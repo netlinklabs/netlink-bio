@@ -1,1 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/u/:username", "destination": "/api/bio?username=:username" }
+  ]
+}
 
