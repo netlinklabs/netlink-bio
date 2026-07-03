@@ -290,9 +290,30 @@
                 display: flex; 
             }
         }
+        /* Auth loading guard: hide content until session check completes */
+        #authGate {
+            position: fixed;
+            inset: 0;
+            background: #f8fafc;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        html.dark #authGate {
+            background: #0f172a;
+        }
     </style>
 </head>
 <body class="min-h-screen">
+    <!-- Auth Gate: shown while checking Supabase session -->
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm text-slate-400">Loading your dashboard...</p>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast" class="toast">Saved successfully!</div>
 
@@ -383,10 +404,10 @@
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-lg">👤</div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate text-primary">username</p>
+                    <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">username</p>
                     <p class="text-xs text-muted">Basic Plan</p>
                 </div>
-                <button onclick="showToast('Logged out')" class="text-secondary hover:text-primary transition">
+                <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -746,6 +767,34 @@
             </button>
         </div>
     </div>
+
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Netlink.bio - Supabase config
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Auth guard: runs before anything else is shown
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            // Logged in: show the dashboard, fill in user info
+            document.getElementById('sidebarUserEmail').textContent = session.user.email;
+            document.getElementById('authGate').style.display = 'none';
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        checkAuth();
+    </script>
 
     <script>
         // Initialize Lucide icons
