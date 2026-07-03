@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,44 +7,288 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: 'rgba(255,255,255,0.05)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         * { font-family: 'Inter', sans-serif; }
-        body { background: #0f172a; color: #e2e8f0; }
-        .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); }
-        .crypto-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; }
-        .net-icon { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
-        .usdc-icon { background: #2775ca; color: white; }
-        .pol-icon { background: #8247e5; color: white; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
-        .modal.active { display: flex; }
-        .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transform: translateY(100px); transition: transform 0.3s; z-index: 60; }
-        .toast.show { transform: translateY(0); }
-        .notification-panel { display: none; position: absolute; top: 50px; right: 0; width: 320px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; z-index: 50; overflow: hidden; }
-        .notification-panel.active { display: block; }
-        .link-item { transition: all 0.2s; cursor: grab; }
-        .link-item:active { cursor: grabbing; }
-        .link-item.dragging { opacity: 0.5; transform: scale(1.02); }
-        .link-item .drag-handle { opacity: 0; transition: opacity 0.2s; }
-        .link-item:hover .drag-handle { opacity: 1; }
-        .link-item.long-press .drag-handle { opacity: 1; }
-        .progress-bar { background: #0f172a; border-radius: 999px; height: 8px; overflow: hidden; }
-        .progress-fill { background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; border-radius: 999px; transition: width 0.5s ease; }
-        .locked-card { position: relative; overflow: hidden; }
-        .locked-card::before { content: ''; position: absolute; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 10; }
-        .locked-content { position: relative; z-index: 20; }
-        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; background: #1e293b; z-index: 50; transition: right 0.3s ease; overflow-y: auto; border-left: 1px solid rgba(255,255,255,0.05); }
-        .sidebar.open { right: 0; }
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
-        .sidebar-overlay.active { display: block; }
+        
+        /* ========== LIGHT THEME (Default) ========== */
+        body { 
+            background: #f8fafc; 
+            color: #1e293b; 
+        }
+        .card { 
+            background: #ffffff; 
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        .hover-surface:hover { background: rgba(0,0,0,0.03); }
+        .sidebar { background: #ffffff; }
+        .mobile-header { background: #ffffff; }
+        .notification-panel { background: #ffffff; }
+        .progress-bar { background: #e2e8f0; }
+        .locked-card::before { background: rgba(241, 245, 249, 0.92); }
+        
+        /* ========== DARK THEME OVERRIDES ========== */
+        html.dark body {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        html.dark .card {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: none;
+        }
+        html.dark .text-primary {
+            color: #f8fafc !important;
+        }
+        html.dark .text-secondary {
+            color: #94a3b8 !important;
+        }
+        html.dark .text-muted {
+            color: #64748b !important;
+        }
+        html.dark .bg-surface,
+        html.dark .bg-\[\#0f172a\] {
+            background: #0f172a !important;
+        }
+        html.dark .border-subtle,
+        html.dark .border-white\/5 {
+            border-color: rgba(255,255,255,0.05) !important;
+        }
+        html.dark .border-white\/10 {
+            border-color: rgba(255,255,255,0.08) !important;
+        }
+        html.dark .hover-surface:hover,
+        html.dark .hover\:bg-white\/5:hover {
+            background: rgba(255,255,255,0.05) !important;
+        }
+        html.dark .sidebar {
+            background: #1e293b;
+            border-left: 1px solid rgba(255,255,255,0.05);
+        }
+        html.dark .mobile-header {
+            background: #0f172a;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        html.dark .notification-panel {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        html.dark .progress-bar {
+            background: #0f172a;
+        }
+        html.dark .locked-card::before {
+            background: rgba(15, 23, 42, 0.85);
+        }
+        html.dark .toast {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        html.dark button.text-gray-500:hover {
+            color: #f8fafc !important;
+        }
+        html.dark .sidebar nav a.text-secondary {
+            color: #94a3b8 !important;
+        }
+        html.dark .sidebar nav a.text-secondary:hover {
+            background: rgba(255,255,255,0.05) !important;
+        }
+        html.dark .sidebar .border-t {
+            border-color: rgba(255,255,255,0.05) !important;
+        }
+        html.dark .sidebar .text-muted {
+            color: #64748b !important;
+        }
+        html.dark .upgrade-option {
+            background: #0f172a !important;
+            border-color: rgba(255,255,255,0.08) !important;
+        }
+        html.dark .upgrade-option:hover {
+            border-color: #3b82f6 !important;
+        }
+        
+        /* ========== COMPONENT STYLES ========== */
+        .crypto-icon { 
+            width: 36px; 
+            height: 36px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 14px; 
+            font-weight: bold; 
+        }
+        .net-icon { 
+            background: linear-gradient(135deg, #667eea, #764ba2); 
+            color: white; 
+        }
+        .usdc-icon { 
+            background: #2775ca; 
+            color: white; 
+        }
+        .pol-icon { 
+            background: #8247e5; 
+            color: white; 
+        }
+        .modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.7); 
+            z-index: 50; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .modal.active { 
+            display: flex; 
+        }
+        .toast { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            background: #10b981; 
+            color: white; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+            transform: translateY(100px); 
+            transition: transform 0.3s; 
+            z-index: 60; 
+        }
+        .toast.show { 
+            transform: translateY(0); 
+        }
+        .notification-panel { 
+            display: none; 
+            position: absolute; 
+            top: 50px; 
+            right: 0; 
+            width: 320px; 
+            border: 1px solid rgba(0,0,0,0.08); 
+            border-radius: 12px; 
+            z-index: 50; 
+            overflow: hidden; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .notification-panel.active { 
+            display: block; 
+        }
+        .link-item { 
+            transition: all 0.2s; 
+            cursor: grab; 
+            background: #f1f5f9;
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        .link-item:active { 
+            cursor: grabbing; 
+        }
+        .link-item.dragging { 
+            opacity: 0.5; 
+            transform: scale(1.02); 
+        }
+        .link-item .drag-handle { 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+        }
+        .link-item:hover .drag-handle { 
+            opacity: 1; 
+        }
+        .link-item.long-press .drag-handle { 
+            opacity: 1; 
+        }
+        .progress-bar { 
+            border-radius: 999px; 
+            height: 8px; 
+            overflow: hidden; 
+        }
+        .progress-fill { 
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6); 
+            height: 100%; 
+            border-radius: 999px; 
+            transition: width 0.5s ease; 
+        }
+        .locked-card { 
+            position: relative; 
+            overflow: hidden; 
+        }
+        .locked-card::before { 
+            content: ''; 
+            position: absolute; 
+            inset: 0; 
+            z-index: 10; 
+        }
+        .locked-content { 
+            position: relative; 
+            z-index: 20; 
+        }
+        .sidebar { 
+            position: fixed; 
+            top: 0; 
+            right: -100%; 
+            width: 280px; 
+            height: 100vh; 
+            z-index: 50; 
+            transition: right 0.3s ease; 
+            overflow-y: auto; 
+            border-left: 1px solid rgba(0,0,0,0.08); 
+        }
+        .sidebar.open { 
+            right: 0; 
+        }
+        .sidebar-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 40; 
+            display: none; 
+        }
+        .sidebar-overlay.active { 
+            display: block; 
+        }
         @media (min-width: 1024px) {
-            .sidebar { right: 0; width: 280px; transition: none; }
-            .sidebar-overlay { display: none !important; }
-            .main-content { margin-right: 280px; margin-left: 0; }
-            .mobile-header { display: none; }
+            .sidebar { 
+                right: 0; 
+                width: 280px; 
+                transition: none; 
+            }
+            .sidebar-overlay { 
+                display: none !important; 
+            }
+            .main-content { 
+                margin-right: 280px; 
+                margin-left: 0; 
+            }
+            .mobile-header { 
+                display: none; 
+            }
         }
         @media (max-width: 1023px) {
-            .main-content { margin-right: 0; }
-            .mobile-header { display: flex; }
+            .main-content { 
+                margin-right: 0; 
+            }
+            .mobile-header { 
+                display: flex; 
+            }
         }
     </style>
 </head>
@@ -53,19 +297,20 @@
     <div id="toast" class="toast">Saved successfully!</div>
 
     <!-- Mobile Header -->
-    <header class="mobile-header fixed top-0 left-0 right-0 h-16 bg-[#0f172a] border-b border-white/5 z-30 flex items-center justify-between px-4">
+    <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
         <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-[#1e293b] rounded-lg flex items-center justify-center border border-white/10">
-                <i data-lucide="link" class="w-4 h-4 text-blue-400"></i>
+            <div class="w-8 h-8 bg-surface rounded-lg flex items-center justify-center border border-subtle">
+                <i data-lucide="link" class="w-4 h-4 text-blue-500"></i>
             </div>
-            <span class="font-bold text-white">netlink.bio</span>
+            <span class="font-bold text-primary">netlink.bio</span>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="toggleTheme()" class="p-2 hover:bg-white/5 rounded-lg transition">
-                <i data-lucide="moon" class="w-5 h-5 text-blue-400"></i>
+            <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch to dark mode">
+                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
             </button>
-            <button onclick="toggleSidebar()" class="p-2 hover:bg-white/5 rounded-lg transition">
-                <i data-lucide="menu" class="w-5 h-5 text-gray-400"></i>
+            <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
+                <i data-lucide="menu" class="w-5 h-5 text-secondary"></i>
             </button>
         </div>
     </header>
@@ -75,73 +320,73 @@
 
     <!-- Sidebar (Right) -->
     <aside class="sidebar text-white flex flex-col">
-        <div class="hidden lg:block p-4 border-b border-white/5">
+        <div class="hidden lg:block p-4 border-b border-subtle">
             <a href="index.html" class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-[#0f172a] rounded-xl flex items-center justify-center border border-white/10">
-                    <i data-lucide="link" class="w-5 h-5 text-blue-400"></i>
+                <div class="w-10 h-10 bg-surface rounded-xl flex items-center justify-center border border-subtle">
+                    <i data-lucide="link" class="w-5 h-5 text-blue-500"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg">netlink.bio</h1>
-                    <p class="text-xs text-gray-500">Dashboard</p>
+                    <h1 class="font-bold text-lg text-primary">netlink.bio</h1>
+                    <p class="text-xs text-muted">Dashboard</p>
                 </div>
             </a>
         </div>
 
         <nav class="flex-1 py-2">
             <!-- Active Menu Items -->
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-400 border-l-2 border-blue-400">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-500 border-l-2 border-blue-500">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-400 hover:bg-white/5 transition">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="link" class="w-4 h-4"></i>
                 <span>Links</span>
             </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-400 hover:bg-white/5 transition">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="palette" class="w-4 h-4"></i>
                 <span>Appearance</span>
             </a>
-            <a href="cv.html" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-400 hover:bg-white/5 transition">
+            <a href="cv.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="file-text" class="w-4 h-4"></i>
                 <span>CV Builder</span>
             </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-400 hover:bg-white/5 transition">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="settings" class="w-4 h-4"></i>
                 <span>Settings</span>
             </a>
 
             <!-- Divider -->
             <div class="my-2 px-4">
-                <div class="border-t border-white/5"></div>
-                <p class="text-xs text-gray-600 mt-2 mb-1">Pro Features</p>
+                <div class="border-t border-subtle"></div>
+                <p class="text-xs text-muted mt-2 mb-1">Pro Features</p>
             </div>
 
             <!-- Locked Menu Items -->
-            <div class="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 cursor-not-allowed select-none">
+            <div class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-not-allowed select-none">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                 <span>Analytics</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-700"></i>
+                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
             </div>
-            <div class="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 cursor-not-allowed select-none">
+            <div class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-not-allowed select-none">
                 <i data-lucide="globe" class="w-4 h-4"></i>
                 <span>Landing Page</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-700"></i>
+                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
             </div>
-            <div class="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 cursor-not-allowed select-none">
+            <div class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-not-allowed select-none">
                 <i data-lucide="shopping-cart" class="w-4 h-4"></i>
                 <span>Store</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-700"></i>
+                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
             </div>
         </nav>
 
-        <div class="p-4 border-t border-white/5">
+        <div class="p-4 border-t border-subtle">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-lg">👤</div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate">username</p>
-                    <p class="text-xs text-gray-500">Basic Plan</p>
+                    <p class="text-sm font-medium truncate text-primary">username</p>
+                    <p class="text-xs text-muted">Basic Plan</p>
                 </div>
-                <button onclick="showToast('Logged out')" class="text-gray-500 hover:text-white">
+                <button onclick="showToast('Logged out')" class="text-secondary hover:text-primary transition">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -153,64 +398,65 @@
         <!-- Desktop Header -->
         <div class="hidden lg:flex items-center justify-between mb-8">
             <div>
-                <h2 class="text-2xl font-bold text-white">Dashboard</h2>
-                <p class="text-gray-500 text-sm">Welcome back! Manage your bio links.</p>
+                <h2 class="text-2xl font-bold text-primary">Dashboard</h2>
+                <p class="text-secondary text-sm">Welcome back! Manage your bio links.</p>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="toggleTheme()" class="p-2 hover:bg-white/5 rounded-lg transition" title="Switch to light mode">
-                    <i data-lucide="moon" class="w-5 h-5 text-blue-400"></i>
+                <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch to dark mode">
+                    <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
                 </button>
                 <div class="relative">
-                    <button onclick="toggleNotifications()" class="p-2 hover:bg-white/5 rounded-lg transition relative">
-                        <i data-lucide="bell" class="w-5 h-5 text-gray-400"></i>
+                    <button onclick="toggleNotifications()" class="p-2 hover-surface rounded-lg transition relative">
+                        <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
                     <div id="notificationPanel" class="notification-panel">
-                        <div class="p-4 border-b border-white/5 flex items-center justify-between">
-                            <h4 class="font-semibold text-sm">Notifications</h4>
-                            <button onclick="markAllRead()" class="text-xs text-blue-400 hover:text-blue-300">Mark all read</button>
+                        <div class="p-4 border-b border-subtle flex items-center justify-between">
+                            <h4 class="font-semibold text-sm text-primary">Notifications</h4>
+                            <button onclick="markAllRead()" class="text-xs text-blue-500 hover:text-blue-600">Mark all read</button>
                         </div>
                         <div class="max-h-80 overflow-y-auto">
-                            <div class="p-4 border-b border-white/5 hover:bg-white/5 cursor-pointer transition">
+                            <div class="p-4 border-b border-subtle hover-surface cursor-pointer transition">
                                 <div class="flex items-start gap-3">
                                     <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="trending-up" class="w-4 h-4 text-green-400"></i>
+                                        <i data-lucide="trending-up" class="w-4 h-4 text-green-500"></i>
                                     </div>
                                     <div>
-                                        <p class="text-sm text-white">Link clicked 50 times today</p>
-                                        <p class="text-xs text-gray-500 mt-1">Your Instagram link is performing well</p>
-                                        <p class="text-xs text-gray-600 mt-1">2 hours ago</p>
+                                        <p class="text-sm text-primary">Link clicked 50 times today</p>
+                                        <p class="text-xs text-secondary mt-1">Your Instagram link is performing well</p>
+                                        <p class="text-xs text-muted mt-1">2 hours ago</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-4 border-b border-white/5 hover:bg-white/5 cursor-pointer transition">
+                            <div class="p-4 border-b border-subtle hover-surface cursor-pointer transition">
                                 <div class="flex items-start gap-3">
                                     <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="gift" class="w-4 h-4 text-blue-400"></i>
+                                        <i data-lucide="gift" class="w-4 h-4 text-blue-500"></i>
                                     </div>
                                     <div>
-                                        <p class="text-sm text-white">You received 10 NET</p>
-                                        <p class="text-xs text-gray-500 mt-1">Welcome bonus for new users</p>
-                                        <p class="text-xs text-gray-600 mt-1">1 day ago</p>
+                                        <p class="text-sm text-primary">You received 10 NET</p>
+                                        <p class="text-xs text-secondary mt-1">Welcome bonus for new users</p>
+                                        <p class="text-xs text-muted mt-1">1 day ago</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-4 hover:bg-white/5 cursor-pointer transition">
+                            <div class="p-4 hover-surface cursor-pointer transition">
                                 <div class="flex items-start gap-3">
                                     <div class="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-400"></i>
+                                        <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-500"></i>
                                     </div>
                                     <div>
-                                        <p class="text-sm text-white">Complete your profile</p>
-                                        <p class="text-xs text-gray-500 mt-1">Add a bio to increase visibility</p>
-                                        <p class="text-xs text-gray-600 mt-1">3 days ago</p>
+                                        <p class="text-sm text-primary">Complete your profile</p>
+                                        <p class="text-xs text-secondary mt-1">Add a bio to increase visibility</p>
+                                        <p class="text-xs text-muted mt-1">3 days ago</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <span class="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm font-medium">Basic</span>
+                <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">Basic</span>
                 <a href="bio.html" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition">
                     <i data-lucide="external-link" class="w-4 h-4"></i>
                     View Profile
@@ -221,11 +467,11 @@
         <!-- Mobile Title -->
         <div class="lg:hidden mb-4 flex items-center justify-between">
             <div>
-                <h2 class="text-xl font-bold text-white">Dashboard</h2>
-                <p class="text-gray-500 text-sm">Welcome back!</p>
+                <h2 class="text-xl font-bold text-primary">Dashboard</h2>
+                <p class="text-secondary text-sm">Welcome back!</p>
             </div>
-            <button onclick="toggleNotifications()" class="p-2 hover:bg-white/5 rounded-lg transition relative">
-                <i data-lucide="bell" class="w-5 h-5 text-gray-400"></i>
+            <button onclick="toggleNotifications()" class="p-2 hover-surface rounded-lg transition relative">
+                <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
                 <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
         </div>
@@ -233,27 +479,27 @@
         <!-- Wallet Card -->
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-white">Wallet</h3>
-                <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Connected</span>
+                <h3 class="font-semibold text-primary">Wallet</h3>
+                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-0.5 rounded-full">Connected</span>
             </div>
             <div class="grid grid-cols-3 gap-3 mb-4">
-                <div class="bg-[#0f172a] rounded-xl p-3 text-center">
+                <div class="bg-surface rounded-xl p-3 text-center">
                     <div class="crypto-icon net-icon mx-auto mb-2">N</div>
-                    <p class="text-sm font-semibold text-white">10.00</p>
-                    <p class="text-xs text-gray-500">NET</p>
+                    <p class="text-sm font-semibold text-primary">10.00</p>
+                    <p class="text-xs text-muted">NET</p>
                 </div>
-                <div class="bg-[#0f172a] rounded-xl p-3 text-center">
+                <div class="bg-surface rounded-xl p-3 text-center">
                     <div class="crypto-icon usdc-icon mx-auto mb-2">U</div>
-                    <p class="text-sm font-semibold text-white">0.00</p>
-                    <p class="text-xs text-gray-500">USDC</p>
+                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">USDC</p>
                 </div>
-                <div class="bg-[#0f172a] rounded-xl p-3 text-center">
+                <div class="bg-surface rounded-xl p-3 text-center">
                     <div class="crypto-icon pol-icon mx-auto mb-2">P</div>
-                    <p class="text-sm font-semibold text-white">0.00</p>
-                    <p class="text-xs text-gray-500">POL</p>
+                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">POL</p>
                 </div>
             </div>
-            <button onclick="showToast('WalletConnect coming soon')" class="px-4 py-2 bg-[#0f172a] hover:bg-[#1e293b] border border-white/10 rounded-lg text-sm text-gray-300 transition">
+            <button onclick="showToast('WalletConnect coming soon')" class="px-4 py-2 bg-surface hover-surface border border-subtle rounded-lg text-sm text-secondary transition">
                 <span class="flex items-center gap-2">
                     <i data-lucide="wallet" class="w-4 h-4"></i>
                     Connect Wallet
@@ -265,28 +511,28 @@
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="target" class="w-5 h-5 text-blue-400"></i>
-                    <h3 class="font-semibold text-white">Complete Your Profile</h3>
+                    <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
+                    <h3 class="font-semibold text-primary">Complete Your Profile</h3>
                 </div>
-                <span class="text-sm text-blue-400 font-medium">60%</span>
+                <span class="text-sm text-blue-500 font-medium">60%</span>
             </div>
             <div class="progress-bar mb-3">
                 <div class="progress-fill" style="width: 60%"></div>
             </div>
             <div class="flex flex-wrap gap-2">
-                <span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded flex items-center gap-1">
+                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1">
                     <i data-lucide="check" class="w-3 h-3"></i> Add avatar
                 </span>
-                <span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded flex items-center gap-1">
+                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1">
                     <i data-lucide="check" class="w-3 h-3"></i> Add bio
                 </span>
-                <span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded flex items-center gap-1">
+                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1">
                     <i data-lucide="check" class="w-3 h-3"></i> Add first link
                 </span>
-                <span class="text-xs bg-gray-700 text-gray-400 px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:bg-gray-600 transition" onclick="showToast('Connect wallet to complete')">
+                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:bg-gray-300 transition" onclick="showToast('Connect wallet to complete')">
                     <i data-lucide="circle" class="w-3 h-3"></i> Connect wallet
                 </span>
-                <span class="text-xs bg-gray-700 text-gray-400 px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:bg-gray-600 transition" onclick="showToast('Share your profile')">
+                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:bg-gray-300 transition" onclick="showToast('Share your profile')">
                     <i data-lucide="circle" class="w-3 h-3"></i> Share profile
                 </span>
             </div>
@@ -294,16 +540,16 @@
 
         <!-- Card 1: Link in Bio -->
         <div class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-white/5">
+            <div class="p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <i data-lucide="link" class="w-5 h-5 text-blue-400"></i>
+                        <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
+                            <i data-lucide="link" class="w-5 h-5 text-blue-500"></i>
                             Link in Bio
                         </h3>
-                        <p class="text-sm text-gray-500">Manage your bio page links</p>
+                        <p class="text-sm text-secondary">Manage your bio page links</p>
                     </div>
-                    <div class="flex items-center gap-4 text-sm text-gray-400">
+                    <div class="flex items-center gap-4 text-sm text-secondary">
                         <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> 1.2K</span>
                         <span class="flex items-center gap-1"><i data-lucide="mouse-pointer-click" class="w-4 h-4"></i> 567</span>
                     </div>
@@ -311,65 +557,65 @@
             </div>
             <div class="p-4 lg:p-6">
                 <div id="linkList" class="space-y-3">
-                    <div class="link-item bg-[#0f172a] rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4 border border-white/5" draggable="true" data-id="1">
-                        <div class="drag-handle p-1 text-gray-600 cursor-grab" title="Hold to drag">
+                    <div class="link-item rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4" draggable="true" data-id="1">
+                        <div class="drag-handle p-1 text-gray-400 cursor-grab" title="Hold to drag">
                             <i data-lucide="grip-vertical" class="w-4 h-4"></i>
                         </div>
                         <div class="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center text-white flex-shrink-0">
                             <i data-lucide="instagram" class="w-5 h-5 lg:w-6 lg:h-6"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-medium text-white text-sm lg:text-base">Instagram</h4>
-                            <p class="text-xs lg:text-sm text-gray-500 truncate">instagram.com/username</p>
+                            <h4 class="font-medium text-primary text-sm lg:text-base">Instagram</h4>
+                            <p class="text-xs lg:text-sm text-secondary truncate">instagram.com/username</p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="showToast('Edit link')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="pencil" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Edit link')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
                             </button>
-                            <button onclick="showToast('Link settings')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="more-vertical" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Link settings')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="more-vertical" class="w-4 h-4 text-secondary"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="link-item bg-[#0f172a] rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4 border border-white/5" draggable="true" data-id="2">
-                        <div class="drag-handle p-1 text-gray-600 cursor-grab" title="Hold to drag">
+                    <div class="link-item rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4" draggable="true" data-id="2">
+                        <div class="drag-handle p-1 text-gray-400 cursor-grab" title="Hold to drag">
                             <i data-lucide="grip-vertical" class="w-4 h-4"></i>
                         </div>
                         <div class="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
                             <i data-lucide="twitter" class="w-5 h-5 lg:w-6 lg:h-6"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-medium text-white text-sm lg:text-base">Twitter</h4>
-                            <p class="text-xs lg:text-sm text-gray-500 truncate">twitter.com/username</p>
+                            <h4 class="font-medium text-primary text-sm lg:text-base">Twitter</h4>
+                            <p class="text-xs lg:text-sm text-secondary truncate">twitter.com/username</p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="showToast('Edit link')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="pencil" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Edit link')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
                             </button>
-                            <button onclick="showToast('Link settings')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="more-vertical" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Link settings')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="more-vertical" class="w-4 h-4 text-secondary"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="link-item bg-[#0f172a] rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4 border border-white/5" draggable="true" data-id="3">
-                        <div class="drag-handle p-1 text-gray-600 cursor-grab" title="Hold to drag">
+                    <div class="link-item rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4" draggable="true" data-id="3">
+                        <div class="drag-handle p-1 text-gray-400 cursor-grab" title="Hold to drag">
                             <i data-lucide="grip-vertical" class="w-4 h-4"></i>
                         </div>
                         <div class="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white flex-shrink-0">
                             <i data-lucide="globe" class="w-5 h-5 lg:w-6 lg:h-6"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-medium text-white text-sm lg:text-base">Portfolio</h4>
-                            <p class="text-xs lg:text-sm text-gray-500 truncate">myportfolio.com</p>
+                            <h4 class="font-medium text-primary text-sm lg:text-base">Portfolio</h4>
+                            <p class="text-xs lg:text-sm text-secondary truncate">myportfolio.com</p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="showToast('Edit link')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="pencil" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Edit link')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
                             </button>
-                            <button onclick="showToast('Link settings')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="more-vertical" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Link settings')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="more-vertical" class="w-4 h-4 text-secondary"></i>
                             </button>
                         </div>
                     </div>
@@ -377,8 +623,8 @@
 
                 <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-400">3/3 links used</span>
-                        <button onclick="showToast('Limit reached - Upgrade to Silver for 10 links')" class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                        <span class="text-sm text-secondary">3/3 links used</span>
+                        <button onclick="showToast('Limit reached - Upgrade to Silver for 10 links')" class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1">
                             <i data-lucide="plus" class="w-4 h-4"></i>
                             Add more
                         </button>
@@ -389,41 +635,41 @@
 
         <!-- Card 2: Curriculum Vitae -->
         <div class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-white/5">
+            <div class="p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-5 h-5 text-green-400"></i>
+                        <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i>
                             Curriculum Vitae
                         </h3>
-                        <p class="text-sm text-gray-500">Professional CV, shareable anytime</p>
+                        <p class="text-sm text-secondary">Professional CV, shareable anytime</p>
                     </div>
-                    <div class="flex items-center gap-4 text-sm text-gray-400">
+                    <div class="flex items-center gap-4 text-sm text-secondary">
                         <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> 89</span>
-                        <span class="flex items-center gap-1 text-green-400"><i data-lucide="check-circle" class="w-4 h-4"></i> Active</span>
+                        <span class="flex items-center gap-1 text-green-600"><i data-lucide="check-circle" class="w-4 h-4"></i> Active</span>
                     </div>
                 </div>
             </div>
             <div class="p-4 lg:p-6">
-                <div class="bg-[#0f172a] rounded-xl p-4 border border-white/5">
+                <div class="bg-surface rounded-xl p-4 border border-subtle">
                     <div class="flex items-center gap-4">
-                        <div class="w-16 h-20 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div class="w-16 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center flex-shrink-0">
                             <i data-lucide="file-text" class="w-8 h-8 text-gray-500"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-medium text-white">My CV</h4>
-                            <p class="text-sm text-gray-500">Last updated 2 days ago</p>
-                            <p class="text-xs text-gray-600 mt-1">netlink.bio/username/cv</p>
+                            <h4 class="font-medium text-primary">My CV</h4>
+                            <p class="text-sm text-secondary">Last updated 2 days ago</p>
+                            <p class="text-xs text-muted mt-1">netlink.bio/username/cv</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="showToast('CV preview')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="eye" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('CV preview')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="eye" class="w-4 h-4 text-secondary"></i>
                             </button>
-                            <button onclick="showToast('Edit CV')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="pencil" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Edit CV')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
                             </button>
-                            <button onclick="showToast('Share CV')" class="p-2 hover:bg-white/5 rounded-lg transition">
-                                <i data-lucide="share-2" class="w-4 h-4 text-gray-400"></i>
+                            <button onclick="showToast('Share CV')" class="p-2 hover-surface rounded-lg transition">
+                                <i data-lucide="share-2" class="w-4 h-4 text-secondary"></i>
                             </button>
                         </div>
                     </div>
@@ -437,14 +683,14 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="sparkles" class="w-5 h-5 text-yellow-400"></i>
+                            <i data-lucide="sparkles" class="w-5 h-5 text-yellow-500"></i>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-white">Pro Features</h3>
-                            <p class="text-sm text-gray-500">Landing Page, Store & more</p>
+                            <h3 class="font-semibold text-primary">Pro Features</h3>
+                            <p class="text-sm text-secondary">Landing Page, Store & more</p>
                         </div>
                     </div>
-                    <button onclick="openUpgradeModal()" class="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 rounded-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0">
+                    <button onclick="openUpgradeModal()" class="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 border border-yellow-500/30 rounded-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0">
                         <i data-lucide="unlock" class="w-4 h-4"></i>
                         <span class="hidden sm:inline">Upgrade</span>
                     </button>
@@ -457,41 +703,41 @@
     <div id="upgradeModal" class="modal">
         <div class="card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-white">Upgrade Plan</h3>
-                <button onclick="closeUpgradeModal()" class="text-gray-500 hover:text-white">
+                <h3 class="text-lg font-semibold text-primary">Upgrade Plan</h3>
+                <button onclick="closeUpgradeModal()" class="text-secondary hover:text-primary transition">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <p class="text-gray-500 text-sm mb-6">Choose a plan. Payment via USDC on Polygon.</p>
+            <p class="text-secondary text-sm mb-6">Choose a plan. Payment via USDC on Polygon.</p>
             <div class="space-y-3">
-                <label class="flex items-center gap-3 p-4 border border-white/10 rounded-xl cursor-pointer hover:border-blue-500 transition bg-[#0f172a]">
+                <label class="upgrade-option flex items-center gap-3 p-4 border border-subtle rounded-xl cursor-pointer hover:border-blue-500 transition bg-surface">
                     <input type="radio" name="plan" class="w-4 h-4 text-blue-500">
                     <div class="flex-1">
                         <div class="flex items-center justify-between">
-                            <span class="font-medium text-white">Silver</span>
-                            <span class="font-bold text-white">$3/mo</span>
+                            <span class="font-medium text-primary">Silver</span>
+                            <span class="font-bold text-primary">$3/mo</span>
                         </div>
-                        <p class="text-sm text-gray-500">10 links, landing page, analytics</p>
+                        <p class="text-sm text-secondary">10 links, landing page, analytics</p>
                     </div>
                 </label>
-                <label class="flex items-center gap-3 p-4 border border-white/10 rounded-xl cursor-pointer hover:border-blue-500 transition bg-[#0f172a]">
+                <label class="upgrade-option flex items-center gap-3 p-4 border border-subtle rounded-xl cursor-pointer hover:border-blue-500 transition bg-surface">
                     <input type="radio" name="plan" class="w-4 h-4 text-blue-500">
                     <div class="flex-1">
                         <div class="flex items-center justify-between">
-                            <span class="font-medium text-white">Gold</span>
-                            <span class="font-bold text-white">$7/mo</span>
+                            <span class="font-medium text-primary">Gold</span>
+                            <span class="font-bold text-primary">$7/mo</span>
                         </div>
-                        <p class="text-sm text-gray-500">25 links, premium templates, custom domain</p>
+                        <p class="text-sm text-secondary">25 links, premium templates, custom domain</p>
                     </div>
                 </label>
-                <label class="flex items-center gap-3 p-4 border border-white/10 rounded-xl cursor-pointer hover:border-blue-500 transition bg-[#0f172a]">
+                <label class="upgrade-option flex items-center gap-3 p-4 border border-subtle rounded-xl cursor-pointer hover:border-blue-500 transition bg-surface">
                     <input type="radio" name="plan" class="w-4 h-4 text-blue-500">
                     <div class="flex-1">
                         <div class="flex items-center justify-between">
-                            <span class="font-medium text-white">Platinum</span>
-                            <span class="font-bold text-white">$15/mo</span>
+                            <span class="font-medium text-primary">Platinum</span>
+                            <span class="font-bold text-primary">$15/mo</span>
                         </div>
-                        <p class="text-sm text-gray-500">Unlimited links, store, priority support</p>
+                        <p class="text-sm text-secondary">Unlimited links, store, priority support</p>
                     </div>
                 </label>
             </div>
@@ -502,8 +748,53 @@
     </div>
 
     <script>
+        // Initialize Lucide icons
         lucide.createIcons();
 
+        // Theme Management
+        function initTheme() {
+            // Default to LIGHT theme (no saved preference or explicit 'light')
+            const savedTheme = localStorage.getItem('theme');
+            if (!savedTheme) {
+                // First visit: apply light theme, don't save yet
+                applyTheme('light', false);
+                return;
+            }
+            applyTheme(savedTheme, true);
+        }
+
+        function applyTheme(theme, save = true) {
+            const html = document.documentElement;
+            const lightIcons = document.querySelectorAll('.theme-icon-light');
+            const darkIcons = document.querySelectorAll('.theme-icon-dark');
+            
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                html.classList.remove('light');
+                lightIcons.forEach(icon => icon.classList.add('hidden'));
+                darkIcons.forEach(icon => icon.classList.remove('hidden'));
+            } else {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                lightIcons.forEach(icon => icon.classList.remove('hidden'));
+                darkIcons.forEach(icon => icon.classList.add('hidden'));
+            }
+            
+            if (save) {
+                localStorage.setItem('theme', theme);
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const newTheme = isDark ? 'light' : 'dark';
+            applyTheme(newTheme, true);
+            showToast(newTheme === 'dark' ? 'Dark mode activated' : 'Light mode activated');
+        }
+
+        initTheme();
+
+        // Toast Notification
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -511,11 +802,13 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
+        // Sidebar Toggle
         function toggleSidebar() {
             document.querySelector('.sidebar').classList.toggle('open');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
 
+        // Upgrade Modal
         function openUpgradeModal() {
             document.getElementById('upgradeModal').classList.add('active');
         }
@@ -524,10 +817,7 @@
             document.getElementById('upgradeModal').classList.remove('active');
         }
 
-        function toggleTheme() {
-            showToast('Light mode coming soon');
-        }
-
+        // Notifications
         function toggleNotifications() {
             document.getElementById('notificationPanel').classList.toggle('active');
         }
@@ -543,6 +833,10 @@
             if (!bell && !e.target.closest('.notification-panel')) {
                 panel.classList.remove('active');
             }
+        });
+
+        document.getElementById('upgradeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeUpgradeModal();
         });
 
         // Drag & Drop
@@ -621,10 +915,6 @@
         }
 
         initDragAndDrop();
-
-        document.getElementById('upgradeModal').addEventListener('click', function(e) {
-            if (e.target === this) closeUpgradeModal();
-        });
     </script>
 </body>
 </html>
