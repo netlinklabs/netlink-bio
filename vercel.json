@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/u/:username", "destination": "/api/bio?username=:username" }
+    { "source": "/:username([a-z0-9_]{3,20})", "destination": "/api/bio?username=:username" }
   ]
 }
-
