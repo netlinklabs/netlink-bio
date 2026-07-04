@@ -879,7 +879,7 @@
 
             const viewBtn = document.getElementById('viewProfileBtn');
             if (data.username) {
-                viewBtn.href = `/u/${data.username}`;
+                viewBtn.href = `/${data.username}`;
             } else {
                 viewBtn.href = '#';
                 viewBtn.onclick = (e) => { e.preventDefault(); showToast('Claim your link at the top of the dashboard first'); };
@@ -898,7 +898,7 @@
                     <div class="flex items-center justify-between gap-3 flex-wrap">
                         <div>
                             <p class="text-xs text-muted mb-1">Your Netlink.bio link</p>
-                            <a href="/u/${username}" target="_blank" class="text-lg font-semibold text-primary hover:underline">netlink.bio/${username}</a>
+                            <a href="/${username}" target="_blank" class="text-lg font-semibold text-primary hover:underline">netlink.bio/${username}</a>
                         </div>
                         <div class="flex items-center gap-2">
                             <button onclick="copyProfileLink('${username}')" class="p-2 hover-surface rounded-lg transition" title="Copy link">
@@ -926,7 +926,7 @@
         }
 
         function copyProfileLink(username) {
-            const url = `${window.location.origin}/u/${username}`;
+            const url = `${window.location.origin}/${username}`;
             navigator.clipboard.writeText(url).then(() => showToast('Link copied!'));
         }
 
