@@ -38,10 +38,28 @@
             <span class="font-poppins font-bold text-xl text-gray-900">netlink<span class="tosca">.bio</span></span>
         </a>
 
+        <!-- Pending username claim banner -->
+        <div id="claimBanner" class="hidden mb-4 p-3 bg-tosca/10 border border-tosca/30 rounded-xl text-center">
+            <p class="text-sm text-gray-700">
+                Claiming <span id="claimUsernameLabel" class="font-semibold tosca"></span> — sign up to lock it in
+            </p>
+        </div>
+
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <div class="flex mb-6 border-b border-gray-100">
                 <button id="tabSignIn" onclick="switchTab('signin')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-tosca tosca">Log in</button>
                 <button id="tabSignUp" onclick="switchTab('signup')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-400">Sign up</button>
+            </div>
+
+            <!-- Google Login -->
+            <button id="googleBtn" onclick="handleGoogleLogin()" class="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2 mb-4">
+                <svg class="w-4 h-4" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.5 29.6 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13.5 24 13.5c3.1 0 5.8 1.1 8 3l6-6C34.6 7.5 29.6 5.5 24 5.5c-7.7 0-14.3 4.4-17.7 10.9z"/><path fill="#4CAF50" d="M24 44.5c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5c-2 1.5-4.6 2.4-7.6 2.4-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.6 39.9 16.3 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.5 36 44.5 30.5 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
+                Continue with Google
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex-1 h-px bg-gray-100"></div>
+                <span class="text-xs text-gray-400">or</span>
+                <div class="flex-1 h-px bg-gray-100"></div>
             </div>
 
             <form id="authForm" class="space-y-4">
@@ -116,6 +134,29 @@
             document.getElementById('submitSpinner').classList.toggle('hidden', !isLoading);
         }
 
+        // ===== Pending username claim (from index.html "Claim now" link) =====
+        const urlParams = new URLSearchParams(window.location.search);
+        const claimedUsername = urlParams.get('username');
+        const initialMode = urlParams.get('mode');
+
+        if (claimedUsername) {
+            sessionStorage.setItem('pendingUsername', claimedUsername);
+            document.getElementById('claimUsernameLabel').textContent = `netlink.bio/${claimedUsername}`;
+            document.getElementById('claimBanner').classList.remove('hidden');
+        }
+        if (initialMode === 'signup') {
+            switchTab('signup');
+        }
+
+        // ===== Google Login =====
+        async function handleGoogleLogin() {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin + '/dashboard.html' }
+            });
+            if (error) showToast(error.message);
+        }
+
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
@@ -130,8 +171,10 @@
                 } else {
                     const { error } = await supabaseClient.auth.signUp({ email, password });
                     if (error) throw error;
-                    showToast('Account created! Check your email to confirm, then log in.', true);
-                    switchTab('signin');
+                    // Email confirmation is disabled for this project, so the
+                    // user is already signed in at this point — go straight
+                    // to the dashboard (pendingUsername survives via sessionStorage).
+                    window.location.href = 'dashboard.html';
                 }
             } catch (err) {
                 showToast(err.message || 'Something went wrong. Please try again.');
