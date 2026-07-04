@@ -76,7 +76,7 @@ export default async function handler(req, res) {
   const displayName = profile.display_name || profile.username;
   const bio = profile.bio || '';
   const avatar = profile.avatar_url || '';
-  const pageUrl = `https://netlink-bio.vercel.app/u/${profile.username}`;
+  const pageUrl = `https://netlink-bio.vercel.app/${profile.username}`;
 
   // ---- JSON-LD (schema.org/Person) ----
   const jsonLd = {
@@ -166,4 +166,3 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
   res.status(200).send(html);
 }
-
