@@ -684,9 +684,49 @@
                     <input id="profileDisplayName" type="text" placeholder="Your Name" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                 </div>
                 <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Bio</label>
-                    <textarea id="profileBio" rows="3" placeholder="Tell people about yourself" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-sm font-medium text-secondary">Bio</label>
+                        <span id="profileBioCount" class="text-xs text-muted">0/150</span>
+                    </div>
+                    <textarea id="profileBio" rows="3" maxlength="150" oninput="document.getElementById('profileBioCount').textContent = this.value.length + '/150'" placeholder="Tell people about yourself" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
                 </div>
+
+                <div class="pt-2 border-t border-subtle">
+                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Contact icons</p>
+                    <div class="space-y-3">
+                        <input id="profileWhatsapp" type="text" placeholder="WhatsApp number (e.g. 6281234567890)" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <input id="profileTelegram" type="text" placeholder="Telegram username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <input id="profileEmail" type="email" placeholder="Contact email" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-subtle">
+                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">YouTube video (optional)</p>
+                    <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                </div>
+
+                <div class="pt-2 border-t border-subtle">
+                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Donate wallet (Polygon)</p>
+                    <input id="profileWallet" type="text" placeholder="0x... (EVM wallet address)" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                </div>
+
+                <div class="pt-2 border-t border-subtle space-y-2">
+                    <label class="flex items-center gap-2 text-sm text-secondary">
+                        <input id="profileShowCv" type="checkbox" class="rounded">
+                        Show "View my Professional CV" card
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-secondary">
+                        <input id="profileShowDonate" type="checkbox" class="rounded">
+                        Show Donate card (requires wallet address above)
+                    </label>
+                </div>
+
+                <div class="pt-2 border-t border-subtle">
+                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-1">Section order</p>
+                    <p class="text-xs text-muted mb-3">Controls the order these appear on your public page, below your photo &amp; contact icons.</p>
+                    <div id="sectionOrderList" class="space-y-2"></div>
+                </div>
+
                 <button id="profileSaveBtn" type="submit" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">
                     Save Profile
                 </button>
@@ -967,10 +1007,58 @@
         }
 
         // ===== PROFILE MODAL =====
+        const SECTION_LABELS = {
+            description: 'Bio / Description',
+            youtube: 'YouTube video',
+            links: 'Links list',
+            cv: 'CV card',
+            donate: 'Donate card',
+        };
+        const DEFAULT_SECTIONS_ORDER = ['description', 'youtube', 'links', 'cv', 'donate'];
+        let editingSectionsOrder = [...DEFAULT_SECTIONS_ORDER];
+
+        function renderSectionOrderList() {
+            const list = document.getElementById('sectionOrderList');
+            list.innerHTML = editingSectionsOrder.map((key, i) => `
+                <div class="flex items-center gap-2 bg-surface border border-subtle rounded-lg px-3 py-2">
+                    <span class="text-sm text-primary flex-1">${SECTION_LABELS[key] || key}</span>
+                    <button type="button" onclick="moveSection(${i}, -1)" ${i === 0 ? 'disabled' : ''} class="p-1 hover-surface rounded disabled:opacity-30 transition">
+                        <i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i>
+                    </button>
+                    <button type="button" onclick="moveSection(${i}, 1)" ${i === editingSectionsOrder.length - 1 ? 'disabled' : ''} class="p-1 hover-surface rounded disabled:opacity-30 transition">
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function moveSection(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= editingSectionsOrder.length) return;
+            [editingSectionsOrder[index], editingSectionsOrder[newIndex]] =
+                [editingSectionsOrder[newIndex], editingSectionsOrder[index]];
+            renderSectionOrderList();
+        }
+
         function openProfileModal() {
             document.getElementById('profileUsername').value = currentProfile?.username || '';
             document.getElementById('profileDisplayName').value = currentProfile?.display_name || '';
             document.getElementById('profileBio').value = currentProfile?.bio || '';
+            document.getElementById('profileBioCount').textContent = (currentProfile?.bio || '').length + '/150';
+            document.getElementById('profileWhatsapp').value = currentProfile?.contact_whatsapp || '';
+            document.getElementById('profileTelegram').value = currentProfile?.contact_telegram || '';
+            document.getElementById('profileEmail').value = currentProfile?.contact_email || '';
+            document.getElementById('profileYoutube').value = currentProfile?.youtube_url || '';
+            document.getElementById('profileWallet').value = currentProfile?.wallet_address || '';
+            document.getElementById('profileShowCv').checked = currentProfile?.show_cv !== false;
+            document.getElementById('profileShowDonate').checked = currentProfile?.show_donate !== false;
+
+            editingSectionsOrder = (Array.isArray(currentProfile?.sections_order) && currentProfile.sections_order.length)
+                ? [...currentProfile.sections_order]
+                : [...DEFAULT_SECTIONS_ORDER];
+            renderSectionOrderList();
+
             document.getElementById('profileModal').classList.add('active');
         }
 
@@ -986,11 +1074,30 @@
 
             const username = document.getElementById('profileUsername').value.trim().toLowerCase();
             const display_name = document.getElementById('profileDisplayName').value.trim();
-            const bio = document.getElementById('profileBio').value.trim();
+            const bio = document.getElementById('profileBio').value.trim().slice(0, 150);
+            const contact_whatsapp = document.getElementById('profileWhatsapp').value.trim();
+            const contact_telegram = document.getElementById('profileTelegram').value.trim();
+            const contact_email = document.getElementById('profileEmail').value.trim();
+            const youtube_url = document.getElementById('profileYoutube').value.trim();
+            const wallet_address = document.getElementById('profileWallet').value.trim();
+            const show_cv = document.getElementById('profileShowCv').checked;
+            const show_donate = document.getElementById('profileShowDonate').checked;
 
             const { error } = await supabaseClient
                 .from('profiles')
-                .update({ username: username || null, display_name: display_name || null, bio: bio || null })
+                .update({
+                    username: username || null,
+                    display_name: display_name || null,
+                    bio: bio || null,
+                    contact_whatsapp: contact_whatsapp || null,
+                    contact_telegram: contact_telegram || null,
+                    contact_email: contact_email || null,
+                    youtube_url: youtube_url || null,
+                    wallet_address: wallet_address || null,
+                    show_cv,
+                    show_donate,
+                    sections_order: editingSectionsOrder,
+                })
                 .eq('id', currentUser.id);
 
             btn.disabled = false;
