@@ -826,10 +826,23 @@
                 currentUser = session.user;
                 document.getElementById('authGate').style.display = 'none';
                 await loadDashboardData();
+                applyPendingUsernameClaim();
             } catch (err) {
                 console.error(err);
                 showAuthError(err.message || String(err));
             }
+        }
+
+        // If the user came from index.html's "Claim now" flow, auto-open
+        // the profile modal with their chosen username pre-filled.
+        function applyPendingUsernameClaim() {
+            const pending = sessionStorage.getItem('pendingUsername');
+            if (!pending) return;
+            sessionStorage.removeItem('pendingUsername');
+            if (currentProfile && currentProfile.username) return; // already has one, don't override
+            openProfileModal();
+            document.getElementById('profileUsername').value = pending;
+            showToast(`Claiming netlink.bio/${pending} — hit Save to confirm`);
         }
 
         async function handleLogout() {
