@@ -13,6 +13,8 @@ const ICONS = {
   youtube: '▶️', globe: '🌐', mail: '✉️', link: '🔗',
 };
 
+const DEFAULT_SECTIONS_ORDER = ['description', 'youtube', 'links', 'cv', 'donate'];
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -20,6 +22,18 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
 }
 
 async function supabaseGet(path) {
@@ -74,11 +88,23 @@ export default async function handler(req, res) {
   }
 
   const displayName = profile.display_name || profile.username;
-  const bio = profile.bio || '';
+  const bio = (profile.bio || '').slice(0, 150);
   const avatar = profile.avatar_url || '';
   const pageUrl = `https://netlink-bio.vercel.app/${profile.username}`;
+  const youtubeId = extractYouTubeId(profile.youtube_url);
+  const walletAddress = profile.wallet_address || '';
+  const showCv = profile.show_cv !== false;
+  const showDonate = profile.show_donate !== false && !!walletAddress;
+  let sectionsOrder = DEFAULT_SECTIONS_ORDER;
+  if (Array.isArray(profile.sections_order) && profile.sections_order.length) {
+    sectionsOrder = profile.sections_order;
+  }
 
   // ---- JSON-LD (schema.org/Person) ----
+  const sameAs = [
+    ...links.map((l) => l.url),
+    ...(profile.contact_telegram ? [`https://t.me/${profile.contact_telegram.replace(/^@/, '')}`] : []),
+  ];
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
@@ -86,23 +112,94 @@ export default async function handler(req, res) {
     url: pageUrl,
     ...(bio ? { description: bio } : {}),
     ...(avatar ? { image: avatar } : {}),
-    ...(links.length ? { sameAs: links.map((l) => l.url) } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
   };
 
-  // ---- Links HTML ----
-  const linksHtml = links
-    .map(
-      (l) => `
-      <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener"
-         class="link-card">
-        <span class="link-icon">${ICONS[l.icon] || ICONS.link}</span>
+  // ---- Contact icons row (WhatsApp / Telegram / Email) ----
+  const contactIcons = [];
+  if (profile.contact_whatsapp) {
+    contactIcons.push(`<a class="contact-icon" title="WhatsApp" href="https://wa.me/${escapeHtml(profile.contact_whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener">💬</a>`);
+  }
+  if (profile.contact_telegram) {
+    contactIcons.push(`<a class="contact-icon" title="Telegram" href="https://t.me/${escapeHtml(profile.contact_telegram.replace(/^@/, ''))}" target="_blank" rel="noopener">✈️</a>`);
+  }
+  if (profile.contact_email) {
+    contactIcons.push(`<a class="contact-icon" title="Email" href="mailto:${escapeHtml(profile.contact_email)}">✉️</a>`);
+  }
+  const contactIconsHtml = contactIcons.length
+    ? `<div class="contact-row">${contactIcons.join('')}</div>`
+    : '';
+
+  // ---- Section renderers ----
+  const sectionRenderers = {
+    description: () => (bio ? `<p class="bio">${escapeHtml(bio)}</p>` : ''),
+
+    youtube: () => {
+      if (!youtubeId) return '';
+      return `
+      <a class="youtube-frame" href="${escapeHtml(profile.youtube_url)}" target="_blank" rel="noopener">
+        <img src="https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg" alt="YouTube video" class="youtube-thumb">
+        <span class="youtube-play">&#9658;</span>
+      </a>`;
+    },
+
+    links: () => {
+      if (!links.length) return '';
+      return links
+        .map(
+          (l) => `
+          <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" class="link-card">
+            <span class="link-icon">${ICONS[l.icon] || ICONS.link}</span>
+            <span class="link-text">
+              <span class="link-title">${escapeHtml(l.title)}</span>
+              ${l.description ? `<span class="link-desc">${escapeHtml(l.description)}</span>` : ''}
+            </span>
+          </a>`
+        )
+        .join('\n');
+    },
+
+    cv: () => {
+      if (!showCv) return '';
+      return `
+      <a href="/cv.html" target="_blank" rel="noopener" class="link-card cv-card">
+        <span class="link-icon">📄</span>
         <span class="link-text">
-          <span class="link-title">${escapeHtml(l.title)}</span>
-          ${l.description ? `<span class="link-desc">${escapeHtml(l.description)}</span>` : ''}
+          <span class="link-title">View my Professional CV</span>
         </span>
-      </a>`
-    )
+      </a>`;
+    },
+
+    donate: () => {
+      if (!showDonate) return '';
+      return `
+      <button type="button" onclick="openDonateModal()" class="link-card donate-card">
+        <span class="link-icon">☕</span>
+        <span class="link-text">
+          <span class="link-title">Donate / Buy me a coffee</span>
+        </span>
+      </button>`;
+    },
+  };
+
+  const sectionsHtml = sectionsOrder
+    .map((key) => sectionRenderers[key] ? sectionRenderers[key]() : '')
+    .filter(Boolean)
     .join('\n');
+
+  const donateModalHtml = showDonate
+    ? `
+    <div id="donateModal" class="modal-overlay" onclick="if(event.target===this) closeDonateModal()">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeDonateModal()">&times;</button>
+        <h3>Support ${escapeHtml(displayName)}</h3>
+        <img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(walletAddress)}" alt="Wallet QR code">
+        <p class="wallet-address">${escapeHtml(walletAddress)}</p>
+        <button class="copy-btn" onclick="copyWallet()">Copy address</button>
+        <p class="wallet-note">EVM wallet &middot; Polygon PoS Network</p>
+      </div>
+    </div>`
+    : '';
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -118,6 +215,7 @@ export default async function handler(req, res) {
 ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
 <meta property="og:url" content="${pageUrl}">
 <meta property="og:type" content="profile">
+<link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
 
 <!-- JSON-LD structured data for AI / search crawlers -->
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
@@ -131,9 +229,14 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
   .avatar { width:96px; height:96px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; background:#e2e8f0; }
   .avatar-fallback { width:96px; height:96px; border-radius:50%; margin:0 auto 16px; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:36px; font-weight:700; }
   h1 { text-align:center; font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 4px; }
-  .handle { text-align:center; color:#64748b; font-size:14px; margin:0 0 16px; }
-  .bio { text-align:center; color:#475569; font-size:14px; margin:0 0 28px; line-height:1.5; }
-  .link-card { display:flex; align-items:center; gap:12px; background:white; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:14px 16px; margin-bottom:12px; text-decoration:none; color:#0f172a; transition:transform .15s; }
+  .handle { text-align:center; color:#64748b; font-size:14px; margin:0 0 14px; }
+  .contact-row { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
+  .contact-icon { width:38px; height:38px; border-radius:50%; background:white; border:1px solid rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; font-size:18px; text-decoration:none; }
+  .bio { text-align:center; color:#475569; font-size:14px; margin:0 0 20px; line-height:1.5; }
+  .youtube-frame { position:relative; display:block; border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 10px 25px rgba(0,0,0,0.12); border:1px solid rgba(0,0,0,0.06); }
+  .youtube-thumb { width:100%; display:block; }
+  .youtube-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:56px; height:56px; background:rgba(0,0,0,0.55); border-radius:50%; color:white; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .link-card { display:flex; align-items:center; gap:12px; background:white; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:14px 16px; margin-bottom:12px; text-decoration:none; color:#0f172a; transition:transform .15s; width:100%; text-align:left; cursor:pointer; font:inherit; }
   .link-card:hover { transform:translateY(-2px); border-color:#14b8a6; }
   .link-icon { font-size:22px; width:36px; text-align:center; flex-shrink:0; }
   .link-text { display:flex; flex-direction:column; min-width:0; }
@@ -142,6 +245,16 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
   .footer { text-align:center; margin-top:32px; }
   .footer a { color:#94a3b8; font-size:12px; text-decoration:none; }
   .empty { text-align:center; color:#94a3b8; font-size:14px; padding:24px 0; }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.active { display:flex; }
+  .modal-box { background:white; border-radius:20px; padding:28px 24px; max-width:320px; width:100%; text-align:center; position:relative; }
+  .modal-close { position:absolute; top:12px; right:16px; border:none; background:none; font-size:22px; color:#94a3b8; cursor:pointer; }
+  .modal-box h3 { margin:0 0 16px; font-size:16px; }
+  .qr-code { width:180px; height:180px; margin:0 auto 16px; border-radius:12px; }
+  .wallet-address { font-size:12px; color:#475569; word-break:break-all; background:#f1f5f9; border-radius:8px; padding:8px 10px; margin-bottom:12px; }
+  .copy-btn { width:100%; padding:10px; background:#14b8a6; color:white; border:none; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; margin-bottom:10px; }
+  .wallet-note { font-size:11px; color:#94a3b8; margin:0; }
 </style>
 </head>
 <body>
@@ -151,14 +264,29 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
       : `<div class="avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`}
     <h1>${escapeHtml(displayName)}</h1>
     <p class="handle">@${escapeHtml(profile.username)}</p>
-    ${bio ? `<p class="bio">${escapeHtml(bio)}</p>` : ''}
+    ${contactIconsHtml}
 
-    ${links.length ? linksHtml : '<p class="empty">No links yet.</p>'}
+    ${sectionsHtml || '<p class="empty">This page is still being set up.</p>'}
 
     <div class="footer">
       <a href="/">netlink.bio &mdash; build your page free</a>
     </div>
   </div>
+
+  ${donateModalHtml}
+
+  <script>
+    function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
+    function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); }
+    function copyWallet() {
+      navigator.clipboard.writeText(${JSON.stringify(walletAddress)}).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = original, 1500);
+      });
+    }
+  </script>
 </body>
 </html>`;
 
