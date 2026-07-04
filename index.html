@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netlink.bio — One link for everything</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -148,9 +149,9 @@
             <div class="max-w-xl mx-auto fade-in-up delay-3">
                 <div class="relative">
                     <div class="flex items-center bg-white border-2 border-gray-200 rounded-2xl p-2 shadow-lg shadow-gray-200/50">
-                        <span class="pl-4 pr-2 text-gray-400 text-sm font-medium whitespace-nowrap">netlink.bio/</span>
-                        <input id="usernameInput" type="text" placeholder="yourname" class="flex-1 py-3 px-2 text-lg font-semibold text-gray-900 bg-transparent outline-none placeholder-gray-300 input-glow rounded-lg">
-                        <button id="claimBtn" onclick="checkAvailability()" class="px-6 py-3 bg-tosca hover-bg-tosca-dark text-white font-semibold rounded-xl transition tosca-glow">
+                        <span class="pl-3 sm:pl-4 pr-1 sm:pr-2 text-gray-400 text-xs sm:text-sm font-medium whitespace-nowrap">netlink.bio/</span>
+                        <input id="usernameInput" type="text" placeholder="yourname" class="flex-1 min-w-0 py-3 px-1 sm:px-2 text-base sm:text-lg font-semibold text-gray-900 bg-transparent outline-none placeholder-gray-300 input-glow rounded-lg">
+                        <button id="claimBtn" onclick="checkAvailability()" class="flex-shrink-0 whitespace-nowrap px-4 sm:px-6 py-3 bg-tosca hover-bg-tosca-dark text-white font-semibold rounded-xl transition tosca-glow">
                             Claim
                         </button>
                     </div>
@@ -507,4 +508,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
