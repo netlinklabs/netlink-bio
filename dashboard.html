@@ -497,6 +497,9 @@
             </button>
         </div>
 
+        <!-- Claim Link Card -->
+        <div id="claimLinkCard" class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6"></div>
+
         <!-- Wallet Card -->
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
@@ -830,16 +833,18 @@
             }
         }
 
-        // If the user came from index.html's "Claim now" flow, auto-open
-        // the profile modal with their chosen username pre-filled.
+        // If the user came from index.html's "Claim now" flow, pre-fill
+        // the claim card at the top of the dashboard with their chosen username.
         function applyPendingUsernameClaim() {
             const pending = sessionStorage.getItem('pendingUsername');
             if (!pending) return;
             sessionStorage.removeItem('pendingUsername');
             if (currentProfile && currentProfile.username) return; // already has one, don't override
-            openProfileModal();
-            document.getElementById('profileUsername').value = pending;
-            showToast(`Claiming netlink.bio/${pending} — hit Save to confirm`);
+            const input = document.getElementById('claimLinkInput');
+            if (input) {
+                input.value = pending;
+                showToast(`Hit "Claim" to lock in netlink.bio/${pending}`);
+            }
         }
 
         async function handleLogout() {
@@ -877,8 +882,88 @@
                 viewBtn.href = `/u/${data.username}`;
             } else {
                 viewBtn.href = '#';
-                viewBtn.onclick = (e) => { e.preventDefault(); showToast('Set a username first (tap your name in the sidebar)'); };
+                viewBtn.onclick = (e) => { e.preventDefault(); showToast('Claim your link at the top of the dashboard first'); };
             }
+
+            renderClaimLinkCard();
+        }
+
+        // ===== CLAIM LINK CARD =====
+        function renderClaimLinkCard() {
+            const card = document.getElementById('claimLinkCard');
+            const username = currentProfile?.username;
+
+            if (username) {
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                            <p class="text-xs text-muted mb-1">Your Netlink.bio link</p>
+                            <a href="/u/${username}" target="_blank" class="text-lg font-semibold text-primary hover:underline">netlink.bio/${username}</a>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="copyProfileLink('${username}')" class="p-2 hover-surface rounded-lg transition" title="Copy link">
+                                <i data-lucide="copy" class="w-4 h-4 text-secondary"></i>
+                            </button>
+                            <button onclick="openProfileModal()" class="p-2 hover-surface rounded-lg transition" title="Edit profile">
+                                <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                card.innerHTML = `
+                    <h3 class="font-semibold text-primary mb-1">Claim your Netlink.bio link</h3>
+                    <p class="text-sm text-secondary mb-3">Pick a unique link before someone else does.</p>
+                    <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
+                        <span class="pl-2 pr-1 text-muted text-sm whitespace-nowrap">netlink.bio/</span>
+                        <input id="claimLinkInput" type="text" placeholder="yourname" class="flex-1 min-w-0 py-2 px-1 text-sm font-medium text-primary bg-transparent outline-none">
+                        <button id="claimLinkBtn" onclick="claimUsername()" class="flex-shrink-0 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-lg transition">Claim</button>
+                    </div>
+                    <p id="claimLinkStatus" class="mt-2 text-xs font-medium hidden"></p>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function copyProfileLink(username) {
+            const url = `${window.location.origin}/u/${username}`;
+            navigator.clipboard.writeText(url).then(() => showToast('Link copied!'));
+        }
+
+        async function claimUsername() {
+            const input = document.getElementById('claimLinkInput');
+            const btn = document.getElementById('claimLinkBtn');
+            const status = document.getElementById('claimLinkStatus');
+            const username = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            input.value = username;
+
+            if (username.length < 3) {
+                status.textContent = 'Must be at least 3 characters (letters, numbers, underscore).';
+                status.className = 'mt-2 text-xs font-medium text-red-500';
+                status.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '...';
+
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ username })
+                .eq('id', currentUser.id);
+
+            btn.disabled = false;
+            btn.textContent = 'Claim';
+
+            if (error) {
+                status.textContent = error.code === '23505' ? `netlink.bio/${username} is already taken.` : 'Something went wrong.';
+                status.className = 'mt-2 text-xs font-medium text-red-500';
+                status.classList.remove('hidden');
+                return;
+            }
+
+            showToast(`netlink.bio/${username} is yours!`);
+            await loadProfile();
         }
 
         // ===== PROFILE MODAL =====
