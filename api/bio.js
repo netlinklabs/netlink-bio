@@ -13,7 +13,9 @@ const BRAND_SLUGS = {
   instagram: 'instagram', x: 'x', twitter: 'x', facebook: 'facebook', linkedin: 'linkedin',
   youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsapp', telegram: 'telegram',
   threads: 'threads', pinterest: 'pinterest', snapchat: 'snapchat', twitch: 'twitch',
-  discord: 'discord', spotify: 'spotify', github: 'github', behance: 'behance', dribbble: 'dribbble',
+  discord: 'discord', spotify: 'spotify', soundcloud: 'soundcloud', applemusic: 'applemusic',
+  github: 'github', behance: 'behance', dribbble: 'dribbble', medium: 'medium',
+  reddit: 'reddit', paypal: 'paypal', patreon: 'patreon', vimeo: 'vimeo', netflix: 'netflix',
 };
 
 function escapeHtml(str) {
@@ -30,8 +32,10 @@ function iconHtml(iconKey) {
   if (slug) {
     return `<img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg">`;
   }
-  const emoji = { globe: '🌐', mail: '✉️', link: '🔗' }[iconKey] || '🔗';
-  return `<span class="emoji-icon">${emoji}</span>`;
+  const emojiOnly = { globe: '🌐', mail: '✉️', link: '🔗' };
+  if (emojiOnly[iconKey]) return `<span class="emoji-icon">${emojiOnly[iconKey]}</span>`;
+  // All other icon keys map directly to a Lucide icon name (lucide-static SVGs via jsDelivr)
+  return `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${iconKey}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg lucide-svg" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji-icon',textContent:'🔗'}))">`;
 }
 
 function extractYouTubeId(url) {
@@ -160,8 +164,8 @@ export default async function handler(req, res) {
   // ---- Donate card + modal ----
   const donateHtml = showDonate ? `
       <button type="button" onclick="openDonateModal()" class="link-card donate-card">
-        <span class="link-icon ${iconShape}"><span class="emoji-icon">☕</span></span>
-        <span class="link-text"><span class="link-title">Donate / Buy me a coffee</span></span>
+        <span class="link-icon ${iconShape}"><img src="/assets/usdc-logo.png" alt="USDC" class="brand-svg"></span>
+        <span class="link-text"><span class="link-title">Send me Crypto</span></span>
       </button>` : '';
 
   const donateModalHtml = showDonate ? `
