@@ -400,7 +400,7 @@
 
         <div class="p-4 border-t border-subtle">
             <div class="flex items-center gap-3">
-                <button onclick="openProfileModal()" class="flex items-center gap-3 flex-1 min-w-0 text-left">
+                <button onclick="scrollToProfileCard()" class="flex items-center gap-3 flex-1 min-w-0 text-left">
                     <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-lg">👤</div>
                     <div class="flex-1 min-w-0">
                         <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">username</p>
@@ -497,10 +497,120 @@
             </button>
         </div>
 
-        <!-- Claim Link Card -->
-        <div id="claimLinkCard" class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6"></div>
+        <!-- Profile + Links (merged card) -->
+        <div id="profileCard" class="card rounded-2xl mb-4 lg:mb-6">
+            <div class="p-4 lg:p-6 border-b border-subtle">
+                <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
+                    <i data-lucide="link" class="w-5 h-5 text-blue-500"></i>
+                    Your Netlink.bio Page
+                </h3>
+                <p class="text-sm text-secondary">This is what people see when they visit your link</p>
+            </div>
 
-        <!-- Wallet Card -->
+            <div class="p-4 lg:p-6 space-y-4">
+                <!-- Avatar -->
+                <div class="flex justify-center">
+                    <div class="relative">
+                        <div id="avatarPreviewWrap" class="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center text-2xl font-bold text-blue-500 overflow-hidden">
+                            <span id="avatarInitial">?</span>
+                            <img id="avatarImg" class="w-full h-full object-cover hidden" alt="Avatar">
+                        </div>
+                        <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white transition" title="Change photo">
+                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
+                    </div>
+                </div>
+                <p id="avatarStatus" class="text-xs text-center text-muted hidden"></p>
+
+                <!-- Username -->
+                <div>
+                    <label class="text-sm font-medium text-secondary block mb-1.5">Your link</label>
+                    <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
+                        <span class="pl-2 pr-1 text-muted text-sm whitespace-nowrap">netlink.bio/</span>
+                        <input id="profileUsername" type="text" pattern="[a-z0-9_]{3,20}" placeholder="yourname" class="flex-1 min-w-0 py-2 px-1 text-sm font-medium text-primary bg-transparent outline-none">
+                    </div>
+                    <p id="usernameStatus" class="mt-1.5 text-xs font-medium hidden"></p>
+                </div>
+
+                <!-- Display Name -->
+                <div>
+                    <label class="text-sm font-medium text-secondary block mb-1.5">Display Name</label>
+                    <input id="profileDisplayName" type="text" placeholder="Your Name" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                </div>
+
+                <!-- Contact -->
+                <div>
+                    <label class="text-sm font-medium text-secondary block mb-1.5">Contact icons</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input id="profileWhatsapp" type="text" placeholder="WhatsApp number" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <input id="profileTelegram" type="text" placeholder="Telegram username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <input id="profileEmail" type="email" placeholder="Contact email" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-sm font-medium text-secondary">Description</label>
+                        <span id="profileBioCount" class="text-xs text-muted">0/150</span>
+                    </div>
+                    <textarea id="profileBio" rows="2" maxlength="150" oninput="document.getElementById('profileBioCount').textContent = this.value.length + '/150'" placeholder="Tell people about yourself" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                </div>
+
+                <!-- YouTube -->
+                <div>
+                    <label class="text-sm font-medium text-secondary block mb-1.5">YouTube video <span class="text-muted">(optional)</span></label>
+                    <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                </div>
+
+                <!-- CV / Donate toggles -->
+                <div class="space-y-2 pt-2 border-t border-subtle">
+                    <label class="flex items-center gap-2 text-sm text-secondary">
+                        <input id="profileShowCv" type="checkbox" class="rounded">
+                        Show "View my Professional CV" card
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-secondary">
+                        <input id="profileShowDonate" type="checkbox" onchange="document.getElementById('walletField').classList.toggle('hidden', !this.checked)" class="rounded">
+                        Show Donate card
+                    </label>
+                    <div id="walletField" class="hidden pl-6">
+                        <input id="profileWallet" type="text" placeholder="0x... (EVM wallet address, Polygon)" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                </div>
+
+                <button id="profileSaveBtn" onclick="saveProfileInline()" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">
+                    Save Profile
+                </button>
+            </div>
+
+            <!-- Links list -->
+            <div class="p-4 lg:p-6 border-t border-subtle">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold text-primary text-sm">Your Links</h4>
+                    <div class="flex items-center gap-4 text-sm text-secondary">
+                        <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> 1.2K</span>
+                        <span class="flex items-center gap-1"><i data-lucide="mouse-pointer-click" class="w-4 h-4"></i> 567</span>
+                    </div>
+                </div>
+
+                <div id="linkList" class="space-y-3">
+                    <p id="linkListEmpty" class="text-sm text-secondary text-center py-6 hidden">No links yet. Add your first one below.</p>
+                </div>
+
+                <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <span id="linkCountLabel" class="text-sm text-secondary">0/20 links used</span>
+                        <button onclick="openLinkModal()" class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            Add more
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-primary">Wallet</h3>
@@ -559,40 +669,6 @@
                 <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:bg-gray-300 transition" onclick="showToast('Share your profile')">
                     <i data-lucide="circle" class="w-3 h-3"></i> Share profile
                 </span>
-            </div>
-        </div>
-
-        <!-- Card 1: Link in Bio -->
-        <div class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-subtle">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                            <i data-lucide="link" class="w-5 h-5 text-blue-500"></i>
-                            Link in Bio
-                        </h3>
-                        <p class="text-sm text-secondary">Manage your bio page links</p>
-                    </div>
-                    <div class="flex items-center gap-4 text-sm text-secondary">
-                        <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> 1.2K</span>
-                        <span class="flex items-center gap-1"><i data-lucide="mouse-pointer-click" class="w-4 h-4"></i> 567</span>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 lg:p-6">
-                <div id="linkList" class="space-y-3">
-                    <p id="linkListEmpty" class="text-sm text-secondary text-center py-6 hidden">No links yet. Add your first one below.</p>
-                </div>
-
-                <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                    <div class="flex items-center justify-between">
-                        <span id="linkCountLabel" class="text-sm text-secondary">0/3 links used</span>
-                        <button onclick="openLinkModal()" class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            Add more
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -661,78 +737,6 @@
             </div>
         </div>
     </main>
-
-    <!-- Edit Profile Modal -->
-    <div id="profileModal" class="modal">
-        <div class="card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-primary">Edit Profile</h3>
-                <button onclick="closeProfileModal()" class="text-secondary hover:text-primary transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <form id="profileForm" class="space-y-4">
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Username</label>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm text-muted">netlink.bio/</span>
-                        <input id="profileUsername" type="text" pattern="[a-z0-9_]{3,20}" title="3-20 characters, lowercase letters, numbers, underscore only" placeholder="yourname" class="flex-1 px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Display Name</label>
-                    <input id="profileDisplayName" type="text" placeholder="Your Name" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-sm font-medium text-secondary">Bio</label>
-                        <span id="profileBioCount" class="text-xs text-muted">0/150</span>
-                    </div>
-                    <textarea id="profileBio" rows="3" maxlength="150" oninput="document.getElementById('profileBioCount').textContent = this.value.length + '/150'" placeholder="Tell people about yourself" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
-                </div>
-
-                <div class="pt-2 border-t border-subtle">
-                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Contact icons</p>
-                    <div class="space-y-3">
-                        <input id="profileWhatsapp" type="text" placeholder="WhatsApp number (e.g. 6281234567890)" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                        <input id="profileTelegram" type="text" placeholder="Telegram username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                        <input id="profileEmail" type="email" placeholder="Contact email" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                </div>
-
-                <div class="pt-2 border-t border-subtle">
-                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">YouTube video (optional)</p>
-                    <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-
-                <div class="pt-2 border-t border-subtle">
-                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Donate wallet (Polygon)</p>
-                    <input id="profileWallet" type="text" placeholder="0x... (EVM wallet address)" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-
-                <div class="pt-2 border-t border-subtle space-y-2">
-                    <label class="flex items-center gap-2 text-sm text-secondary">
-                        <input id="profileShowCv" type="checkbox" class="rounded">
-                        Show "View my Professional CV" card
-                    </label>
-                    <label class="flex items-center gap-2 text-sm text-secondary">
-                        <input id="profileShowDonate" type="checkbox" class="rounded">
-                        Show Donate card (requires wallet address above)
-                    </label>
-                </div>
-
-                <div class="pt-2 border-t border-subtle">
-                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-1">Section order</p>
-                    <p class="text-xs text-muted mb-3">Controls the order these appear on your public page, below your photo &amp; contact icons.</p>
-                    <div id="sectionOrderList" class="space-y-2"></div>
-                </div>
-
-                <button id="profileSaveBtn" type="submit" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">
-                    Save Profile
-                </button>
-            </form>
-        </div>
-    </div>
 
     <!-- Add / Edit Link Modal -->
     <div id="linkModal" class="modal">
@@ -852,7 +856,7 @@
         let currentUser = null;
         let currentProfile = null;
         let currentLinks = [];
-        const LINK_LIMITS = { basic: 3, silver: 10, gold: 25, platinum: Infinity };
+        const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: Infinity };
 
         // Auth guard: runs before anything else is shown
         async function checkAuth() {
@@ -874,22 +878,27 @@
         }
 
         // If the user came from index.html's "Claim now" flow, pre-fill
-        // the claim card at the top of the dashboard with their chosen username.
+        // the username field with their chosen username.
         function applyPendingUsernameClaim() {
             const pending = sessionStorage.getItem('pendingUsername');
             if (!pending) return;
             sessionStorage.removeItem('pendingUsername');
             if (currentProfile && currentProfile.username) return; // already has one, don't override
-            const input = document.getElementById('claimLinkInput');
+            const input = document.getElementById('profileUsername');
             if (input) {
                 input.value = pending;
-                showToast(`Hit "Claim" to lock in netlink.bio/${pending}`);
+                showToast(`Hit "Save Profile" to lock in netlink.bio/${pending}`);
             }
         }
 
         async function handleLogout() {
             await supabaseClient.auth.signOut();
             window.location.href = 'login.html';
+        }
+
+        function scrollToProfileCard() {
+            document.getElementById('profileCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (window.innerWidth < 1024) toggleSidebar();
         }
 
         // ===== LOAD DATA =====
@@ -920,183 +929,78 @@
             const viewBtn = document.getElementById('viewProfileBtn');
             if (data.username) {
                 viewBtn.href = `/${data.username}`;
+                viewBtn.onclick = null;
             } else {
                 viewBtn.href = '#';
-                viewBtn.onclick = (e) => { e.preventDefault(); showToast('Claim your link at the top of the dashboard first'); };
+                viewBtn.onclick = (e) => { e.preventDefault(); showToast('Pick a username below first'); };
             }
 
-            renderClaimLinkCard();
-        }
+            // Populate the inline profile fields
+            document.getElementById('profileUsername').value = data.username || '';
+            document.getElementById('profileDisplayName').value = data.display_name || '';
+            document.getElementById('profileWhatsapp').value = data.contact_whatsapp || '';
+            document.getElementById('profileTelegram').value = data.contact_telegram || '';
+            document.getElementById('profileEmail').value = data.contact_email || '';
+            document.getElementById('profileBio').value = data.bio || '';
+            document.getElementById('profileBioCount').textContent = (data.bio || '').length + '/150';
+            document.getElementById('profileYoutube').value = data.youtube_url || '';
+            document.getElementById('profileWallet').value = data.wallet_address || '';
+            document.getElementById('profileShowCv').checked = data.show_cv !== false;
+            document.getElementById('profileShowDonate').checked = data.show_donate === true;
+            document.getElementById('walletField').classList.toggle('hidden', data.show_donate !== true);
 
-        // ===== CLAIM LINK CARD =====
-        function renderClaimLinkCard() {
-            const card = document.getElementById('claimLinkCard');
-            const username = currentProfile?.username;
-
-            if (username) {
-                card.innerHTML = `
-                    <div class="flex items-center justify-between gap-3 flex-wrap">
-                        <div>
-                            <p class="text-xs text-muted mb-1">Your Netlink.bio link</p>
-                            <a href="/${username}" target="_blank" class="text-lg font-semibold text-primary hover:underline">netlink.bio/${username}</a>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="copyProfileLink('${username}')" class="p-2 hover-surface rounded-lg transition" title="Copy link">
-                                <i data-lucide="copy" class="w-4 h-4 text-secondary"></i>
-                            </button>
-                            <button onclick="openProfileModal()" class="p-2 hover-surface rounded-lg transition" title="Edit profile">
-                                <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
+            // Avatar preview
+            const initialEl = document.getElementById('avatarInitial');
+            const imgEl = document.getElementById('avatarImg');
+            if (data.avatar_url) {
+                imgEl.src = data.avatar_url;
+                imgEl.classList.remove('hidden');
+                initialEl.classList.add('hidden');
             } else {
-                card.innerHTML = `
-                    <h3 class="font-semibold text-primary mb-1">Claim your Netlink.bio link</h3>
-                    <p class="text-sm text-secondary mb-3">Pick a unique link before someone else does.</p>
-                    <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
-                        <span class="pl-2 pr-1 text-muted text-sm whitespace-nowrap">netlink.bio/</span>
-                        <input id="claimLinkInput" type="text" placeholder="yourname" class="flex-1 min-w-0 py-2 px-1 text-sm font-medium text-primary bg-transparent outline-none">
-                        <button id="claimLinkBtn" onclick="claimUsername()" class="flex-shrink-0 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-lg transition">Claim</button>
-                    </div>
-                    <p id="claimLinkStatus" class="mt-2 text-xs font-medium hidden"></p>
-                `;
+                imgEl.classList.add('hidden');
+                initialEl.classList.remove('hidden');
+                initialEl.textContent = (data.display_name || data.username || currentUser.email || '?').charAt(0).toUpperCase();
             }
-            lucide.createIcons();
         }
 
-        function copyProfileLink(username) {
-            const url = `${window.location.origin}/${username}`;
-            navigator.clipboard.writeText(url).then(() => showToast('Link copied!'));
-        }
+        async function saveProfileInline() {
+            const btn = document.getElementById('profileSaveBtn');
+            const usernameStatus = document.getElementById('usernameStatus');
+            usernameStatus.classList.add('hidden');
 
-        async function claimUsername() {
-            const input = document.getElementById('claimLinkInput');
-            const btn = document.getElementById('claimLinkBtn');
-            const status = document.getElementById('claimLinkStatus');
-            const username = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-            input.value = username;
+            const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            document.getElementById('profileUsername').value = username;
 
             if (username.length < 3) {
-                status.textContent = 'Must be at least 3 characters (letters, numbers, underscore).';
-                status.className = 'mt-2 text-xs font-medium text-red-500';
-                status.classList.remove('hidden');
+                usernameStatus.textContent = 'Username must be at least 3 characters (letters, numbers, underscore).';
+                usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                usernameStatus.classList.remove('hidden');
                 return;
             }
 
-            btn.disabled = true;
-            btn.textContent = '...';
-
-            const { error } = await supabaseClient
-                .from('profiles')
-                .update({ username })
-                .eq('id', currentUser.id);
-
-            btn.disabled = false;
-            btn.textContent = 'Claim';
-
-            if (error) {
-                status.textContent = error.code === '23505' ? `netlink.bio/${username} is already taken.` : 'Something went wrong.';
-                status.className = 'mt-2 text-xs font-medium text-red-500';
-                status.classList.remove('hidden');
+            const showDonate = document.getElementById('profileShowDonate').checked;
+            const wallet = document.getElementById('profileWallet').value.trim();
+            if (showDonate && !wallet) {
+                showToast('Add a wallet address to enable the Donate card');
                 return;
             }
 
-            showToast(`netlink.bio/${username} is yours!`);
-            await loadProfile();
-        }
-
-        // ===== PROFILE MODAL =====
-        const SECTION_LABELS = {
-            description: 'Bio / Description',
-            youtube: 'YouTube video',
-            links: 'Links list',
-            cv: 'CV card',
-            donate: 'Donate card',
-        };
-        const DEFAULT_SECTIONS_ORDER = ['description', 'youtube', 'links', 'cv', 'donate'];
-        let editingSectionsOrder = [...DEFAULT_SECTIONS_ORDER];
-
-        function renderSectionOrderList() {
-            const list = document.getElementById('sectionOrderList');
-            list.innerHTML = editingSectionsOrder.map((key, i) => `
-                <div class="flex items-center gap-2 bg-surface border border-subtle rounded-lg px-3 py-2">
-                    <span class="text-sm text-primary flex-1">${SECTION_LABELS[key] || key}</span>
-                    <button type="button" onclick="moveSection(${i}, -1)" ${i === 0 ? 'disabled' : ''} class="p-1 hover-surface rounded disabled:opacity-30 transition">
-                        <i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i>
-                    </button>
-                    <button type="button" onclick="moveSection(${i}, 1)" ${i === editingSectionsOrder.length - 1 ? 'disabled' : ''} class="p-1 hover-surface rounded disabled:opacity-30 transition">
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i>
-                    </button>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        function moveSection(index, direction) {
-            const newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= editingSectionsOrder.length) return;
-            [editingSectionsOrder[index], editingSectionsOrder[newIndex]] =
-                [editingSectionsOrder[newIndex], editingSectionsOrder[index]];
-            renderSectionOrderList();
-        }
-
-        function openProfileModal() {
-            document.getElementById('profileUsername').value = currentProfile?.username || '';
-            document.getElementById('profileDisplayName').value = currentProfile?.display_name || '';
-            document.getElementById('profileBio').value = currentProfile?.bio || '';
-            document.getElementById('profileBioCount').textContent = (currentProfile?.bio || '').length + '/150';
-            document.getElementById('profileWhatsapp').value = currentProfile?.contact_whatsapp || '';
-            document.getElementById('profileTelegram').value = currentProfile?.contact_telegram || '';
-            document.getElementById('profileEmail').value = currentProfile?.contact_email || '';
-            document.getElementById('profileYoutube').value = currentProfile?.youtube_url || '';
-            document.getElementById('profileWallet').value = currentProfile?.wallet_address || '';
-            document.getElementById('profileShowCv').checked = currentProfile?.show_cv !== false;
-            document.getElementById('profileShowDonate').checked = currentProfile?.show_donate !== false;
-
-            editingSectionsOrder = (Array.isArray(currentProfile?.sections_order) && currentProfile.sections_order.length)
-                ? [...currentProfile.sections_order]
-                : [...DEFAULT_SECTIONS_ORDER];
-            renderSectionOrderList();
-
-            document.getElementById('profileModal').classList.add('active');
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.remove('active');
-        }
-
-        document.getElementById('profileForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('profileSaveBtn');
             btn.disabled = true;
             btn.textContent = 'Saving...';
-
-            const username = document.getElementById('profileUsername').value.trim().toLowerCase();
-            const display_name = document.getElementById('profileDisplayName').value.trim();
-            const bio = document.getElementById('profileBio').value.trim().slice(0, 150);
-            const contact_whatsapp = document.getElementById('profileWhatsapp').value.trim();
-            const contact_telegram = document.getElementById('profileTelegram').value.trim();
-            const contact_email = document.getElementById('profileEmail').value.trim();
-            const youtube_url = document.getElementById('profileYoutube').value.trim();
-            const wallet_address = document.getElementById('profileWallet').value.trim();
-            const show_cv = document.getElementById('profileShowCv').checked;
-            const show_donate = document.getElementById('profileShowDonate').checked;
 
             const { error } = await supabaseClient
                 .from('profiles')
                 .update({
-                    username: username || null,
-                    display_name: display_name || null,
-                    bio: bio || null,
-                    contact_whatsapp: contact_whatsapp || null,
-                    contact_telegram: contact_telegram || null,
-                    contact_email: contact_email || null,
-                    youtube_url: youtube_url || null,
-                    wallet_address: wallet_address || null,
-                    show_cv,
-                    show_donate,
-                    sections_order: editingSectionsOrder,
+                    username,
+                    display_name: document.getElementById('profileDisplayName').value.trim() || null,
+                    bio: document.getElementById('profileBio').value.trim().slice(0, 150) || null,
+                    contact_whatsapp: document.getElementById('profileWhatsapp').value.trim() || null,
+                    contact_telegram: document.getElementById('profileTelegram').value.trim() || null,
+                    contact_email: document.getElementById('profileEmail').value.trim() || null,
+                    youtube_url: document.getElementById('profileYoutube').value.trim() || null,
+                    wallet_address: wallet || null,
+                    show_cv: document.getElementById('profileShowCv').checked,
+                    show_donate: showDonate,
                 })
                 .eq('id', currentUser.id);
 
@@ -1104,14 +1008,81 @@
             btn.textContent = 'Save Profile';
 
             if (error) {
-                showToast(error.code === '23505' ? 'That username is already taken' : 'Failed to save profile');
+                if (error.code === '23505') {
+                    usernameStatus.textContent = `netlink.bio/${username} is already taken.`;
+                    usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                    usernameStatus.classList.remove('hidden');
+                } else {
+                    showToast('Failed to save profile');
+                }
                 return;
             }
 
             showToast('Profile saved');
-            closeProfileModal();
             await loadProfile();
-        });
+        }
+
+        // ===== AVATAR UPLOAD (client-side compression, then Supabase Storage) =====
+        function compressImage(file, maxDimension = 512, quality = 0.75) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const reader = new FileReader();
+                reader.onload = (e) => { img.src = e.target.result; };
+                reader.onerror = reject;
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > height && width > maxDimension) {
+                        height = Math.round(height * (maxDimension / width));
+                        width = maxDimension;
+                    } else if (height > maxDimension) {
+                        width = Math.round(width * (maxDimension / height));
+                        height = maxDimension;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', quality);
+                };
+                img.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const status = document.getElementById('avatarStatus');
+            status.textContent = 'Compressing & uploading...';
+            status.classList.remove('hidden');
+
+            try {
+                const compressed = await compressImage(file);
+                const path = `${currentUser.id}/avatar.jpg`;
+
+                const { error: uploadError } = await supabaseClient.storage
+                    .from('avatars')
+                    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+                if (uploadError) throw uploadError;
+
+                const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+                const avatarUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`; // cache-bust
+
+                const { error: updateError } = await supabaseClient
+                    .from('profiles')
+                    .update({ avatar_url: avatarUrl })
+                    .eq('id', currentUser.id);
+                if (updateError) throw updateError;
+
+                status.textContent = 'Photo updated!';
+                setTimeout(() => status.classList.add('hidden'), 2000);
+                await loadProfile();
+            } catch (err) {
+                console.error(err);
+                status.textContent = 'Upload failed. Please try a different image.';
+            }
+        }
+
 
         // ===== LINKS =====
         async function loadLinks() {
@@ -1134,7 +1105,7 @@
             const list = document.getElementById('linkList');
             const empty = document.getElementById('linkListEmpty');
             const tier = currentProfile?.tier || 'basic';
-            const limit = LINK_LIMITS[tier] ?? 3;
+            const limit = LINK_LIMITS[tier] ?? 20;
 
             document.getElementById('linkCountLabel').textContent =
                 `${currentLinks.length}/${limit === Infinity ? '∞' : limit} links used`;
@@ -1147,7 +1118,7 @@
             }
             empty.classList.add('hidden');
 
-            currentLinks.forEach(link => {
+            currentLinks.forEach((link, index) => {
                 const div = document.createElement('div');
                 div.className = 'link-item rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4';
                 div.innerHTML = `
@@ -1159,7 +1130,13 @@
                         <p class="text-xs lg:text-sm text-secondary truncate">${escapeHtml(link.description || link.url)}</p>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button onclick="openLinkModal('${link.id}')" class="p-2 hover-surface rounded-lg transition">
+                        <button onclick="moveLink(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition">
+                            <i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i>
+                        </button>
+                        <button onclick="moveLink(${index}, 1)" ${index === currentLinks.length - 1 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i>
+                        </button>
+                        <button onclick="openLinkModal('${link.id}')" class="p-1.5 hover-surface rounded-lg transition">
                             <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
                         </button>
                     </div>
@@ -1168,6 +1145,25 @@
             });
 
             lucide.createIcons();
+        }
+
+        async function moveLink(index, direction) {
+            const otherIndex = index + direction;
+            if (otherIndex < 0 || otherIndex >= currentLinks.length) return;
+
+            const a = currentLinks[index];
+            const b = currentLinks[otherIndex];
+
+            // Swap positions locally first for instant feedback
+            [currentLinks[index], currentLinks[otherIndex]] = [b, a];
+            renderLinks();
+
+            // Persist the swap to the database
+            await Promise.all([
+                supabaseClient.from('links').update({ position: b.position }).eq('id', a.id),
+                supabaseClient.from('links').update({ position: a.position }).eq('id', b.id),
+            ]);
+            const tmp = a.position; a.position = b.position; b.position = tmp;
         }
 
         function escapeHtml(str) {
@@ -1252,9 +1248,6 @@
 
         document.getElementById('linkModal').addEventListener('click', function(e) {
             if (e.target === this) closeLinkModal();
-        });
-        document.getElementById('profileModal').addEventListener('click', function(e) {
-            if (e.target === this) closeProfileModal();
         });
 
         checkAuth();
