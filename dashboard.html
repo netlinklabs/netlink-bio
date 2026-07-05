@@ -11,32 +11,13 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            border: 'rgba(255,255,255,0.05)'
-                        }
-                    }
-                }
-            }
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
         }
     </script>
     <style>
         * { font-family: 'Inter', sans-serif; }
-        
-        /* ========== LIGHT THEME (Default) ========== */
-        body { 
-            background: #f8fafc; 
-            color: #1e293b; 
-        }
-        .card { 
-            background: #ffffff; 
-            border: 1px solid rgba(0,0,0,0.08);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .text-primary { color: #0f172a; }
         .text-secondary { color: #475569; }
         .text-muted { color: #64748b; }
@@ -48,266 +29,74 @@
         .notification-panel { background: #ffffff; }
         .progress-bar { background: #e2e8f0; }
         .locked-card::before { background: rgba(241, 245, 249, 0.92); }
-        
-        /* ========== DARK THEME OVERRIDES ========== */
-        html.dark body {
-            background: #0f172a;
-            color: #e2e8f0;
-        }
-        html.dark .card {
-            background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: none;
-        }
-        html.dark .text-primary {
-            color: #f8fafc !important;
-        }
-        html.dark .text-secondary {
-            color: #94a3b8 !important;
-        }
-        html.dark .text-muted {
-            color: #64748b !important;
-        }
-        html.dark .bg-surface,
-        html.dark .bg-\[\#0f172a\] {
-            background: #0f172a !important;
-        }
-        html.dark .border-subtle,
-        html.dark .border-white\/5 {
-            border-color: rgba(255,255,255,0.05) !important;
-        }
-        html.dark .border-white\/10 {
-            border-color: rgba(255,255,255,0.08) !important;
-        }
-        html.dark .hover-surface:hover,
-        html.dark .hover\:bg-white\/5:hover {
-            background: rgba(255,255,255,0.05) !important;
-        }
-        html.dark .sidebar {
-            background: #1e293b;
-            border-left: 1px solid rgba(255,255,255,0.05);
-        }
-        html.dark .mobile-header {
-            background: #0f172a;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        html.dark .notification-panel {
-            background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        html.dark .progress-bar {
-            background: #0f172a;
-        }
-        html.dark .locked-card::before {
-            background: rgba(15, 23, 42, 0.85);
-        }
-        html.dark .toast {
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        html.dark button.text-gray-500:hover {
-            color: #f8fafc !important;
-        }
-        html.dark .sidebar nav a.text-secondary {
-            color: #94a3b8 !important;
-        }
-        html.dark .sidebar nav a.text-secondary:hover {
-            background: rgba(255,255,255,0.05) !important;
-        }
-        html.dark .sidebar .border-t {
-            border-color: rgba(255,255,255,0.05) !important;
-        }
-        html.dark .sidebar .text-muted {
-            color: #64748b !important;
-        }
-        html.dark .upgrade-option {
-            background: #0f172a !important;
-            border-color: rgba(255,255,255,0.08) !important;
-        }
-        html.dark .upgrade-option:hover {
-            border-color: #3b82f6 !important;
-        }
-        
-        /* ========== COMPONENT STYLES ========== */
-        .crypto-icon { 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 10px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 14px; 
-            font-weight: bold; 
-        }
-        .net-icon { 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            color: white; 
-        }
-        .usdc-icon { 
-            background: #2775ca; 
-            color: white; 
-        }
-        .pol-icon { 
-            background: #8247e5; 
-            color: white; 
-        }
-        .modal { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.7); 
-            z-index: 50; 
-            align-items: center; 
-            justify-content: center; 
-        }
-        .modal.active { 
-            display: flex; 
-        }
-        .toast { 
-            position: fixed; 
-            bottom: 20px; 
-            right: 20px; 
-            background: #10b981; 
-            color: white; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
-            transform: translateY(100px); 
-            transition: transform 0.3s; 
-            z-index: 60; 
-        }
-        .toast.show { 
-            transform: translateY(0); 
-        }
-        .notification-panel { 
-            display: none; 
-            position: absolute; 
-            top: 50px; 
-            right: 0; 
-            width: 320px; 
-            border: 1px solid rgba(0,0,0,0.08); 
-            border-radius: 12px; 
-            z-index: 50; 
-            overflow: hidden; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .notification-panel.active { 
-            display: block; 
-        }
-        .link-item { 
-            transition: all 0.2s; 
-            cursor: grab; 
-            background: #f1f5f9;
-            border: 1px solid rgba(0,0,0,0.06);
-        }
-        .link-item:active { 
-            cursor: grabbing; 
-        }
-        .link-item.dragging { 
-            opacity: 0.5; 
-            transform: scale(1.02); 
-        }
-        .link-item .drag-handle { 
-            opacity: 0; 
-            transition: opacity 0.2s; 
-        }
-        .link-item:hover .drag-handle { 
-            opacity: 1; 
-        }
-        .link-item.long-press .drag-handle { 
-            opacity: 1; 
-        }
-        .progress-bar { 
-            border-radius: 999px; 
-            height: 8px; 
-            overflow: hidden; 
-        }
-        .progress-fill { 
-            background: linear-gradient(90deg, #3b82f6, #8b5cf6); 
-            height: 100%; 
-            border-radius: 999px; 
-            transition: width 0.5s ease; 
-        }
-        .locked-card { 
-            position: relative; 
-            overflow: hidden; 
-        }
-        .locked-card::before { 
-            content: ''; 
-            position: absolute; 
-            inset: 0; 
-            z-index: 10; 
-        }
-        .locked-content { 
-            position: relative; 
-            z-index: 20; 
-        }
-        .sidebar { 
-            position: fixed; 
-            top: 0; 
-            right: -100%; 
-            width: 280px; 
-            height: 100vh; 
-            z-index: 50; 
-            transition: right 0.3s ease; 
-            overflow-y: auto; 
-            border-left: 1px solid rgba(0,0,0,0.08); 
-        }
-        .sidebar.open { 
-            right: 0; 
-        }
-        .sidebar-overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.5); 
-            z-index: 40; 
-            display: none; 
-        }
-        .sidebar-overlay.active { 
-            display: block; 
-        }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle, html.dark .border-white\/5 { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .border-white\/10 { border-color: rgba(255,255,255,0.08) !important; }
+        html.dark .hover-surface:hover, html.dark .hover\:bg-white\/5:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar { background: #1e293b; border-left: 1px solid rgba(255,255,255,0.05); }
+        html.dark .mobile-header { background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        html.dark .notification-panel { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        html.dark .progress-bar { background: #0f172a; }
+        html.dark .locked-card::before { background: rgba(15, 23, 42, 0.85); }
+        html.dark .toast { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        html.dark .sidebar nav a.text-secondary { color: #94a3b8 !important; }
+        html.dark .sidebar nav a.text-secondary:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar .border-t { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar .text-muted { color: #64748b !important; }
+        html.dark .upgrade-option { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
+        html.dark .upgrade-option:hover { border-color: #3b82f6 !important; }
+        /* Fix: link cards used a near-white background that lost contrast against
+           white text in dark mode. Give them an explicit dark surface. */
+        html.dark .link-item { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); }
+        .notification-panel { display: none; position: absolute; top: 50px; right: 0; width: 320px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; z-index: 50; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .notification-panel.active { display: block; }
+        .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
+        .progress-bar { border-radius: 999px; height: 8px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+        .locked-card { position: relative; overflow: hidden; }
+        .locked-card::before { content: ''; position: absolute; inset: 0; z-index: 10; }
+        .locked-content { position: relative; z-index: 20; }
+        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; z-index: 50; transition: right 0.3s ease; overflow-y: auto; border-left: 1px solid rgba(0,0,0,0.08); }
+        .sidebar.open { right: 0; }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
+        .sidebar-overlay.active { display: block; }
         @media (min-width: 1024px) {
-            .sidebar { 
-                right: 0; 
-                width: 280px; 
-                transition: none; 
-            }
-            .sidebar-overlay { 
-                display: none !important; 
-            }
-            .main-content { 
-                margin-right: 280px; 
-                margin-left: 0; 
-            }
-            .mobile-header { 
-                display: none; 
-            }
+            .sidebar { right: 0; width: 280px; transition: none; }
+            .sidebar-overlay { display: none !important; }
+            .main-content { margin-right: 280px; margin-left: 0; }
+            .mobile-header { display: none; }
         }
         @media (max-width: 1023px) {
-            .main-content { 
-                margin-right: 0; 
-            }
-            .mobile-header { 
-                display: flex; 
-            }
+            .main-content { margin-right: 0; }
+            .mobile-header { display: flex; }
         }
-        /* Auth loading guard: hide content until session check completes */
-        #authGate {
-            position: fixed;
-            inset: 0;
-            background: #f8fafc;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        html.dark #authGate {
-            background: #0f172a;
-        }
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        /* Accordion */
+        .accordion-body { display: none; }
+        .accordion-body.open { display: block; }
+        .accordion-chevron { transition: transform 0.2s; }
+        .accordion-chevron.open { transform: rotate(180deg); }
+
+        /* Icon picker popup */
+        .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; }
+        .icon-picker-panel.open { display: grid; }
     </style>
 </head>
 <body class="min-h-screen">
-    <!-- Auth Gate: shown while checking Supabase session -->
+    <!-- Auth Gate -->
     <div id="authGate">
         <div class="flex flex-col items-center gap-3 px-6 text-center">
             <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -316,7 +105,6 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast">Saved successfully!</div>
 
     <!-- Mobile Header -->
@@ -336,10 +124,8 @@
         </div>
     </header>
 
-    <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- Sidebar (Right) -->
     <aside class="sidebar text-white flex flex-col">
         <div class="hidden lg:block p-4 border-b border-subtle">
             <a href="index.html" class="flex items-center gap-3">
@@ -352,48 +138,35 @@
         </div>
 
         <nav class="flex-1 py-2">
-            <!-- Active Menu Items -->
             <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-500 border-l-2 border-blue-500">
-                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                <span>Dashboard</span>
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
             </a>
             <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="link" class="w-4 h-4"></i>
-                <span>Links</span>
+                <i data-lucide="link" class="w-4 h-4"></i><span>Links</span>
             </a>
             <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="palette" class="w-4 h-4"></i>
-                <span>Appearance</span>
+                <i data-lucide="palette" class="w-4 h-4"></i><span>Appearance</span>
             </a>
             <a href="cv.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="file-text" class="w-4 h-4"></i>
-                <span>CV Builder</span>
+                <i data-lucide="file-text" class="w-4 h-4"></i><span>CV Builder</span>
             </a>
             <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="settings" class="w-4 h-4"></i>
-                <span>Settings</span>
+                <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
             </a>
-
-            <!-- Divider -->
             <div class="my-2 px-4">
                 <div class="border-t border-subtle"></div>
                 <p class="text-xs text-muted mt-2 mb-1">Pro Features</p>
             </div>
-
-            <!-- Locked Menu Items -->
-            <div class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-not-allowed select-none">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                <span>Analytics</span>
+            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Analytics</span>
                 <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
             </div>
-            <div class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-not-allowed select-none">
-                <i data-lucide="globe" class="w-4 h-4"></i>
-                <span>Landing Page</span>
+            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
+                <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
                 <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
             </div>
-            <div class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-not-allowed select-none">
-                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-                <span>Store</span>
+            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
+                <i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Store</span>
                 <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
             </div>
         </nav>
@@ -414,9 +187,7 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8">
-        <!-- Desktop Header -->
         <div class="hidden lg:flex items-center justify-between mb-8">
             <div>
                 <h2 class="text-2xl font-bold text-primary">Dashboard</h2>
@@ -438,54 +209,20 @@
                             <button onclick="markAllRead()" class="text-xs text-blue-500 hover:text-blue-600">Mark all read</button>
                         </div>
                         <div class="max-h-80 overflow-y-auto">
-                            <div class="p-4 border-b border-subtle hover-surface cursor-pointer transition">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="trending-up" class="w-4 h-4 text-green-500"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-primary">Link clicked 50 times today</p>
-                                        <p class="text-xs text-secondary mt-1">Your Instagram link is performing well</p>
-                                        <p class="text-xs text-muted mt-1">2 hours ago</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-b border-subtle hover-surface cursor-pointer transition">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="gift" class="w-4 h-4 text-blue-500"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-primary">You received 10 NET</p>
-                                        <p class="text-xs text-secondary mt-1">Welcome bonus for new users</p>
-                                        <p class="text-xs text-muted mt-1">1 day ago</p>
-                                    </div>
-                                </div>
-                            </div>
                             <div class="p-4 hover-surface cursor-pointer transition">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-500"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-primary">Complete your profile</p>
-                                        <p class="text-xs text-secondary mt-1">Add a bio to increase visibility</p>
-                                        <p class="text-xs text-muted mt-1">3 days ago</p>
-                                    </div>
-                                </div>
+                                <p class="text-sm text-primary">Welcome to Netlink.bio!</p>
+                                <p class="text-xs text-secondary mt-1">Finish setting up your page below.</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">Basic</span>
-                <a id="viewProfileBtn" href="bio.html" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition">
-                    <i data-lucide="external-link" class="w-4 h-4"></i>
-                    View Profile
+                <a id="viewProfileBtn" href="#" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition">
+                    <i data-lucide="external-link" class="w-4 h-4"></i> View Profile
                 </a>
             </div>
         </div>
 
-        <!-- Mobile Title -->
         <div class="lg:hidden mb-4 flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-bold text-primary">Dashboard</h2>
@@ -497,19 +234,86 @@
             </button>
         </div>
 
-        <!-- Profile + Links (merged card) -->
-        <div id="profileCard" class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-subtle">
-                <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                    <i data-lucide="link" class="w-5 h-5 text-blue-500"></i>
-                    Your Netlink.bio Page
-                </h3>
-                <p class="text-sm text-secondary">This is what people see when they visit your link</p>
+        <!-- 1. WALLET (top) -->
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-primary">Wallet</h3>
+                <button onclick="showToast('WalletConnect coming soon')" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                    <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet
+                </button>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="bg-surface rounded-xl p-3 text-center">
+                    <img src="/assets/net-logo.png" alt="NET" class="w-9 h-9 mx-auto mb-2 rounded-full">
+                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">NET</p>
+                </div>
+                <div class="bg-surface rounded-xl p-3 text-center">
+                    <img src="/assets/usdc-logo.png" alt="USDC" class="w-9 h-9 mx-auto mb-2 rounded-full">
+                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">USDC</p>
+                </div>
+                <div class="bg-surface rounded-xl p-3 text-center">
+                    <img src="/assets/polygon-logo.png" alt="Polygon" class="w-9 h-9 mx-auto mb-2 rounded-full">
+                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">POL</p>
+                </div>
             </div>
 
-            <div class="p-4 lg:p-6 space-y-4">
-                <!-- Avatar -->
-                <div class="flex justify-center">
+            <label class="text-sm font-medium text-secondary block mb-1.5">Your wallet address</label>
+            <div class="flex items-center gap-2">
+                <input id="walletAddressInput" type="text" placeholder="0x..." class="flex-1 px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                <button onclick="copyWalletAddress()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Copy address">
+                    <i data-lucide="copy" class="w-4 h-4 text-secondary"></i>
+                </button>
+                <button id="walletSaveBtn" onclick="saveWallet()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Save</button>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+                <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline">About wallet</button>
+            </div>
+        </div>
+
+        <!-- 2. YOUR NETLINK.BIO LINK -->
+        <div id="profileCard" class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
+            <h3 class="font-semibold text-primary mb-3">Your Netlink.bio Link</h3>
+            <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
+                <span class="pl-2 pr-1 text-muted text-sm whitespace-nowrap">netlink.bio/</span>
+                <input id="profileUsername" type="text" pattern="[a-z0-9_]{3,20}" placeholder="yourname" onblur="checkUsernameLive()" class="flex-1 min-w-0 py-2 px-1 text-sm font-medium text-primary bg-transparent outline-none">
+            </div>
+            <p id="usernameStatus" class="mt-1.5 text-xs font-medium hidden"></p>
+
+            <div class="mt-4 space-y-2">
+                <label class="flex items-center gap-2 text-sm text-secondary">
+                    <input id="profileShowCv" type="checkbox" class="rounded"> Tampilkan CV
+                </label>
+                <label class="flex items-center gap-2 text-sm text-secondary">
+                    <input id="profileShowDonate" type="checkbox" class="rounded"> Tampilkan Wallet
+                </label>
+            </div>
+
+            <button id="linkCardSaveBtn" onclick="saveLinkCardSettings()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+
+            <div class="grid grid-cols-3 gap-2 mt-3">
+                <button onclick="shareProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                </button>
+                <button onclick="previewProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                </button>
+                <button onclick="copyProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. ACCORDIONS -->
+        <div class="card rounded-2xl mb-3 overflow-hidden">
+            <button onclick="toggleAccordion('accEditProfile')" class="w-full flex items-center justify-between p-4 lg:p-5">
+                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Edit Profile</span>
+                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accEditProfileChevron"></i>
+            </button>
+            <div id="accEditProfile" class="accordion-body px-4 lg:px-5 pb-5">
+                <div class="flex justify-center mb-4">
                     <div class="relative">
                         <div id="avatarPreviewWrap" class="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center text-2xl font-bold text-blue-500 overflow-hidden">
                             <span id="avatarInitial">?</span>
@@ -521,165 +325,135 @@
                         <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
                     </div>
                 </div>
-                <p id="avatarStatus" class="text-xs text-center text-muted hidden"></p>
+                <p id="avatarStatus" class="text-xs text-center text-muted hidden mb-3"></p>
 
-                <!-- Username -->
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Your link</label>
-                    <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
-                        <span class="pl-2 pr-1 text-muted text-sm whitespace-nowrap">netlink.bio/</span>
-                        <input id="profileUsername" type="text" pattern="[a-z0-9_]{3,20}" placeholder="yourname" class="flex-1 min-w-0 py-2 px-1 text-sm font-medium text-primary bg-transparent outline-none">
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Display Name</label>
+                        <input id="profileDisplayName" type="text" placeholder="Your Name" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                     </div>
-                    <p id="usernameStatus" class="mt-1.5 text-xs font-medium hidden"></p>
-                </div>
-
-                <!-- Display Name -->
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Display Name</label>
-                    <input id="profileDisplayName" type="text" placeholder="Your Name" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-
-                <!-- Contact -->
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Contact icons</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input id="profileWhatsapp" type="text" placeholder="WhatsApp number" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                        <input id="profileTelegram" type="text" placeholder="Telegram username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Email</label>
                         <input id="profileEmail" type="email" placeholder="Contact email" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                     </div>
-                </div>
-
-                <!-- Description -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-sm font-medium text-secondary">Description</label>
-                        <span id="profileBioCount" class="text-xs text-muted">0/150</span>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">WhatsApp</label>
+                        <input id="profileWhatsapp" type="text" placeholder="e.g. 6281234567890" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                     </div>
-                    <textarea id="profileBio" rows="2" maxlength="150" oninput="document.getElementById('profileBioCount').textContent = this.value.length + '/150'" placeholder="Tell people about yourself" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
-                </div>
-
-                <!-- YouTube -->
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">YouTube video <span class="text-muted">(optional)</span></label>
-                    <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-
-                <!-- CV / Donate toggles -->
-                <div class="space-y-2 pt-2 border-t border-subtle">
-                    <label class="flex items-center gap-2 text-sm text-secondary">
-                        <input id="profileShowCv" type="checkbox" class="rounded">
-                        Show "View my Professional CV" card
-                    </label>
-                    <label class="flex items-center gap-2 text-sm text-secondary">
-                        <input id="profileShowDonate" type="checkbox" onchange="document.getElementById('walletField').classList.toggle('hidden', !this.checked)" class="rounded">
-                        Show Donate card
-                    </label>
-                    <div id="walletField" class="hidden pl-6">
-                        <input id="profileWallet" type="text" placeholder="0x... (EVM wallet address, Polygon)" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Telegram</label>
+                        <input id="profileTelegram" type="text" placeholder="Telegram username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                     </div>
                 </div>
-
-                <button id="profileSaveBtn" onclick="saveProfileInline()" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">
-                    Save Profile
-                </button>
+                <button id="editProfileSaveBtn" onclick="saveEditProfile()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
             </div>
+        </div>
 
-            <!-- Links list -->
-            <div class="p-4 lg:p-6 border-t border-subtle">
-                <div class="flex items-center justify-between mb-3">
+        <div class="card rounded-2xl mb-3 overflow-hidden">
+            <button onclick="toggleAccordion('accDescription')" class="w-full flex items-center justify-between p-4 lg:p-5">
+                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="align-left" class="w-4 h-4 text-blue-500"></i> Description</span>
+                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accDescriptionChevron"></i>
+            </button>
+            <div id="accDescription" class="accordion-body px-4 lg:px-5 pb-5">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-sm font-medium text-secondary">Tell people about yourself</label>
+                    <span id="profileBioCount" class="text-xs text-muted">0/500</span>
+                </div>
+                <textarea id="profileBio" rows="5" maxlength="500" oninput="document.getElementById('profileBioCount').textContent = this.value.length + '/500'" placeholder="Write a short description for your bio page..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                <button id="descriptionSaveBtn" onclick="saveDescription()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl mb-4 lg:mb-6 overflow-hidden">
+            <button onclick="toggleAccordion('accYoutube')" class="w-full flex items-center justify-between p-4 lg:p-5">
+                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="youtube" class="w-4 h-4 text-red-500"></i> Video Link</span>
+                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accYoutubeChevron"></i>
+            </button>
+            <div id="accYoutube" class="accordion-body px-4 lg:px-5 pb-5">
+                <p class="text-xs text-muted mb-3">Free plan: 1 video link.</p>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Video Title</label>
+                        <input id="youtubeTitleInput" type="text" placeholder="e.g. Watch my latest video" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">YouTube Link</label>
+                        <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-secondary">
+                        <input id="youtubeThumbToggle" type="checkbox" class="rounded"> Show video thumbnail (otherwise shown as a regular link card)
+                    </label>
+                </div>
+                <button id="youtubeSaveBtn" onclick="saveYoutube()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+            </div>
+        </div>
+
+        <!-- 4. YOUR LINKS (always open) -->
+        <div class="card rounded-2xl mb-4 lg:mb-6">
+            <div class="p-4 lg:p-6 border-b border-subtle">
+                <div class="flex items-center justify-between mb-1">
                     <h4 class="font-semibold text-primary text-sm">Your Links</h4>
                     <div class="flex items-center gap-4 text-sm text-secondary">
                         <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> 1.2K</span>
                         <span class="flex items-center gap-1"><i data-lucide="mouse-pointer-click" class="w-4 h-4"></i> 567</span>
                     </div>
                 </div>
-
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="text-xs text-muted">Icon shape:</span>
+                    <button type="button" onclick="setIconShape('circle')" id="shapeBtnCircle" class="px-3 py-1 rounded-full text-xs font-medium border transition">Circle</button>
+                    <button type="button" onclick="setIconShape('rounded')" id="shapeBtnRounded" class="px-3 py-1 rounded-lg text-xs font-medium border transition">Rounded</button>
+                </div>
+            </div>
+            <div class="p-4 lg:p-6">
                 <div id="linkList" class="space-y-3">
                     <p id="linkListEmpty" class="text-sm text-secondary text-center py-6 hidden">No links yet. Add your first one below.</p>
                 </div>
-
                 <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
                     <div class="flex items-center justify-between">
                         <span id="linkCountLabel" class="text-sm text-secondary">0/20 links used</span>
                         <button onclick="openLinkModal()" class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            Add more
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add more
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-
-        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-primary">Wallet</h3>
-                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-0.5 rounded-full">Connected</span>
-            </div>
-            <div class="grid grid-cols-3 gap-3 mb-4">
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <div class="crypto-icon net-icon mx-auto mb-2">N</div>
-                    <p class="text-sm font-semibold text-primary">10.00</p>
-                    <p class="text-xs text-muted">NET</p>
-                </div>
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <div class="crypto-icon usdc-icon mx-auto mb-2">U</div>
-                    <p class="text-sm font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">USDC</p>
-                </div>
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <div class="crypto-icon pol-icon mx-auto mb-2">P</div>
-                    <p class="text-sm font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">POL</p>
-                </div>
-            </div>
-            <button onclick="showToast('WalletConnect coming soon')" class="px-4 py-2 bg-surface hover-surface border border-subtle rounded-lg text-sm text-secondary transition">
-                <span class="flex items-center gap-2">
-                    <i data-lucide="wallet" class="w-4 h-4"></i>
-                    Connect Wallet
-                </span>
-            </button>
-        </div>
-
-        <!-- Profile Completion -->
+        <!-- 5. Complete Your Profile -->
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                     <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
                     <h3 class="font-semibold text-primary">Complete Your Profile</h3>
                 </div>
-                <span class="text-sm text-blue-500 font-medium">60%</span>
+                <span id="completionPct" class="text-sm text-blue-500 font-medium">0%</span>
             </div>
             <div class="progress-bar mb-3">
-                <div class="progress-fill" style="width: 60%"></div>
+                <div id="completionFill" class="progress-fill" style="width: 0%"></div>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="check" class="w-3 h-3"></i> Add avatar
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span id="checkAvatar" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Upload Avatar
                 </span>
-                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="check" class="w-3 h-3"></i> Add bio
+                <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Buat Link Bio
                 </span>
-                <span class="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="check" class="w-3 h-3"></i> Add first link
-                </span>
-                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:bg-gray-300 transition" onclick="showToast('Connect wallet to complete')">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Connect wallet
-                </span>
-                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:bg-gray-300 transition" onclick="showToast('Share your profile')">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Share profile
+                <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
                 </span>
             </div>
+            <button id="claimNetBtn" disabled onclick="showToast('NET claiming coming soon — smart contract in progress')" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
+                Claim NET
+            </button>
         </div>
 
-        <!-- Card 2: Curriculum Vitae -->
+        <!-- 6. Curriculum Vitae -->
         <div class="card rounded-2xl mb-4 lg:mb-6">
             <div class="p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i>
-                            Curriculum Vitae
+                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Curriculum Vitae
                         </h3>
                         <p class="text-sm text-secondary">Professional CV, shareable anytime</p>
                     </div>
@@ -698,25 +472,19 @@
                         <div class="flex-1 min-w-0">
                             <h4 class="font-medium text-primary">My CV</h4>
                             <p class="text-sm text-secondary">Last updated 2 days ago</p>
-                            <p class="text-xs text-muted mt-1">netlink.bio/username/cv</p>
+                            <p id="cvUrlHint" class="text-xs text-muted mt-1">netlink.bio/cv/username</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="showToast('CV preview')" class="p-2 hover-surface rounded-lg transition">
-                                <i data-lucide="eye" class="w-4 h-4 text-secondary"></i>
-                            </button>
-                            <button onclick="showToast('Edit CV')" class="p-2 hover-surface rounded-lg transition">
-                                <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
-                            </button>
-                            <button onclick="showToast('Share CV')" class="p-2 hover-surface rounded-lg transition">
-                                <i data-lucide="share-2" class="w-4 h-4 text-secondary"></i>
-                            </button>
+                            <button onclick="showToast('CV preview')" class="p-2 hover-surface rounded-lg transition"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
+                            <button onclick="showToast('Edit CV')" class="p-2 hover-surface rounded-lg transition"><i data-lucide="pencil" class="w-4 h-4 text-secondary"></i></button>
+                            <button onclick="showToast('Share CV')" class="p-2 hover-surface rounded-lg transition"><i data-lucide="share-2" class="w-4 h-4 text-secondary"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Card 3: Pro Features (Locked) -->
+        <!-- 7. Pro Features -->
         <div class="card locked-card rounded-2xl mb-4 lg:mb-6">
             <div class="locked-content p-4 lg:p-6">
                 <div class="flex items-center justify-between">
@@ -726,12 +494,12 @@
                         </div>
                         <div>
                             <h3 class="font-semibold text-primary">Pro Features</h3>
-                            <p class="text-sm text-secondary">Landing Page, Store & more</p>
+                            <p class="text-sm text-secondary">Landing Page, Premium Template &amp; more</p>
                         </div>
                     </div>
-                    <button onclick="openUpgradeModal()" class="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 border border-yellow-500/30 rounded-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0">
-                        <i data-lucide="unlock" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Upgrade</span>
+                    <button onclick="showToast('Coming soon!')" class="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 border border-yellow-500/30 rounded-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Coming Soon</span>
                     </button>
                 </div>
             </div>
@@ -743,9 +511,7 @@
         <div class="card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
                 <h3 id="linkModalTitle" class="text-lg font-semibold text-primary">Add Link</h3>
-                <button onclick="closeLinkModal()" class="text-secondary hover:text-primary transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button onclick="closeLinkModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <form id="linkForm" class="space-y-4">
                 <input id="linkId" type="hidden">
@@ -761,83 +527,27 @@
                     <label class="text-sm font-medium text-secondary block mb-1.5">Description <span class="text-muted">(optional)</span></label>
                     <input id="linkDescription" type="text" placeholder="e.g. Follow my daily photography" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                 </div>
-                <div>
+                <div class="relative">
                     <label class="text-sm font-medium text-secondary block mb-1.5">Icon</label>
-                    <select id="linkIcon" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                        <option value="instagram">Instagram</option>
-                        <option value="twitter">Twitter / X</option>
-                        <option value="facebook">Facebook</option>
-                        <option value="linkedin">LinkedIn</option>
-                        <option value="youtube">YouTube</option>
-                        <option value="globe">Website / Portfolio</option>
-                        <option value="mail">Email</option>
-                        <option value="link">Other</option>
-                    </select>
+                    <button type="button" onclick="toggleIconPicker()" class="w-full flex items-center gap-2 px-3 py-2 border border-subtle bg-surface rounded-lg">
+                        <span id="iconPickerPreview" class="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-subtle overflow-hidden"></span>
+                        <span id="iconPickerLabel" class="text-sm text-primary">Instagram</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted ml-auto"></i>
+                    </button>
+                    <input type="hidden" id="linkIcon" value="instagram">
+                    <div id="iconPickerPanel" class="icon-picker-panel grid-cols-4 gap-2 bg-white card border border-subtle rounded-lg shadow-lg p-2"></div>
                 </div>
                 <div class="flex gap-2">
-                    <button id="linkSaveBtn" type="submit" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">
-                        Save Link
-                    </button>
-                    <button id="linkDeleteBtn" type="button" onclick="deleteCurrentLink()" class="hidden px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
+                    <button id="linkSaveBtn" type="submit" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">Save Link</button>
+                    <button id="linkDeleteBtn" type="button" onclick="deleteCurrentLink()" class="hidden px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- Upgrade Modal -->
-    <div id="upgradeModal" class="modal">
-        <div class="card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-primary">Upgrade Plan</h3>
-                <button onclick="closeUpgradeModal()" class="text-secondary hover:text-primary transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <p class="text-secondary text-sm mb-6">Choose a plan. Payment via USDC on Polygon.</p>
-            <div class="space-y-3">
-                <label class="upgrade-option flex items-center gap-3 p-4 border border-subtle rounded-xl cursor-pointer hover:border-blue-500 transition bg-surface">
-                    <input type="radio" name="plan" class="w-4 h-4 text-blue-500">
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between">
-                            <span class="font-medium text-primary">Silver</span>
-                            <span class="font-bold text-primary">$3/mo</span>
-                        </div>
-                        <p class="text-sm text-secondary">10 links, landing page, analytics</p>
-                    </div>
-                </label>
-                <label class="upgrade-option flex items-center gap-3 p-4 border border-subtle rounded-xl cursor-pointer hover:border-blue-500 transition bg-surface">
-                    <input type="radio" name="plan" class="w-4 h-4 text-blue-500">
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between">
-                            <span class="font-medium text-primary">Gold</span>
-                            <span class="font-bold text-primary">$7/mo</span>
-                        </div>
-                        <p class="text-sm text-secondary">25 links, premium templates, custom domain</p>
-                    </div>
-                </label>
-                <label class="upgrade-option flex items-center gap-3 p-4 border border-subtle rounded-xl cursor-pointer hover:border-blue-500 transition bg-surface">
-                    <input type="radio" name="plan" class="w-4 h-4 text-blue-500">
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between">
-                            <span class="font-medium text-primary">Platinum</span>
-                            <span class="font-bold text-primary">$15/mo</span>
-                        </div>
-                        <p class="text-sm text-secondary">Unlimited links, store, priority support</p>
-                    </div>
-                </label>
-            </div>
-            <button onclick="showToast('USDC payment coming soon'); closeUpgradeModal()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition">
-                Pay with USDC
-            </button>
         </div>
     </div>
 
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Show any uncaught JS error directly on screen (mobile-friendly debugging)
         function showAuthError(msg) {
             document.getElementById('authSpinner').classList.add('hidden');
             document.getElementById('authGateText').textContent = 'Something went wrong:';
@@ -848,7 +558,6 @@
         window.addEventListener('error', (e) => showAuthError(e.message));
         window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
 
-        // Netlink.bio - Supabase config
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -858,15 +567,11 @@
         let currentLinks = [];
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: Infinity };
 
-        // Auth guard: runs before anything else is shown
         async function checkAuth() {
             try {
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
                 if (error) throw error;
-                if (!session) {
-                    window.location.href = 'login.html';
-                    return;
-                }
+                if (!session) { window.location.href = 'login.html'; return; }
                 currentUser = session.user;
                 document.getElementById('authGate').style.display = 'none';
                 await loadDashboardData();
@@ -877,17 +582,15 @@
             }
         }
 
-        // If the user came from index.html's "Claim now" flow, pre-fill
-        // the username field with their chosen username.
         function applyPendingUsernameClaim() {
             const pending = sessionStorage.getItem('pendingUsername');
             if (!pending) return;
             sessionStorage.removeItem('pendingUsername');
-            if (currentProfile && currentProfile.username) return; // already has one, don't override
+            if (currentProfile && currentProfile.username) return;
             const input = document.getElementById('profileUsername');
             if (input) {
                 input.value = pending;
-                showToast(`Hit "Save Profile" to lock in netlink.bio/${pending}`);
+                showToast(`Hit "Save" to lock in netlink.bio/${pending}`);
             }
         }
 
@@ -901,18 +604,55 @@
             if (window.innerWidth < 1024) toggleSidebar();
         }
 
+        function getCurrentUsername() {
+            return currentProfile?.username || document.getElementById('profileUsername').value.trim();
+        }
+
+        function copyProfileLink() {
+            const username = getCurrentUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            navigator.clipboard.writeText(`${window.location.origin}/${username}`).then(() => showToast('Link copied!'));
+        }
+
+        function previewProfileLink() {
+            const username = getCurrentUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            window.open(`/${username}`, '_blank');
+        }
+
+        function shareProfileLink() {
+            const username = getCurrentUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            const url = `${window.location.origin}/${username}`;
+            if (navigator.share) {
+                navigator.share({ title: 'My Netlink.bio', url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => showToast('Link copied to share!'));
+            }
+        }
+
+        function copyWalletAddress() {
+            const val = document.getElementById('walletAddressInput').value.trim();
+            if (!val) { showToast('No wallet address yet'); return; }
+            navigator.clipboard.writeText(val).then(() => showToast('Wallet address copied!'));
+        }
+
+        // ===== ACCORDION =====
+        function toggleAccordion(id) {
+            document.getElementById(id).classList.toggle('open');
+            document.getElementById(id + 'Chevron').classList.toggle('open');
+        }
+
         // ===== LOAD DATA =====
         async function loadDashboardData() {
             await loadProfile();
             await loadLinks();
+            updateProfileCompletion();
         }
 
         async function loadProfile() {
             const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .eq('id', currentUser.id)
-                .single();
+                .from('profiles').select('*').eq('id', currentUser.id).single();
 
             if (error) {
                 console.error('Failed to load profile:', error);
@@ -930,26 +670,32 @@
             if (data.username) {
                 viewBtn.href = `/${data.username}`;
                 viewBtn.onclick = null;
+                document.getElementById('cvUrlHint').textContent = `netlink.bio/cv/${data.username}`;
             } else {
                 viewBtn.href = '#';
                 viewBtn.onclick = (e) => { e.preventDefault(); showToast('Pick a username below first'); };
             }
 
-            // Populate the inline profile fields
             document.getElementById('profileUsername').value = data.username || '';
-            document.getElementById('profileDisplayName').value = data.display_name || '';
-            document.getElementById('profileWhatsapp').value = data.contact_whatsapp || '';
-            document.getElementById('profileTelegram').value = data.contact_telegram || '';
-            document.getElementById('profileEmail').value = data.contact_email || '';
-            document.getElementById('profileBio').value = data.bio || '';
-            document.getElementById('profileBioCount').textContent = (data.bio || '').length + '/150';
-            document.getElementById('profileYoutube').value = data.youtube_url || '';
-            document.getElementById('profileWallet').value = data.wallet_address || '';
             document.getElementById('profileShowCv').checked = data.show_cv !== false;
             document.getElementById('profileShowDonate').checked = data.show_donate === true;
-            document.getElementById('walletField').classList.toggle('hidden', data.show_donate !== true);
 
-            // Avatar preview
+            document.getElementById('profileDisplayName').value = data.display_name || '';
+            document.getElementById('profileEmail').value = data.contact_email || '';
+            document.getElementById('profileWhatsapp').value = data.contact_whatsapp || '';
+            document.getElementById('profileTelegram').value = data.contact_telegram || '';
+
+            document.getElementById('profileBio').value = data.bio || '';
+            document.getElementById('profileBioCount').textContent = (data.bio || '').length + '/500';
+
+            document.getElementById('youtubeTitleInput').value = data.youtube_title || '';
+            document.getElementById('profileYoutube').value = data.youtube_url || '';
+            document.getElementById('youtubeThumbToggle').checked = data.show_youtube_thumbnail !== false;
+
+            document.getElementById('walletAddressInput').value = data.wallet_address || '';
+
+            setIconShapeButtons(data.link_icon_shape || 'circle');
+
             const initialEl = document.getElementById('avatarInitial');
             const imgEl = document.getElementById('avatarImg');
             if (data.avatar_url) {
@@ -963,66 +709,172 @@
             }
         }
 
-        async function saveProfileInline() {
-            const btn = document.getElementById('profileSaveBtn');
-            const usernameStatus = document.getElementById('usernameStatus');
-            usernameStatus.classList.add('hidden');
+        async function checkUsernameLive() {
+            const input = document.getElementById('profileUsername');
+            const status = document.getElementById('usernameStatus');
+            const username = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            input.value = username;
 
-            const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-            document.getElementById('profileUsername').value = username;
-
+            if (!username) { status.classList.add('hidden'); return; }
+            if (username === currentProfile?.username) {
+                status.textContent = 'This is your current link.';
+                status.className = 'mt-1.5 text-xs font-medium text-muted';
+                status.classList.remove('hidden');
+                return;
+            }
             if (username.length < 3) {
-                usernameStatus.textContent = 'Username must be at least 3 characters (letters, numbers, underscore).';
-                usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
-                usernameStatus.classList.remove('hidden');
+                status.textContent = 'Must be at least 3 characters (letters, numbers, underscore).';
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+                status.classList.remove('hidden');
                 return;
             }
-
-            const showDonate = document.getElementById('profileShowDonate').checked;
-            const wallet = document.getElementById('profileWallet').value.trim();
-            if (showDonate && !wallet) {
-                showToast('Add a wallet address to enable the Donate card');
-                return;
+            const { data } = await supabaseClient.from('profiles').select('id').eq('username', username).maybeSingle();
+            if (data) {
+                status.textContent = `netlink.bio/${username} is taken.`;
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+            } else {
+                status.textContent = `netlink.bio/${username} is available!`;
+                status.className = 'mt-1.5 text-xs font-medium text-green-600';
             }
-
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-
-            const { error } = await supabaseClient
-                .from('profiles')
-                .update({
-                    username,
-                    display_name: document.getElementById('profileDisplayName').value.trim() || null,
-                    bio: document.getElementById('profileBio').value.trim().slice(0, 150) || null,
-                    contact_whatsapp: document.getElementById('profileWhatsapp').value.trim() || null,
-                    contact_telegram: document.getElementById('profileTelegram').value.trim() || null,
-                    contact_email: document.getElementById('profileEmail').value.trim() || null,
-                    youtube_url: document.getElementById('profileYoutube').value.trim() || null,
-                    wallet_address: wallet || null,
-                    show_cv: document.getElementById('profileShowCv').checked,
-                    show_donate: showDonate,
-                })
-                .eq('id', currentUser.id);
-
-            btn.disabled = false;
-            btn.textContent = 'Save Profile';
-
-            if (error) {
-                if (error.code === '23505') {
-                    usernameStatus.textContent = `netlink.bio/${username} is already taken.`;
-                    usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
-                    usernameStatus.classList.remove('hidden');
-                } else {
-                    showToast('Failed to save profile');
-                }
-                return;
-            }
-
-            showToast('Profile saved');
-            await loadProfile();
+            status.classList.remove('hidden');
         }
 
-        // ===== AVATAR UPLOAD (client-side compression, then Supabase Storage) =====
+        // ===== SAVE FUNCTIONS (each card saves its own fields) =====
+        async function withSaving(btnId, fn) {
+            const btn = document.getElementById(btnId);
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await fn();
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        }
+
+        async function saveWallet() {
+            await withSaving('walletSaveBtn', async () => {
+                const wallet_address = document.getElementById('walletAddressInput').value.trim();
+                const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save wallet address'); return; }
+                showToast('Wallet address saved');
+                await loadProfile();
+                updateProfileCompletion();
+            });
+        }
+
+        async function saveLinkCardSettings() {
+            await withSaving('linkCardSaveBtn', async () => {
+                const usernameStatus = document.getElementById('usernameStatus');
+                const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+                document.getElementById('profileUsername').value = username;
+
+                if (username.length < 3) {
+                    usernameStatus.textContent = 'Username must be at least 3 characters.';
+                    usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                    usernameStatus.classList.remove('hidden');
+                    return;
+                }
+
+                const { error } = await supabaseClient.from('profiles').update({
+                    username,
+                    show_cv: document.getElementById('profileShowCv').checked,
+                    show_donate: document.getElementById('profileShowDonate').checked,
+                }).eq('id', currentUser.id);
+
+                if (error) {
+                    if (error.code === '23505') {
+                        usernameStatus.textContent = `netlink.bio/${username} is already taken.`;
+                        usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                        usernameStatus.classList.remove('hidden');
+                    } else {
+                        showToast('Failed to save');
+                    }
+                    return;
+                }
+                showToast('Saved!');
+                usernameStatus.classList.add('hidden');
+                await loadProfile();
+                updateProfileCompletion();
+            });
+        }
+
+        async function saveEditProfile() {
+            await withSaving('editProfileSaveBtn', async () => {
+                const { error } = await supabaseClient.from('profiles').update({
+                    display_name: document.getElementById('profileDisplayName').value.trim() || null,
+                    contact_email: document.getElementById('profileEmail').value.trim() || null,
+                    contact_whatsapp: document.getElementById('profileWhatsapp').value.trim() || null,
+                    contact_telegram: document.getElementById('profileTelegram').value.trim() || null,
+                }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save profile'); return; }
+                showToast('Profile saved');
+                await loadProfile();
+            });
+        }
+
+        async function saveDescription() {
+            await withSaving('descriptionSaveBtn', async () => {
+                const bio = document.getElementById('profileBio').value.trim().slice(0, 500);
+                const { error } = await supabaseClient.from('profiles').update({ bio: bio || null }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save description'); return; }
+                showToast('Description saved');
+                await loadProfile();
+            });
+        }
+
+        async function saveYoutube() {
+            await withSaving('youtubeSaveBtn', async () => {
+                const { error } = await supabaseClient.from('profiles').update({
+                    youtube_title: document.getElementById('youtubeTitleInput').value.trim() || null,
+                    youtube_url: document.getElementById('profileYoutube').value.trim() || null,
+                    show_youtube_thumbnail: document.getElementById('youtubeThumbToggle').checked,
+                }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save video link'); return; }
+                showToast('Video link saved');
+                await loadProfile();
+            });
+        }
+
+        // ===== PROFILE COMPLETION =====
+        function updateProfileCompletion() {
+            const hasAvatar = !!currentProfile?.avatar_url;
+            const hasLink = currentLinks.length > 0;
+            const hasWallet = !!currentProfile?.wallet_address;
+            const items = [
+                ['checkAvatar', hasAvatar], ['checkLinkBio', hasLink], ['checkWallet', hasWallet],
+            ];
+            let count = 0;
+            items.forEach(([id, done]) => {
+                const el = document.getElementById(id);
+                const icon = el.querySelector('i');
+                if (done) {
+                    count++;
+                    el.className = 'text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1';
+                    icon.setAttribute('data-lucide', 'check');
+                } else {
+                    el.className = 'text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1';
+                    icon.setAttribute('data-lucide', 'circle');
+                }
+            });
+            lucide.createIcons();
+
+            const pct = Math.round((count / items.length) * 100);
+            document.getElementById('completionPct').textContent = pct + '%';
+            document.getElementById('completionFill').style.width = pct + '%';
+
+            const claimBtn = document.getElementById('claimNetBtn');
+            if (pct === 100) {
+                claimBtn.disabled = false;
+                claimBtn.className = 'w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm';
+            } else {
+                claimBtn.disabled = true;
+                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
+            }
+        }
+
+        // ===== AVATAR UPLOAD =====
         function compressImage(file, maxDimension = 512, quality = 0.75) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -1031,16 +883,10 @@
                 reader.onerror = reject;
                 img.onload = () => {
                     let { width, height } = img;
-                    if (width > height && width > maxDimension) {
-                        height = Math.round(height * (maxDimension / width));
-                        width = maxDimension;
-                    } else if (height > maxDimension) {
-                        width = Math.round(width * (maxDimension / height));
-                        height = maxDimension;
-                    }
+                    if (width > height && width > maxDimension) { height = Math.round(height * (maxDimension / width)); width = maxDimension; }
+                    else if (height > maxDimension) { width = Math.round(width * (maxDimension / height)); height = maxDimension; }
                     const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = width; canvas.height = height;
                     canvas.getContext('2d').drawImage(img, 0, 0, width, height);
                     canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', quality);
                 };
@@ -1059,46 +905,79 @@
             try {
                 const compressed = await compressImage(file);
                 const path = `${currentUser.id}/avatar.jpg`;
-
-                const { error: uploadError } = await supabaseClient.storage
-                    .from('avatars')
-                    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+                const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
                 if (uploadError) throw uploadError;
 
                 const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
-                const avatarUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`; // cache-bust
+                const avatarUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
 
-                const { error: updateError } = await supabaseClient
-                    .from('profiles')
-                    .update({ avatar_url: avatarUrl })
-                    .eq('id', currentUser.id);
+                const { error: updateError } = await supabaseClient.from('profiles').update({ avatar_url: avatarUrl }).eq('id', currentUser.id);
                 if (updateError) throw updateError;
 
                 status.textContent = 'Photo updated!';
                 setTimeout(() => status.classList.add('hidden'), 2000);
                 await loadProfile();
+                updateProfileCompletion();
             } catch (err) {
                 console.error(err);
                 status.textContent = 'Upload failed. Please try a different image.';
             }
         }
 
-
         // ===== LINKS =====
         async function loadLinks() {
-            const { data, error } = await supabaseClient
-                .from('links')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .order('position', { ascending: true });
-
-            if (error) {
-                console.error('Failed to load links:', error);
-                return;
-            }
-
+            const { data, error } = await supabaseClient.from('links').select('*').eq('user_id', currentUser.id).order('position', { ascending: true });
+            if (error) { console.error('Failed to load links:', error); return; }
             currentLinks = data || [];
             renderLinks();
+        }
+
+        const ICON_OPTIONS = [
+            { key: 'instagram', label: 'Instagram' },
+            { key: 'twitter', label: 'Twitter / X' },
+            { key: 'facebook', label: 'Facebook' },
+            { key: 'linkedin', label: 'LinkedIn' },
+            { key: 'youtube', label: 'YouTube' },
+            { key: 'globe', label: 'Website' },
+            { key: 'mail', label: 'Email' },
+            { key: 'link', label: 'Other' },
+        ];
+        const BRAND_ICONS = {
+            instagram: { slug: 'instagram', color: 'E4405F' },
+            twitter: { slug: 'twitter', color: '1DA1F2' },
+            facebook: { slug: 'facebook', color: '1877F2' },
+            linkedin: { slug: 'linkedin', color: '0A66C2' },
+            youtube: { slug: 'youtube', color: 'FF0000' },
+        };
+
+        function iconWrapperClass(shape) {
+            const base = 'w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center flex-shrink-0';
+            return shape === 'rounded' ? `${base} rounded-xl` : `${base} rounded-full`;
+        }
+
+        function getIconInnerHtml(iconKey) {
+            const brand = BRAND_ICONS[iconKey];
+            if (brand) {
+                return { wrapperExtra: 'bg-white border border-subtle', inner: `<img src="https://cdn.simpleicons.org/${brand.slug}/${brand.color}" class="w-5 h-5 lg:w-6 lg:h-6" alt="${iconKey}">` };
+            }
+            const fallback = { globe: 'globe', mail: 'mail', link: 'link' }[iconKey] || 'link';
+            return { wrapperExtra: 'bg-gradient-to-br from-blue-500 to-purple-600', inner: `<i data-lucide="${fallback}" class="w-5 h-5 lg:w-6 lg:h-6 text-white"></i>` };
+        }
+
+        function setIconShapeButtons(shape) {
+            document.getElementById('shapeBtnCircle').classList.toggle('bg-blue-500', shape === 'circle');
+            document.getElementById('shapeBtnCircle').classList.toggle('text-white', shape === 'circle');
+            document.getElementById('shapeBtnCircle').classList.toggle('border-blue-500', shape === 'circle');
+            document.getElementById('shapeBtnRounded').classList.toggle('bg-blue-500', shape === 'rounded');
+            document.getElementById('shapeBtnRounded').classList.toggle('text-white', shape === 'rounded');
+            document.getElementById('shapeBtnRounded').classList.toggle('border-blue-500', shape === 'rounded');
+        }
+
+        function setIconShape(shape) {
+            setIconShapeButtons(shape);
+            if (currentProfile) currentProfile.link_icon_shape = shape;
+            renderLinks();
+            supabaseClient.from('profiles').update({ link_icon_shape: shape }).eq('id', currentUser.id);
         }
 
         function renderLinks() {
@@ -1106,59 +985,42 @@
             const empty = document.getElementById('linkListEmpty');
             const tier = currentProfile?.tier || 'basic';
             const limit = LINK_LIMITS[tier] ?? 20;
+            const shape = currentProfile?.link_icon_shape || 'circle';
 
-            document.getElementById('linkCountLabel').textContent =
-                `${currentLinks.length}/${limit === Infinity ? '∞' : limit} links used`;
-
+            document.getElementById('linkCountLabel').textContent = `${currentLinks.length}/${limit === Infinity ? '∞' : limit} links used`;
             list.querySelectorAll('.link-item').forEach(el => el.remove());
 
-            if (currentLinks.length === 0) {
-                empty.classList.remove('hidden');
-                return;
-            }
+            if (currentLinks.length === 0) { empty.classList.remove('hidden'); return; }
             empty.classList.add('hidden');
 
             currentLinks.forEach((link, index) => {
+                const { wrapperExtra, inner } = getIconInnerHtml(link.icon);
                 const div = document.createElement('div');
                 div.className = 'link-item rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4';
                 div.innerHTML = `
-                    <div class="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white flex-shrink-0">
-                        <i data-lucide="${link.icon || 'link'}" class="w-5 h-5 lg:w-6 lg:h-6"></i>
-                    </div>
+                    <div class="${iconWrapperClass(shape)} ${wrapperExtra}">${inner}</div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-medium text-primary text-sm lg:text-base">${escapeHtml(link.title)}</h4>
                         <p class="text-xs lg:text-sm text-secondary truncate">${escapeHtml(link.description || link.url)}</p>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button onclick="moveLink(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition">
-                            <i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i>
-                        </button>
-                        <button onclick="moveLink(${index}, 1)" ${index === currentLinks.length - 1 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition">
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i>
-                        </button>
-                        <button onclick="openLinkModal('${link.id}')" class="p-1.5 hover-surface rounded-lg transition">
-                            <i data-lucide="pencil" class="w-4 h-4 text-secondary"></i>
-                        </button>
+                        <button onclick="moveLink(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="moveLink(${index}, 1)" ${index === currentLinks.length - 1 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="openLinkModal('${link.id}')" class="p-1.5 hover-surface rounded-lg transition"><i data-lucide="pencil" class="w-4 h-4 text-secondary"></i></button>
                     </div>
                 `;
                 list.appendChild(div);
             });
-
             lucide.createIcons();
         }
 
         async function moveLink(index, direction) {
             const otherIndex = index + direction;
             if (otherIndex < 0 || otherIndex >= currentLinks.length) return;
-
             const a = currentLinks[index];
             const b = currentLinks[otherIndex];
-
-            // Swap positions locally first for instant feedback
             [currentLinks[index], currentLinks[otherIndex]] = [b, a];
             renderLinks();
-
-            // Persist the swap to the database
             await Promise.all([
                 supabaseClient.from('links').update({ position: b.position }).eq('id', a.id),
                 supabaseClient.from('links').update({ position: a.position }).eq('id', b.id),
@@ -1172,14 +1034,43 @@
             return div.innerHTML;
         }
 
+        // ===== ICON PICKER POPUP =====
+        function renderIconPickerPanel() {
+            const panel = document.getElementById('iconPickerPanel');
+            panel.innerHTML = ICON_OPTIONS.map(opt => {
+                const { wrapperExtra, inner } = getIconInnerHtml(opt.key);
+                return `
+                    <button type="button" onclick="selectLinkIcon('${opt.key}', '${opt.label}')" class="flex flex-col items-center gap-1 p-2 hover-surface rounded-lg transition">
+                        <span class="w-8 h-8 rounded-full flex items-center justify-center ${wrapperExtra}">${inner.replace(/w-5 h-5 lg:w-6 lg:h-6/, 'w-4 h-4').replace(/w-5 h-5 lg:w-6 lg:h-6 text-white/, 'w-4 h-4 text-white')}</span>
+                        <span class="text-[10px] text-secondary">${opt.label}</span>
+                    </button>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function toggleIconPicker() {
+            const panel = document.getElementById('iconPickerPanel');
+            if (!panel.classList.contains('open')) renderIconPickerPanel();
+            panel.classList.toggle('open');
+        }
+
+        function selectLinkIcon(key, label) {
+            document.getElementById('linkIcon').value = key;
+            document.getElementById('iconPickerLabel').textContent = label;
+            const { wrapperExtra, inner } = getIconInnerHtml(key);
+            const preview = document.getElementById('iconPickerPreview');
+            preview.className = `w-6 h-6 flex items-center justify-center rounded-full overflow-hidden ${wrapperExtra}`;
+            preview.innerHTML = inner.replace(/w-5 h-5 lg:w-6 lg:h-6/, 'w-4 h-4').replace(/w-5 h-5 lg:w-6 lg:h-6 text-white/, 'w-4 h-4 text-white');
+            lucide.createIcons();
+            document.getElementById('iconPickerPanel').classList.remove('open');
+        }
+
         // ===== LINK MODAL =====
         function openLinkModal(linkId = null) {
             const tier = currentProfile?.tier || 'basic';
-            const limit = LINK_LIMITS[tier] ?? 3;
-            if (!linkId && currentLinks.length >= limit) {
-                showToast(`Limit reached — upgrade your plan for more links`);
-                return;
-            }
+            const limit = LINK_LIMITS[tier] ?? 20;
+            if (!linkId && currentLinks.length >= limit) { showToast('Limit reached — upgrade your plan for more links'); return; }
 
             const link = linkId ? currentLinks.find(l => l.id === linkId) : null;
             document.getElementById('linkModalTitle').textContent = link ? 'Edit Link' : 'Add Link';
@@ -1187,13 +1078,18 @@
             document.getElementById('linkTitle').value = link ? link.title : '';
             document.getElementById('linkUrl').value = link ? link.url : '';
             document.getElementById('linkDescription').value = link ? (link.description || '') : '';
-            document.getElementById('linkIcon').value = link ? (link.icon || 'link') : 'instagram';
+
+            const iconKey = link ? (link.icon || 'link') : 'instagram';
+            const opt = ICON_OPTIONS.find(o => o.key === iconKey) || ICON_OPTIONS[0];
+            selectLinkIcon(opt.key, opt.label);
+
             document.getElementById('linkDeleteBtn').classList.toggle('hidden', !link);
             document.getElementById('linkModal').classList.add('active');
         }
 
         function closeLinkModal() {
             document.getElementById('linkModal').classList.remove('active');
+            document.getElementById('iconPickerPanel').classList.remove('open');
         }
 
         document.getElementById('linkForm').addEventListener('submit', async (e) => {
@@ -1222,28 +1118,23 @@
             btn.disabled = false;
             btn.textContent = 'Save Link';
 
-            if (error) {
-                console.error(error);
-                showToast('Failed to save link');
-                return;
-            }
+            if (error) { console.error(error); showToast('Failed to save link'); return; }
 
             showToast(id ? 'Link updated' : 'Link added');
             closeLinkModal();
             await loadLinks();
+            updateProfileCompletion();
         });
 
         async function deleteCurrentLink() {
             const id = document.getElementById('linkId').value;
             if (!id) return;
             const { error } = await supabaseClient.from('links').delete().eq('id', id);
-            if (error) {
-                showToast('Failed to delete link');
-                return;
-            }
+            if (error) { showToast('Failed to delete link'); return; }
             showToast('Link deleted');
             closeLinkModal();
             await loadLinks();
+            updateProfileCompletion();
         }
 
         document.getElementById('linkModal').addEventListener('click', function(e) {
@@ -1254,19 +1145,11 @@
     </script>
 
     <script>
-
-        // Initialize Lucide icons
         lucide.createIcons();
 
-        // Theme Management
         function initTheme() {
-            // Default to LIGHT theme (no saved preference or explicit 'light')
             const savedTheme = localStorage.getItem('theme');
-            if (!savedTheme) {
-                // First visit: apply light theme, don't save yet
-                applyTheme('light', false);
-                return;
-            }
+            if (!savedTheme) { applyTheme('light', false); return; }
             applyTheme(savedTheme, true);
         }
 
@@ -1274,22 +1157,16 @@
             const html = document.documentElement;
             const lightIcons = document.querySelectorAll('.theme-icon-light');
             const darkIcons = document.querySelectorAll('.theme-icon-dark');
-            
             if (theme === 'dark') {
-                html.classList.add('dark');
-                html.classList.remove('light');
+                html.classList.add('dark'); html.classList.remove('light');
                 lightIcons.forEach(icon => icon.classList.add('hidden'));
                 darkIcons.forEach(icon => icon.classList.remove('hidden'));
             } else {
-                html.classList.remove('dark');
-                html.classList.add('light');
+                html.classList.remove('dark'); html.classList.add('light');
                 lightIcons.forEach(icon => icon.classList.remove('hidden'));
                 darkIcons.forEach(icon => icon.classList.add('hidden'));
             }
-            
-            if (save) {
-                localStorage.setItem('theme', theme);
-            }
+            if (save) localStorage.setItem('theme', theme);
         }
 
         function toggleTheme() {
@@ -1298,10 +1175,8 @@
             applyTheme(newTheme, true);
             showToast(newTheme === 'dark' ? 'Dark mode activated' : 'Light mode activated');
         }
-
         initTheme();
 
-        // Toast Notification
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -1309,119 +1184,27 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Sidebar Toggle
         function toggleSidebar() {
             document.querySelector('.sidebar').classList.toggle('open');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
 
-        // Upgrade Modal
-        function openUpgradeModal() {
-            document.getElementById('upgradeModal').classList.add('active');
-        }
-
-        function closeUpgradeModal() {
-            document.getElementById('upgradeModal').classList.remove('active');
-        }
-
-        // Notifications
         function toggleNotifications() {
             document.getElementById('notificationPanel').classList.toggle('active');
         }
-
         function markAllRead() {
             showToast('All notifications marked as read');
             document.getElementById('notificationPanel').classList.remove('active');
         }
-
         document.addEventListener('click', function(e) {
             const panel = document.getElementById('notificationPanel');
             const bell = e.target.closest('button[onclick="toggleNotifications()"]');
-            if (!bell && !e.target.closest('.notification-panel')) {
-                panel.classList.remove('active');
-            }
+            if (!bell && !e.target.closest('.notification-panel')) panel.classList.remove('active');
+
+            const iconPanel = document.getElementById('iconPickerPanel');
+            const iconBtn = e.target.closest('button[onclick="toggleIconPicker()"]');
+            if (!iconBtn && !e.target.closest('#iconPickerPanel')) iconPanel.classList.remove('open');
         });
-
-        document.getElementById('upgradeModal').addEventListener('click', function(e) {
-            if (e.target === this) closeUpgradeModal();
-        });
-
-        // Drag & Drop
-        let draggedItem = null;
-        let longPressTimer = null;
-        const linkList = document.getElementById('linkList');
-
-        function initDragAndDrop() {
-            const items = linkList.querySelectorAll('.link-item');
-            items.forEach(item => {
-                item.addEventListener('dragstart', handleDragStart);
-                item.addEventListener('dragend', handleDragEnd);
-                item.addEventListener('dragover', handleDragOver);
-                item.addEventListener('drop', handleDrop);
-                item.addEventListener('touchstart', handleTouchStart, { passive: false });
-                item.addEventListener('touchend', handleTouchEnd);
-                item.addEventListener('touchmove', handleTouchMove, { passive: false });
-            });
-        }
-
-        function handleDragStart(e) {
-            draggedItem = this;
-            this.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        }
-
-        function handleDragEnd(e) {
-            this.classList.remove('dragging');
-            draggedItem = null;
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            const afterElement = getDragAfterElement(linkList, e.clientY);
-            if (afterElement == null) {
-                linkList.appendChild(draggedItem);
-            } else {
-                linkList.insertBefore(draggedItem, afterElement);
-            }
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            showToast('Link order updated');
-        }
-
-        function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('.link-item:not(.dragging)')];
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-
-        function handleTouchStart(e) {
-            longPressTimer = setTimeout(() => {
-                this.classList.add('long-press');
-                showToast('Long press activated - drag to reorder');
-            }, 500);
-        }
-
-        function handleTouchEnd(e) {
-            clearTimeout(longPressTimer);
-            this.classList.remove('long-press');
-        }
-
-        function handleTouchMove(e) {
-            clearTimeout(longPressTimer);
-            this.classList.remove('long-press');
-        }
-
-        initDragAndDrop();
     </script>
 </body>
 </html>
