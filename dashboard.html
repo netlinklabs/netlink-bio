@@ -261,12 +261,12 @@
             </div>
 
             <label class="text-sm font-medium text-secondary block mb-1.5">Your wallet address</label>
+            <input id="walletAddressInput" type="text" placeholder="0x..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30 mb-2">
             <div class="flex items-center gap-2">
-                <input id="walletAddressInput" type="text" placeholder="0x..." class="flex-1 px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                <button onclick="copyWalletAddress()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Copy address">
-                    <i data-lucide="copy" class="w-4 h-4 text-secondary"></i>
+                <button onclick="copyWalletAddress()" class="flex-1 flex items-center justify-center gap-1.5 py-2 hover-surface border border-subtle rounded-lg transition text-sm text-secondary" title="Copy address">
+                    <i data-lucide="copy" class="w-4 h-4"></i> Copy
                 </button>
-                <button id="walletSaveBtn" onclick="saveWallet()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Save</button>
+                <button id="walletSaveBtn" onclick="saveWallet()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Save</button>
             </div>
             <div class="flex items-center justify-between mt-2">
                 <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline">About wallet</button>
@@ -934,20 +934,35 @@
 
         const ICON_OPTIONS = [
             { key: 'instagram', label: 'Instagram' },
-            { key: 'twitter', label: 'Twitter / X' },
+            { key: 'x', label: 'Twitter / X' },
             { key: 'facebook', label: 'Facebook' },
             { key: 'linkedin', label: 'LinkedIn' },
             { key: 'youtube', label: 'YouTube' },
+            { key: 'tiktok', label: 'TikTok' },
+            { key: 'whatsapp', label: 'WhatsApp' },
+            { key: 'telegram', label: 'Telegram' },
+            { key: 'threads', label: 'Threads' },
+            { key: 'pinterest', label: 'Pinterest' },
+            { key: 'snapchat', label: 'Snapchat' },
+            { key: 'twitch', label: 'Twitch' },
+            { key: 'discord', label: 'Discord' },
+            { key: 'spotify', label: 'Spotify' },
+            { key: 'github', label: 'GitHub' },
+            { key: 'behance', label: 'Behance' },
+            { key: 'dribbble', label: 'Dribbble' },
             { key: 'globe', label: 'Website' },
             { key: 'mail', label: 'Email' },
             { key: 'link', label: 'Other' },
         ];
-        const BRAND_ICONS = {
-            instagram: { slug: 'instagram', color: 'E4405F' },
-            twitter: { slug: 'twitter', color: '1DA1F2' },
-            facebook: { slug: 'facebook', color: '1877F2' },
-            linkedin: { slug: 'linkedin', color: '0A66C2' },
-            youtube: { slug: 'youtube', color: 'FF0000' },
+        // Brand logos are served from jsDelivr's simple-icons package — a very
+        // reliable, heavily-cached CDN (same family as unpkg). Icons render in
+        // their default black; kept on a white badge for a clean, consistent look
+        // that doesn't depend on a third-party color-conversion service.
+        const BRAND_SLUGS = {
+            instagram: 'instagram', x: 'x', facebook: 'facebook', linkedin: 'linkedin',
+            youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsapp', telegram: 'telegram',
+            threads: 'threads', pinterest: 'pinterest', snapchat: 'snapchat', twitch: 'twitch',
+            discord: 'discord', spotify: 'spotify', github: 'github', behance: 'behance', dribbble: 'dribbble',
         };
 
         function iconWrapperClass(shape) {
@@ -956,9 +971,12 @@
         }
 
         function getIconInnerHtml(iconKey) {
-            const brand = BRAND_ICONS[iconKey];
-            if (brand) {
-                return { wrapperExtra: 'bg-white border border-subtle', inner: `<img src="https://cdn.simpleicons.org/${brand.slug}/${brand.color}" class="w-5 h-5 lg:w-6 lg:h-6" alt="${iconKey}">` };
+            const slug = BRAND_SLUGS[iconKey];
+            if (slug) {
+                return {
+                    wrapperExtra: 'bg-white border border-subtle p-2',
+                    inner: `<img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg" class="w-full h-full" alt="${iconKey}" onerror="this.style.display='none'">`,
+                };
             }
             const fallback = { globe: 'globe', mail: 'mail', link: 'link' }[iconKey] || 'link';
             return { wrapperExtra: 'bg-gradient-to-br from-blue-500 to-purple-600', inner: `<i data-lucide="${fallback}" class="w-5 h-5 lg:w-6 lg:h-6 text-white"></i>` };
