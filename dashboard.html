@@ -91,7 +91,7 @@
         .accordion-chevron.open { transform: rotate(180deg); }
 
         /* Icon picker popup */
-        .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; }
+        .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; max-height: 280px; overflow-y: auto; }
         .icon-picker-panel.open { display: grid; }
     </style>
 </head>
@@ -282,12 +282,12 @@
             </div>
             <p id="usernameStatus" class="mt-1.5 text-xs font-medium hidden"></p>
 
-            <div class="mt-4 space-y-2">
+            <div class="mt-4 flex items-center gap-6">
                 <label class="flex items-center gap-2 text-sm text-secondary">
-                    <input id="profileShowCv" type="checkbox" class="rounded"> Tampilkan CV
+                    <input id="profileShowCv" type="checkbox" class="rounded"> Show CV
                 </label>
                 <label class="flex items-center gap-2 text-sm text-secondary">
-                    <input id="profileShowDonate" type="checkbox" class="rounded"> Tampilkan Wallet
+                    <input id="profileShowDonate" type="checkbox" class="rounded"> Show Wallet
                 </label>
             </div>
 
@@ -933,6 +933,7 @@
         }
 
         const ICON_OPTIONS = [
+            // --- Social / Brand ---
             { key: 'instagram', label: 'Instagram' },
             { key: 'x', label: 'Twitter / X' },
             { key: 'facebook', label: 'Facebook' },
@@ -947,9 +948,60 @@
             { key: 'twitch', label: 'Twitch' },
             { key: 'discord', label: 'Discord' },
             { key: 'spotify', label: 'Spotify' },
+            { key: 'soundcloud', label: 'SoundCloud' },
+            { key: 'applemusic', label: 'Apple Music' },
             { key: 'github', label: 'GitHub' },
             { key: 'behance', label: 'Behance' },
             { key: 'dribbble', label: 'Dribbble' },
+            { key: 'medium', label: 'Medium' },
+            { key: 'reddit', label: 'Reddit' },
+            { key: 'paypal', label: 'PayPal' },
+            { key: 'patreon', label: 'Patreon' },
+            { key: 'vimeo', label: 'Vimeo' },
+            { key: 'netflix', label: 'Netflix' },
+            // --- Professional / Business ---
+            { key: 'briefcase', label: 'Professional' },
+            { key: 'building', label: 'Building' },
+            { key: 'building-2', label: 'Office' },
+            { key: 'graduation-cap', label: 'Student' },
+            { key: 'user', label: 'Person' },
+            { key: 'users', label: 'People' },
+            { key: 'award', label: 'Award' },
+            { key: 'briefcase-business', label: 'Business' },
+            // --- Home / Places ---
+            { key: 'home', label: 'House' },
+            { key: 'map-pin', label: 'Location' },
+            { key: 'plane', label: 'Travel' },
+            { key: 'car', label: 'Car' },
+            // --- Books / Learning ---
+            { key: 'book', label: 'Book' },
+            { key: 'book-open', label: 'Reading' },
+            { key: 'file-text', label: 'Document' },
+            // --- Sports / Health ---
+            { key: 'dumbbell', label: 'Fitness' },
+            { key: 'trophy', label: 'Sports' },
+            { key: 'heart', label: 'Health' },
+            // --- Money / Finance ---
+            { key: 'coins', label: 'Coin' },
+            { key: 'wallet', label: 'Wallet' },
+            { key: 'banknote', label: 'Currency' },
+            { key: 'trending-up', label: 'Chart' },
+            { key: 'bar-chart-3', label: 'Statistics' },
+            { key: 'credit-card', label: 'Payment' },
+            // --- Creative / Misc ---
+            { key: 'camera', label: 'Photography' },
+            { key: 'music', label: 'Music' },
+            { key: 'video', label: 'Video' },
+            { key: 'palette', label: 'Design' },
+            { key: 'code', label: 'Code' },
+            { key: 'gamepad-2', label: 'Gaming' },
+            { key: 'coffee', label: 'Coffee' },
+            { key: 'gift', label: 'Gift' },
+            { key: 'shopping-cart', label: 'Shop' },
+            { key: 'star', label: 'Star' },
+            { key: 'calendar', label: 'Calendar' },
+            { key: 'phone', label: 'Phone' },
+            // --- Generic ---
             { key: 'globe', label: 'Website' },
             { key: 'mail', label: 'Email' },
             { key: 'link', label: 'Other' },
@@ -962,8 +1014,12 @@
             instagram: 'instagram', x: 'x', facebook: 'facebook', linkedin: 'linkedin',
             youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsapp', telegram: 'telegram',
             threads: 'threads', pinterest: 'pinterest', snapchat: 'snapchat', twitch: 'twitch',
-            discord: 'discord', spotify: 'spotify', github: 'github', behance: 'behance', dribbble: 'dribbble',
+            discord: 'discord', spotify: 'spotify', soundcloud: 'soundcloud', applemusic: 'applemusic',
+            github: 'github', behance: 'behance', dribbble: 'dribbble', medium: 'medium',
+            reddit: 'reddit', paypal: 'paypal', patreon: 'patreon', vimeo: 'vimeo', netflix: 'netflix',
         };
+        // Everything NOT in BRAND_SLUGS above is rendered as a Lucide icon
+        // (the icon key itself is used as the Lucide icon name).
 
         function iconWrapperClass(shape) {
             const base = 'w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center flex-shrink-0';
@@ -978,8 +1034,7 @@
                     inner: `<img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg" class="w-full h-full" alt="${iconKey}" onerror="this.style.display='none'">`,
                 };
             }
-            const fallback = { globe: 'globe', mail: 'mail', link: 'link' }[iconKey] || 'link';
-            return { wrapperExtra: 'bg-gradient-to-br from-blue-500 to-purple-600', inner: `<i data-lucide="${fallback}" class="w-5 h-5 lg:w-6 lg:h-6 text-white"></i>` };
+            return { wrapperExtra: 'bg-gradient-to-br from-blue-500 to-purple-600', inner: `<i data-lucide="${iconKey}" class="w-5 h-5 lg:w-6 lg:h-6 text-white"></i>` };
         }
 
         function setIconShapeButtons(shape) {
