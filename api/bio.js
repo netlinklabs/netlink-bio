@@ -166,7 +166,7 @@ export default async function handler(req, res) {
       <button type="button" onclick="openDonateModal()" class="donate-card">
         <span class="donate-icon"><img src="/assets/usdc-logo.png" alt="USDC"></span>
         <span class="donate-text">
-          <span class="donate-title">Receive Crypto Payments</span>
+          <span class="donate-title">Receive Crypto Payment</span>
           <span class="donate-subtitle">USDC &middot; Polygon Network</span>
         </span>
       </button>` : '';
@@ -179,7 +179,7 @@ export default async function handler(req, res) {
         <img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(walletAddress)}" alt="Wallet QR code">
         <p class="wallet-address">${escapeHtml(walletAddress)}</p>
         <button class="copy-btn" onclick="copyWallet()">Copy address</button>
-        <p class="wallet-note">EVM wallet &middot; Polygon PoS Network</p>
+        <p class="wallet-note">Polygon (PoS) Network</p>
       </div>
     </div>` : '';
 
@@ -237,13 +237,13 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
   .link-desc { font-size:12px; color:#64748b; }
 
   /* Donate / Receive Crypto Payment — taller, coin-style icon, USDC accent */
-  .donate-card { display:flex; align-items:center; gap:14px; background:white; border:1.5px solid #2775CA33; border-radius:18px; padding:18px 18px; margin-bottom:12px; width:100%; text-align:left; cursor:pointer; font:inherit; color:#0f172a; transition:transform .15s; box-shadow:0 4px 14px rgba(39,117,202,0.08); }
-  .donate-card:hover { transform:translateY(-2px); border-color:#2775CA; }
-  .donate-icon { width:56px; height:56px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:white; border:1px solid rgba(0,0,0,0.08); box-shadow:0 2px 6px rgba(0,0,0,0.08); overflow:hidden; }
+  .donate-card { display:flex; align-items:center; gap:14px; background:linear-gradient(145deg, #1c1c1e, #2c2c30); border:1.5px solid; border-image:linear-gradient(135deg, #f5f5f5, #8a8a8a, #f5f5f5) 1; border-radius:18px; padding:18px 18px; margin-bottom:12px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .15s; }
+  .donate-card:hover { transform:translateY(-2px); }
+  .donate-icon { width:56px; height:56px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:white; border:1px solid rgba(255,255,255,0.5); overflow:hidden; }
   .donate-icon img { width:100%; height:100%; object-fit:cover; }
   .donate-text { display:flex; flex-direction:column; min-width:0; }
-  .donate-title { font-weight:700; font-size:15px; }
-  .donate-subtitle { font-size:12px; color:#2775CA; font-weight:500; margin-top:2px; }
+  .donate-title { font-family:'Poppins',sans-serif; font-weight:800; font-size:15px; letter-spacing:0.3px; color:#F0C468; }
+  .donate-subtitle { font-size:12px; color:#c9c9ce; font-weight:500; margin-top:3px; }
 
   .footer { text-align:center; margin-top:32px; }
   .footer a { color:#94a3b8; font-size:12px; text-decoration:none; }
