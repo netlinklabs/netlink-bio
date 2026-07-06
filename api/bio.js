@@ -163,9 +163,12 @@ export default async function handler(req, res) {
 
   // ---- Donate card + modal ----
   const donateHtml = showDonate ? `
-      <button type="button" onclick="openDonateModal()" class="link-card donate-card">
-        <span class="link-icon ${iconShape}"><img src="/assets/usdc-logo.png" alt="USDC" class="brand-svg"></span>
-        <span class="link-text"><span class="link-title">Send me Crypto</span></span>
+      <button type="button" onclick="openDonateModal()" class="donate-card">
+        <span class="donate-icon"><img src="/assets/usdc-logo.png" alt="USDC"></span>
+        <span class="donate-text">
+          <span class="donate-title">Receive Crypto Payment</span>
+          <span class="donate-subtitle">USDC &middot; Polygon Network</span>
+        </span>
       </button>` : '';
 
   const donateModalHtml = showDonate ? `
@@ -232,6 +235,16 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
   .link-text { display:flex; flex-direction:column; min-width:0; }
   .link-title { font-weight:600; font-size:14px; }
   .link-desc { font-size:12px; color:#64748b; }
+
+  /* Donate / Receive Crypto Payment — taller, coin-style icon, USDC accent */
+  .donate-card { display:flex; align-items:center; gap:14px; background:white; border:1.5px solid #2775CA33; border-radius:18px; padding:18px 18px; margin-bottom:12px; width:100%; text-align:left; cursor:pointer; font:inherit; color:#0f172a; transition:transform .15s; box-shadow:0 4px 14px rgba(39,117,202,0.08); }
+  .donate-card:hover { transform:translateY(-2px); border-color:#2775CA; }
+  .donate-icon { width:56px; height:56px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:white; border:1px solid rgba(0,0,0,0.08); box-shadow:0 2px 6px rgba(0,0,0,0.08); overflow:hidden; }
+  .donate-icon img { width:100%; height:100%; object-fit:cover; }
+  .donate-text { display:flex; flex-direction:column; min-width:0; }
+  .donate-title { font-weight:700; font-size:15px; }
+  .donate-subtitle { font-size:12px; color:#2775CA; font-weight:500; margin-top:2px; }
+
   .footer { text-align:center; margin-top:32px; }
   .footer a { color:#94a3b8; font-size:12px; text-decoration:none; }
   .empty { text-align:center; color:#94a3b8; font-size:14px; padding:24px 0; }
