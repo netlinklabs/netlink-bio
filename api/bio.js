@@ -163,20 +163,27 @@ export default async function handler(req, res) {
 
   // ---- Donate card + modal ----
   const donateHtml = showDonate ? `
-      <button type="button" onclick="openDonateModal()" class="donate-card">
-        <span class="donate-icon"><img src="/assets/usdc-logo.png" alt="USDC"></span>
-        <span class="donate-text">
-          <span class="donate-title">Receive Crypto Payment</span>
-          <span class="donate-subtitle">USDC &middot; Polygon Network</span>
-        </span>
-      </button>` : '';
+      <div class="donate-card-wrap">
+        <button type="button" onclick="openDonateModal()" class="donate-card">
+          <span class="donate-shimmer"></span>
+          <span class="donate-icon-ring"><span class="donate-icon"><img src="/assets/usdc-logo.png" alt="USDC"></span></span>
+          <span class="donate-text">
+            <span class="donate-badges">
+              <span class="donate-badge">&#9889; Instant</span>
+              <span class="donate-badge">Tap to pay</span>
+            </span>
+            <span class="donate-title">Receive Crypto Payment</span>
+            <span class="donate-subtitle">USDC &middot; Polygon Network</span>
+          </span>
+        </button>
+      </div>` : '';
 
   const donateModalHtml = showDonate ? `
     <div id="donateModal" class="modal-overlay" onclick="if(event.target===this) closeDonateModal()">
-      <div class="modal-box">
+      <div class="modal-box donate-modal-box">
         <button class="modal-close" onclick="closeDonateModal()">&times;</button>
         <h3>Support ${escapeHtml(displayName)}</h3>
-        <img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(walletAddress)}" alt="Wallet QR code">
+        <div class="qr-frame"><img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(walletAddress)}" alt="Wallet QR code"></div>
         <p class="wallet-address">${escapeHtml(walletAddress)}</p>
         <button class="copy-btn" onclick="copyWallet()">Copy address</button>
         <p class="wallet-note">Polygon (PoS) Network</p>
@@ -237,12 +244,26 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
   .link-desc { font-size:12px; color:#64748b; }
 
   /* Donate / Receive Crypto Payment — taller, coin-style icon, USDC accent */
-  .donate-card { display:flex; align-items:center; gap:14px; background:linear-gradient(145deg, #1c1c1e, #2c2c30); border:1.5px solid; border-image:linear-gradient(135deg, #f5f5f5, #8a8a8a, #f5f5f5) 1; border-radius:18px; padding:18px 18px; margin-bottom:12px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .15s; }
-  .donate-card:hover { transform:translateY(-2px); }
-  .donate-icon { width:56px; height:56px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:white; border:1px solid rgba(255,255,255,0.5); overflow:hidden; }
+  /* Donate / Receive Crypto Payment — premium gold-on-dark "killer feature" card */
+  .donate-card-wrap { padding:1.5px; border-radius:19px; margin-bottom:12px; background:linear-gradient(135deg, rgba(240,196,104,0.9), rgba(240,196,104,0.15) 40%, rgba(240,196,104,0.9)); }
+  .donate-card { position:relative; overflow:hidden; display:flex; align-items:center; gap:14px; background:linear-gradient(160deg, #0d0d0f 0%, #1c1c1e 45%, #2a2a2e 100%); border-radius:17.5px; padding:18px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .2s, box-shadow .2s; }
+  .donate-card:hover { transform:translateY(-4px); box-shadow:0 14px 30px rgba(240,196,104,0.25); }
+  .donate-shimmer { position:absolute; top:0; left:-60%; width:50%; height:100%; background:linear-gradient(120deg, transparent, rgba(255,255,255,0.15), transparent); transform:skewX(-20deg); animation:shimmer-sweep 3.2s ease-in-out infinite; pointer-events:none; }
+  @keyframes shimmer-sweep { 0% { left:-60%; } 55% { left:130%; } 100% { left:130%; } }
+  .donate-icon-ring { position:relative; flex-shrink:0; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+  .donate-icon-ring::before { content:''; position:absolute; inset:0; border-radius:50%; box-shadow:0 0 0 0 rgba(240,196,104,0.5); animation:icon-pulse 2.2s ease-out infinite; }
+  @keyframes icon-pulse { 0% { box-shadow:0 0 0 0 rgba(240,196,104,0.45); } 70% { box-shadow:0 0 0 10px rgba(240,196,104,0); } 100% { box-shadow:0 0 0 0 rgba(240,196,104,0); } }
+  .donate-icon { position:relative; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:white; border:1px solid rgba(255,255,255,0.6); overflow:hidden; z-index:1; }
   .donate-icon img { width:100%; height:100%; object-fit:cover; }
-  .donate-text { display:flex; flex-direction:column; min-width:0; }
-  .donate-title { font-family:'Poppins',sans-serif; font-weight:800; font-size:15px; letter-spacing:0.3px; color:#F0C468; }
+  .donate-text { display:flex; flex-direction:column; min-width:0; position:relative; z-index:1; }
+  .donate-badges { display:flex; gap:6px; margin-bottom:4px; }
+  .donate-badge { font-size:10px; font-weight:700; color:#0d0d0f; background:#F0C468; border-radius:999px; padding:2px 8px; letter-spacing:0.2px; }
+  .donate-title {
+    font-family:'Poppins',sans-serif; font-weight:800; font-size:15px; letter-spacing:0.3px;
+    background:linear-gradient(90deg, #F0C468, #FFF3D6, #F0C468); background-size:200% auto; color:transparent;
+    -webkit-background-clip:text; background-clip:text; animation:gold-shine 3s linear infinite;
+  }
+  @keyframes gold-shine { 0% { background-position:0% center; } 100% { background-position:200% center; } }
   .donate-subtitle { font-size:12px; color:#c9c9ce; font-weight:500; margin-top:3px; }
 
   .footer { text-align:center; margin-top:32px; }
@@ -258,6 +279,16 @@ ${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
   .wallet-address { font-size:12px; color:#475569; word-break:break-all; background:#f1f5f9; border-radius:8px; padding:8px 10px; margin-bottom:12px; }
   .copy-btn { width:100%; padding:10px; background:#14b8a6; color:white; border:none; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; margin-bottom:10px; }
   .wallet-note { font-size:11px; color:#94a3b8; margin:0; }
+
+  /* Donate modal gets its own dark glassmorphism treatment */
+  .donate-modal-box { background:rgba(24,24,27,0.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.12); color:#f1f1f3; }
+  .donate-modal-box h3 { color:#F0C468; }
+  .donate-modal-box .modal-close { color:#a1a1aa; }
+  .donate-modal-box .qr-frame { background:white; padding:12px; border-radius:16px; display:inline-block; margin-bottom:16px; }
+  .donate-modal-box .qr-code { margin:0; }
+  .donate-modal-box .wallet-address { background:rgba(255,255,255,0.08); color:#d4d4d8; }
+  .donate-modal-box .copy-btn { background:#F0C468; color:#1c1c1e; font-weight:700; }
+  .donate-modal-box .wallet-note { color:#a1a1aa; }
 </style>
 </head>
 <body>
