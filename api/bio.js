@@ -166,7 +166,7 @@ export default async function handler(req, res) {
       <button type="button" onclick="openDonateModal()" class="donate-card">
         <span class="donate-icon"><img src="/assets/usdc-logo.png" alt="USDC"></span>
         <span class="donate-text">
-          <span class="donate-title">Receive Crypto Payment</span>
+          <span class="donate-title">Receive Crypto Payments</span>
           <span class="donate-subtitle">USDC &middot; Polygon Network</span>
         </span>
       </button>` : '';
