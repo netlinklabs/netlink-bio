@@ -216,6 +216,12 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item svg { flex-shrink:0; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
+.cv-actions { display:flex; gap:0.75rem; justify-content:center; margin-top:2rem; flex-wrap:wrap; }
+.btn-action { display:inline-flex; align-items:center; gap:0.5rem; border:none; padding:0.75rem 1.5rem; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.btn-print { background:var(--primary); color:white; box-shadow:var(--shadow); }
+.btn-print:hover { background:var(--primary-light); transform:translateY(-1px); box-shadow:var(--shadow-lg); }
+.btn-share { background:white; color:var(--primary); border:1.5px solid var(--border) !important; }
+.btn-share:hover { border-color:var(--primary) !important; transform:translateY(-1px); }
 @media (min-width:768px) {
   .cv-container { grid-template-columns:320px 1fr; }
   .left-column { border-bottom:none; border-right:1px solid var(--border); }
@@ -226,6 +232,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   body { background:white; padding:0; }
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
+  .cv-actions { display:none !important; }
 }
 </style>
 </head>
@@ -252,7 +259,28 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
       ${certificationsHtml}
     </div>
   </div>
+  <div class="cv-actions">
+    <button type="button" class="btn-action btn-share" onclick="shareCv()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Share
+    </button>
+    <button type="button" class="btn-action btn-print" onclick="window.print()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print to PDF
+    </button>
+  </div>
   <div class="footer-link"><a href="/">netlink.bio &mdash; build your page free</a></div>
+
+  <script>
+    function shareCv() {
+      const url = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: document.title, url }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(url).then(() => alert('CV link copied to clipboard!'));
+      }
+    }
+  </script>
 </body>
 </html>`;
 
