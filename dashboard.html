@@ -147,7 +147,7 @@
             <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="palette" class="w-4 h-4"></i><span>Appearance</span>
             </a>
-            <a href="cv.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+            <a href="#" onclick="event.preventDefault(); scrollToCvCard();" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="file-text" class="w-4 h-4"></i><span>CV Builder</span>
             </a>
             <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
@@ -436,7 +436,7 @@
                     <i data-lucide="circle" class="w-3 h-3"></i> Upload Avatar
                 </span>
                 <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Create Link Bio
+                    <i data-lucide="circle" class="w-3 h-3"></i> Buat Link Bio
                 </span>
                 <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
                     <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
@@ -447,40 +447,87 @@
             </button>
         </div>
 
-        <!-- 6. Curriculum Vitae -->
-        <div class="card rounded-2xl mb-4 lg:mb-6">
+        <!-- 6. Curriculum Vitae Builder -->
+        <div id="cvCard" class="card rounded-2xl mb-4 lg:mb-6">
             <div class="p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
                             <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Curriculum Vitae
                         </h3>
-                        <p class="text-sm text-secondary">Professional CV, shareable anytime</p>
+                        <p id="cvUrlHint" class="text-sm text-secondary">netlink.bio/cv/username</p>
                     </div>
-                    <div class="flex items-center gap-4 text-sm text-secondary">
-                        <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> 89</span>
-                        <span class="flex items-center gap-1 text-green-600"><i data-lucide="check-circle" class="w-4 h-4"></i> Active</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="previewCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="copyCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Copy link"><i data-lucide="copy" class="w-4 h-4 text-secondary"></i></button>
                     </div>
                 </div>
             </div>
-            <div class="p-4 lg:p-6">
-                <div class="bg-surface rounded-xl p-4 border border-subtle">
-                    <div class="flex items-center gap-4">
-                        <div class="w-16 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="file-text" class="w-8 h-8 text-gray-500"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-medium text-primary">My CV</h4>
-                            <p class="text-sm text-secondary">Last updated 2 days ago</p>
-                            <p id="cvUrlHint" class="text-xs text-muted mt-1">netlink.bio/cv/username</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="showToast('CV preview')" class="p-2 hover-surface rounded-lg transition"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
-                            <button onclick="showToast('Edit CV')" class="p-2 hover-surface rounded-lg transition"><i data-lucide="pencil" class="w-4 h-4 text-secondary"></i></button>
-                            <button onclick="showToast('Share CV')" class="p-2 hover-surface rounded-lg transition"><i data-lucide="share-2" class="w-4 h-4 text-secondary"></i></button>
-                        </div>
+            <div class="p-4 lg:p-6 space-y-5">
+
+                <!-- Basic Info -->
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Professional Title</label>
+                        <input id="cvTitle" type="text" placeholder="e.g. Senior Product Designer" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Location</label>
+                        <input id="cvLocation" type="text" placeholder="e.g. Jakarta, Indonesia" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Professional Summary</label>
+                        <textarea id="cvSummary" rows="3" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Skills <span class="text-muted">(comma separated)</span></label>
+                        <input id="cvSkills" type="text" placeholder="Figma, React, Project Management, ..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                     </div>
                 </div>
+
+                <!-- Experience -->
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-primary">Work Experience</h4>
+                        <button type="button" onclick="addCvItem('experience')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvExperienceList" class="space-y-3"></div>
+                </div>
+
+                <!-- Education -->
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-primary">Education</h4>
+                        <button type="button" onclick="addCvItem('education')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvEducationList" class="space-y-3"></div>
+                </div>
+
+                <!-- Projects -->
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-primary">Featured Projects</h4>
+                        <button type="button" onclick="addCvItem('projects')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvProjectsList" class="space-y-3"></div>
+                </div>
+
+                <!-- Languages -->
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-primary">Languages</h4>
+                        <button type="button" onclick="addCvItem('languages')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvLanguagesList" class="space-y-3"></div>
+                </div>
+
+                <!-- Certifications -->
+                <div class="pt-4 border-t border-subtle">
+                    <label class="text-sm font-medium text-secondary block mb-1.5">Certifications <span class="text-muted">(one per line)</span></label>
+                    <textarea id="cvCertifications" rows="3" placeholder="Google UX Design Professional Certificate&#10;AWS Cloud Practitioner" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                </div>
+
+                <button id="cvSaveBtn" onclick="saveCv()" class="w-full mt-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save CV</button>
             </div>
         </div>
 
@@ -695,6 +742,7 @@
             document.getElementById('walletAddressInput').value = data.wallet_address || '';
 
             setIconShapeButtons(data.link_icon_shape || 'circle');
+            populateCvForm(data.cv_data);
 
             const initialEl = document.getElementById('avatarInitial');
             const imgEl = document.getElementById('avatarImg');
@@ -834,6 +882,171 @@
                 if (error) { showToast('Failed to save video link'); return; }
                 showToast('Video link saved');
                 await loadProfile();
+            });
+        }
+
+        // ===== CV BUILDER =====
+        const CV_DEFAULT = { title: '', location: '', summary: '', skills: [], education: [], languages: [], experience: [], projects: [], certifications: [] };
+        let currentCvData = { ...CV_DEFAULT };
+
+        function scrollToCvCard() {
+            document.getElementById('cvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (window.innerWidth < 1024) toggleSidebar();
+        }
+
+        function getCvUsername() {
+            return currentProfile?.username || '';
+        }
+
+        function copyCvLink() {
+            const username = getCvUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            navigator.clipboard.writeText(`${window.location.origin}/cv/${username}`).then(() => showToast('CV link copied!'));
+        }
+
+        function previewCvLink() {
+            const username = getCvUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            window.open(`/cv/${username}`, '_blank');
+        }
+
+        function populateCvForm(cv) {
+            currentCvData = {
+                ...CV_DEFAULT,
+                ...cv,
+                skills: cv?.skills || [],
+                education: cv?.education || [],
+                languages: cv?.languages || [],
+                experience: cv?.experience || [],
+                projects: cv?.projects || [],
+                certifications: cv?.certifications || [],
+            };
+            document.getElementById('cvTitle').value = currentCvData.title || '';
+            document.getElementById('cvLocation').value = currentCvData.location || '';
+            document.getElementById('cvSummary').value = currentCvData.summary || '';
+            document.getElementById('cvSkills').value = (currentCvData.skills || []).join(', ');
+            document.getElementById('cvCertifications').value = (currentCvData.certifications || []).join('\n');
+            renderCvLists();
+        }
+
+        function renderCvLists() {
+            renderCvSection('experience', 'cvExperienceList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
+                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('experience', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <input class="cv-exp-title w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Job Title" value="${escapeHtml(item.title)}">
+                    <input class="cv-exp-company w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Company" value="${escapeHtml(item.company)}">
+                    <input class="cv-exp-date w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2021 — Present" value="${escapeHtml(item.date)}">
+                    <textarea class="cv-exp-bullets w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="3" placeholder="One achievement per line">${escapeHtml((item.bullets || []).join('\n'))}</textarea>
+                </div>
+            `);
+            renderCvSection('education', 'cvEducationList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
+                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('education', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <input class="cv-edu-degree w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Degree" value="${escapeHtml(item.degree)}">
+                    <input class="cv-edu-school w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="School" value="${escapeHtml(item.school)}">
+                    <input class="cv-edu-year w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2016 — 2018" value="${escapeHtml(item.year)}">
+                    <input class="cv-edu-detail w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Detail (optional)" value="${escapeHtml(item.detail)}">
+                </div>
+            `);
+            renderCvSection('projects', 'cvProjectsList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
+                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('projects', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <input class="cv-proj-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Project Name" value="${escapeHtml(item.name)}">
+                    <textarea class="cv-proj-desc w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="2" placeholder="Short description">${escapeHtml(item.description)}</textarea>
+                    <input class="cv-proj-tags w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Tags, comma separated" value="${escapeHtml((item.tags || []).join(', '))}">
+                </div>
+            `);
+            renderCvSection('languages', 'cvLanguagesList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
+                    <input class="cv-lang-name flex-1 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Language" value="${escapeHtml(item.name)}">
+                    <input class="cv-lang-level flex-1 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Level" value="${escapeHtml(item.level)}">
+                    <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 flex-shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+            `);
+            lucide.createIcons();
+        }
+
+        function renderCvSection(key, listId, rowTemplate) {
+            const list = document.getElementById(listId);
+            const items = currentCvData[key] || [];
+            list.innerHTML = items.length
+                ? items.map((item, idx) => rowTemplate(item, idx)).join('')
+                : `<p class="text-xs text-muted text-center py-3">None added yet.</p>`;
+        }
+
+        function addCvItem(section) {
+            const blanks = {
+                experience: { title: '', company: '', date: '', bullets: [] },
+                education: { degree: '', school: '', year: '', detail: '' },
+                projects: { name: '', description: '', tags: [] },
+                languages: { name: '', level: '' },
+            };
+            syncCvSectionFromDom(section); // keep any in-progress edits before adding a new row
+            currentCvData[section] = [...(currentCvData[section] || []), blanks[section]];
+            renderCvLists();
+        }
+
+        function removeCvItem(section, idx) {
+            syncCvSectionFromDom(section);
+            currentCvData[section].splice(idx, 1);
+            renderCvLists();
+        }
+
+        // Reads the current DOM inputs for a section back into currentCvData,
+        // so add/remove doesn't discard whatever the user just typed.
+        function syncCvSectionFromDom(section) {
+            const container = document.getElementById(
+                { experience: 'cvExperienceList', education: 'cvEducationList', projects: 'cvProjectsList', languages: 'cvLanguagesList' }[section]
+            );
+            const rows = [...container.querySelectorAll('.cv-item')];
+            if (section === 'experience') {
+                currentCvData.experience = rows.map(row => ({
+                    title: row.querySelector('.cv-exp-title').value.trim(),
+                    company: row.querySelector('.cv-exp-company').value.trim(),
+                    date: row.querySelector('.cv-exp-date').value.trim(),
+                    bullets: row.querySelector('.cv-exp-bullets').value.split('\n').map(s => s.trim()).filter(Boolean),
+                }));
+            } else if (section === 'education') {
+                currentCvData.education = rows.map(row => ({
+                    degree: row.querySelector('.cv-edu-degree').value.trim(),
+                    school: row.querySelector('.cv-edu-school').value.trim(),
+                    year: row.querySelector('.cv-edu-year').value.trim(),
+                    detail: row.querySelector('.cv-edu-detail').value.trim(),
+                }));
+            } else if (section === 'projects') {
+                currentCvData.projects = rows.map(row => ({
+                    name: row.querySelector('.cv-proj-name').value.trim(),
+                    description: row.querySelector('.cv-proj-desc').value.trim(),
+                    tags: row.querySelector('.cv-proj-tags').value.split(',').map(s => s.trim()).filter(Boolean),
+                }));
+            } else if (section === 'languages') {
+                currentCvData.languages = rows.map(row => ({
+                    name: row.querySelector('.cv-lang-name').value.trim(),
+                    level: row.querySelector('.cv-lang-level').value.trim(),
+                }));
+            }
+        }
+
+        async function saveCv() {
+            await withSaving('cvSaveBtn', async () => {
+                ['experience', 'education', 'projects', 'languages'].forEach(syncCvSectionFromDom);
+
+                const payload = {
+                    title: document.getElementById('cvTitle').value.trim(),
+                    location: document.getElementById('cvLocation').value.trim(),
+                    summary: document.getElementById('cvSummary').value.trim(),
+                    skills: document.getElementById('cvSkills').value.split(',').map(s => s.trim()).filter(Boolean),
+                    certifications: document.getElementById('cvCertifications').value.split('\n').map(s => s.trim()).filter(Boolean),
+                    experience: currentCvData.experience,
+                    education: currentCvData.education,
+                    projects: currentCvData.projects,
+                    languages: currentCvData.languages,
+                };
+
+                const { error } = await supabaseClient.from('profiles').update({ cv_data: payload }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save CV'); return; }
+                showToast('CV saved!');
+                currentCvData = payload;
             });
         }
 
