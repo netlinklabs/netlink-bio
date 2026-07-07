@@ -156,7 +156,7 @@ export default async function handler(req, res) {
 
   // ---- CV card ----
   const cvHtml = showCv ? `
-      <a href="/cv.html" target="_blank" rel="noopener" class="link-card cv-card">
+      <a href="/cv/${profile.username}" target="_blank" rel="noopener" class="link-card cv-card">
         <span class="link-icon ${iconShape}"><span class="emoji-icon">📄</span></span>
         <span class="link-text"><span class="link-title">View my Professional CV</span></span>
       </a>` : '';
