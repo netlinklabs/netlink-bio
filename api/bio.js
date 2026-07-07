@@ -208,9 +208,12 @@ export default async function handler(req, res) {
 
 <meta property="og:title" content="${escapeHtml(displayName)} — Netlink.bio">
 <meta property="og:description" content="${escapeHtml(bio)}">
-${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
+<meta property="og:image" content="https://netlink-bio.vercel.app/api/og?username=${encodeURIComponent(profile.username)}&type=bio">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="${pageUrl}">
 <meta property="og:type" content="profile">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
 
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
