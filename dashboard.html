@@ -250,17 +250,17 @@
             <div class="grid grid-cols-3 gap-3 mb-4">
                 <div class="bg-surface rounded-xl p-3 text-center">
                     <img src="/assets/net-logo.png" alt="NET" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p id="balanceNet" class="text-sm font-semibold text-primary">0.00</p>
                     <p class="text-xs text-muted">NET</p>
                 </div>
                 <div class="bg-surface rounded-xl p-3 text-center">
                     <img src="/assets/usdc-logo.png" alt="USDC" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p id="balanceUsdc" class="text-sm font-semibold text-primary">0.00</p>
                     <p class="text-xs text-muted">USDC</p>
                 </div>
                 <div class="bg-surface rounded-xl p-3 text-center">
                     <img src="/assets/polygon-logo.png" alt="Polygon" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p class="text-sm font-semibold text-primary">0.00</p>
+                    <p id="balancePol" class="text-sm font-semibold text-primary">0.00</p>
                     <p class="text-xs text-muted">POL</p>
                 </div>
             </div>
@@ -764,6 +764,7 @@
             document.getElementById('youtubeThumbToggle').checked = data.show_youtube_thumbnail !== false;
 
             document.getElementById('walletAddressInput').value = data.wallet_address || '';
+            fetchWalletBalances(data.wallet_address);
 
             setIconShapeButtons(data.link_icon_shape || 'circle');
             populateCvForm(data.cv_data);
@@ -828,12 +829,50 @@
         async function saveWallet() {
             await withSaving('walletSaveBtn', async () => {
                 const wallet_address = document.getElementById('walletAddressInput').value.trim();
+                if (wallet_address && !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
+                    showToast('That doesn\'t look like a valid wallet address');
+                    return;
+                }
                 const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
                 if (error) { showToast('Failed to save wallet address'); return; }
                 showToast('Wallet address saved');
                 await loadProfile();
                 updateProfileCompletion();
+                fetchWalletBalances(wallet_address);
             });
+        }
+
+        async function fetchWalletBalances(address) {
+            const statusEl = document.getElementById('walletConnectionStatus');
+            if (!address) {
+                statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Not Connected';
+                statusEl.className = 'text-xs font-medium text-red-500 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
+                document.getElementById('balanceNet').textContent = '0.00';
+                document.getElementById('balanceUsdc').textContent = '0.00';
+                document.getElementById('balancePol').textContent = '0.00';
+                return;
+            }
+
+            statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span> Checking...';
+            statusEl.className = 'text-xs font-medium text-yellow-600 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
+
+            try {
+                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
+                if (!res.ok) throw new Error('Failed to fetch balances');
+                const data = await res.json();
+
+                document.getElementById('balanceNet').textContent = data.net;
+                document.getElementById('balanceUsdc').textContent = data.usdc;
+                document.getElementById('balancePol').textContent = data.pol;
+
+                statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Connected';
+                statusEl.className = 'text-xs font-medium text-green-600 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
+            } catch (err) {
+                console.error(err);
+                statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Not Connected';
+                statusEl.className = 'text-xs font-medium text-red-500 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
+                showToast('Could not fetch wallet balances');
+            }
         }
 
         async function saveLinkCardSettings() {
