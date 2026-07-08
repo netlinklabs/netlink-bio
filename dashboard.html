@@ -54,6 +54,11 @@
         /* Fix: link cards used a near-white background that lost contrast against
            white text in dark mode. Give them an explicit dark surface. */
         html.dark .link-item { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
+        /* CV Builder inputs use a literal white background so they stay
+           readable inside .cv-item cards — override that in dark mode so
+           typed text (which inherits light text color) stays visible. */
+        html.dark .cv-item .bg-white { background: #0f172a !important; color: #f8fafc !important; border-color: rgba(255,255,255,0.12) !important; }
+        html.dark .cv-item .bg-white::placeholder { color: #64748b; }
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
@@ -391,13 +396,7 @@
         <!-- 4. YOUR LINKS (always open) -->
         <div class="card rounded-2xl mb-4 lg:mb-6">
             <div class="p-4 lg:p-6 border-b border-subtle">
-                <div class="flex items-center justify-between mb-1">
-                    <h4 class="font-semibold text-primary text-sm">Your Links</h4>
-                    <div class="flex items-center gap-4 text-sm text-secondary">
-                        <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> 1.2K</span>
-                        <span class="flex items-center gap-1"><i data-lucide="mouse-pointer-click" class="w-4 h-4"></i> 567</span>
-                    </div>
-                </div>
+                <h4 class="font-semibold text-primary text-sm mb-1">Your Links</h4>
                 <div class="flex items-center gap-2 mt-2">
                     <span class="text-xs text-muted">Icon shape:</span>
                     <button type="button" onclick="setIconShape('circle')" id="shapeBtnCircle" class="px-3 py-1 rounded-full text-xs font-medium border transition">Circle</button>
@@ -436,7 +435,7 @@
                     <i data-lucide="circle" class="w-3 h-3"></i> Upload Avatar
                 </span>
                 <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Buat Link Bio
+                    <i data-lucide="circle" class="w-3 h-3"></i> Create Link Bio
                 </span>
                 <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
                     <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
@@ -488,37 +487,57 @@
                 <!-- Experience -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-primary">Work Experience</h4>
+                        <button type="button" onclick="toggleAccordion('cvExperienceBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Work Experience</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvExperienceBodyChevron"></i>
+                        </button>
                         <button type="button" onclick="addCvItem('experience')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
                     </div>
-                    <div id="cvExperienceList" class="space-y-3"></div>
+                    <div id="cvExperienceBody" class="accordion-body">
+                        <div id="cvExperienceList" class="space-y-3"></div>
+                    </div>
                 </div>
 
                 <!-- Education -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-primary">Education</h4>
+                        <button type="button" onclick="toggleAccordion('cvEducationBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Education</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvEducationBodyChevron"></i>
+                        </button>
                         <button type="button" onclick="addCvItem('education')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
                     </div>
-                    <div id="cvEducationList" class="space-y-3"></div>
+                    <div id="cvEducationBody" class="accordion-body">
+                        <div id="cvEducationList" class="space-y-3"></div>
+                    </div>
                 </div>
 
                 <!-- Projects -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-primary">Featured Projects</h4>
+                        <button type="button" onclick="toggleAccordion('cvProjectsBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Featured Projects</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvProjectsBodyChevron"></i>
+                        </button>
                         <button type="button" onclick="addCvItem('projects')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
                     </div>
-                    <div id="cvProjectsList" class="space-y-3"></div>
+                    <div id="cvProjectsBody" class="accordion-body">
+                        <div id="cvProjectsList" class="space-y-3"></div>
+                    </div>
                 </div>
 
                 <!-- Languages -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-primary">Languages</h4>
+                        <button type="button" onclick="toggleAccordion('cvLanguagesBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Languages</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvLanguagesBodyChevron"></i>
+                        </button>
                         <button type="button" onclick="addCvItem('languages')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
                     </div>
-                    <div id="cvLanguagesList" class="space-y-3"></div>
+                    <div id="cvLanguagesBody" class="accordion-body">
+                        <div id="cvLanguagesList" class="space-y-3"></div>
+                    </div>
                 </div>
 
                 <!-- Certifications -->
@@ -958,12 +977,29 @@
             `);
             renderCvSection('languages', 'cvLanguagesList', (item, idx) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
-                    <input class="cv-lang-name flex-1 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Language" value="${escapeHtml(item.name)}">
-                    <input class="cv-lang-level flex-1 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Level" value="${escapeHtml(item.level)}">
+                    <input class="cv-lang-name flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Language" value="${escapeHtml(item.name)}">
+                    <input class="cv-lang-level flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Level" value="${escapeHtml(item.level)}">
                     <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 flex-shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                 </div>
             `);
             lucide.createIcons();
+            autoOpenCvAccordions();
+        }
+
+        function openAccordion(id) {
+            const body = document.getElementById(id);
+            const chevron = document.getElementById(id + 'Chevron');
+            if (body && !body.classList.contains('open')) body.classList.add('open');
+            if (chevron && !chevron.classList.contains('open')) chevron.classList.add('open');
+        }
+
+        // Auto-expand any CV section that already has saved data, so
+        // returning users see their content without extra taps.
+        function autoOpenCvAccordions() {
+            const map = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
+            Object.entries(map).forEach(([key, bodyId]) => {
+                if ((currentCvData[key] || []).length > 0) openAccordion(bodyId);
+            });
         }
 
         function renderCvSection(key, listId, rowTemplate) {
@@ -981,9 +1017,11 @@
                 projects: { name: '', description: '', tags: [] },
                 languages: { name: '', level: '' },
             };
+            const bodyMap = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
             syncCvSectionFromDom(section); // keep any in-progress edits before adding a new row
             currentCvData[section] = [...(currentCvData[section] || []), blanks[section]];
             renderCvLists();
+            openAccordion(bodyMap[section]);
         }
 
         function removeCvItem(section, idx) {
