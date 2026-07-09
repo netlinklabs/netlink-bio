@@ -243,7 +243,7 @@
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-primary">Wallet</h3>
-                <button onclick="showToast('WalletConnect coming soon')" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                <button id="walletConnectBtn" onclick="connectWallet()" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5">
                     <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet
                 </button>
             </div>
@@ -1573,6 +1573,92 @@
             const iconBtn = e.target.closest('button[onclick="toggleIconPicker()"]');
             if (!iconBtn && !e.target.closest('#iconPickerPanel')) iconPanel.classList.remove('open');
         });
+    </script>
+
+    <!-- WalletConnect (Reown / EthereumProvider) — QR-based mobile wallet connect -->
+    <script type="module">
+        import { EthereumProvider } from "https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2/+esm";
+
+        const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
+        const POLYGON_CHAIN_ID = 137;
+        let wcProvider = null;
+
+        async function getWcProvider() {
+            if (wcProvider) return wcProvider;
+            wcProvider = await EthereumProvider.init({
+                projectId: WC_PROJECT_ID,
+                metadata: {
+                    name: 'Netlink.bio',
+                    description: 'One link for everything — bio, CV, and crypto wallet in one page.',
+                    url: 'https://netlink-bio.vercel.app',
+                    icons: ['https://netlink-bio.vercel.app/assets/netlinkbio-icon.png'],
+                },
+                showQrModal: true,
+                optionalChains: [POLYGON_CHAIN_ID],
+                rpcMap: { [POLYGON_CHAIN_ID]: 'https://polygon-rpc.com' },
+            });
+
+            wcProvider.on('accountsChanged', (accounts) => {
+                if (accounts && accounts.length) applyConnectedWallet(accounts[0]);
+            });
+            wcProvider.on('disconnect', () => {
+                setWalletConnectBtnState(false);
+                showToast('Wallet disconnected');
+            });
+
+            return wcProvider;
+        }
+
+        async function applyConnectedWallet(address) {
+            document.getElementById('walletAddressInput').value = address;
+            setWalletConnectBtnState(true);
+            await saveWallet();
+        }
+
+        function setWalletConnectBtnState(connected) {
+            const btn = document.getElementById('walletConnectBtn');
+            if (!btn) return;
+            if (connected) {
+                btn.innerHTML = '<i data-lucide="link-2-off" class="w-3.5 h-3.5"></i> Disconnect';
+                btn.onclick = disconnectWallet;
+            } else {
+                btn.innerHTML = '<i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet';
+                btn.onclick = connectWallet;
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function connectWallet() {
+            const btn = document.getElementById('walletConnectBtn');
+            btn.disabled = true;
+            const original = btn.innerHTML;
+            btn.textContent = 'Connecting...';
+            try {
+                const provider = await getWcProvider();
+                await provider.connect();
+                if (provider.accounts && provider.accounts.length) {
+                    await applyConnectedWallet(provider.accounts[0]);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Wallet connection cancelled or failed');
+                btn.innerHTML = original;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function disconnectWallet() {
+            try {
+                if (wcProvider) await wcProvider.disconnect();
+            } catch (err) {
+                console.error(err);
+            }
+            setWalletConnectBtnState(false);
+        }
+
+        window.connectWallet = connectWallet;
+        window.disconnectWallet = disconnectWallet;
     </script>
 </body>
 </html>
