@@ -51,12 +51,7 @@
         html.dark .sidebar .text-muted { color: #64748b !important; }
         html.dark .upgrade-option { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
         html.dark .upgrade-option:hover { border-color: #3b82f6 !important; }
-        /* Fix: link cards used a near-white background that lost contrast against
-           white text in dark mode. Give them an explicit dark surface. */
         html.dark .link-item { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
-        /* CV Builder inputs use a literal white background so they stay
-           readable inside .cv-item cards — override that in dark mode so
-           typed text (which inherits light text color) stays visible. */
         html.dark .cv-item .bg-white { background: #0f172a !important; color: #f8fafc !important; border-color: rgba(255,255,255,0.12) !important; }
         html.dark .cv-item .bg-white::placeholder { color: #64748b; }
 
@@ -242,7 +237,7 @@
                 <h3 class="font-semibold text-primary">Wallet</h3>
                 <span id="walletStatusLabel" class="text-xs font-medium text-secondary flex items-center gap-1.5 flex-shrink-0">
                     <span id="walletStatusDot" class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                    <span id="walletStatusText">Network: No Network | Status: No Connected</span>
+                    <span id="walletStatusText">Status: Not Connected</span>
                 </span>
             </div>
             <div class="grid grid-cols-3 gap-3 mb-4">
@@ -698,13 +693,11 @@
             navigator.clipboard.writeText(val).then(() => showToast('Wallet address copied!'));
         }
 
-        // ===== ACCORDION =====
         function toggleAccordion(id) {
             document.getElementById(id).classList.toggle('open');
             document.getElementById(id + 'Chevron').classList.toggle('open');
         }
 
-        // ===== LOAD DATA =====
         async function loadDashboardData() {
             await loadProfile();
             await loadLinks();
@@ -803,7 +796,6 @@
             status.classList.remove('hidden');
         }
 
-        // ===== SAVE FUNCTIONS (each card saves its own fields) =====
         async function withSaving(btnId, fn) {
             const btn = document.getElementById(btnId);
             const original = btn.textContent;
@@ -817,9 +809,6 @@
             }
         }
 
-        // Called automatically right after a successful WalletConnect connection.
-        // There is no manual Save button anymore — address can only come from a
-        // connected wallet, never typed in by hand.
         async function saveWallet() {
             const wallet_address = document.getElementById('walletAddressInput').value.trim();
             if (wallet_address && !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
@@ -935,7 +924,6 @@
             });
         }
 
-        // ===== CV BUILDER =====
         const CV_DEFAULT = { title: '', location: '', summary: '', skills: [], education: [], languages: [], experience: [], projects: [], certifications: [] };
         let currentCvData = { ...CV_DEFAULT };
 
@@ -1024,8 +1012,6 @@
             if (chevron && !chevron.classList.contains('open')) chevron.classList.add('open');
         }
 
-        // Auto-expand any CV section that already has saved data, so
-        // returning users see their content without extra taps.
         function autoOpenCvAccordions() {
             const map = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
             Object.entries(map).forEach(([key, bodyId]) => {
@@ -1049,7 +1035,7 @@
                 languages: { name: '', level: '' },
             };
             const bodyMap = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
-            syncCvSectionFromDom(section); // keep any in-progress edits before adding a new row
+            syncCvSectionFromDom(section);
             currentCvData[section] = [...(currentCvData[section] || []), blanks[section]];
             renderCvLists();
             openAccordion(bodyMap[section]);
@@ -1061,8 +1047,6 @@
             renderCvLists();
         }
 
-        // Reads the current DOM inputs for a section back into currentCvData,
-        // so add/remove doesn't discard whatever the user just typed.
         function syncCvSectionFromDom(section) {
             const container = document.getElementById(
                 { experience: 'cvExperienceList', education: 'cvEducationList', projects: 'cvProjectsList', languages: 'cvLanguagesList' }[section]
@@ -1119,7 +1103,6 @@
             });
         }
 
-        // ===== PROFILE COMPLETION =====
         function updateProfileCompletion() {
             const hasAvatar = !!currentProfile?.avatar_url;
             const hasLink = currentLinks.length > 0;
@@ -1156,7 +1139,6 @@
             }
         }
 
-        // ===== AVATAR UPLOAD =====
         function compressImage(file, maxDimension = 512, quality = 0.75) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -1206,7 +1188,6 @@
             }
         }
 
-        // ===== LINKS =====
         async function loadLinks() {
             const { data, error } = await supabaseClient.from('links').select('*').eq('user_id', currentUser.id).order('position', { ascending: true });
             if (error) { console.error('Failed to load links:', error); return; }
@@ -1215,7 +1196,6 @@
         }
 
         const ICON_OPTIONS = [
-            // --- Social / Brand ---
             { key: 'instagram', label: 'Instagram' },
             { key: 'x', label: 'Twitter / X' },
             { key: 'facebook', label: 'Facebook' },
@@ -1241,7 +1221,6 @@
             { key: 'patreon', label: 'Patreon' },
             { key: 'vimeo', label: 'Vimeo' },
             { key: 'netflix', label: 'Netflix' },
-            // --- Professional / Business ---
             { key: 'briefcase', label: 'Professional' },
             { key: 'building', label: 'Building' },
             { key: 'building-2', label: 'Office' },
@@ -1250,27 +1229,22 @@
             { key: 'users', label: 'People' },
             { key: 'award', label: 'Award' },
             { key: 'briefcase-business', label: 'Business' },
-            // --- Home / Places ---
             { key: 'home', label: 'House' },
             { key: 'map-pin', label: 'Location' },
             { key: 'plane', label: 'Travel' },
             { key: 'car', label: 'Car' },
-            // --- Books / Learning ---
             { key: 'book', label: 'Book' },
             { key: 'book-open', label: 'Reading' },
             { key: 'file-text', label: 'Document' },
-            // --- Sports / Health ---
             { key: 'dumbbell', label: 'Fitness' },
             { key: 'trophy', label: 'Sports' },
             { key: 'heart', label: 'Health' },
-            // --- Money / Finance ---
             { key: 'coins', label: 'Coin' },
             { key: 'wallet', label: 'Wallet' },
             { key: 'banknote', label: 'Currency' },
             { key: 'trending-up', label: 'Chart' },
             { key: 'bar-chart-3', label: 'Statistics' },
             { key: 'credit-card', label: 'Payment' },
-            // --- Creative / Misc ---
             { key: 'camera', label: 'Photography' },
             { key: 'music', label: 'Music' },
             { key: 'video', label: 'Video' },
@@ -1283,15 +1257,11 @@
             { key: 'star', label: 'Star' },
             { key: 'calendar', label: 'Calendar' },
             { key: 'phone', label: 'Phone' },
-            // --- Generic ---
             { key: 'globe', label: 'Website' },
             { key: 'mail', label: 'Email' },
             { key: 'link', label: 'Other' },
         ];
-        // Brand logos are served from jsDelivr's simple-icons package — a very
-        // reliable, heavily-cached CDN (same family as unpkg). Icons render in
-        // their default black; kept on a white badge for a clean, consistent look
-        // that doesn't depend on a third-party color-conversion service.
+
         const BRAND_SLUGS = {
             instagram: 'instagram', x: 'x', facebook: 'facebook', linkedin: 'linkedin',
             youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsapp', telegram: 'telegram',
@@ -1300,8 +1270,6 @@
             github: 'github', behance: 'behance', dribbble: 'dribbble', medium: 'medium',
             reddit: 'reddit', paypal: 'paypal', patreon: 'patreon', vimeo: 'vimeo', netflix: 'netflix',
         };
-        // Everything NOT in BRAND_SLUGS above is rendered as a Lucide icon
-        // (the icon key itself is used as the Lucide icon name).
 
         function iconWrapperClass(shape) {
             const base = 'w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center flex-shrink-0';
@@ -1389,7 +1357,6 @@
             return div.innerHTML;
         }
 
-        // ===== ICON PICKER POPUP =====
         function renderIconPickerPanel() {
             const panel = document.getElementById('iconPickerPanel');
             panel.innerHTML = ICON_OPTIONS.map(opt => {
@@ -1421,7 +1388,6 @@
             document.getElementById('iconPickerPanel').classList.remove('open');
         }
 
-        // ===== LINK MODAL =====
         function openLinkModal(linkId = null) {
             const tier = currentProfile?.tier || 'basic';
             const limit = LINK_LIMITS[tier] ?? 20;
@@ -1568,16 +1534,11 @@
         let wcProvider = null;
         let EthereumProviderClass = null;
 
-        // ----- UI helpers: defined synchronously so they're ready immediately,
-        // NOT dependent on the (large, potentially slow) WalletConnect bundle below. -----
-
         function truncateAddress(addr) {
             if (!addr) return '';
             return addr.slice(0, 6) + '...' + addr.slice(-4);
         }
 
-        // hasAddress: is there a saved address (from DB or a fresh connect)?
-        // isLive: is there an active WalletConnect session in THIS tab right now?
         function renderWalletAddressUI(address, isLive) {
             const textEl = document.getElementById('walletAddressText');
             const removeBtn = document.getElementById('walletRemoveBtn');
@@ -1598,10 +1559,10 @@
             }
 
             if (isLive) {
-                statusText.textContent = 'Network: Polygon PoS | Status: Connected';
+                statusText.textContent = 'Status: Connected';
                 statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
             } else {
-                statusText.textContent = 'Network: No Network | Status: No Connected';
+                statusText.textContent = 'Status: Not Connected';
                 statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
             }
 
@@ -1622,16 +1583,9 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        // ----- WalletConnect: loaded lazily (dynamic import), only when the user
-        // actually taps Connect. A static top-level import here would block every
-        // function in this file — including the two above — until the whole
-        // multi-MB bundle finished downloading, which is what caused the button
-        // to appear "dead" on slower connections. -----
-
         async function loadEthereumProvider() {
             if (EthereumProviderClass) return EthereumProviderClass;
             
-            // Perbaikan: Menggunakan esm.sh dengan query ?bundle agar polyfill Node.js disertakan
             const mod = await import("https://esm.sh/@walletconnect/ethereum-provider@2?bundle");
             
             EthereumProviderClass = mod.EthereumProvider;
@@ -1665,14 +1619,11 @@
             return wcProvider;
         }
 
-        // Called right after a successful WalletConnect pairing.
-        // This always overwrites whatever address was previously saved —
-        // only a connected wallet is allowed to set/change the address.
         async function applyConnectedWallet(address) {
             document.getElementById('walletAddressInput').value = address;
             renderWalletAddressUI(address, true);
-            await saveWallet(); // saveWallet() -> loadProfile() briefly resets isLive to false
-            renderWalletAddressUI(address, true); // re-assert the live-connected state after save
+            await saveWallet(); 
+            renderWalletAddressUI(address, true); 
         }
 
         async function connectWallet() {
@@ -1692,4 +1643,43 @@
                 showToast('Could not load/connect wallet — check your internet connection and try again');
                 btn.innerHTML = original;
             } finally {
-   
+                btn.disabled = false;
+            }
+        }
+
+        async function disconnectWallet() {
+            try {
+                if (wcProvider) await wcProvider.disconnect();
+            } catch (err) {
+                console.error(err);
+            }
+            renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
+            showToast('Wallet disconnected');
+        }
+
+        async function removeWalletAddress() {
+            const current = document.getElementById('walletAddressInput').value;
+            if (!current) { showToast('No wallet address saved'); return; }
+            if (!confirm('Remove your saved wallet address? It will disappear from your public bio page until you connect again.')) return;
+
+            try {
+                if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
+                const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to remove wallet address'); return; }
+                document.getElementById('walletAddressInput').value = '';
+                renderWalletAddressUI('', false);
+                fetchWalletBalances('');
+                updateProfileCompletion();
+                showToast('Wallet address removed');
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to remove wallet address');
+            }
+        }
+
+        window.connectWallet = connectWallet;
+        window.disconnectWallet = disconnectWallet;
+        window.removeWalletAddress = removeWalletAddress;
+    </script>
+</body>
+</html>
