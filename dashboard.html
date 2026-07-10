@@ -1551,19 +1551,18 @@
                 textEl.classList.remove('text-muted');
                 textEl.classList.add('text-primary');
                 removeBtn.classList.remove('hidden');
+
+                // Jika ada address terpasang di profil, ubah indikator menjadi Connected.
+                if(statusText) statusText.textContent = 'Status: Connected';
+                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
             } else {
                 textEl.textContent = 'Not connected';
                 textEl.classList.add('text-muted');
                 textEl.classList.remove('text-primary');
                 removeBtn.classList.add('hidden');
-            }
 
-            if (isLive) {
-                statusText.textContent = 'Status: Connected';
-                statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
-            } else {
-                statusText.textContent = 'Status: Not Connected';
-                statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
+                if(statusText) statusText.textContent = 'Status: Not Connected';
+                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
             }
 
             setWalletConnectBtnState(isLive);
