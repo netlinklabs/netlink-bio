@@ -1,20 +1,8 @@
 // api/bio.js
-// Server-rendered public bio page with embedded JSON-LD (schema.org/Person).
-// Runs on Vercel's Node.js serverless runtime — data is fetched here, on the
-// server, BEFORE any HTML is sent to the browser.
-
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
 
-const BRAND_SLUGS = {
-  instagram: 'instagram', x: 'x', twitter: 'x', facebook: 'facebook', linkedin: 'linkedin',
-  youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsapp', telegram: 'telegram',
-  threads: 'threads', pinterest: 'pinterest', snapchat: 'snapchat', twitch: 'twitch',
-  discord: 'discord', spotify: 'spotify', soundcloud: 'soundcloud', applemusic: 'applemusic',
-  github: 'github', behance: 'behance', dribbble: 'dribbble', medium: 'medium',
-  reddit: 'reddit', paypal: 'paypal', patreon: 'patreon', vimeo: 'vimeo', netflix: 'netflix',
-};
-
+// Helper untuk escape HTML
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -25,64 +13,77 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-function iconHtml(slug) {
-  const brand = BRAND_SLUGS[slug.toLowerCase()] || 'link';
-  return `<img src="https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/${brand}.svg" alt="${slug}">`;
-}
-
-// Handler utama untuk merender halaman
+// Handler utama
 export default async function handler(req, res) {
   const { username } = req.query;
-  
-  // Fetch data profile dari Supabase
-  const { data: profiles, error } = await fetch(`${SUPABASE_URL}/rest/v1/profiles?username=eq.${username}&select=*`, {
-    headers: { apikey: SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-  }).then(r => r.json());
 
-  if (error || !profiles || profiles.length === 0) {
-    return res.status(404).send('Profile not found');
+  if (!username) {
+    return res.status(400).send('Username diperlukan.');
   }
 
-  const profile = profiles[0];
-  const avatar = profile.avatar_url;
-  const displayName = profile.display_name || profile.username;
-  const walletAddress = profile.wallet_address;
+  try {
+    // 1. Fetch profile menggunakan ilike agar tidak sensitif huruf kapital
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?username=ilike.${encodeURIComponent(username)}&select=*`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const profiles = await profileRes.json();
 
-  // Logika perbaikan Shape Icon di sini
-  const iconShape = (profile.link_icon_shape === 'rounded') ? 'rounded' : 'circle';
+    if (!profiles || profiles.length === 0) {
+      return res.status(404).send(`Profil dengan username "${username}" tidak ditemukan.`);
+    }
 
-  // Fetch links
-  const { data: links } = await fetch(`${SUPABASE_URL}/rest/v1/links?user_id=eq.${profile.id}&order=position.asc`, {
-    headers: { apikey: SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-  }).then(r => r.json());
+    const profile = profiles[0];
+    
+    // 2. Fetch links berdasarkan user_id (kolom di tabel links)
+    const linksRes = await fetch(`${SUPABASE_URL}/rest/v1/links?user_id=eq.${profile.id}&order=position.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const links = await linksRes.json();
 
-  const linksHtml = links.map((l) => `
+    // 3. Menentukan shape icon dari kolom link_icon_shape
+    const iconShape = (profile.link_icon_shape === 'rounded') ? 'rounded' : 'circle';
+
+    // 4. Render HTML
+    const linksHtml = links.map((l) => `
       <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" class="link-card">
-        <span class="link-icon ${iconShape}">${iconHtml(l.icon)}</span>
-        <span class="link-title">${escapeHtml(l.title)}</span>
+        <span class="link-icon ${iconShape}">
+           <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${escapeHtml(l.icon || 'link')}.svg" alt="icon">
+        </span>
+        <div class="link-text">
+            <span class="link-title">${escapeHtml(l.title)}</span>
+            ${l.description ? `<span class="link-desc">${escapeHtml(l.description)}</span>` : ''}
+        </div>
       </a>`).join('\n');
 
-  // Render HTML final
-  res.setHeader('Content-Type', 'text/html');
-  res.send(`
-    <html>
-    <head>
-      <title>${displayName} | Netlink.bio</title>
-      <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        .avatar { width: 100px; height: 100px; border-radius: 50%; }
-        .link-card { display: flex; align-items: center; padding: 10px; margin: 10px auto; border: 1px solid #ccc; width: 300px; border-radius: 8px; text-decoration: none; color: #333; }
-        .link-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 15px; overflow: hidden; }
-        .link-icon.circle { border-radius: 50%; }
-        .link-icon.rounded { border-radius: 8px; }
-        .link-icon img { width: 24px; height: 24px; }
-      </style>
-    </head>
-    <body>
-      ${avatar ? `<img class="avatar" src="${avatar}">` : ''}
-      <h1>${displayName}</h1>
-      <div class="links-container">${linksHtml}</div>
-    </body>
-    </html>
-  `);
+    res.setHeader('Content-Type', 'text/html');
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${escapeHtml(profile.display_name || profile.username)} | Netlink.bio</title>
+        <style>
+          body { font-family: sans-serif; text-align: center; padding: 20px; background: #f8fafc; }
+          .avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+          .link-card { display: flex; align-items: center; padding: 12px; margin: 10px auto; border: 1px solid #e2e8f0; width: 100%; max-width: 400px; border-radius: 12px; background: white; text-decoration: none; color: #333; }
+          .link-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 15px; background: #f1f5f9; }
+          .link-icon.circle { border-radius: 50%; }
+          .link-icon.rounded { border-radius: 8px; }
+          .link-icon img { width: 20px; height: 20px; }
+          .link-text { display: flex; flex-direction: column; text-align: left; }
+          .link-title { font-weight: 600; font-size: 14px; }
+          .link-desc { font-size: 12px; color: #64748b; }
+        </style>
+      </head>
+      <body>
+        ${profile.avatar_url ? `<img class="avatar" src="${escapeHtml(profile.avatar_url)}">` : ''}
+        <h1>${escapeHtml(profile.display_name || profile.username)}</h1>
+        <p>${escapeHtml(profile.bio || '')}</p>
+        <div class="links-container">${linksHtml}</div>
+      </body>
+      </html>
+    `);
+
+  } catch (err) {
+    return res.status(500).send('Terjadi kesalahan server.');
+  }
 }
