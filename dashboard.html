@@ -101,7 +101,6 @@
     </style>
 </head>
 <body class="min-h-screen">
-    <!-- Auth Gate -->
     <div id="authGate">
         <div class="flex flex-col items-center gap-3 px-6 text-center">
             <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -112,7 +111,6 @@
 
     <div id="toast" class="toast">Saved successfully!</div>
 
-    <!-- Mobile Header -->
     <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
         <div class="flex items-center gap-2">
             <img src="/assets/netlinkbio-icon.png" alt="Netlink.bio" class="w-8 h-8 rounded-lg">
@@ -239,7 +237,6 @@
             </button>
         </div>
 
-        <!-- 1. WALLET (top) -->
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-primary">Wallet</h3>
@@ -291,7 +288,6 @@
             </div>
         </div>
 
-        <!-- 2. YOUR NETLINK.BIO LINK -->
         <div id="profileCard" class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <h3 class="font-semibold text-primary mb-3">Your Netlink.bio Link</h3>
             <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
@@ -324,7 +320,6 @@
             </div>
         </div>
 
-        <!-- 3. ACCORDIONS -->
         <div class="card rounded-2xl mb-3 overflow-hidden">
             <button onclick="toggleAccordion('accEditProfile')" class="w-full flex items-center justify-between p-4 lg:p-5">
                 <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Edit Profile</span>
@@ -406,7 +401,6 @@
             </div>
         </div>
 
-        <!-- 4. YOUR LINKS (always open) -->
         <div class="card rounded-2xl mb-4 lg:mb-6">
             <div class="p-4 lg:p-6 border-b border-subtle">
                 <h4 class="font-semibold text-primary text-sm mb-1">Your Links</h4>
@@ -431,7 +425,6 @@
             </div>
         </div>
 
-        <!-- 5. Complete Your Profile -->
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
@@ -459,7 +452,6 @@
             </button>
         </div>
 
-        <!-- 6. Curriculum Vitae Builder -->
         <div id="cvCard" class="card rounded-2xl mb-4 lg:mb-6">
             <div class="p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -477,7 +469,6 @@
             </div>
             <div class="p-4 lg:p-6 space-y-5">
 
-                <!-- Basic Info -->
                 <div class="space-y-3">
                     <div>
                         <label class="text-sm font-medium text-secondary block mb-1.5">Professional Title</label>
@@ -497,7 +488,6 @@
                     </div>
                 </div>
 
-                <!-- Experience -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
                         <button type="button" onclick="toggleAccordion('cvExperienceBody')" class="flex items-center gap-2">
@@ -511,7 +501,6 @@
                     </div>
                 </div>
 
-                <!-- Education -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
                         <button type="button" onclick="toggleAccordion('cvEducationBody')" class="flex items-center gap-2">
@@ -525,7 +514,6 @@
                     </div>
                 </div>
 
-                <!-- Projects -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
                         <button type="button" onclick="toggleAccordion('cvProjectsBody')" class="flex items-center gap-2">
@@ -539,7 +527,6 @@
                     </div>
                 </div>
 
-                <!-- Languages -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="flex items-center justify-between mb-2">
                         <button type="button" onclick="toggleAccordion('cvLanguagesBody')" class="flex items-center gap-2">
@@ -553,7 +540,6 @@
                     </div>
                 </div>
 
-                <!-- Certifications -->
                 <div class="pt-4 border-t border-subtle">
                     <label class="text-sm font-medium text-secondary block mb-1.5">Certifications <span class="text-muted">(one per line)</span></label>
                     <textarea id="cvCertifications" rows="3" placeholder="Google UX Design Professional Certificate&#10;AWS Cloud Practitioner" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
@@ -563,7 +549,6 @@
             </div>
         </div>
 
-        <!-- 7. Pro Features -->
         <div class="card locked-card rounded-2xl mb-4 lg:mb-6">
             <div class="locked-content p-4 lg:p-6">
                 <div class="flex items-center justify-between">
@@ -585,7 +570,6 @@
         </div>
     </main>
 
-    <!-- Add / Edit Link Modal -->
     <div id="linkModal" class="modal">
         <div class="card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
@@ -624,7 +608,6 @@
         </div>
     </div>
 
-    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         function showAuthError(msg) {
@@ -1591,7 +1574,6 @@
         });
     </script>
 
-    <!-- WalletConnect (Reown / EthereumProvider) — QR-based mobile wallet connect -->
     <script type="module">
         const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
         const POLYGON_CHAIN_ID = 137;
@@ -1653,7 +1635,10 @@
 
         async function loadEthereumProvider() {
             if (EthereumProviderClass) return EthereumProviderClass;
-            const mod = await import("https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2/+esm");
+            
+            // Perbaikan: Menggunakan esm.sh dengan query ?bundle agar polyfill Node.js disertakan
+            const mod = await import("https://esm.sh/@walletconnect/ethereum-provider@2?bundle");
+            
             EthereumProviderClass = mod.EthereumProvider;
             return EthereumProviderClass;
         }
@@ -1679,4 +1664,80 @@
             });
             wcProvider.on('disconnect', () => {
                 renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
-                showToast('
+                showToast('Wallet disconnected');
+            });
+
+            return wcProvider;
+        }
+
+        // Called right after a successful WalletConnect pairing.
+        // This always overwrites whatever address was previously saved —
+        // only a connected wallet is allowed to set/change the address.
+        async function applyConnectedWallet(address) {
+            document.getElementById('walletAddressInput').value = address;
+            renderWalletAddressUI(address, true);
+            await saveWallet(); // saveWallet() -> loadProfile() briefly resets isLive to false
+            renderWalletAddressUI(address, true); // re-assert the live-connected state after save
+        }
+
+        async function connectWallet() {
+            const btn = document.getElementById('walletConnectBtn');
+            btn.disabled = true;
+            const original = btn.innerHTML;
+            btn.textContent = 'Loading...';
+            try {
+                const provider = await getWcProvider();
+                btn.textContent = 'Connecting...';
+                await provider.connect();
+                if (provider.accounts && provider.accounts.length) {
+                    await applyConnectedWallet(provider.accounts[0]);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Could not load/connect wallet — check your internet connection and try again');
+                btn.innerHTML = original;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Disconnect = end the live session only. The address stays saved
+        // in the profile and keeps showing on the public bio/donate card.
+        async function disconnectWallet() {
+            try {
+                if (wcProvider) await wcProvider.disconnect();
+            } catch (err) {
+                console.error(err);
+            }
+            renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
+            showToast('Wallet disconnected');
+        }
+
+        // Remove = actually erase the saved address from the profile.
+        // Separate, deliberate action — distinct from Disconnect.
+        async function removeWalletAddress() {
+            const current = document.getElementById('walletAddressInput').value;
+            if (!current) { showToast('No wallet address saved'); return; }
+            if (!confirm('Remove your saved wallet address? It will disappear from your public bio page until you connect again.')) return;
+
+            try {
+                if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
+                const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to remove wallet address'); return; }
+                document.getElementById('walletAddressInput').value = '';
+                renderWalletAddressUI('', false);
+                fetchWalletBalances('');
+                updateProfileCompletion();
+                showToast('Wallet address removed');
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to remove wallet address');
+            }
+        }
+
+        window.connectWallet = connectWallet;
+        window.disconnectWallet = disconnectWallet;
+        window.removeWalletAddress = removeWalletAddress;
+    </script>
+</body>
+</html>
