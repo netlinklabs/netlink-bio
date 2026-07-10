@@ -260,10 +260,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </section>
 
 <section id="servicesModule" class="services-section">
-<h3 class="section-title" id="servicesTitle">Featured Menu</h3>
-<div class="service-card"><div class="service-img" style="background: linear-gradient(135deg, #E8D5C4, #D4C4B0);"></div><div class="service-info"><h4>Espresso Toraja</h4><p>Single origin, dark chocolate notes</p></div><span class="service-price" style="color: #5D4037;">25K</span></div>
-<div class="service-card"><div class="service-img" style="background: linear-gradient(135deg, #F5E6D3, #E8D5C4);"></div><div class="service-info"><h4>V60 Pour Over</h4><p>Gayo, floral & citrusy</p></div><span class="service-price" style="color: #5D4037;">32K</span></div>
-<div class="service-card"><div class="service-img" style="background: linear-gradient(135deg, #D4C4B0, #C9B8A4);"></div><div class="service-info"><h4>Cold Brew</h4><p>12-hour steeped, smooth finish</p></div><span class="service-price" style="color: #5D4037;">28K</span></div>
 </section>
 
 <section id="locationModule" class="location-section">
@@ -383,13 +379,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="sidebar-section">
 <label class="sidebar-label">Modules</label>
 <div>
-<label class="module-toggle"><input type="checkbox" id="modHero" checked onchange="toggleModule('hero')"><span>Hero Banner</span></label>
-<label class="module-toggle"><input type="checkbox" id="modAbout" checked onchange="toggleModule('about')"><span>About Us</span></label>
+<label class="module-toggle"><input type="checkbox" id="modHero" checked onchange="toggleModule('hero')"><span>Home</span></label>
+<label class="module-toggle"><input type="checkbox" id="modAbout" checked onchange="toggleModule('about')"><span>About</span></label>
 <label class="module-toggle"><input type="checkbox" id="modGallery" checked onchange="toggleModule('gallery')"><span>Gallery</span></label>
-<label class="module-toggle"><input type="checkbox" id="modServices" checked onchange="toggleModule('services')"><span>Services / Menu</span></label>
-<label class="module-toggle"><input type="checkbox" id="modLocation" checked onchange="toggleModule('location')"><span>Location & Maps</span></label>
-<label class="module-toggle"><input type="checkbox" id="modHours" onchange="toggleModule('hours')"><span>Opening Hours</span></label>
-<label class="module-toggle"><input type="checkbox" id="modContact" checked onchange="toggleModule('contact')"><span>Contact & WhatsApp</span></label>
+<label class="module-toggle"><input type="checkbox" id="modServices" checked onchange="toggleModule('services')"><span>Offerings</span></label>
+<label class="module-toggle"><input type="checkbox" id="modLocation" checked onchange="toggleModule('location')"><span>Location</span></label>
+<label class="module-toggle"><input type="checkbox" id="modHours" onchange="toggleModule('hours')"><span>Hours</span></label>
+<label class="module-toggle"><input type="checkbox" id="modContact" checked onchange="toggleModule('contact')"><span>Contact</span></label>
 </div>
 </div>
 
@@ -428,6 +424,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <input type="file" id="galleryInput" accept="image/*" multiple style="display: none;" onchange="handleGalleryUpload(event)">
 <div class="gallery-list" id="galleryList"></div>
 <p class="gallery-limit" id="galleryLimit">0 / 10 photos uploaded</p>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Offerings (Menu / Services)</label>
+<div id="offerEditorList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+    </div>
+<button onclick="addOffer()" class="sidebar-btn btn-outline" style="font-size: 13px; padding: 10px;">+ Add New Item</button>
 </div>
 
 <div class="sidebar-section">
@@ -498,6 +501,14 @@ let logoImage = null;
 let heroImage = null;
 let showLogoText = true;
 let lightboxIndex = 0;
+let currentCurrency = 'IDR';
+
+const defaultOffers = [
+    { title: 'Espresso Toraja', desc: 'Single origin, dark chocolate notes', price: '25000' },
+    { title: 'V60 Pour Over', desc: 'Gayo, floral & citrusy', price: '32000' },
+    { title: 'Cold Brew', desc: '12-hour steeped, smooth finish', price: '28000' }
+];
+let offers = [];
 
 const businessData = {
 cafe: { name: 'Kopi Senja', tagline: 'Cafe & Roastery', heroTitle: 'Crafted with Heart', heroSubtitle: 'From local farmers, to your table every morning.', aboutTitle: 'Our Story', aboutText: 'Started from a small garage in 2019, we now serve coffee from hand-picked beans by farmers in Toraja and Gayo. Every cup is a journey of flavor.', servicesTitle: 'Featured Menu', locationTitle: 'Location', contactTitle: 'Contact Us', galleryTitle: 'Gallery', heroBadge: 'Open Today', logo: 'K' },
@@ -560,6 +571,7 @@ const secPreview = document.getElementById('secondaryPreview');
 secPreview.style.background = currentSecondary;
 secPreview.style.color = currentTextOnSecondary;
 applyColors();
+renderOffers();
 autoSave();
 }
 
@@ -576,7 +588,6 @@ heroCta.style.background = currentSecondary;
 heroCta.style.color = currentTextOnSecondary;
 document.getElementById('aboutIcon').style.background = currentPrimary + '15';
 document.querySelector('#aboutIcon svg').style.color = currentPrimary;
-document.querySelectorAll('.service-price').forEach(el => el.style.color = currentPrimary);
 document.getElementById('mapPin').style.background = currentPrimary;
 const dirBtn = document.getElementById('directionBtn');
 dirBtn.style.background = currentPrimary + '15';
@@ -623,7 +634,6 @@ document.getElementById('heroTitle').textContent = data.heroTitle;
 document.getElementById('heroSubtitle').textContent = data.heroSubtitle;
 document.getElementById('aboutTitle').textContent = data.aboutTitle;
 document.getElementById('aboutText').textContent = data.aboutText;
-document.getElementById('servicesTitle').textContent = data.servicesTitle;
 document.getElementById('locationTitle').textContent = data.locationTitle;
 document.getElementById('contactTitle').textContent = data.contactTitle;
 document.getElementById('galleryTitle').textContent = data.galleryTitle;
@@ -633,6 +643,7 @@ document.getElementById('inputName').value = data.name;
 document.getElementById('inputTagline').value = data.tagline;
 document.getElementById('inputHeadline').value = data.heroTitle;
 document.getElementById('inputSubtitle').value = data.heroSubtitle;
+renderOffers();
 autoSave();
 }
 
@@ -821,6 +832,91 @@ document.getElementById('lightboxImg').src = galleryImages[lightboxIndex].src;
 document.getElementById('lightboxCounter').textContent = (lightboxIndex + 1) + ' / ' + galleryImages.length;
 }
 
+function formatPrice(value, currency) {
+if (!value || isNaN(value)) return value || 'Free';
+return new Intl.NumberFormat(currency === 'IDR' ? 'id-ID' : 'en-US', {
+style: 'currency',
+currency: currency,
+maximumFractionDigits: 0
+}).format(value);
+}
+
+function updateCurrency(val) {
+currentCurrency = val;
+renderOffers();
+autoSave();
+}
+
+function renderOffers() {
+const container = document.getElementById('servicesModule');
+const type = document.getElementById('businessType').value;
+const data = businessData[type];
+const currentTitle = data ? data.servicesTitle : 'Offerings';
+
+const headerHtml = `
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+<h3 class="section-title" id="servicesTitle" style="margin-bottom: 0;">${currentTitle}</h3>
+<select onchange="updateCurrency(this.value)" style="padding: 4px 8px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 12px; outline: none; background: white; color: #333; cursor: pointer;">
+<option value="IDR" ${currentCurrency === 'IDR' ? 'selected' : ''}>IDR</option>
+<option value="USD" ${currentCurrency === 'USD' ? 'selected' : ''}>USD</option>
+<option value="GBP" ${currentCurrency === 'GBP' ? 'selected' : ''}>GBP</option>
+</select>
+</div>
+`;
+
+const cardsHtml = offers.map(offer => `
+<div class="service-card" style="align-items: flex-start;">
+<div class="service-img" style="background: linear-gradient(135deg, #E8D5C4, #D4C4B0);"></div>
+<div class="service-info" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 56px;">
+<div>
+<h4>${offer.title}</h4>
+<p>${offer.desc}</p>
+</div>
+<div style="text-align: right; margin-top: 10px;">
+<span class="service-price" style="color: ${currentPrimary}; font-size: 14px; font-weight: 700;">${formatPrice(offer.price, currentCurrency)}</span>
+</div>
+</div>
+</div>
+`).join('');
+
+container.innerHTML = headerHtml + cardsHtml;
+}
+
+function renderOfferEditor() {
+const list = document.getElementById('offerEditorList');
+list.innerHTML = offers.map((offer, i) => `
+<div style="background: #3A3A3A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px;">
+<div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+<span style="color:#F5F5F5; font-size:12px; font-weight:600;">Item ${i+1}</span>
+<button onclick="deleteOffer(${i})" style="background:transparent; border:none; color:#ef5350; cursor:pointer; font-size:14px;">🗑</button>
+</div>
+<input type="text" class="sidebar-input" style="padding:8px; margin-bottom:6px; font-size:13px;" placeholder="Title" value="${offer.title}" oninput="updateOffer(${i}, 'title', this.value)">
+<input type="text" class="sidebar-input" style="padding:8px; margin-bottom:6px; font-size:13px;" placeholder="Description" value="${offer.desc}" oninput="updateOffer(${i}, 'desc', this.value)">
+<input type="text" class="sidebar-input" style="padding:8px; font-size:13px;" placeholder="Price (Numeric, e.g. 25000)" value="${offer.price}" oninput="updateOffer(${i}, 'price', this.value)">
+</div>
+`).join('');
+}
+
+function updateOffer(index, field, value) {
+offers[index][field] = value;
+renderOffers();
+autoSave();
+}
+
+function addOffer() {
+offers.push({ title: "New Item", desc: "Short description...", price: "0" });
+renderOfferEditor();
+renderOffers();
+autoSave();
+}
+
+function deleteOffer(index) {
+offers.splice(index, 1);
+renderOfferEditor();
+renderOffers();
+autoSave();
+}
+
 function showUpdateModal() {
 const modal = document.getElementById('updateModal');
 modal.classList.add('active');
@@ -876,6 +972,8 @@ logoImage: logoImage,
 heroImage: heroImage,
 showLogoText: showLogoText,
 galleryImages: galleryImages,
+currentCurrency: currentCurrency,
+offers: offers,
 modules: {
 hero: document.getElementById('modHero').checked,
 about: document.getElementById('modAbout').checked,
@@ -947,6 +1045,11 @@ renderGallery();
 renderGalleryList();
 }
 
+if (draft.offers) offers = draft.offers;
+else offers = JSON.parse(JSON.stringify(defaultOffers));
+
+if (draft.currentCurrency) currentCurrency = draft.currentCurrency;
+
 document.getElementById('modHero').checked = draft.modules.hero;
 document.getElementById('modAbout').checked = draft.modules.about;
 document.getElementById('modGallery').checked = draft.modules.gallery;
@@ -957,6 +1060,8 @@ document.getElementById('modContact').checked = draft.modules.contact;
 
 changeBusinessType();
 updateContent();
+renderOffers();
+renderOfferEditor();
 
 Object.keys(draft.modules).forEach(mod => {
 const el = document.getElementById(mod + 'Module');
@@ -978,6 +1083,11 @@ window.addEventListener('DOMContentLoaded', () => {
 applyColors();
 renderGallery();
 renderGalleryList();
+
+offers = JSON.parse(JSON.stringify(defaultOffers));
+renderOffers();
+renderOfferEditor();
+
 setTimeout(checkDraft, 500);
 
 const galleryUploadArea = document.getElementById('galleryUploadArea');
