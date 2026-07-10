@@ -240,8 +240,9 @@
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-primary">Wallet</h3>
-                <span id="walletNetworkLabel" class="hidden text-xs font-medium text-secondary items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Network: Polygon (PoS)
+                <span id="walletStatusLabel" class="text-xs font-medium text-secondary flex items-center gap-1.5 flex-shrink-0">
+                    <span id="walletStatusDot" class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                    <span id="walletStatusText">Network: No Network | Status: No Connected</span>
                 </span>
             </div>
             <div class="grid grid-cols-3 gap-3 mb-4">
@@ -264,29 +265,27 @@
 
             <label class="text-sm font-medium text-secondary block mb-1.5">Your wallet address</label>
             <input id="walletAddressInput" type="hidden" value="">
-            <div class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm mb-2 flex items-center">
+            <div class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm mb-2 flex items-center justify-between gap-2">
                 <span id="walletAddressText" class="font-mono text-muted truncate">Not connected</span>
+                <button onclick="copyWalletAddress()" class="flex-shrink-0 p-1.5 hover-surface rounded-md transition text-secondary" title="Copy address">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                </button>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="copyWalletAddress()" class="flex-1 flex items-center justify-center gap-1.5 py-2 hover-surface border border-subtle rounded-lg transition text-sm text-secondary" title="Copy address">
-                    <i data-lucide="copy" class="w-4 h-4"></i> Copy
+                <button id="walletRemoveBtn" onclick="removeWalletAddress()" title="Remove saved wallet address" class="hidden flex-shrink-0 p-2.5 text-red-500 hover:bg-red-500/10 border border-subtle rounded-lg transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
                 <button id="walletConnectBtn" onclick="connectWallet()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
                     <i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet
                 </button>
-                <button id="walletRemoveBtn" onclick="removeWalletAddress()" title="Remove saved wallet address" class="hidden flex-shrink-0 p-2.5 text-red-500 hover:bg-red-500/10 border border-subtle rounded-lg transition">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
             </div>
-            <div class="flex items-center justify-between mt-2 gap-2">
+            <div class="flex items-center mt-2">
                 <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline flex items-center gap-1 flex-shrink-0">
                     About wallet <i data-lucide="info" class="w-3 h-3"></i>
                 </button>
-                <span id="walletConnectionStatus" class="text-xs font-medium text-red-500 flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Not Connected
-                </span>
             </div>
         </div>
+
 
         <div id="profileCard" class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <h3 class="font-semibold text-primary mb-3">Your Netlink.bio Link</h3>
@@ -842,18 +841,12 @@
         }
 
         async function fetchWalletBalances(address) {
-            const statusEl = document.getElementById('walletConnectionStatus');
             if (!address) {
-                statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Not Connected';
-                statusEl.className = 'text-xs font-medium text-red-500 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
                 document.getElementById('balanceNet').textContent = '0.00';
                 document.getElementById('balanceUsdc').textContent = '0.00';
                 document.getElementById('balancePol').textContent = '0.00';
                 return;
             }
-
-            statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span> Checking...';
-            statusEl.className = 'text-xs font-medium text-yellow-600 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
 
             try {
                 const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
@@ -863,13 +856,8 @@
                 document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
-
-                statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Connected';
-                statusEl.className = 'text-xs font-medium text-green-600 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
             } catch (err) {
                 console.error(err);
-                statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Not Connected';
-                statusEl.className = 'text-xs font-medium text-red-500 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
                 showToast('Could not fetch wallet balances');
             }
         }
@@ -1593,7 +1581,8 @@
         function renderWalletAddressUI(address, isLive) {
             const textEl = document.getElementById('walletAddressText');
             const removeBtn = document.getElementById('walletRemoveBtn');
-            const networkLabel = document.getElementById('walletNetworkLabel');
+            const statusDot = document.getElementById('walletStatusDot');
+            const statusText = document.getElementById('walletStatusText');
             const hasAddress = !!address;
 
             if (hasAddress) {
@@ -1608,8 +1597,14 @@
                 removeBtn.classList.add('hidden');
             }
 
-            networkLabel.classList.toggle('hidden', !isLive);
-            networkLabel.classList.toggle('flex', isLive);
+            if (isLive) {
+                statusText.textContent = 'Network: Polygon PoS | Status: Connected';
+                statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
+            } else {
+                statusText.textContent = 'Network: No Network | Status: No Connected';
+                statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
+            }
+
             setWalletConnectBtnState(isLive);
         }
         window.renderWalletAddressUI = renderWalletAddressUI;
@@ -1697,47 +1692,4 @@
                 showToast('Could not load/connect wallet — check your internet connection and try again');
                 btn.innerHTML = original;
             } finally {
-                btn.disabled = false;
-            }
-        }
-
-        // Disconnect = end the live session only. The address stays saved
-        // in the profile and keeps showing on the public bio/donate card.
-        async function disconnectWallet() {
-            try {
-                if (wcProvider) await wcProvider.disconnect();
-            } catch (err) {
-                console.error(err);
-            }
-            renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
-            showToast('Wallet disconnected');
-        }
-
-        // Remove = actually erase the saved address from the profile.
-        // Separate, deliberate action — distinct from Disconnect.
-        async function removeWalletAddress() {
-            const current = document.getElementById('walletAddressInput').value;
-            if (!current) { showToast('No wallet address saved'); return; }
-            if (!confirm('Remove your saved wallet address? It will disappear from your public bio page until you connect again.')) return;
-
-            try {
-                if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
-                const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to remove wallet address'); return; }
-                document.getElementById('walletAddressInput').value = '';
-                renderWalletAddressUI('', false);
-                fetchWalletBalances('');
-                updateProfileCompletion();
-                showToast('Wallet address removed');
-            } catch (err) {
-                console.error(err);
-                showToast('Failed to remove wallet address');
-            }
-        }
-
-        window.connectWallet = connectWallet;
-        window.disconnectWallet = disconnectWallet;
-        window.removeWalletAddress = removeWalletAddress;
-    </script>
-</body>
-</html>
+   
