@@ -243,35 +243,43 @@
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-primary">Wallet</h3>
-                <button id="walletConnectBtn" onclick="connectWallet()" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                    <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet
-                </button>
+                <span id="walletNetworkLabel" class="hidden text-xs font-medium text-secondary items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Network: Polygon (PoS)
+                </span>
             </div>
             <div class="grid grid-cols-3 gap-3 mb-4">
                 <div class="bg-surface rounded-xl p-3 text-center">
                     <img src="/assets/net-logo.png" alt="NET" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balanceNet" class="text-sm font-semibold text-primary">0.00</p>
+                    <p id="balanceNet" class="text-xs font-semibold text-primary">0.00</p>
                     <p class="text-xs text-muted">NET</p>
                 </div>
                 <div class="bg-surface rounded-xl p-3 text-center">
                     <img src="/assets/usdc-logo.png" alt="USDC" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balanceUsdc" class="text-sm font-semibold text-primary">0.00</p>
+                    <p id="balanceUsdc" class="text-xs font-semibold text-primary">0.00</p>
                     <p class="text-xs text-muted">USDC</p>
                 </div>
                 <div class="bg-surface rounded-xl p-3 text-center">
                     <img src="/assets/polygon-logo.png" alt="Polygon" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balancePol" class="text-sm font-semibold text-primary">0.00</p>
+                    <p id="balancePol" class="text-xs font-semibold text-primary">0.00</p>
                     <p class="text-xs text-muted">POL</p>
                 </div>
             </div>
 
             <label class="text-sm font-medium text-secondary block mb-1.5">Your wallet address</label>
-            <input id="walletAddressInput" type="text" placeholder="0x..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30 mb-2">
+            <input id="walletAddressInput" type="hidden" value="">
+            <div class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm mb-2 flex items-center">
+                <span id="walletAddressText" class="font-mono text-muted truncate">Not connected</span>
+            </div>
             <div class="flex items-center gap-2">
                 <button onclick="copyWalletAddress()" class="flex-1 flex items-center justify-center gap-1.5 py-2 hover-surface border border-subtle rounded-lg transition text-sm text-secondary" title="Copy address">
                     <i data-lucide="copy" class="w-4 h-4"></i> Copy
                 </button>
-                <button id="walletSaveBtn" onclick="saveWallet()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Save</button>
+                <button id="walletConnectBtn" onclick="connectWallet()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet
+                </button>
+                <button id="walletRemoveBtn" onclick="removeWalletAddress()" title="Remove saved wallet address" class="hidden flex-shrink-0 p-2.5 text-red-500 hover:bg-red-500/10 border border-subtle rounded-lg transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
             </div>
             <div class="flex items-center justify-between mt-2 gap-2">
                 <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline flex items-center gap-1 flex-shrink-0">
@@ -764,6 +772,7 @@
             document.getElementById('youtubeThumbToggle').checked = data.show_youtube_thumbnail !== false;
 
             document.getElementById('walletAddressInput').value = data.wallet_address || '';
+            if (window.renderWalletAddressUI) window.renderWalletAddressUI(data.wallet_address || '', false);
             fetchWalletBalances(data.wallet_address);
 
             setIconShapeButtons(data.link_icon_shape || 'circle');
@@ -826,20 +835,27 @@
             }
         }
 
+        // Called automatically right after a successful WalletConnect connection.
+        // There is no manual Save button anymore — address can only come from a
+        // connected wallet, never typed in by hand.
         async function saveWallet() {
-            await withSaving('walletSaveBtn', async () => {
-                const wallet_address = document.getElementById('walletAddressInput').value.trim();
-                if (wallet_address && !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
-                    showToast('That doesn\'t look like a valid wallet address');
-                    return;
-                }
-                const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to save wallet address'); return; }
-                showToast('Wallet address saved');
-                await loadProfile();
-                updateProfileCompletion();
-                fetchWalletBalances(wallet_address);
-            });
+            const wallet_address = document.getElementById('walletAddressInput').value.trim();
+            if (wallet_address && !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
+                showToast('That doesn\'t look like a valid wallet address');
+                return;
+            }
+            const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
+            if (error) { showToast('Failed to save wallet address'); return; }
+            showToast('Wallet address saved');
+            await loadProfile();
+            updateProfileCompletion();
+            fetchWalletBalances(wallet_address);
+        }
+
+        function formatTokenAmount(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return '0.00';
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         async function fetchWalletBalances(address) {
@@ -861,9 +877,9 @@
                 if (!res.ok) throw new Error('Failed to fetch balances');
                 const data = await res.json();
 
-                document.getElementById('balanceNet').textContent = data.net;
-                document.getElementById('balanceUsdc').textContent = data.usdc;
-                document.getElementById('balancePol').textContent = data.pol;
+                document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
+                document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
+                document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
 
                 statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Connected';
                 statusEl.className = 'text-xs font-medium text-green-600 flex items-center gap-1 flex-shrink-0 whitespace-nowrap';
@@ -1583,6 +1599,37 @@
         const POLYGON_CHAIN_ID = 137;
         let wcProvider = null;
 
+        function truncateAddress(addr) {
+            if (!addr) return '';
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+
+        // hasAddress: is there a saved address (from DB or a fresh connect)?
+        // isLive: is there an active WalletConnect session in THIS tab right now?
+        function renderWalletAddressUI(address, isLive) {
+            const textEl = document.getElementById('walletAddressText');
+            const removeBtn = document.getElementById('walletRemoveBtn');
+            const networkLabel = document.getElementById('walletNetworkLabel');
+            const hasAddress = !!address;
+
+            if (hasAddress) {
+                textEl.textContent = truncateAddress(address);
+                textEl.classList.remove('text-muted');
+                textEl.classList.add('text-primary');
+                removeBtn.classList.remove('hidden');
+            } else {
+                textEl.textContent = 'Not connected';
+                textEl.classList.add('text-muted');
+                textEl.classList.remove('text-primary');
+                removeBtn.classList.add('hidden');
+            }
+
+            networkLabel.classList.toggle('hidden', !isLive);
+            networkLabel.classList.toggle('flex', isLive);
+            setWalletConnectBtnState(isLive);
+        }
+        window.renderWalletAddressUI = renderWalletAddressUI;
+
         async function getWcProvider() {
             if (wcProvider) return wcProvider;
             wcProvider = await EthereumProvider.init({
@@ -1602,27 +1649,31 @@
                 if (accounts && accounts.length) applyConnectedWallet(accounts[0]);
             });
             wcProvider.on('disconnect', () => {
-                setWalletConnectBtnState(false);
+                renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
                 showToast('Wallet disconnected');
             });
 
             return wcProvider;
         }
 
+        // Called right after a successful WalletConnect pairing.
+        // This always overwrites whatever address was previously saved —
+        // only a connected wallet is allowed to set/change the address.
         async function applyConnectedWallet(address) {
             document.getElementById('walletAddressInput').value = address;
-            setWalletConnectBtnState(true);
-            await saveWallet();
+            renderWalletAddressUI(address, true);
+            await saveWallet(); // saveWallet() -> loadProfile() briefly resets isLive to false
+            renderWalletAddressUI(address, true); // re-assert the live-connected state after save
         }
 
-        function setWalletConnectBtnState(connected) {
+        function setWalletConnectBtnState(isLive) {
             const btn = document.getElementById('walletConnectBtn');
             if (!btn) return;
-            if (connected) {
-                btn.innerHTML = '<i data-lucide="link-2-off" class="w-3.5 h-3.5"></i> Disconnect';
+            if (isLive) {
+                btn.innerHTML = '<i data-lucide="link-2-off" class="w-4 h-4"></i> Disconnect';
                 btn.onclick = disconnectWallet;
             } else {
-                btn.innerHTML = '<i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet';
+                btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet';
                 btn.onclick = connectWallet;
             }
             if (window.lucide) lucide.createIcons();
@@ -1632,33 +1683,4 @@
             const btn = document.getElementById('walletConnectBtn');
             btn.disabled = true;
             const original = btn.innerHTML;
-            btn.textContent = 'Connecting...';
-            try {
-                const provider = await getWcProvider();
-                await provider.connect();
-                if (provider.accounts && provider.accounts.length) {
-                    await applyConnectedWallet(provider.accounts[0]);
-                }
-            } catch (err) {
-                console.error(err);
-                showToast('Wallet connection cancelled or failed');
-                btn.innerHTML = original;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function disconnectWallet() {
-            try {
-                if (wcProvider) await wcProvider.disconnect();
-            } catch (err) {
-                console.error(err);
-            }
-            setWalletConnectBtnState(false);
-        }
-
-        window.connectWallet = connectWallet;
-        window.disconnectWallet = disconnectWallet;
-    </script>
-</body>
-</html>
+            btn.textC
