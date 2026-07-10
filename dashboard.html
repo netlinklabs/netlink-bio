@@ -1593,11 +1593,13 @@
 
     <!-- WalletConnect (Reown / EthereumProvider) — QR-based mobile wallet connect -->
     <script type="module">
-        import { EthereumProvider } from "https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2/+esm";
-
         const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
         const POLYGON_CHAIN_ID = 137;
         let wcProvider = null;
+        let EthereumProviderClass = null;
+
+        // ----- UI helpers: defined synchronously so they're ready immediately,
+        // NOT dependent on the (large, potentially slow) WalletConnect bundle below. -----
 
         function truncateAddress(addr) {
             if (!addr) return '';
@@ -1630,8 +1632,35 @@
         }
         window.renderWalletAddressUI = renderWalletAddressUI;
 
+        function setWalletConnectBtnState(isLive) {
+            const btn = document.getElementById('walletConnectBtn');
+            if (!btn) return;
+            if (isLive) {
+                btn.innerHTML = '<i data-lucide="link-2-off" class="w-4 h-4"></i> Disconnect';
+                btn.onclick = disconnectWallet;
+            } else {
+                btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet';
+                btn.onclick = connectWallet;
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // ----- WalletConnect: loaded lazily (dynamic import), only when the user
+        // actually taps Connect. A static top-level import here would block every
+        // function in this file — including the two above — until the whole
+        // multi-MB bundle finished downloading, which is what caused the button
+        // to appear "dead" on slower connections. -----
+
+        async function loadEthereumProvider() {
+            if (EthereumProviderClass) return EthereumProviderClass;
+            const mod = await import("https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2/+esm");
+            EthereumProviderClass = mod.EthereumProvider;
+            return EthereumProviderClass;
+        }
+
         async function getWcProvider() {
             if (wcProvider) return wcProvider;
+            const EthereumProvider = await loadEthereumProvider();
             wcProvider = await EthereumProvider.init({
                 projectId: WC_PROJECT_ID,
                 metadata: {
@@ -1650,37 +1679,4 @@
             });
             wcProvider.on('disconnect', () => {
                 renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
-                showToast('Wallet disconnected');
-            });
-
-            return wcProvider;
-        }
-
-        // Called right after a successful WalletConnect pairing.
-        // This always overwrites whatever address was previously saved —
-        // only a connected wallet is allowed to set/change the address.
-        async function applyConnectedWallet(address) {
-            document.getElementById('walletAddressInput').value = address;
-            renderWalletAddressUI(address, true);
-            await saveWallet(); // saveWallet() -> loadProfile() briefly resets isLive to false
-            renderWalletAddressUI(address, true); // re-assert the live-connected state after save
-        }
-
-        function setWalletConnectBtnState(isLive) {
-            const btn = document.getElementById('walletConnectBtn');
-            if (!btn) return;
-            if (isLive) {
-                btn.innerHTML = '<i data-lucide="link-2-off" class="w-4 h-4"></i> Disconnect';
-                btn.onclick = disconnectWallet;
-            } else {
-                btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet';
-                btn.onclick = connectWallet;
-            }
-            if (window.lucide) lucide.createIcons();
-        }
-
-        async function connectWallet() {
-            const btn = document.getElementById('walletConnectBtn');
-            btn.disabled = true;
-            const original = btn.innerHTML;
-            btn.textC
+                showToast('
