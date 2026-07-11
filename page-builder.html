@@ -415,31 +415,57 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="sidebar-section">
 <label class="sidebar-label">Business Type</label>
 <select id="businessType" class="sidebar-select" onchange="changeBusinessType()">
-<option value="cafe">Cafe</option>
-<option value="salon">Beauty Salon</option>
-<option value="property">Property</option>
-<option value="umkm">Local Store</option>
-<option value="professional">Professional Service</option>
+<optgroup label="🔥 Popular">
 <option value="creator">Content Creator</option>
+<option value="web3">Web3 / Crypto Project</option>
+<option value="freelance">Freelancer</option>
+</optgroup>
+<optgroup label="Creative & Content">
+<option value="photography">Photography</option>
 <option value="author">Book Author</option>
 <option value="educator">Online Educator</option>
-<option value="restaurant">Restaurant</option>
-<option value="hotel">Hotel & Homestay</option>
-<option value="fitness">Fitness & Gym</option>
-<option value="yoga">Yoga Studio</option>
-<option value="clinic">Health Clinic</option>
-<option value="photography">Photography</option>
-<option value="event">Event Organizer</option>
-<option value="travel">Travel Agency</option>
-<option value="laundry">Laundry</option>
-<option value="repair">Repair Service</option>
-<option value="bakery">Bakery</option>
-<option value="florist">Florist</option>
-<option value="barbershop">Barbershop</option>
-<option value="coworking">Coworking Space</option>
+<option value="musician">Musician / Band</option>
+<option value="podcaster">Podcaster</option>
+<option value="artist">Digital Artist / Illustrator</option>
 <option value="workshop">Creative Workshop</option>
+</optgroup>
+<optgroup label="Food & Beverage">
+<option value="cafe">Cafe</option>
+<option value="restaurant">Restaurant</option>
+<option value="bakery">Bakery</option>
+</optgroup>
+<optgroup label="Beauty & Wellness">
+<option value="salon">Beauty Salon</option>
+<option value="barbershop">Barbershop</option>
+<option value="yoga">Yoga Studio</option>
+<option value="fitness">Fitness & Gym</option>
+<option value="trainer">Personal Trainer</option>
+<option value="clinic">Health Clinic</option>
+</optgroup>
+<optgroup label="Property & Real Estate">
+<option value="property">Property Developer</option>
+<option value="agent">Real Estate Agent</option>
+</optgroup>
+<optgroup label="Retail & Local Business">
+<option value="umkm">Local Store</option>
+<option value="florist">Florist</option>
+</optgroup>
+<optgroup label="Hospitality & Travel">
+<option value="hotel">Hotel & Homestay</option>
+<option value="travel">Travel Agency</option>
+<option value="event">Event Organizer</option>
+</optgroup>
+<optgroup label="Professional Services">
+<option value="professional">Professional Service</option>
 <option value="consulting">Consulting Firm</option>
-<option value="freelance">Freelancer</option>
+<option value="tutor">Private Tutor</option>
+<option value="repair">Repair Service</option>
+<option value="laundry">Laundry</option>
+<option value="coworking">Coworking Space</option>
+</optgroup>
+<optgroup label="Community">
+<option value="nonprofit">NGO / Community</option>
+</optgroup>
 </select>
 </div>
 
@@ -624,7 +650,7 @@ let lightboxIndex = 0;
 let currentCurrency = 'IDR';
 let currentIconEditingIndex = null;
 
-// Kumpulan 52 Ikon Populer untuk Offerings (Kategori Bisnis, Kuliner, dll)
+// Kumpulan 64 Ikon Populer untuk Offerings (Kategori Bisnis, Kuliner, Web3, dll)
 const faIcons = [
     {v: 'fa-solid fa-coffee', l: 'Coffee/Cafe'}, {v: 'fa-solid fa-utensils', l: 'Restaurant/Food'},
     {v: 'fa-solid fa-burger', l: 'Burger/Fast Food'}, {v: 'fa-solid fa-pizza-slice', l: 'Pizza'},
@@ -651,7 +677,12 @@ const faIcons = [
     {v: 'fa-solid fa-person-swimming', l: 'Swimming'}, {v: 'fa-solid fa-guitar', l: 'Guitar'},
     {v: 'fa-solid fa-masks-theater', l: 'Theater/Acting'}, {v: 'fa-solid fa-seedling', l: 'Agriculture/Plant'},
     {v: 'fa-solid fa-leaf', l: 'Nature/Eco'}, {v: 'fa-solid fa-paw', l: 'Pets/Vet'},
-    {v: 'fa-solid fa-house', l: 'Property/House'}, {v: 'fa-solid fa-key', l: 'Keys/Rentals'}
+    {v: 'fa-solid fa-house', l: 'Property/House'}, {v: 'fa-solid fa-key', l: 'Keys/Rentals'},
+    {v: 'fa-solid fa-cube', l: 'Web3/Blockchain'}, {v: 'fa-solid fa-coins', l: 'Crypto/Token'},
+    {v: 'fa-solid fa-link', l: 'Chain/Link'}, {v: 'fa-solid fa-drum', l: 'Band/Drums'},
+    {v: 'fa-solid fa-podcast', l: 'Podcast Show'}, {v: 'fa-solid fa-id-badge', l: 'Agent/ID'},
+    {v: 'fa-solid fa-graduation-cap', l: 'Tutor/Graduate'}, {v: 'fa-solid fa-chalkboard-user', l: 'Teaching/Class'},
+    {v: 'fa-solid fa-hand-holding-heart', l: 'Charity/Care'}, {v: 'fa-solid fa-people-group', l: 'Community/NGO'}
 ];
 
 const defaultOffers = [
@@ -686,7 +717,15 @@ barbershop: { name: 'The Gentlemen Cut', tagline: 'Barbershop', heroTitle: 'Shar
 coworking: { name: 'Hub Space', tagline: 'Coworking Space', heroTitle: 'Work Smarter, Together', heroSubtitle: 'Hot desks, private offices, and meeting rooms.', aboutTitle: 'Our Space', aboutText: 'High-speed internet, free coffee, and a community of innovators. Flexible plans for freelancers to growing teams.', servicesTitle: 'Plans', locationTitle: 'Location', contactTitle: 'Tour Space', galleryTitle: 'Space', heroBadge: 'Day Pass', logo: 'H' },
 workshop: { name: 'Craft Studio', tagline: 'Creative Workshop', heroTitle: 'Create Something Beautiful', heroSubtitle: 'Pottery, painting, and craft classes for all ages.', aboutTitle: 'Our Studio', aboutText: 'A creative sanctuary where you can disconnect and make something with your hands. All materials provided. No experience needed.', servicesTitle: 'Workshops', locationTitle: 'Studio', contactTitle: 'Join Class', galleryTitle: 'Creations', heroBadge: 'New Workshop', logo: 'C' },
 consulting: { name: 'Prime Consulting', tagline: 'Business Consulting', heroTitle: 'Grow Your Business', heroSubtitle: 'Strategy, operations, and financial advisory.', aboutTitle: 'Our Firm', aboutText: 'Helping businesses scale for 12 years. Data-driven strategies tailored to your industry and growth stage.', servicesTitle: 'Services', locationTitle: 'Office', contactTitle: 'Free Audit', galleryTitle: 'Clients', heroBadge: 'Free Call', logo: 'P' },
-freelance: { name: 'Dika Creative', tagline: 'Freelance Designer', heroTitle: 'Design That Converts', heroSubtitle: 'Branding, UI/UX, and social media design.', aboutTitle: 'About Me', aboutText: '5 years creating designs that tell stories and drive results. From startups to established brands, I bring ideas to life.', servicesTitle: 'Services', locationTitle: 'Remote / Worldwide', contactTitle: 'Start Project', galleryTitle: 'Portfolio', heroBadge: '1 Slot Left', logo: 'D' }
+freelance: { name: 'Dika Creative', tagline: 'Freelance Designer', heroTitle: 'Design That Converts', heroSubtitle: 'Branding, UI/UX, and social media design.', aboutTitle: 'About Me', aboutText: '5 years creating designs that tell stories and drive results. From startups to established brands, I bring ideas to life.', servicesTitle: 'Services', locationTitle: 'Remote / Worldwide', contactTitle: 'Start Project', galleryTitle: 'Portfolio', heroBadge: '1 Slot Left', logo: 'D' },
+web3: { name: 'MetaVerse DAO', tagline: 'Web3 / Crypto Project', heroTitle: 'Building The Decentralized Future', heroSubtitle: 'A community-owned project on Polygon, powered by our token holders.', aboutTitle: 'About The Project', aboutText: 'Launched by a team of builders passionate about decentralization. Our roadmap is public, our treasury is transparent, and our community drives every decision.', servicesTitle: 'Tokenomics & Utility', locationTitle: 'Community Hub', contactTitle: 'Join The Community', galleryTitle: 'Milestones', heroBadge: 'Live on Polygon', logo: 'M' },
+musician: { name: 'Rhea Sound', tagline: 'Musician & Producer', heroTitle: 'Music That Moves You', heroSubtitle: 'Original tracks, live performances, and studio collaborations.', aboutTitle: 'About Me', aboutText: 'Independent artist blending electronic and acoustic sounds since 2017. Streamed over 2 million times across platforms worldwide.', servicesTitle: 'Music & Bookings', locationTitle: 'Based In', contactTitle: 'Book A Show', galleryTitle: 'Releases', heroBadge: 'New Single Out', logo: 'R' },
+podcaster: { name: 'The Real Talk', tagline: 'Podcast Host', heroTitle: 'Conversations Worth Hearing', heroSubtitle: 'Weekly episodes on business, life, and everything in between.', aboutTitle: 'About The Show', aboutText: 'Over 150 episodes and 80,000 monthly listeners. We bring honest conversations with guests who have real stories to tell.', servicesTitle: 'Episodes & Sponsorship', locationTitle: 'Recording Studio', contactTitle: 'Be A Guest', galleryTitle: 'Episodes', heroBadge: 'New Episode Weekly', logo: 'T' },
+artist: { name: 'Nova Illustrates', tagline: 'Digital Artist & Illustrator', heroTitle: 'Art That Tells Your Story', heroSubtitle: 'Character design, commissions, and NFT collections.', aboutTitle: 'About My Art', aboutText: 'Self-taught digital artist with 6 years of experience across illustration and character design. Open for commissions and collaborations.', servicesTitle: 'Commissions', locationTitle: 'Studio', contactTitle: 'Commission Me', galleryTitle: 'Portfolio', heroBadge: 'Slots Open', logo: 'N' },
+trainer: { name: 'Coach Bima', tagline: 'Personal Trainer', heroTitle: 'Your Goals, My Mission', heroSubtitle: 'Personalized training programs for strength, weight loss, and performance.', aboutTitle: 'About Me', aboutText: 'Certified personal trainer with 8 years of experience helping clients reach their fitness goals. Programs tailored to every body and every level.', servicesTitle: 'Programs', locationTitle: 'Training Location', contactTitle: 'Start Training', galleryTitle: 'Transformations', heroBadge: 'Free Consultation', logo: 'B' },
+agent: { name: 'Prime Realty', tagline: 'Real Estate Agent', heroTitle: 'Find Your Perfect Property', heroSubtitle: 'Trusted guidance through every step of buying, selling, and renting.', aboutTitle: 'About Me', aboutText: '10+ years of experience helping families and investors find the right property. Honest advice, market insight, and a network you can rely on.', servicesTitle: 'Listings', locationTitle: 'Coverage Area', contactTitle: 'Consult Free', galleryTitle: 'Featured Properties', heroBadge: 'New Listings', logo: 'P' },
+tutor: { name: 'Learn With Sam', tagline: 'Private Tutor', heroTitle: 'Personalized Learning That Works', heroSubtitle: 'One-on-one tutoring in math, science, and languages.', aboutTitle: 'About Me', aboutText: 'Certified educator with 9 years of tutoring experience. Lessons designed around how each student learns best, online or in person.', servicesTitle: 'Subjects & Rates', locationTitle: 'Available Areas', contactTitle: 'Book A Session', galleryTitle: 'Student Results', heroBadge: 'Slots This Week', logo: 'S' },
+nonprofit: { name: 'Hope Foundation', tagline: 'NGO / Nonprofit', heroTitle: 'Together We Can Change Lives', heroSubtitle: 'Supporting communities through education, health, and relief programs.', aboutTitle: 'Our Mission', aboutText: 'A registered nonprofit serving communities since 2016. 100% of donations go directly to programs on the ground.', servicesTitle: 'Our Programs', locationTitle: 'Operating Areas', contactTitle: 'Support Us', galleryTitle: 'Impact', heroBadge: 'Donations Open', logo: 'H' }
 };
 
 function toggleSidebar() {
@@ -1122,6 +1161,11 @@ list.innerHTML = offers.map((offer, i) => `
 function updateOffer(index, field, value) {
 offers[index][field] = value;
 renderOffers();
+// Icon changes come from the icon-picker modal (not a text field the user is
+// typing in), so it's safe to refresh the editor thumbnail here. We skip this
+// for title/desc/price because re-rendering on every keystroke would steal
+// focus from the input the user is actively typing in.
+if (field === 'icon') renderOfferEditor();
 autoSave();
 }
 
