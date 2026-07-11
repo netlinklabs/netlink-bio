@@ -353,6 +353,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 </div>
 <button id="directionBtn" class="direction-btn" style="background: rgba(93,64,55,0.1); color: #5D4037;"><i class="fa-solid fa-map-location-dot"></i> Open in Maps</button>
+<p id="closingText" style="margin-top: 20px; font-size: 14px; color: #666; line-height: 1.7; font-style: italic; text-align: center;"></p>
 </div>
 </section>
 
@@ -379,7 +380,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <footer class="page-footer">
 <div class="section-inner">
-<p>Made with Netlink.bio</p>
+<a href="https://netlink.bio" target="_blank" rel="noopener" style="color: #999; font-size: 13px; font-weight: 500; text-decoration: none;">Made with Netlink.bio</a>
 </div>
 </footer>
 </div>
@@ -389,7 +390,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div id="sidebar">
-<div class="sidebar-header"><div><h2>Editor</h2><p>Customize your page</p></div><button class="sidebar-close" onclick="toggleSidebar()">✕</button></div>
+<div class="sidebar-header">
+<div style="display:flex;align-items:center;gap:12px;min-width:0;">
+<img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" style="height:26px;width:auto;flex-shrink:0;">
+<div><h2>Editor</h2><p>Customize your page</p></div>
+</div>
+<button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+</div>
 <div class="sidebar-content">
 
 <div class="sidebar-section">
@@ -409,6 +416,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="toggle-row" style="margin-top: 12px;">
 <span>Show text title</span>
 <div class="toggle-switch active" id="logoTextToggle" onclick="toggleLogoText()"></div>
+</div>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Content</label>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Business Name</label>
+<input type="text" id="inputName" class="sidebar-input" value="Kopi Senja" oninput="updateContent()">
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Tagline</label>
+<input type="text" id="inputTagline" class="sidebar-input" value="Cafe & Roastery" oninput="updateContent()">
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Hero Headline</label>
+<input type="text" id="inputHeadline" class="sidebar-input" value="Crafted with Heart" oninput="updateContent()">
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Hero Subtitle</label>
+<input type="text" id="inputSubtitle" class="sidebar-input" value="From local farmers, to your table every morning." oninput="updateContent()">
+</div>
+<div>
+<label class="sidebar-input-label">Business Description</label>
+<textarea id="inputDesc" class="sidebar-textarea" placeholder="Describe your business..." oninput="updateContent()"></textarea>
 </div>
 </div>
 
@@ -495,20 +526,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 
 <div class="sidebar-section">
-<label class="sidebar-label">Modules</label>
-<div>
-<label class="module-toggle"><input type="checkbox" id="modHero" checked onchange="toggleModule('hero')"><span>Home</span></label>
-<label class="module-toggle"><input type="checkbox" id="modAbout" checked onchange="toggleModule('about')"><span>About</span></label>
-<label class="module-toggle"><input type="checkbox" id="modGallery" checked onchange="toggleModule('gallery')"><span>Gallery</span></label>
-<label class="module-toggle"><input type="checkbox" id="modServices" checked onchange="toggleModule('services')"><span>Offerings</span></label>
-<label class="module-toggle"><input type="checkbox" id="modImage" checked onchange="toggleModule('image')"><span>Additional Image</span></label>
-<label class="module-toggle"><input type="checkbox" id="modLocation" checked onchange="toggleModule('location')"><span>Location</span></label>
-<label class="module-toggle"><input type="checkbox" id="modHours" onchange="toggleModule('hours')"><span>Hours</span></label>
-<label class="module-toggle"><input type="checkbox" id="modContact" checked onchange="toggleModule('contact')"><span>Contact</span></label>
-</div>
-</div>
-
-<div class="sidebar-section">
 <label class="sidebar-label">Hero Banner Image</label>
 <div class="hero-img-selector" style="margin-bottom: 12px;">
 <button class="hero-img-option active" onclick="setHeroImage('landscape')" data-type="landscape" style="background: linear-gradient(135deg, #D4A574, #E8953A);"><span>Landscape</span></button>
@@ -528,6 +545,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 </div>
 <p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 8px;">Dark overlay auto-applied for text readability</p>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Modules</label>
+<div>
+<label class="module-toggle"><input type="checkbox" id="modHero" checked onchange="toggleModule('hero')"><span>Home</span></label>
+<label class="module-toggle"><input type="checkbox" id="modAbout" checked onchange="toggleModule('about')"><span>About</span></label>
+<label class="module-toggle"><input type="checkbox" id="modGallery" checked onchange="toggleModule('gallery')"><span>Gallery</span></label>
+<label class="module-toggle"><input type="checkbox" id="modServices" checked onchange="toggleModule('services')"><span>Offerings</span></label>
+<label class="module-toggle"><input type="checkbox" id="modImage" checked onchange="toggleModule('image')"><span>Additional Image</span></label>
+<label class="module-toggle"><input type="checkbox" id="modLocation" checked onchange="toggleModule('location')"><span>Location</span></label>
+<label class="module-toggle"><input type="checkbox" id="modHours" onchange="toggleModule('hours')"><span>Hours</span></label>
+<label class="module-toggle"><input type="checkbox" id="modContact" checked onchange="toggleModule('contact')"><span>Contact</span></label>
+</div>
 </div>
 
 <div class="sidebar-section">
@@ -565,31 +596,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 
 <div class="sidebar-section">
-<label class="sidebar-label">Content</label>
-<div style="margin-bottom: 16px;">
-<label class="sidebar-input-label">Business Name</label>
-<input type="text" id="inputName" class="sidebar-input" value="Kopi Senja" oninput="updateContent()">
-</div>
-<div style="margin-bottom: 16px;">
-<label class="sidebar-input-label">Tagline</label>
-<input type="text" id="inputTagline" class="sidebar-input" value="Cafe & Roastery" oninput="updateContent()">
-</div>
-<div style="margin-bottom: 16px;">
-<label class="sidebar-input-label">Hero Headline</label>
-<input type="text" id="inputHeadline" class="sidebar-input" value="Crafted with Heart" oninput="updateContent()">
-</div>
-<div style="margin-bottom: 16px;">
-<label class="sidebar-input-label">Hero Subtitle</label>
-<input type="text" id="inputSubtitle" class="sidebar-input" value="From local farmers, to your table every morning." oninput="updateContent()">
-</div>
-<div style="margin-bottom: 16px;">
+<label class="sidebar-label">Maps</label>
 <label class="sidebar-input-label">Google Maps Link</label>
 <input type="text" id="inputMapLink" class="sidebar-input" placeholder="https://maps.google.com/..." value="https://maps.google.com/" oninput="updateContent()">
 </div>
-<div>
-<label class="sidebar-input-label">Business Description</label>
-<textarea id="inputDesc" class="sidebar-textarea" placeholder="Describe your business..." oninput="updateContent()"></textarea>
-</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Closing Message</label>
+<p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-bottom: 8px;">A short heartfelt note shown right after "Open in Maps", just before your Contact section.</p>
+<textarea id="inputClosingText" class="sidebar-textarea" maxlength="300" placeholder="Thank you for visiting..." oninput="updateClosingText()">Thank you for visiting — we can't wait to hear from you and bring your vision to life together.</textarea>
 </div>
 
 <div class="sidebar-section" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px;">
@@ -694,38 +709,38 @@ let offers = [];
 
 const businessData = {
 cafe: { name: 'Kopi Senja', tagline: 'Cafe & Roastery', heroTitle: 'Crafted with Heart', heroSubtitle: 'From local farmers, to your table every morning.', aboutTitle: 'Our Story', aboutText: 'Started from a small garage in 2019, we now serve coffee from hand-picked beans by farmers in Toraja and Gayo. Every cup is a journey of flavor.', servicesTitle: 'Featured Menu', locationTitle: 'Location', contactTitle: 'Contact Us', galleryTitle: 'Gallery', heroBadge: 'Open Today', logo: 'K' },
-salon: { name: 'Glowing Studio', tagline: 'Beauty & Wellness', heroTitle: 'Trust Your Beauty to Experts', heroSubtitle: 'Facial, hair, and body treatments with premium products.', aboutTitle: 'About Us', aboutText: 'Founded by beauty enthusiasts with 10 years of experience. We believe everyone deserves to feel beautiful and confident.', servicesTitle: 'Services', locationTitle: 'Studio Location', contactTitle: 'Book Now', galleryTitle: 'Our Work', heroBadge: 'Slots Available', logo: 'G' },
-property: { name: 'Citra Land', tagline: 'Property & Development', heroTitle: 'Dream Home in Strategic Location', heroSubtitle: 'Houses, apartments, and shop houses with modern and sustainable concepts.', aboutTitle: 'Company Profile', aboutText: 'Over 50 residential and commercial projects spread across 8 major cities. Our commitment: quality, location, and resident satisfaction.', servicesTitle: 'Our Projects', locationTitle: 'Project Locations', contactTitle: 'Free Consultation', galleryTitle: 'Portfolio', heroBadge: 'New Project', logo: 'C' },
-umkm: { name: 'Berkah Store', tagline: 'Daily Needs', heroTitle: 'Complete, Affordable, Trusted', heroSubtitle: 'Groceries, household supplies, and family needs in one place.', aboutTitle: 'About Our Store', aboutText: 'A family store serving the neighborhood since 2015. Friendly prices, quality goods, and warm service.', servicesTitle: 'Product Categories', locationTitle: 'Store Address', contactTitle: 'Order for Delivery', galleryTitle: 'Featured Products', heroBadge: 'Free Delivery', logo: 'B' },
-professional: { name: 'Aditya Consulting', tagline: 'Business Strategy', heroTitle: 'Measurable Business Solutions', heroSubtitle: 'Strategy, branding, and digital transformation consulting for SMEs.', aboutTitle: 'About Me', aboutText: '10 years helping 200+ SMEs grow. I believe every business has potential, it just needs the right strategy.', servicesTitle: 'Consulting Services', locationTitle: 'Office / Meeting Point', contactTitle: 'Schedule Consultation', galleryTitle: 'Results', heroBadge: '1 Slot This Week', logo: 'A' },
-creator: { name: 'Nanda Vlogs', tagline: 'Content Creator', heroTitle: 'Stories That Inspire', heroSubtitle: 'Daily vlogs, tech reviews, and lifestyle content from Jakarta.', aboutTitle: 'About Me', aboutText: 'Creating content since 2018. Over 500K subscribers who trust my honest reviews and authentic storytelling. Let us collaborate!', servicesTitle: 'Collaboration', locationTitle: 'Based In', contactTitle: 'Work With Me', galleryTitle: 'Content', heroBadge: 'Open Collab', logo: 'N' },
-author: { name: 'Luna Writes', tagline: 'Author & Storyteller', heroTitle: 'Words That Move Hearts', heroSubtitle: 'Bestselling novels, poetry collections, and writing workshops.', aboutTitle: 'My Journey', aboutText: 'Published 12 novels and 3 poetry collections. My writing explores love, loss, and the beauty of everyday moments. Join my reader community.', servicesTitle: 'Books & Services', locationTitle: 'Events', contactTitle: 'Get In Touch', galleryTitle: 'Books', heroBadge: 'New Release', logo: 'L' },
-educator: { name: 'LearnWithRina', tagline: 'Online Education', heroTitle: 'Learn Anytime, Anywhere', heroSubtitle: 'Interactive courses in design, coding, and digital marketing.', aboutTitle: 'About The Course', aboutText: 'Over 10,000 students have joined my online courses. Learn at your own pace with lifetime access and community support.', servicesTitle: 'Courses', locationTitle: 'Workshop Venue', contactTitle: 'Enroll Now', galleryTitle: 'Classroom', heroBadge: 'New Course', logo: 'R' },
-restaurant: { name: 'Warung Nusantara', tagline: 'Indonesian Cuisine', heroTitle: 'Authentic Taste of Indonesia', heroSubtitle: 'From Sabang to Merauke, served on your plate.', aboutTitle: 'Our Story', aboutText: 'Founded by a chef who traveled across 34 provinces to collect authentic recipes. Every dish tells a story of Indonesian heritage.', servicesTitle: 'Menu', locationTitle: 'Restaurant Location', contactTitle: 'Reserve Table', galleryTitle: 'Dishes', heroBadge: 'Open Now', logo: 'W' },
-hotel: { name: 'The Sunrise Inn', tagline: 'Hotel & Homestay', heroTitle: 'Your Home Away From Home', heroSubtitle: 'Cozy rooms, stunning views, and warm hospitality.', aboutTitle: 'About Us', aboutText: 'Nestled in the hills with panoramic mountain views. 20 uniquely designed rooms, an infinity pool, and farm-to-table dining.', servicesTitle: 'Rooms', locationTitle: 'Address', contactTitle: 'Book Now', galleryTitle: 'Gallery', heroBadge: 'Rooms Available', logo: 'S' },
-fitness: { name: 'IronFit Gym', tagline: 'Fitness Center', heroTitle: 'Build Your Best Self', heroSubtitle: 'Modern equipment, expert trainers, and a supportive community.', aboutTitle: 'Our Mission', aboutText: 'More than a gym — we are a community. Personal training, group classes, and nutrition coaching all under one roof.', servicesTitle: 'Membership', locationTitle: 'Gym Location', contactTitle: 'Free Trial', galleryTitle: 'Facilities', heroBadge: 'Open 24h', logo: 'I' },
-yoga: { name: 'Serenity Yoga', tagline: 'Yoga & Meditation', heroTitle: 'Find Your Inner Peace', heroSubtitle: 'Hatha, Vinyasa, and meditation classes for all levels.', aboutTitle: 'Our Philosophy', aboutText: 'Yoga is not about touching your toes. It is about what you learn on the way down. Beginner-friendly classes in a calming space.', servicesTitle: 'Classes', locationTitle: 'Studio', contactTitle: 'Book Class', galleryTitle: 'Studio', heroBadge: 'New Class', logo: 'S' },
-clinic: { name: 'Sehat Clinic', tagline: 'Health & Wellness', heroTitle: 'Care You Can Trust', heroSubtitle: 'General practice, dental care, and health screenings.', aboutTitle: 'About Us', aboutText: 'Serving the community for over 15 years with compassionate care. Modern facilities and experienced medical professionals.', servicesTitle: 'Services', locationTitle: 'Clinic Address', contactTitle: 'Book Appointment', galleryTitle: 'Facility', heroBadge: 'Walk-ins OK', logo: 'S' },
-photography: { name: 'Lens & Light', tagline: 'Photography Studio', heroTitle: 'Capture The Moment', heroSubtitle: 'Wedding, portrait, and commercial photography.', aboutTitle: 'Our Approach', aboutText: 'Every photo tells a story. With 8 years of experience, we capture emotions that last a lifetime. Natural light specialist.', servicesTitle: 'Packages', locationTitle: 'Studio', contactTitle: 'Book Session', galleryTitle: 'Portfolio', heroBadge: 'Weekend Slots', logo: 'L' },
-event: { name: 'Grand Event', tagline: 'Event Organizer', heroTitle: 'Your Dream Event, Realized', heroSubtitle: 'Weddings, corporate events, and celebrations.', aboutTitle: 'Who We Are', aboutText: 'From intimate gatherings to grand celebrations, we handle every detail. 200+ successful events and counting.', servicesTitle: 'Packages', locationTitle: 'Office', contactTitle: 'Consult Free', galleryTitle: 'Events', heroBadge: '2026 Open', logo: 'G' },
-travel: { name: 'Wanderlust Tours', tagline: 'Travel Agency', heroTitle: 'Adventure Awaits', heroSubtitle: 'Curated trips, visa assistance, and travel insurance.', aboutTitle: 'Our Story', aboutText: 'We have explored 50+ countries so you do not have to worry about the details. Custom itineraries for solo, couple, and group travel.', servicesTitle: 'Destinations', locationTitle: 'Office', contactTitle: 'Plan My Trip', galleryTitle: 'Destinations', heroBadge: 'Early Bird', logo: 'W' },
-laundry: { name: 'Clean & Fresh', tagline: 'Laundry Service', heroTitle: 'Spotless, Every Time', heroSubtitle: 'Wash, dry, fold, and express service available.', aboutTitle: 'About Us', aboutText: 'Eco-friendly detergents, careful handling of delicate fabrics, and same-day express service. Your clothes deserve the best.', servicesTitle: 'Services', locationTitle: 'Outlet', contactTitle: 'Order Pickup', galleryTitle: 'Process', heroBadge: 'Express Ready', logo: 'C' },
-repair: { name: 'FixIt Pro', tagline: 'Repair Service', heroTitle: 'We Fix Everything', heroSubtitle: 'Phones, laptops, appliances, and home repairs.', aboutTitle: 'Our Expertise', aboutText: 'Certified technicians with 10+ years experience. Genuine parts warranty and transparent pricing. No fix, no fee policy.', servicesTitle: 'Repairs', locationTitle: 'Service Center', contactTitle: 'Get Quote', galleryTitle: 'Workshop', heroBadge: 'Same Day', logo: 'F' },
-bakery: { name: 'Sweet Crumbs', tagline: 'Bakery & Cakes', heroTitle: 'Baked With Love', heroSubtitle: 'Custom cakes, pastries, and daily fresh bread.', aboutTitle: 'Our Story', aboutText: 'A family bakery using recipes passed down three generations. Everything baked fresh daily with premium ingredients.', servicesTitle: 'Menu', locationTitle: 'Bakery', contactTitle: 'Order Cake', galleryTitle: 'Creations', heroBadge: 'Fresh Daily', logo: 'S' },
-florist: { name: 'Bloom & Petal', tagline: 'Flower Shop', heroTitle: 'Flowers For Every Occasion', heroSubtitle: 'Bouquets, arrangements, and event decorations.', aboutTitle: 'Our Passion', aboutText: 'We source the freshest flowers daily and create arrangements that speak emotions. Same-day delivery available.', servicesTitle: 'Collections', locationTitle: 'Shop', contactTitle: 'Order Flowers', galleryTitle: 'Arrangements', heroBadge: 'Same Day', logo: 'B' },
-barbershop: { name: 'The Gentlemen Cut', tagline: 'Barbershop', heroTitle: 'Sharp Looks, Confident You', heroSubtitle: 'Classic cuts, modern styles, and hot towel shaves.', aboutTitle: 'Our Craft', aboutText: 'Master barbers with 15+ years experience. Premium products, relaxed atmosphere, and attention to every detail.', servicesTitle: 'Services', locationTitle: 'Shop', contactTitle: 'Book Chair', galleryTitle: 'Styles', heroBadge: 'Walk-ins OK', logo: 'G' },
-coworking: { name: 'Hub Space', tagline: 'Coworking Space', heroTitle: 'Work Smarter, Together', heroSubtitle: 'Hot desks, private offices, and meeting rooms.', aboutTitle: 'Our Space', aboutText: 'High-speed internet, free coffee, and a community of innovators. Flexible plans for freelancers to growing teams.', servicesTitle: 'Plans', locationTitle: 'Location', contactTitle: 'Tour Space', galleryTitle: 'Space', heroBadge: 'Day Pass', logo: 'H' },
-workshop: { name: 'Craft Studio', tagline: 'Creative Workshop', heroTitle: 'Create Something Beautiful', heroSubtitle: 'Pottery, painting, and craft classes for all ages.', aboutTitle: 'Our Studio', aboutText: 'A creative sanctuary where you can disconnect and make something with your hands. All materials provided. No experience needed.', servicesTitle: 'Workshops', locationTitle: 'Studio', contactTitle: 'Join Class', galleryTitle: 'Creations', heroBadge: 'New Workshop', logo: 'C' },
-consulting: { name: 'Prime Consulting', tagline: 'Business Consulting', heroTitle: 'Grow Your Business', heroSubtitle: 'Strategy, operations, and financial advisory.', aboutTitle: 'Our Firm', aboutText: 'Helping businesses scale for 12 years. Data-driven strategies tailored to your industry and growth stage.', servicesTitle: 'Services', locationTitle: 'Office', contactTitle: 'Free Audit', galleryTitle: 'Clients', heroBadge: 'Free Call', logo: 'P' },
-freelance: { name: 'Dika Creative', tagline: 'Freelance Designer', heroTitle: 'Design That Converts', heroSubtitle: 'Branding, UI/UX, and social media design.', aboutTitle: 'About Me', aboutText: '5 years creating designs that tell stories and drive results. From startups to established brands, I bring ideas to life.', servicesTitle: 'Services', locationTitle: 'Remote / Worldwide', contactTitle: 'Start Project', galleryTitle: 'Portfolio', heroBadge: '1 Slot Left', logo: 'D' },
-web3: { name: 'MetaVerse DAO', tagline: 'Web3 / Crypto Project', heroTitle: 'Building The Decentralized Future', heroSubtitle: 'A community-owned project on Polygon, powered by our token holders.', aboutTitle: 'About The Project', aboutText: 'Launched by a team of builders passionate about decentralization. Our roadmap is public, our treasury is transparent, and our community drives every decision.', servicesTitle: 'Tokenomics & Utility', locationTitle: 'Community Hub', contactTitle: 'Join The Community', galleryTitle: 'Milestones', heroBadge: 'Live on Polygon', logo: 'M' },
-musician: { name: 'Rhea Sound', tagline: 'Musician & Producer', heroTitle: 'Music That Moves You', heroSubtitle: 'Original tracks, live performances, and studio collaborations.', aboutTitle: 'About Me', aboutText: 'Independent artist blending electronic and acoustic sounds since 2017. Streamed over 2 million times across platforms worldwide.', servicesTitle: 'Music & Bookings', locationTitle: 'Based In', contactTitle: 'Book A Show', galleryTitle: 'Releases', heroBadge: 'New Single Out', logo: 'R' },
-podcaster: { name: 'The Real Talk', tagline: 'Podcast Host', heroTitle: 'Conversations Worth Hearing', heroSubtitle: 'Weekly episodes on business, life, and everything in between.', aboutTitle: 'About The Show', aboutText: 'Over 150 episodes and 80,000 monthly listeners. We bring honest conversations with guests who have real stories to tell.', servicesTitle: 'Episodes & Sponsorship', locationTitle: 'Recording Studio', contactTitle: 'Be A Guest', galleryTitle: 'Episodes', heroBadge: 'New Episode Weekly', logo: 'T' },
-artist: { name: 'Nova Illustrates', tagline: 'Digital Artist & Illustrator', heroTitle: 'Art That Tells Your Story', heroSubtitle: 'Character design, commissions, and NFT collections.', aboutTitle: 'About My Art', aboutText: 'Self-taught digital artist with 6 years of experience across illustration and character design. Open for commissions and collaborations.', servicesTitle: 'Commissions', locationTitle: 'Studio', contactTitle: 'Commission Me', galleryTitle: 'Portfolio', heroBadge: 'Slots Open', logo: 'N' },
-trainer: { name: 'Coach Bima', tagline: 'Personal Trainer', heroTitle: 'Your Goals, My Mission', heroSubtitle: 'Personalized training programs for strength, weight loss, and performance.', aboutTitle: 'About Me', aboutText: 'Certified personal trainer with 8 years of experience helping clients reach their fitness goals. Programs tailored to every body and every level.', servicesTitle: 'Programs', locationTitle: 'Training Location', contactTitle: 'Start Training', galleryTitle: 'Transformations', heroBadge: 'Free Consultation', logo: 'B' },
-agent: { name: 'Prime Realty', tagline: 'Real Estate Agent', heroTitle: 'Find Your Perfect Property', heroSubtitle: 'Trusted guidance through every step of buying, selling, and renting.', aboutTitle: 'About Me', aboutText: '10+ years of experience helping families and investors find the right property. Honest advice, market insight, and a network you can rely on.', servicesTitle: 'Listings', locationTitle: 'Coverage Area', contactTitle: 'Consult Free', galleryTitle: 'Featured Properties', heroBadge: 'New Listings', logo: 'P' },
-tutor: { name: 'Learn With Sam', tagline: 'Private Tutor', heroTitle: 'Personalized Learning That Works', heroSubtitle: 'One-on-one tutoring in math, science, and languages.', aboutTitle: 'About Me', aboutText: 'Certified educator with 9 years of tutoring experience. Lessons designed around how each student learns best, online or in person.', servicesTitle: 'Subjects & Rates', locationTitle: 'Available Areas', contactTitle: 'Book A Session', galleryTitle: 'Student Results', heroBadge: 'Slots This Week', logo: 'S' },
-nonprofit: { name: 'Hope Foundation', tagline: 'NGO / Nonprofit', heroTitle: 'Together We Can Change Lives', heroSubtitle: 'Supporting communities through education, health, and relief programs.', aboutTitle: 'Our Mission', aboutText: 'A registered nonprofit serving communities since 2016. 100% of donations go directly to programs on the ground.', servicesTitle: 'Our Programs', locationTitle: 'Operating Areas', contactTitle: 'Support Us', galleryTitle: 'Impact', heroBadge: 'Donations Open', logo: 'H' }
+salon: { name: 'Glowing Studio', tagline: 'Beauty & Wellness', heroTitle: 'Trust Your Beauty to Experts', heroSubtitle: 'Facial, hair, and body treatments with premium products.', aboutTitle: 'About Us', aboutText: 'Founded by beauty enthusiasts with 10 years of experience. We believe everyone deserves to feel beautiful and confident.', servicesTitle: 'Services', locationTitle: 'Studio Location', contactTitle: 'Contact Us', galleryTitle: 'Our Work', heroBadge: 'Slots Available', logo: 'G' },
+property: { name: 'Citra Land', tagline: 'Property & Development', heroTitle: 'Dream Home in Strategic Location', heroSubtitle: 'Houses, apartments, and shop houses with modern and sustainable concepts.', aboutTitle: 'Company Profile', aboutText: 'Over 50 residential and commercial projects spread across 8 major cities. Our commitment: quality, location, and resident satisfaction.', servicesTitle: 'Our Projects', locationTitle: 'Project Locations', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: 'New Project', logo: 'C' },
+umkm: { name: 'Berkah Store', tagline: 'Daily Needs', heroTitle: 'Complete, Affordable, Trusted', heroSubtitle: 'Groceries, household supplies, and family needs in one place.', aboutTitle: 'About Our Store', aboutText: 'A family store serving the neighborhood since 2015. Friendly prices, quality goods, and warm service.', servicesTitle: 'Product Categories', locationTitle: 'Store Address', contactTitle: 'Contact Us', galleryTitle: 'Featured Products', heroBadge: 'Free Delivery', logo: 'B' },
+professional: { name: 'Aditya Consulting', tagline: 'Business Strategy', heroTitle: 'Measurable Business Solutions', heroSubtitle: 'Strategy, branding, and digital transformation consulting for SMEs.', aboutTitle: 'About Me', aboutText: '10 years helping 200+ SMEs grow. I believe every business has potential, it just needs the right strategy.', servicesTitle: 'Consulting Services', locationTitle: 'Office / Meeting Point', contactTitle: 'Contact Us', galleryTitle: 'Results', heroBadge: '1 Slot This Week', logo: 'A' },
+creator: { name: 'Nanda Vlogs', tagline: 'Content Creator', heroTitle: 'Stories That Inspire', heroSubtitle: 'Daily vlogs, tech reviews, and lifestyle content from Jakarta.', aboutTitle: 'About Me', aboutText: 'Creating content since 2018. Over 500K subscribers who trust my honest reviews and authentic storytelling. Let us collaborate!', servicesTitle: 'Collaboration', locationTitle: 'Based In', contactTitle: 'Contact Us', galleryTitle: 'Content', heroBadge: 'Open Collab', logo: 'N' },
+author: { name: 'Luna Writes', tagline: 'Author & Storyteller', heroTitle: 'Words That Move Hearts', heroSubtitle: 'Bestselling novels, poetry collections, and writing workshops.', aboutTitle: 'My Journey', aboutText: 'Published 12 novels and 3 poetry collections. My writing explores love, loss, and the beauty of everyday moments. Join my reader community.', servicesTitle: 'Books & Services', locationTitle: 'Events', contactTitle: 'Contact Us', galleryTitle: 'Books', heroBadge: 'New Release', logo: 'L' },
+educator: { name: 'LearnWithRina', tagline: 'Online Education', heroTitle: 'Learn Anytime, Anywhere', heroSubtitle: 'Interactive courses in design, coding, and digital marketing.', aboutTitle: 'About The Course', aboutText: 'Over 10,000 students have joined my online courses. Learn at your own pace with lifetime access and community support.', servicesTitle: 'Courses', locationTitle: 'Workshop Venue', contactTitle: 'Contact Us', galleryTitle: 'Classroom', heroBadge: 'New Course', logo: 'R' },
+restaurant: { name: 'Warung Nusantara', tagline: 'Indonesian Cuisine', heroTitle: 'Authentic Taste of Indonesia', heroSubtitle: 'From Sabang to Merauke, served on your plate.', aboutTitle: 'Our Story', aboutText: 'Founded by a chef who traveled across 34 provinces to collect authentic recipes. Every dish tells a story of Indonesian heritage.', servicesTitle: 'Menu', locationTitle: 'Restaurant Location', contactTitle: 'Contact Us', galleryTitle: 'Dishes', heroBadge: 'Open Now', logo: 'W' },
+hotel: { name: 'The Sunrise Inn', tagline: 'Hotel & Homestay', heroTitle: 'Your Home Away From Home', heroSubtitle: 'Cozy rooms, stunning views, and warm hospitality.', aboutTitle: 'About Us', aboutText: 'Nestled in the hills with panoramic mountain views. 20 uniquely designed rooms, an infinity pool, and farm-to-table dining.', servicesTitle: 'Rooms', locationTitle: 'Address', contactTitle: 'Contact Us', galleryTitle: 'Gallery', heroBadge: 'Rooms Available', logo: 'S' },
+fitness: { name: 'IronFit Gym', tagline: 'Fitness Center', heroTitle: 'Build Your Best Self', heroSubtitle: 'Modern equipment, expert trainers, and a supportive community.', aboutTitle: 'Our Mission', aboutText: 'More than a gym — we are a community. Personal training, group classes, and nutrition coaching all under one roof.', servicesTitle: 'Membership', locationTitle: 'Gym Location', contactTitle: 'Contact Us', galleryTitle: 'Facilities', heroBadge: 'Open 24h', logo: 'I' },
+yoga: { name: 'Serenity Yoga', tagline: 'Yoga & Meditation', heroTitle: 'Find Your Inner Peace', heroSubtitle: 'Hatha, Vinyasa, and meditation classes for all levels.', aboutTitle: 'Our Philosophy', aboutText: 'Yoga is not about touching your toes. It is about what you learn on the way down. Beginner-friendly classes in a calming space.', servicesTitle: 'Classes', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Studio', heroBadge: 'New Class', logo: 'S' },
+clinic: { name: 'Sehat Clinic', tagline: 'Health & Wellness', heroTitle: 'Care You Can Trust', heroSubtitle: 'General practice, dental care, and health screenings.', aboutTitle: 'About Us', aboutText: 'Serving the community for over 15 years with compassionate care. Modern facilities and experienced medical professionals.', servicesTitle: 'Services', locationTitle: 'Clinic Address', contactTitle: 'Contact Us', galleryTitle: 'Facility', heroBadge: 'Walk-ins OK', logo: 'S' },
+photography: { name: 'Lens & Light', tagline: 'Photography Studio', heroTitle: 'Capture The Moment', heroSubtitle: 'Wedding, portrait, and commercial photography.', aboutTitle: 'Our Approach', aboutText: 'Every photo tells a story. With 8 years of experience, we capture emotions that last a lifetime. Natural light specialist.', servicesTitle: 'Packages', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: 'Weekend Slots', logo: 'L' },
+event: { name: 'Grand Event', tagline: 'Event Organizer', heroTitle: 'Your Dream Event, Realized', heroSubtitle: 'Weddings, corporate events, and celebrations.', aboutTitle: 'Who We Are', aboutText: 'From intimate gatherings to grand celebrations, we handle every detail. 200+ successful events and counting.', servicesTitle: 'Packages', locationTitle: 'Office', contactTitle: 'Contact Us', galleryTitle: 'Events', heroBadge: '2026 Open', logo: 'G' },
+travel: { name: 'Wanderlust Tours', tagline: 'Travel Agency', heroTitle: 'Adventure Awaits', heroSubtitle: 'Curated trips, visa assistance, and travel insurance.', aboutTitle: 'Our Story', aboutText: 'We have explored 50+ countries so you do not have to worry about the details. Custom itineraries for solo, couple, and group travel.', servicesTitle: 'Destinations', locationTitle: 'Office', contactTitle: 'Contact Us', galleryTitle: 'Destinations', heroBadge: 'Early Bird', logo: 'W' },
+laundry: { name: 'Clean & Fresh', tagline: 'Laundry Service', heroTitle: 'Spotless, Every Time', heroSubtitle: 'Wash, dry, fold, and express service available.', aboutTitle: 'About Us', aboutText: 'Eco-friendly detergents, careful handling of delicate fabrics, and same-day express service. Your clothes deserve the best.', servicesTitle: 'Services', locationTitle: 'Outlet', contactTitle: 'Contact Us', galleryTitle: 'Process', heroBadge: 'Express Ready', logo: 'C' },
+repair: { name: 'FixIt Pro', tagline: 'Repair Service', heroTitle: 'We Fix Everything', heroSubtitle: 'Phones, laptops, appliances, and home repairs.', aboutTitle: 'Our Expertise', aboutText: 'Certified technicians with 10+ years experience. Genuine parts warranty and transparent pricing. No fix, no fee policy.', servicesTitle: 'Repairs', locationTitle: 'Service Center', contactTitle: 'Contact Us', galleryTitle: 'Workshop', heroBadge: 'Same Day', logo: 'F' },
+bakery: { name: 'Sweet Crumbs', tagline: 'Bakery & Cakes', heroTitle: 'Baked With Love', heroSubtitle: 'Custom cakes, pastries, and daily fresh bread.', aboutTitle: 'Our Story', aboutText: 'A family bakery using recipes passed down three generations. Everything baked fresh daily with premium ingredients.', servicesTitle: 'Menu', locationTitle: 'Bakery', contactTitle: 'Contact Us', galleryTitle: 'Creations', heroBadge: 'Fresh Daily', logo: 'S' },
+florist: { name: 'Bloom & Petal', tagline: 'Flower Shop', heroTitle: 'Flowers For Every Occasion', heroSubtitle: 'Bouquets, arrangements, and event decorations.', aboutTitle: 'Our Passion', aboutText: 'We source the freshest flowers daily and create arrangements that speak emotions. Same-day delivery available.', servicesTitle: 'Collections', locationTitle: 'Shop', contactTitle: 'Contact Us', galleryTitle: 'Arrangements', heroBadge: 'Same Day', logo: 'B' },
+barbershop: { name: 'The Gentlemen Cut', tagline: 'Barbershop', heroTitle: 'Sharp Looks, Confident You', heroSubtitle: 'Classic cuts, modern styles, and hot towel shaves.', aboutTitle: 'Our Craft', aboutText: 'Master barbers with 15+ years experience. Premium products, relaxed atmosphere, and attention to every detail.', servicesTitle: 'Services', locationTitle: 'Shop', contactTitle: 'Contact Us', galleryTitle: 'Styles', heroBadge: 'Walk-ins OK', logo: 'G' },
+coworking: { name: 'Hub Space', tagline: 'Coworking Space', heroTitle: 'Work Smarter, Together', heroSubtitle: 'Hot desks, private offices, and meeting rooms.', aboutTitle: 'Our Space', aboutText: 'High-speed internet, free coffee, and a community of innovators. Flexible plans for freelancers to growing teams.', servicesTitle: 'Plans', locationTitle: 'Location', contactTitle: 'Contact Us', galleryTitle: 'Space', heroBadge: 'Day Pass', logo: 'H' },
+workshop: { name: 'Craft Studio', tagline: 'Creative Workshop', heroTitle: 'Create Something Beautiful', heroSubtitle: 'Pottery, painting, and craft classes for all ages.', aboutTitle: 'Our Studio', aboutText: 'A creative sanctuary where you can disconnect and make something with your hands. All materials provided. No experience needed.', servicesTitle: 'Workshops', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Creations', heroBadge: 'New Workshop', logo: 'C' },
+consulting: { name: 'Prime Consulting', tagline: 'Business Consulting', heroTitle: 'Grow Your Business', heroSubtitle: 'Strategy, operations, and financial advisory.', aboutTitle: 'Our Firm', aboutText: 'Helping businesses scale for 12 years. Data-driven strategies tailored to your industry and growth stage.', servicesTitle: 'Services', locationTitle: 'Office', contactTitle: 'Contact Us', galleryTitle: 'Clients', heroBadge: 'Free Call', logo: 'P' },
+freelance: { name: 'Dika Creative', tagline: 'Freelance Designer', heroTitle: 'Design That Converts', heroSubtitle: 'Branding, UI/UX, and social media design.', aboutTitle: 'About Me', aboutText: '5 years creating designs that tell stories and drive results. From startups to established brands, I bring ideas to life.', servicesTitle: 'Services', locationTitle: 'Remote / Worldwide', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: '1 Slot Left', logo: 'D' },
+web3: { name: 'MetaVerse DAO', tagline: 'Web3 / Crypto Project', heroTitle: 'Building The Decentralized Future', heroSubtitle: 'A community-owned project on Polygon, powered by our token holders.', aboutTitle: 'About The Project', aboutText: 'Launched by a team of builders passionate about decentralization. Our roadmap is public, our treasury is transparent, and our community drives every decision.', servicesTitle: 'Tokenomics & Utility', locationTitle: 'Community Hub', contactTitle: 'Contact Us', galleryTitle: 'Milestones', heroBadge: 'Live on Polygon', logo: 'M' },
+musician: { name: 'Rhea Sound', tagline: 'Musician & Producer', heroTitle: 'Music That Moves You', heroSubtitle: 'Original tracks, live performances, and studio collaborations.', aboutTitle: 'About Me', aboutText: 'Independent artist blending electronic and acoustic sounds since 2017. Streamed over 2 million times across platforms worldwide.', servicesTitle: 'Music & Bookings', locationTitle: 'Based In', contactTitle: 'Contact Us', galleryTitle: 'Releases', heroBadge: 'New Single Out', logo: 'R' },
+podcaster: { name: 'The Real Talk', tagline: 'Podcast Host', heroTitle: 'Conversations Worth Hearing', heroSubtitle: 'Weekly episodes on business, life, and everything in between.', aboutTitle: 'About The Show', aboutText: 'Over 150 episodes and 80,000 monthly listeners. We bring honest conversations with guests who have real stories to tell.', servicesTitle: 'Episodes & Sponsorship', locationTitle: 'Recording Studio', contactTitle: 'Contact Us', galleryTitle: 'Episodes', heroBadge: 'New Episode Weekly', logo: 'T' },
+artist: { name: 'Nova Illustrates', tagline: 'Digital Artist & Illustrator', heroTitle: 'Art That Tells Your Story', heroSubtitle: 'Character design, commissions, and NFT collections.', aboutTitle: 'About My Art', aboutText: 'Self-taught digital artist with 6 years of experience across illustration and character design. Open for commissions and collaborations.', servicesTitle: 'Commissions', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: 'Slots Open', logo: 'N' },
+trainer: { name: 'Coach Bima', tagline: 'Personal Trainer', heroTitle: 'Your Goals, My Mission', heroSubtitle: 'Personalized training programs for strength, weight loss, and performance.', aboutTitle: 'About Me', aboutText: 'Certified personal trainer with 8 years of experience helping clients reach their fitness goals. Programs tailored to every body and every level.', servicesTitle: 'Programs', locationTitle: 'Training Location', contactTitle: 'Contact Us', galleryTitle: 'Transformations', heroBadge: 'Free Consultation', logo: 'B' },
+agent: { name: 'Prime Realty', tagline: 'Real Estate Agent', heroTitle: 'Find Your Perfect Property', heroSubtitle: 'Trusted guidance through every step of buying, selling, and renting.', aboutTitle: 'About Me', aboutText: '10+ years of experience helping families and investors find the right property. Honest advice, market insight, and a network you can rely on.', servicesTitle: 'Listings', locationTitle: 'Coverage Area', contactTitle: 'Contact Us', galleryTitle: 'Featured Properties', heroBadge: 'New Listings', logo: 'P' },
+tutor: { name: 'Learn With Sam', tagline: 'Private Tutor', heroTitle: 'Personalized Learning That Works', heroSubtitle: 'One-on-one tutoring in math, science, and languages.', aboutTitle: 'About Me', aboutText: 'Certified educator with 9 years of tutoring experience. Lessons designed around how each student learns best, online or in person.', servicesTitle: 'Subjects & Rates', locationTitle: 'Available Areas', contactTitle: 'Contact Us', galleryTitle: 'Student Results', heroBadge: 'Slots This Week', logo: 'S' },
+nonprofit: { name: 'Hope Foundation', tagline: 'NGO / Nonprofit', heroTitle: 'Together We Can Change Lives', heroSubtitle: 'Supporting communities through education, health, and relief programs.', aboutTitle: 'Our Mission', aboutText: 'A registered nonprofit serving communities since 2016. 100% of donations go directly to programs on the ground.', servicesTitle: 'Our Programs', locationTitle: 'Operating Areas', contactTitle: 'Contact Us', galleryTitle: 'Impact', heroBadge: 'Donations Open', logo: 'H' }
 };
 
 function toggleSidebar() {
@@ -852,6 +867,14 @@ document.getElementById('directionBtn').onclick = function() {
     window.open(mapUrl || 'https://maps.google.com/', '_blank');
 };
 
+autoSave();
+}
+
+function updateClosingText() {
+const val = document.getElementById('inputClosingText').value.trim();
+const el = document.getElementById('closingText');
+el.textContent = val;
+el.style.display = val ? 'block' : 'none';
 autoSave();
 }
 
@@ -1243,6 +1266,7 @@ showLogoText: showLogoText,
 galleryImages: galleryImages,
 currentCurrency: currentCurrency,
 offers: offers,
+closingText: document.getElementById('inputClosingText').value,
 modules: {
 hero: document.getElementById('modHero').checked,
 about: document.getElementById('modAbout').checked,
@@ -1332,6 +1356,12 @@ renderGalleryList();
 if (draft.offers) offers = draft.offers;
 else offers = JSON.parse(JSON.stringify(defaultOffers));
 
+if (draft.closingText !== undefined) {
+document.getElementById('inputClosingText').value = draft.closingText;
+}
+updateClosingText();
+
+
 if (draft.currentCurrency) currentCurrency = draft.currentCurrency;
 
 document.getElementById('modHero').checked = draft.modules.hero;
@@ -1376,7 +1406,8 @@ renderGalleryList();
 offers = JSON.parse(JSON.stringify(defaultOffers));
 renderOffers();
 renderOfferEditor();
-updateContent(); 
+updateContent();
+updateClosingText();
 
 setTimeout(checkDraft, 500);
 
