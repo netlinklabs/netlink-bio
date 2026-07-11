@@ -116,6 +116,24 @@
                 <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
                 <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
             </button>
+            <div class="relative">
+                <button onclick="toggleNotifications(this)" class="p-2 hover-surface rounded-lg transition relative">
+                    <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div id="notificationPanelMobile" class="notification-panel">
+                    <div class="p-4 border-b border-subtle flex items-center justify-between">
+                        <h4 class="font-semibold text-sm text-primary">Notifications</h4>
+                        <button onclick="markAllRead()" class="text-xs text-blue-500 hover:text-blue-600">Mark all read</button>
+                    </div>
+                    <div class="max-h-80 overflow-y-auto">
+                        <div class="p-4 hover-surface cursor-pointer transition">
+                            <p class="text-sm text-primary">Welcome to Netlink.bio!</p>
+                            <p class="text-xs text-secondary mt-1">Finish setting up your page below.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
                 <i data-lucide="menu" class="w-5 h-5 text-secondary"></i>
             </button>
@@ -197,7 +215,7 @@
                     <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
                 </button>
                 <div class="relative">
-                    <button onclick="toggleNotifications()" class="p-2 hover-surface rounded-lg transition relative">
+                    <button onclick="toggleNotifications(this)" class="p-2 hover-surface rounded-lg transition relative">
                         <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
@@ -226,9 +244,9 @@
                 <h2 class="text-xl font-bold text-primary">Dashboard</h2>
                 <p class="text-secondary text-sm">Welcome back!</p>
             </div>
-            <button onclick="toggleNotifications()" class="p-2 hover-surface rounded-lg transition relative">
-                <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
-                <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <button onclick="scrollToProfileCard()" class="w-10 h-10 rounded-full overflow-hidden bg-blue-500/20 flex items-center justify-center flex-shrink-0" title="Edit profile">
+                <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                <span id="headerAvatarInitial" class="text-sm font-semibold text-blue-500">?</span>
             </button>
         </div>
 
@@ -755,14 +773,25 @@
 
             const initialEl = document.getElementById('avatarInitial');
             const imgEl = document.getElementById('avatarImg');
+            const headerInitialEl = document.getElementById('headerAvatarInitial');
+            const headerImgEl = document.getElementById('headerAvatarImg');
+            const initialChar = (data.display_name || data.username || currentUser.email || '?').charAt(0).toUpperCase();
             if (data.avatar_url) {
                 imgEl.src = data.avatar_url;
                 imgEl.classList.remove('hidden');
                 initialEl.classList.add('hidden');
+
+                headerImgEl.src = data.avatar_url;
+                headerImgEl.classList.remove('hidden');
+                headerInitialEl.classList.add('hidden');
             } else {
                 imgEl.classList.add('hidden');
                 initialEl.classList.remove('hidden');
-                initialEl.textContent = (data.display_name || data.username || currentUser.email || '?').charAt(0).toUpperCase();
+                initialEl.textContent = initialChar;
+
+                headerImgEl.classList.add('hidden');
+                headerInitialEl.classList.remove('hidden');
+                headerInitialEl.textContent = initialChar;
             }
         }
 
@@ -1002,7 +1031,8 @@
                 </div>
             `);
             lucide.createIcons();
-            autoOpenCvAccordions();
+            // CV sections stay collapsed by default now (even if they already
+            // have saved data) — user has to tap to expand, keeps the card short.
         }
 
         function openAccordion(id) {
@@ -1296,11 +1326,17 @@
             document.getElementById('shapeBtnRounded').classList.toggle('border-blue-500', shape === 'rounded');
         }
 
-        function setIconShape(shape) {
+        async function setIconShape(shape) {
             setIconShapeButtons(shape);
             if (currentProfile) currentProfile.link_icon_shape = shape;
             renderLinks();
-            supabaseClient.from('profiles').update({ link_icon_shape: shape }).eq('id', currentUser.id);
+            const { error } = await supabaseClient.from('profiles').update({ link_icon_shape: shape }).eq('id', currentUser.id);
+            if (error) {
+                console.error(error);
+                showToast('Failed to save icon shape — please try again');
+                return;
+            }
+            showToast(`Icon shape set to ${shape === 'rounded' ? 'Rounded' : 'Circle'}`);
         }
 
         function renderLinks() {
@@ -1510,17 +1546,20 @@
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
 
-        function toggleNotifications() {
-            document.getElementById('notificationPanel').classList.toggle('active');
+        function toggleNotifications(btn) {
+            const panel = btn.closest('.relative').querySelector('.notification-panel');
+            document.querySelectorAll('.notification-panel').forEach(p => { if (p !== panel) p.classList.remove('active'); });
+            panel.classList.toggle('active');
         }
         function markAllRead() {
             showToast('All notifications marked as read');
-            document.getElementById('notificationPanel').classList.remove('active');
+            document.querySelectorAll('.notification-panel').forEach(p => p.classList.remove('active'));
         }
         document.addEventListener('click', function(e) {
-            const panel = document.getElementById('notificationPanel');
-            const bell = e.target.closest('button[onclick="toggleNotifications()"]');
-            if (!bell && !e.target.closest('.notification-panel')) panel.classList.remove('active');
+            const bell = e.target.closest('button[onclick^="toggleNotifications"]');
+            if (!bell && !e.target.closest('.notification-panel')) {
+                document.querySelectorAll('.notification-panel').forEach(p => p.classList.remove('active'));
+            }
 
             const iconPanel = document.getElementById('iconPickerPanel');
             const iconBtn = e.target.closest('button[onclick="toggleIconPicker()"]');
@@ -1656,7 +1695,7 @@
             showToast('Wallet disconnected');
         }
 
-        async function removeWalletAddress() {
+    async function removeWalletAddress() {
             const current = document.getElementById('walletAddressInput').value;
             if (!current) { showToast('No wallet address saved'); return; }
             if (!confirm('Remove your saved wallet address? It will disappear from your public bio page until you connect again.')) return;
