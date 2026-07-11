@@ -98,7 +98,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 /* Contact Section */
 .contact-section { background: white; }
-.contact-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .contact-btn { padding: 16px; border-radius: 16px; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; border: none; }
 .contact-btn:active { transform: scale(0.98); }
 .wa-btn { background: #5D4037; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
@@ -117,7 +117,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 @media (min-width: 768px) {
     .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
     #servicesGrid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-    .contact-grid { grid-template-columns: repeat(2, 1fr); }
     .hero-section { height: 440px; }
     .hero-title { font-size: 40px; }
     .hero-subtitle { font-size: 16px; }
@@ -348,8 +347,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="map-container">
 <div class="map-content">
 <div id="mapPin" class="map-pin" style="background: #5D4037;">📍</div>
-<p>Jl. Raya Kopi No. 42</p>
-<span>Bandung, Jawa Barat</span>
+<p id="addressLine">Jl. Raya Kopi No. 42</p>
+<span id="addressCity">Bandung, Jawa Barat</span>
 </div>
 </div>
 <button id="directionBtn" class="direction-btn" style="background: rgba(93,64,55,0.1); color: #5D4037;"><i class="fa-solid fa-map-location-dot"></i> Open in Maps</button>
@@ -371,10 +370,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <section id="contactModule" class="contact-section">
 <div class="section-inner">
 <h3 class="section-title" id="contactTitle">Contact Us</h3>
-<div class="contact-grid">
-<button id="waBtn" class="contact-btn wa-btn" style="background: #5D4037;"><i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Chat on WhatsApp</button>
-<button id="phoneBtn" class="contact-btn phone-btn" style="border-color: #5D4037; color: #5D4037;"><i class="fa-solid fa-phone" style="font-size: 16px;"></i> Call Us</button>
-</div>
+<div class="contact-grid" id="contactGrid"></div>
 </div>
 </section>
 
@@ -390,12 +386,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div id="sidebar">
-<div class="sidebar-header">
-<div style="display:flex;align-items:center;gap:12px;min-width:0;">
+<div class="sidebar-header" style="flex-direction: column; align-items: stretch; gap: 14px; padding: 16px 24px;">
+<div style="display:flex;align-items:center;justify-content:space-between;">
 <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" style="height:26px;width:auto;flex-shrink:0;">
-<div><h2>Editor</h2><p>Customize your page</p></div>
-</div>
 <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+</div>
+<div style="display:flex;align-items:center;gap:10px;">
+<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+<i class="fa-solid fa-user" style="color:rgba(255,255,255,0.5);font-size:13px;"></i>
+</div>
+<div style="flex:1;min-width:0;">
+<p style="color:#F5F5F5;font-size:13px;font-weight:600;line-height:1.2;">Your Account</p>
+<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(224,224,224,0.15);color:#E0E0E0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;">
+<i class="fa-solid fa-star" style="font-size:9px;"></i> Silver Plan
+</span>
+</div>
+<button type="button" onclick="alert('Subscription management is coming soon!')" style="flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;">Manage Plan</button>
+</div>
 </div>
 <div class="sidebar-content">
 
@@ -596,15 +603,61 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 
 <div class="sidebar-section">
-<label class="sidebar-label">Maps</label>
+<label class="sidebar-label">Location</label>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Address</label>
+<input type="text" id="inputAddressLine" class="sidebar-input" placeholder="e.g. Jl. Raya Kopi No. 42" value="Jl. Raya Kopi No. 42" oninput="updateContent()">
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">City / Area</label>
+<input type="text" id="inputAddressCity" class="sidebar-input" placeholder="e.g. Bandung, Jawa Barat" value="Bandung, Jawa Barat" oninput="updateContent()">
+</div>
+<div>
 <label class="sidebar-input-label">Google Maps Link</label>
 <input type="text" id="inputMapLink" class="sidebar-input" placeholder="https://maps.google.com/..." value="https://maps.google.com/" oninput="updateContent()">
+</div>
 </div>
 
 <div class="sidebar-section">
 <label class="sidebar-label">Closing Message</label>
 <p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-bottom: 8px;">A short heartfelt note shown right after "Open in Maps", just before your Contact section.</p>
 <textarea id="inputClosingText" class="sidebar-textarea" maxlength="300" placeholder="Thank you for visiting..." oninput="updateClosingText()">Thank you for visiting — we can't wait to hear from you and bring your vision to life together.</textarea>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Contact Channels</label>
+<p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-bottom: 14px;">Pick how visitors reach you — mix and match for wherever your audience is (works well for global audiences too).</p>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanWhatsappToggle" checked onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-whatsapp" style="width:16px;text-align:center;color:#25D366;"></i> WhatsApp</span></label>
+<input type="text" id="chanWhatsappValue" class="sidebar-input" placeholder="e.g. 6281234567890 (with country code, no +)" value="6281234567890" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanPhoneToggle" checked onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-phone" style="width:16px;text-align:center;color:rgba(255,255,255,0.6);"></i> Phone Call</span></label>
+<input type="text" id="chanPhoneValue" class="sidebar-input" placeholder="e.g. +62 812 3456 7890" value="+6281234567890" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanTelegramToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-telegram" style="width:16px;text-align:center;color:#229ED9;"></i> Telegram</span></label>
+<input type="text" id="chanTelegramValue" class="sidebar-input" placeholder="Telegram username (without @)" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanLineToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-line" style="width:16px;text-align:center;color:#00B900;"></i> LINE</span></label>
+<input type="text" id="chanLineValue" class="sidebar-input" placeholder="LINE ID" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanWechatToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-weixin" style="width:16px;text-align:center;color:#07C160;"></i> WeChat</span></label>
+<input type="text" id="chanWechatValue" class="sidebar-input" placeholder="WeChat ID" oninput="updateContactChannels()">
+<p style="color: rgba(255,255,255,0.35); font-size: 10px; margin-top: 4px;">WeChat can't be opened directly from a browser — visitors will copy this ID and search it inside the app.</p>
+</div>
+
+<div>
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanEmailToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-envelope" style="width:16px;text-align:center;color:rgba(255,255,255,0.6);"></i> Email</span></label>
+<input type="text" id="chanEmailValue" class="sidebar-input" placeholder="you@business.com" oninput="updateContactChannels()">
+</div>
 </div>
 
 <div class="sidebar-section" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px;">
@@ -785,6 +838,75 @@ const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 0, g: 0, b: 0 };
 }
 
+// ===== Flexible contact channels (global reach: WhatsApp, Telegram, LINE, WeChat, Phone, Email) =====
+const contactChannelDefs = [
+{ key: 'whatsapp', label: 'Chat on WhatsApp', icon: 'fa-brands fa-whatsapp' },
+{ key: 'telegram', label: 'Message on Telegram', icon: 'fa-brands fa-telegram' },
+{ key: 'line', label: 'Add on LINE', icon: 'fa-brands fa-line' },
+{ key: 'wechat', label: 'WeChat', icon: 'fa-brands fa-weixin' },
+{ key: 'phone', label: 'Call Us', icon: 'fa-solid fa-phone' },
+{ key: 'email', label: 'Email Us', icon: 'fa-solid fa-envelope' },
+];
+
+function capKey(key) { return key.charAt(0).toUpperCase() + key.slice(1); }
+
+function getChannelHref(key, value) {
+if (key === 'whatsapp') return 'https://wa.me/' + value.replace(/[^0-9]/g, '');
+if (key === 'telegram') return 'https://t.me/' + value.replace(/^[@~]/, '').trim();
+if (key === 'line') return 'https://line.me/ti/p/~' + value.replace(/^[@~]/, '').trim();
+if (key === 'phone') return 'tel:' + value.replace(/[^0-9+]/g, '');
+if (key === 'email') return 'mailto:' + value.trim();
+return '#';
+}
+
+function copyWeChatId(id) {
+// WeChat has no universal web deep-link for arbitrary contacts, so we copy
+// the ID instead and ask the visitor to search it inside the WeChat app.
+navigator.clipboard.writeText(id).then(() => {
+alert('WeChat ID "' + id + '" copied! Search this ID inside the WeChat app to add.');
+}).catch(() => {
+alert('WeChat ID: ' + id + ' (search this inside the WeChat app to add).');
+});
+}
+
+function renderContactButtons() {
+const grid = document.getElementById('contactGrid');
+if (!grid) return;
+
+const active = contactChannelDefs.filter(ch => {
+const toggle = document.getElementById('chan' + capKey(ch.key) + 'Toggle');
+const input = document.getElementById('chan' + capKey(ch.key) + 'Value');
+return toggle && input && toggle.checked && input.value.trim();
+});
+
+if (active.length === 0) {
+grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #999; font-size: 13px;">Add at least one contact channel in the editor.</p>';
+return;
+}
+
+grid.innerHTML = active.map((ch, i) => {
+const input = document.getElementById('chan' + capKey(ch.key) + 'Value');
+const value = input.value.trim();
+const isPrimary = i === 0;
+const btnClass = isPrimary ? 'contact-btn wa-btn' : 'contact-btn phone-btn';
+const style = isPrimary
+? 'background:' + currentPrimary + ';'
+: 'border-color:' + currentPrimary + '; color:' + currentPrimary + ';';
+
+if (ch.key === 'wechat') {
+return '<button type="button" class="' + btnClass + '" style="' + style + '" onclick="copyWeChatId(\'' + value.replace(/'/g, "\\'") + '\')"><i class="' + ch.icon + '" style="font-size:18px;"></i> WeChat: ' + value + '</button>';
+}
+
+const href = getChannelHref(ch.key, value);
+return '<a href="' + href + '" target="_blank" rel="noopener" class="' + btnClass + '" style="' + style + ' text-decoration:none;"><i class="' + ch.icon + '" style="font-size:18px;"></i> ' + ch.label + '</a>';
+}).join('');
+}
+
+function updateContactChannels() {
+renderContactButtons();
+autoSave();
+}
+
 function applyColors() {
 const logoBox = document.getElementById('logoBox');
 if (!logoImage) logoBox.style.background = currentPrimary;
@@ -797,10 +919,7 @@ document.getElementById('mapPin').style.background = currentPrimary;
 const dirBtn = document.getElementById('directionBtn');
 dirBtn.style.background = currentPrimary + '15';
 dirBtn.style.color = currentPrimary;
-document.getElementById('waBtn').style.background = currentPrimary;
-const phoneBtn = document.getElementById('phoneBtn');
-phoneBtn.style.borderColor = currentPrimary;
-phoneBtn.style.color = currentPrimary;
+renderContactButtons();
 }
 
 function toggleModule(module) {
@@ -860,6 +979,11 @@ document.getElementById('heroSubtitle').textContent = document.getElementById('i
 const desc = document.getElementById('inputDesc').value;
 if (desc) document.getElementById('aboutText').textContent = desc;
 if (!logoImage) document.getElementById('logoBox').textContent = (document.getElementById('inputName').value || 'B').charAt(0).toUpperCase();
+
+const addrLine = document.getElementById('inputAddressLine').value;
+const addrCity = document.getElementById('inputAddressCity').value;
+document.getElementById('addressLine').textContent = addrLine || 'Address line';
+document.getElementById('addressCity').textContent = addrCity || 'City, Region';
 
 // Update Maps Link behavior
 const mapUrl = document.getElementById('inputMapLink').value;
@@ -1259,6 +1383,15 @@ headline: document.getElementById('inputHeadline').value,
 subtitle: document.getElementById('inputSubtitle').value,
 desc: document.getElementById('inputDesc').value,
 mapLink: document.getElementById('inputMapLink').value,
+addressLine: document.getElementById('inputAddressLine').value,
+addressCity: document.getElementById('inputAddressCity').value,
+contactChannels: contactChannelDefs.reduce((acc, ch) => {
+acc[ch.key] = {
+checked: document.getElementById('chan' + capKey(ch.key) + 'Toggle').checked,
+value: document.getElementById('chan' + capKey(ch.key) + 'Value').value
+};
+return acc;
+}, {}),
 logoImage: logoImage,
 heroImage: heroImage,
 additionalImage: additionalImage,
@@ -1307,6 +1440,18 @@ document.getElementById('inputDesc').value = draft.desc || '';
 if (draft.mapLink) {
     document.getElementById('inputMapLink').value = draft.mapLink;
 }
+if (draft.addressLine) document.getElementById('inputAddressLine').value = draft.addressLine;
+if (draft.addressCity) document.getElementById('inputAddressCity').value = draft.addressCity;
+
+if (draft.contactChannels) {
+contactChannelDefs.forEach(ch => {
+const saved = draft.contactChannels[ch.key];
+if (!saved) return;
+document.getElementById('chan' + capKey(ch.key) + 'Toggle').checked = saved.checked;
+document.getElementById('chan' + capKey(ch.key) + 'Value').value = saved.value || '';
+});
+}
+renderContactButtons();
 
 if (draft.logoImage) {
 logoImage = draft.logoImage;
