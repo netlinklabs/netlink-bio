@@ -16,8 +16,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 /* Header */
 .page-header { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #f0f0f0; padding: 12px 24px; }
 .header-brand { display: flex; align-items: center; gap: 12px; }
-.logo-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; transition: background 0.3s; overflow: hidden; flex-shrink: 0; }
+.logo-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; transition: background 0.3s, width 0.3s, border-radius 0.3s; overflow: hidden; flex-shrink: 0; }
 .logo-box img { width: 100%; height: 100%; object-fit: cover; }
+.logo-box.landscape { width: auto; min-width: 90px; max-width: 170px; height: 40px; border-radius: 8px; padding: 0 6px; }
+.logo-box.landscape img { width: auto; height: 100%; object-fit: contain; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.field-hint { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 6px; display: flex; align-items: center; gap: 5px; line-height: 1.4; }
+.field-hint.warning { color: #FFB74D; }
 .header-text h1 { font-size: 15px; font-weight: 700; color: #212121; line-height: 1.2; }
 .header-text p { font-size: 12px; color: #999; }
 
@@ -299,7 +304,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <svg style="color: #5D4037;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
 </div>
 <div class="about-text">
-<h3 id="aboutTitle">Our Story</h3>
+<h3 id="aboutTitle">About</h3>
 <p id="aboutText">Started from a small garage in 2019, we now serve coffee from hand-picked beans by farmers in Toraja and Gayo. Every cup is a journey of flavor.</p>
 </div>
 </div>
@@ -344,12 +349,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <section id="locationModule" class="location-section">
 <div class="section-inner">
 <h3 class="section-title" id="locationTitle">Location</h3>
-<div class="map-container">
-<div class="map-content">
-<div id="mapPin" class="map-pin" style="background: #5D4037;">📍</div>
-<p id="addressLine">Jl. Raya Kopi No. 42</p>
-<span id="addressCity">Bandung, Jawa Barat</span>
+<div class="map-container" id="mapContainer" onclick="openMapsLink()" style="cursor: pointer;">
+<iframe id="mapEmbed" src="" style="width: 100%; height: 100%; border: 0; pointer-events: none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
 </div>
+<div style="text-align: center; margin-top: 14px;">
+<p id="addressLine" style="font-size: 15px; font-weight: 700; color: #212121;">Jl. Raya Kopi No. 42</p>
+<span id="addressCity" style="font-size: 13px; color: #777;">Bandung, Jawa Barat</span>
 </div>
 <button id="directionBtn" class="direction-btn" style="background: rgba(93,64,55,0.1); color: #5D4037;"><i class="fa-solid fa-map-location-dot"></i> Open in Maps</button>
 <p id="closingText" style="margin-top: 20px; font-size: 14px; color: #666; line-height: 1.7; font-style: italic; text-align: center;"></p>
@@ -388,7 +393,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div id="sidebar">
 <div class="sidebar-header" style="flex-direction: column; align-items: stretch; gap: 14px; padding: 16px 24px;">
 <div style="display:flex;align-items:center;justify-content:space-between;">
-<img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" style="height:26px;width:auto;flex-shrink:0;">
+<img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" style="height:40px;width:auto;flex-shrink:0;">
 <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
 </div>
 <div style="display:flex;align-items:center;gap:10px;">
@@ -397,6 +402,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 <div style="flex:1;min-width:0;">
 <p style="color:#F5F5F5;font-size:13px;font-weight:600;line-height:1.2;">Your Account</p>
+<p id="accountEmail" style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">user@example.com</p>
 <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(224,224,224,0.15);color:#E0E0E0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;">
 <i class="fa-solid fa-star" style="font-size:9px;"></i> Silver Plan
 </span>
@@ -408,6 +414,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <div class="sidebar-section">
 <label class="sidebar-label">Logo</label>
+<div class="hero-img-selector" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 12px;">
+<button class="hero-img-option active" id="logoShapeSquareBtn" onclick="setLogoShape('square')" style="background: #3A3A3A;"><span style="background: rgba(255,255,255,0.15); color: #F5F5F5;">Square</span></button>
+<button class="hero-img-option" id="logoShapeLandscapeBtn" onclick="setLogoShape('landscape')" style="background: #3A3A3A;"><span style="background: rgba(255,255,255,0.15); color: #F5F5F5;">Landscape</span></button>
+</div>
 <div class="logo-upload-area" id="logoUploadArea" onclick="document.getElementById('logoInput').click()">
 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 28px; color: rgba(255,255,255,0.4);"></i>
 <p>Click to upload logo image</p>
@@ -431,6 +441,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div style="margin-bottom: 16px;">
 <label class="sidebar-input-label">Business Name</label>
 <input type="text" id="inputName" class="sidebar-input" value="Kopi Senja" oninput="updateContent()">
+<p id="hintName" class="field-hint"></p>
 </div>
 <div style="margin-bottom: 16px;">
 <label class="sidebar-input-label">Tagline</label>
@@ -447,6 +458,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div>
 <label class="sidebar-input-label">Business Description</label>
 <textarea id="inputDesc" class="sidebar-textarea" placeholder="Describe your business..." oninput="updateContent()"></textarea>
+<p id="hintDesc" class="field-hint"></p>
 </div>
 </div>
 
@@ -557,7 +569,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="sidebar-section">
 <label class="sidebar-label">Modules</label>
 <div>
-<label class="module-toggle"><input type="checkbox" id="modHero" checked onchange="toggleModule('hero')"><span>Home</span></label>
+<label class="module-toggle"><input type="checkbox" id="modHero" checked onchange="toggleModule('hero')"><span>Hero</span></label>
 <label class="module-toggle"><input type="checkbox" id="modAbout" checked onchange="toggleModule('about')"><span>About</span></label>
 <label class="module-toggle"><input type="checkbox" id="modGallery" checked onchange="toggleModule('gallery')"><span>Gallery</span></label>
 <label class="module-toggle"><input type="checkbox" id="modServices" checked onchange="toggleModule('services')"><span>Offerings</span></label>
@@ -581,6 +593,171 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <div class="sidebar-section">
 <label class="sidebar-label">Offerings (Menu / Services)</label>
+<div style="margin-bottom: 14px;">
+<label class="sidebar-input-label">Currency</label>
+<select id="currencySelect" class="sidebar-select" onchange="updateCurrency(this.value)">
+<optgroup label="🔥 Popular">
+<option value="IDR">IDR — Indonesian Rupiah</option>
+<option value="USD">USD — US Dollar</option>
+<option value="EUR">EUR — Euro</option>
+<option value="GBP">GBP — British Pound</option>
+<option value="SGD">SGD — Singapore Dollar</option>
+<option value="MYR">MYR — Malaysian Ringgit</option>
+<option value="JPY">JPY — Japanese Yen</option>
+<option value="AUD">AUD — Australian Dollar</option>
+<option value="CNY">CNY — Chinese Yuan</option>
+<option value="THB">THB — Thai Baht</option>
+</optgroup>
+<optgroup label="All Currencies (A-Z)">
+<option value="AED">AED — United Arab Emirates Dirham</option>
+<option value="AFN">AFN — Afghan Afghani</option>
+<option value="ALL">ALL — Albanian Lek</option>
+<option value="AMD">AMD — Armenian Dram</option>
+<option value="ANG">ANG — Netherlands Antillean Guilder</option>
+<option value="AOA">AOA — Angolan Kwanza</option>
+<option value="ARS">ARS — Argentine Peso</option>
+<option value="AWG">AWG — Aruban Florin</option>
+<option value="AZN">AZN — Azerbaijani Manat</option>
+<option value="BAM">BAM — Bosnia-Herzegovina Convertible Mark</option>
+<option value="BBD">BBD — Barbadian Dollar</option>
+<option value="BDT">BDT — Bangladeshi Taka</option>
+<option value="BGN">BGN — Bulgarian Lev</option>
+<option value="BHD">BHD — Bahraini Dinar</option>
+<option value="BIF">BIF — Burundian Franc</option>
+<option value="BMD">BMD — Bermudan Dollar</option>
+<option value="BND">BND — Brunei Dollar</option>
+<option value="BOB">BOB — Bolivian Boliviano</option>
+<option value="BRL">BRL — Brazilian Real</option>
+<option value="BSD">BSD — Bahamian Dollar</option>
+<option value="BTN">BTN — Bhutanese Ngultrum</option>
+<option value="BWP">BWP — Botswanan Pula</option>
+<option value="BYN">BYN — Belarusian Ruble</option>
+<option value="BZD">BZD — Belize Dollar</option>
+<option value="CAD">CAD — Canadian Dollar</option>
+<option value="CDF">CDF — Congolese Franc</option>
+<option value="CHF">CHF — Swiss Franc</option>
+<option value="CLP">CLP — Chilean Peso</option>
+<option value="COP">COP — Colombian Peso</option>
+<option value="CRC">CRC — Costa Rican Colón</option>
+<option value="CUP">CUP — Cuban Peso</option>
+<option value="CVE">CVE — Cape Verdean Escudo</option>
+<option value="CZK">CZK — Czech Koruna</option>
+<option value="DJF">DJF — Djiboutian Franc</option>
+<option value="DKK">DKK — Danish Krone</option>
+<option value="DOP">DOP — Dominican Peso</option>
+<option value="DZD">DZD — Algerian Dinar</option>
+<option value="EGP">EGP — Egyptian Pound</option>
+<option value="ERN">ERN — Eritrean Nakfa</option>
+<option value="ETB">ETB — Ethiopian Birr</option>
+<option value="FJD">FJD — Fijian Dollar</option>
+<option value="FKP">FKP — Falkland Islands Pound</option>
+<option value="GEL">GEL — Georgian Lari</option>
+<option value="GHS">GHS — Ghanaian Cedi</option>
+<option value="GIP">GIP — Gibraltar Pound</option>
+<option value="GMD">GMD — Gambian Dalasi</option>
+<option value="GNF">GNF — Guinean Franc</option>
+<option value="GTQ">GTQ — Guatemalan Quetzal</option>
+<option value="GYD">GYD — Guyanaese Dollar</option>
+<option value="HKD">HKD — Hong Kong Dollar</option>
+<option value="HNL">HNL — Honduran Lempira</option>
+<option value="HTG">HTG — Haitian Gourde</option>
+<option value="HUF">HUF — Hungarian Forint</option>
+<option value="ILS">ILS — Israeli New Shekel</option>
+<option value="INR">INR — Indian Rupee</option>
+<option value="IQD">IQD — Iraqi Dinar</option>
+<option value="IRR">IRR — Iranian Rial</option>
+<option value="ISK">ISK — Icelandic Króna</option>
+<option value="JMD">JMD — Jamaican Dollar</option>
+<option value="JOD">JOD — Jordanian Dinar</option>
+<option value="KES">KES — Kenyan Shilling</option>
+<option value="KGS">KGS — Kyrgyz Som</option>
+<option value="KHR">KHR — Cambodian Riel</option>
+<option value="KMF">KMF — Comorian Franc</option>
+<option value="KPW">KPW — North Korean Won</option>
+<option value="KRW">KRW — South Korean Won</option>
+<option value="KWD">KWD — Kuwaiti Dinar</option>
+<option value="KYD">KYD — Cayman Islands Dollar</option>
+<option value="KZT">KZT — Kazakhstani Tenge</option>
+<option value="LAK">LAK — Laotian Kip</option>
+<option value="LBP">LBP — Lebanese Pound</option>
+<option value="LKR">LKR — Sri Lankan Rupee</option>
+<option value="LRD">LRD — Liberian Dollar</option>
+<option value="LSL">LSL — Lesotho Loti</option>
+<option value="LYD">LYD — Libyan Dinar</option>
+<option value="MAD">MAD — Moroccan Dirham</option>
+<option value="MDL">MDL — Moldovan Leu</option>
+<option value="MGA">MGA — Malagasy Ariary</option>
+<option value="MKD">MKD — Macedonian Denar</option>
+<option value="MMK">MMK — Myanmar Kyat</option>
+<option value="MNT">MNT — Mongolian Tugrik</option>
+<option value="MOP">MOP — Macanese Pataca</option>
+<option value="MRU">MRU — Mauritanian Ouguiya</option>
+<option value="MUR">MUR — Mauritian Rupee</option>
+<option value="MVR">MVR — Maldivian Rufiyaa</option>
+<option value="MWK">MWK — Malawian Kwacha</option>
+<option value="MXN">MXN — Mexican Peso</option>
+<option value="MZN">MZN — Mozambican Metical</option>
+<option value="NAD">NAD — Namibian Dollar</option>
+<option value="NGN">NGN — Nigerian Naira</option>
+<option value="NIO">NIO — Nicaraguan Córdoba</option>
+<option value="NOK">NOK — Norwegian Krone</option>
+<option value="NPR">NPR — Nepalese Rupee</option>
+<option value="NZD">NZD — New Zealand Dollar</option>
+<option value="OMR">OMR — Omani Rial</option>
+<option value="PAB">PAB — Panamanian Balboa</option>
+<option value="PEN">PEN — Peruvian Sol</option>
+<option value="PGK">PGK — Papua New Guinean Kina</option>
+<option value="PHP">PHP — Philippine Peso</option>
+<option value="PKR">PKR — Pakistani Rupee</option>
+<option value="PLN">PLN — Polish Zloty</option>
+<option value="PYG">PYG — Paraguayan Guarani</option>
+<option value="QAR">QAR — Qatari Riyal</option>
+<option value="RON">RON — Romanian Leu</option>
+<option value="RSD">RSD — Serbian Dinar</option>
+<option value="RUB">RUB — Russian Ruble</option>
+<option value="RWF">RWF — Rwandan Franc</option>
+<option value="SAR">SAR — Saudi Riyal</option>
+<option value="SBD">SBD — Solomon Islands Dollar</option>
+<option value="SCR">SCR — Seychellois Rupee</option>
+<option value="SDG">SDG — Sudanese Pound</option>
+<option value="SEK">SEK — Swedish Krona</option>
+<option value="SHP">SHP — St. Helena Pound</option>
+<option value="SLE">SLE — Sierra Leonean Leone</option>
+<option value="SOS">SOS — Somali Shilling</option>
+<option value="SRD">SRD — Surinamese Dollar</option>
+<option value="SSP">SSP — South Sudanese Pound</option>
+<option value="STN">STN — São Tomé & Príncipe Dobra</option>
+<option value="SVC">SVC — Salvadoran Colón</option>
+<option value="SYP">SYP — Syrian Pound</option>
+<option value="SZL">SZL — Swazi Lilangeni</option>
+<option value="TJS">TJS — Tajikistani Somoni</option>
+<option value="TMT">TMT — Turkmenistani Manat</option>
+<option value="TND">TND — Tunisian Dinar</option>
+<option value="TOP">TOP — Tongan Paʻanga</option>
+<option value="TRY">TRY — Turkish Lira</option>
+<option value="TTD">TTD — Trinidad & Tobago Dollar</option>
+<option value="TWD">TWD — New Taiwan Dollar</option>
+<option value="TZS">TZS — Tanzanian Shilling</option>
+<option value="UAH">UAH — Ukrainian Hryvnia</option>
+<option value="UGX">UGX — Ugandan Shilling</option>
+<option value="UYU">UYU — Uruguayan Peso</option>
+<option value="UZS">UZS — Uzbekistani Som</option>
+<option value="VES">VES — Venezuelan Bolívar</option>
+<option value="VND">VND — Vietnamese Dong</option>
+<option value="VUV">VUV — Vanuatu Vatu</option>
+<option value="WST">WST — Samoan Tala</option>
+<option value="XAF">XAF — Central African CFA Franc</option>
+<option value="XCD">XCD — East Caribbean Dollar</option>
+<option value="XOF">XOF — West African CFA Franc</option>
+<option value="XPF">XPF — CFP Franc</option>
+<option value="YER">YER — Yemeni Rial</option>
+<option value="ZAR">ZAR — South African Rand</option>
+<option value="ZMW">ZMW — Zambian Kwacha</option>
+<option value="ZWG">ZWG — Zimbabwean Gold</option>
+</optgroup>
+</select>
+<p style="color: rgba(255,255,255,0.35); font-size: 11px; margin-top: 6px;">This is for you while editing — visitors just see the formatted price, not a picker.</p>
+</div>
 <div id="offerEditorList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
     </div>
 <button onclick="addOffer()" class="sidebar-btn btn-outline" style="font-size: 13px; padding: 12px;">+ Add New Item</button>
@@ -611,6 +788,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div style="margin-bottom: 16px;">
 <label class="sidebar-input-label">City / Area</label>
 <input type="text" id="inputAddressCity" class="sidebar-input" placeholder="e.g. Bandung, Jawa Barat" value="Bandung, Jawa Barat" oninput="updateContent()">
+<p id="hintAddress" class="field-hint"></p>
 </div>
 <div>
 <label class="sidebar-input-label">Google Maps Link</label>
@@ -658,6 +836,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanEmailToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-envelope" style="width:16px;text-align:center;color:rgba(255,255,255,0.6);"></i> Email</span></label>
 <input type="text" id="chanEmailValue" class="sidebar-input" placeholder="you@business.com" oninput="updateContactChannels()">
 </div>
+<p id="hintContact" class="field-hint"></p>
 </div>
 
 <div class="sidebar-section" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px;">
@@ -714,6 +893,7 @@ let logoImage = null;
 let heroImage = null;
 let additionalImage = null; // Variabel baru untuk gambar tambahan
 let showLogoText = true;
+let logoShape = 'square';
 let lightboxIndex = 0;
 let currentCurrency = 'IDR';
 let currentIconEditingIndex = null;
@@ -902,10 +1082,114 @@ return '<a href="' + href + '" target="_blank" rel="noopener" class="' + btnClas
 }).join('');
 }
 
+function setFieldHint(hintId, isEmpty, filledText, emptyText) {
+const el = document.getElementById(hintId);
+if (!el) return;
+if (isEmpty) {
+el.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + emptyText;
+el.classList.add('warning');
+} else {
+el.textContent = filledText;
+el.classList.remove('warning');
+}
+}
+
+function updateFieldHints() {
+setFieldHint('hintName', !document.getElementById('inputName').value.trim(),
+'Helps AI assistants and search engines recognize your business name.',
+'Empty — AI assistants may not index your business optimally without a name.');
+
+setFieldHint('hintDesc', !document.getElementById('inputDesc').value.trim(),
+'Helps AI assistants and search engines understand what your business offers.',
+'Empty — AI assistants may not index your business optimally without a description.');
+
+const addrEmpty = !document.getElementById('inputAddressLine').value.trim() || !document.getElementById('inputAddressCity').value.trim();
+setFieldHint('hintAddress', addrEmpty,
+'Helps AI assistants and search engines show your business location accurately.',
+'Empty — AI assistants may not show your business location without a complete address.');
+
+const anyContactActive = contactChannelDefs.some(ch => {
+const toggle = document.getElementById('chan' + capKey(ch.key) + 'Toggle');
+const input = document.getElementById('chan' + capKey(ch.key) + 'Value');
+return toggle.checked && input.value.trim();
+});
+setFieldHint('hintContact', !anyContactActive,
+'At least one contact channel helps AI assistants and visitors reach you.',
+"No contact channel active — AI assistants and visitors won't know how to reach you.");
+}
+
 function updateContactChannels() {
 renderContactButtons();
+updateFieldHints();
+updateJsonLd();
 autoSave();
 }
+
+// ===== JSON-LD (schema.org) for AI assistants & search engine indexing =====
+const businessTypeSchema = {
+cafe: 'CafeOrCoffeeShop', restaurant: 'Restaurant', bakery: 'Bakery',
+salon: 'BeautySalon', barbershop: 'HairSalon', yoga: 'ExerciseGym', fitness: 'ExerciseGym',
+clinic: 'MedicalClinic', property: 'RealEstateAgent', agent: 'RealEstateAgent',
+umkm: 'Store', florist: 'Florist', hotel: 'LodgingBusiness', travel: 'TravelAgency',
+event: 'Organization', laundry: 'DryCleaningOrLaundry', repair: 'ProfessionalService',
+coworking: 'LocalBusiness', workshop: 'EducationalOrganization', consulting: 'ProfessionalService',
+professional: 'ProfessionalService', nonprofit: 'NGO', web3: 'Organization',
+creator: 'Person', freelance: 'Person', author: 'Person', educator: 'Person',
+musician: 'Person', podcaster: 'Person', artist: 'Person', trainer: 'Person', tutor: 'Person',
+photography: 'ProfessionalService'
+};
+
+function updateJsonLd() {
+const type = document.getElementById('businessType').value;
+const schemaType = businessTypeSchema[type] || 'LocalBusiness';
+const name = document.getElementById('inputName').value.trim();
+const description = document.getElementById('inputDesc').value.trim();
+const addressLine = document.getElementById('inputAddressLine').value.trim();
+const addressCity = document.getElementById('inputAddressCity').value.trim();
+
+const data = { '@context': 'https://schema.org', '@type': schemaType };
+if (name) data.name = name;
+if (description) data.description = description;
+
+if (addressLine || addressCity) {
+data.address = { '@type': 'PostalAddress' };
+if (addressLine) data.address.streetAddress = addressLine;
+if (addressCity) data.address.addressLocality = addressCity;
+}
+
+const phoneChecked = document.getElementById('chanPhoneToggle').checked;
+const phoneValue = document.getElementById('chanPhoneValue').value.trim();
+const waChecked = document.getElementById('chanWhatsappToggle').checked;
+const waValue = document.getElementById('chanWhatsappValue').value.trim();
+if (phoneChecked && phoneValue) data.telephone = phoneValue;
+else if (waChecked && waValue) data.telephone = '+' + waValue.replace(/[^0-9]/g, '');
+
+const emailChecked = document.getElementById('chanEmailToggle').checked;
+const emailValue = document.getElementById('chanEmailValue').value.trim();
+if (emailChecked && emailValue) data.email = emailValue;
+
+if (logoImage) data.image = logoImage;
+else if (heroImage) data.image = heroImage;
+
+data.url = window.location.href;
+
+if (document.getElementById('modHours').checked) {
+data.openingHoursSpecification = [
+{ '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '07:00', closes: '22:00' },
+{ '@type': 'OpeningHoursSpecification', dayOfWeek: ['Saturday', 'Sunday'], opens: '08:00', closes: '23:00' }
+];
+}
+
+let scriptEl = document.getElementById('jsonLdScript');
+if (!scriptEl) {
+scriptEl = document.createElement('script');
+scriptEl.type = 'application/ld+json';
+scriptEl.id = 'jsonLdScript';
+document.head.appendChild(scriptEl);
+}
+scriptEl.textContent = JSON.stringify(data, null, 2);
+}
+
 
 function applyColors() {
 const logoBox = document.getElementById('logoBox');
@@ -915,7 +1199,6 @@ heroCta.style.background = currentSecondary;
 heroCta.style.color = currentTextOnSecondary;
 document.getElementById('aboutIcon').style.background = currentPrimary + '15';
 document.querySelector('#aboutIcon svg').style.color = currentPrimary;
-document.getElementById('mapPin').style.background = currentPrimary;
 const dirBtn = document.getElementById('directionBtn');
 dirBtn.style.background = currentPrimary + '15';
 dirBtn.style.color = currentPrimary;
@@ -956,11 +1239,9 @@ document.getElementById('bizName').textContent = data.name;
 document.getElementById('bizTagline').textContent = data.tagline;
 document.getElementById('heroTitle').textContent = data.heroTitle;
 document.getElementById('heroSubtitle').textContent = data.heroSubtitle;
-document.getElementById('aboutTitle').textContent = data.aboutTitle;
 document.getElementById('aboutText').textContent = data.aboutText;
 document.getElementById('locationTitle').textContent = data.locationTitle;
 document.getElementById('contactTitle').textContent = data.contactTitle;
-document.getElementById('galleryTitle').textContent = data.galleryTitle;
 document.getElementById('heroBadge').textContent = data.heroBadge;
 if (!logoImage) document.getElementById('logoBox').textContent = data.logo;
 document.getElementById('inputName').value = data.name;
@@ -968,6 +1249,7 @@ document.getElementById('inputTagline').value = data.tagline;
 document.getElementById('inputHeadline').value = data.heroTitle;
 document.getElementById('inputSubtitle').value = data.heroSubtitle;
 renderOffers();
+updateJsonLd();
 autoSave();
 }
 
@@ -986,12 +1268,24 @@ document.getElementById('addressLine').textContent = addrLine || 'Address line';
 document.getElementById('addressCity').textContent = addrCity || 'City, Region';
 
 // Update Maps Link behavior
-const mapUrl = document.getElementById('inputMapLink').value;
-document.getElementById('directionBtn').onclick = function() {
-    window.open(mapUrl || 'https://maps.google.com/', '_blank');
-};
+document.getElementById('directionBtn').onclick = openMapsLink;
+updateMapEmbed();
 
+updateFieldHints();
+updateJsonLd();
 autoSave();
+}
+
+function openMapsLink() {
+const mapUrl = document.getElementById('inputMapLink').value;
+window.open(mapUrl || 'https://maps.google.com/', '_blank');
+}
+
+function updateMapEmbed() {
+const addrLine = document.getElementById('inputAddressLine').value.trim();
+const addrCity = document.getElementById('inputAddressCity').value.trim();
+const query = [addrLine, addrCity].filter(Boolean).join(', ') || 'Indonesia';
+document.getElementById('mapEmbed').src = 'https://www.google.com/maps?q=' + encodeURIComponent(query) + '&output=embed';
 }
 
 function updateClosingText() {
@@ -1035,8 +1329,21 @@ function toggleLogoText() {
 showLogoText = !showLogoText;
 const toggle = document.getElementById('logoTextToggle');
 const headerText = document.getElementById('headerTextWrap');
-if (showLogoText) { toggle.classList.add('active'); headerText.style.display = 'block'; }
-else { toggle.classList.remove('active'); headerText.style.display = 'none'; }
+// Visually hide only (sr-only), never display:none — the business name must
+// stay present in the DOM so AI crawlers / JSON-LD still pick it up even
+// when the visitor doesn't see it rendered (e.g. landscape logo already
+// contains the wordmark).
+if (showLogoText) { toggle.classList.add('active'); headerText.classList.remove('sr-only'); }
+else { toggle.classList.remove('active'); headerText.classList.add('sr-only'); }
+autoSave();
+}
+
+function setLogoShape(shape) {
+logoShape = shape;
+const logoBox = document.getElementById('logoBox');
+logoBox.classList.toggle('landscape', shape === 'landscape');
+document.getElementById('logoShapeSquareBtn').classList.toggle('active', shape === 'square');
+document.getElementById('logoShapeLandscapeBtn').classList.toggle('active', shape === 'landscape');
 autoSave();
 }
 
@@ -1228,13 +1535,8 @@ const data = businessData[type];
 const currentTitle = data ? data.servicesTitle : 'Offerings';
 
 const headerHtml = `
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div style="margin-bottom: 20px;">
 <h3 class="section-title" id="servicesTitle" style="margin-bottom: 0;">${currentTitle}</h3>
-<select onchange="updateCurrency(this.value)" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; outline: none; background: white; color: #333; cursor: pointer; font-weight: 600;">
-<option value="IDR" ${currentCurrency === 'IDR' ? 'selected' : ''}>IDR</option>
-<option value="USD" ${currentCurrency === 'USD' ? 'selected' : ''}>USD</option>
-<option value="GBP" ${currentCurrency === 'GBP' ? 'selected' : ''}>GBP</option>
-</select>
 </div>
 `;
 
@@ -1297,7 +1599,6 @@ list.innerHTML = offers.map((offer, i) => `
     </div>
     <span style="color: rgba(255,255,255,0.4); font-size: 14px;">❯</span>
 </div>
-
 <input type="text" class="sidebar-input" style="padding:10px; margin-bottom:8px; font-size:13px;" placeholder="Title" value="${offer.title}" oninput="updateOffer(${i}, 'title', this.value)">
 <input type="text" class="sidebar-input" style="padding:10px; margin-bottom:8px; font-size:13px;" placeholder="Description" value="${offer.desc}" oninput="updateOffer(${i}, 'desc', this.value)">
 <input type="text" class="sidebar-input" style="padding:10px; font-size:13px;" placeholder="Price (Numeric, e.g. 25000)" value="${offer.price}" oninput="updateOffer(${i}, 'price', this.value)">
@@ -1396,6 +1697,7 @@ logoImage: logoImage,
 heroImage: heroImage,
 additionalImage: additionalImage,
 showLogoText: showLogoText,
+logoShape: logoShape,
 galleryImages: galleryImages,
 currentCurrency: currentCurrency,
 offers: offers,
@@ -1488,8 +1790,10 @@ if (draft.showLogoText !== undefined) {
 showLogoText = draft.showLogoText;
 const toggle = document.getElementById('logoTextToggle');
 const headerText = document.getElementById('headerTextWrap');
-if (showLogoText) { toggle.classList.add('active'); headerText.style.display = 'block'; }
-else { toggle.classList.remove('active'); headerText.style.display = 'none'; }
+if (showLogoText) { toggle.classList.add('active'); headerText.classList.remove('sr-only'); }
+else { toggle.classList.remove('active'); headerText.classList.add('sr-only'); }
+
+if (draft.logoShape) setLogoShape(draft.logoShape);
 }
 
 if (draft.galleryImages) {
@@ -1507,7 +1811,10 @@ document.getElementById('inputClosingText').value = draft.closingText;
 updateClosingText();
 
 
-if (draft.currentCurrency) currentCurrency = draft.currentCurrency;
+if (draft.currentCurrency) {
+    currentCurrency = draft.currentCurrency;
+    document.getElementById('currencySelect').value = currentCurrency;
+}
 
 document.getElementById('modHero').checked = draft.modules.hero;
 document.getElementById('modAbout').checked = draft.modules.about;
@@ -1544,6 +1851,7 @@ document.getElementById('draftModal').classList.remove('active');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+document.getElementById('currencySelect').value = currentCurrency;
 applyColors();
 renderGallery();
 renderGalleryList();
@@ -1553,6 +1861,7 @@ renderOffers();
 renderOfferEditor();
 updateContent();
 updateClosingText();
+updateFieldHints();
 
 setTimeout(checkDraft, 500);
 
