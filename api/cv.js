@@ -240,7 +240,7 @@ export default async function handler(req, res) {
 body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#f0f2f5; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:2rem 1rem;
   --primary:#1a365d; --primary-light:#2c5282; --accent:#c5a47e; --text-dark:#1a202c; --text-medium:#4a5568; --text-light:#718096; --bg-warm:#faf9f7; --bg-white:#ffffff; --border:#e2e8f0;
   --shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06); --shadow-lg:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04); }
-.cv-container { width:100%; max-width:1100px; background:var(--bg-white); border-radius:12px; box-shadow:var(--shadow-lg); overflow:hidden; display:grid; grid-template-columns:1fr; }
+.cv-container { position:relative; width:100%; max-width:1100px; background:var(--bg-white); border-radius:12px; box-shadow:var(--shadow-lg); overflow:hidden; display:grid; grid-template-columns:1fr; }
 .cv-column { padding:2rem; }
 .left-column { background:var(--bg-warm); border-bottom:1px solid var(--border); }
 .right-column { background:var(--bg-white); }
@@ -314,9 +314,8 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item svg { flex-shrink:0; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
-.cv-banner { position:relative; height:56px; margin:-2rem -2rem 1.5rem; padding:12px 16px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; }
-.cv-banner-logo { display:inline-flex; align-items:center; }
-.cv-banner-logo img { width:32px; height:32px; border-radius:7px; display:block; }
+.cv-corner-logo { position:absolute; top:16px; left:16px; z-index:5; display:inline-flex; }
+.cv-corner-logo img { width:30px; height:30px; border-radius:7px; display:block; }
 .cv-toolbar { max-width:1100px; margin:1.5rem auto 0; padding:0 1rem; display:flex; justify-content:center; gap:0.5rem; }
 .cv-toolbar-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 0.9rem; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.8rem; font-weight:600; color:var(--text-medium); cursor:pointer; }
 .cv-toolbar-btn:hover { background:var(--bg-warm); color:var(--primary); }
@@ -331,17 +330,14 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
   .cv-toolbar { display:none !important; }
-  .cv-banner { display:none !important; }
-  .cv-banner { display:none !important; }
+  .cv-corner-logo { display:none !important; }
 }
 </style>
 </head>
 <body>
   <div class="cv-container">
+    <a href="https://netlink.bio" class="cv-corner-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
     <div class="cv-column left-column">
-      <div class="cv-banner">
-        <a href="https://netlink.bio" class="cv-banner-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
-      </div>
       <div class="profile-header">
         <div class="profile-avatar">
           ${avatar ? `<img src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">` : `<span class="profile-avatar-initial">${escapeHtml(displayName.charAt(0).toUpperCase())}</span>`}
