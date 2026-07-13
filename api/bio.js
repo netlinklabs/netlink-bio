@@ -27,6 +27,55 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ---- Verification badges (Green/Gold/Silver/Black) ----
+// Color is computed live from stored facts + current tier, never stored
+// directly, so it always reflects live subscription status without any
+// extra write whenever a tier changes. Mirrors the same logic used in
+// dashboard.html so both surfaces always agree.
+function formatBadgeDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function computeBadges(profile) {
+  const badges = [];
+  const tier = profile.tier || 'basic';
+  const tierEligible = tier === 'gold' || tier === 'platinum';
+
+  if (profile.is_black_badge) {
+    badges.push({
+      color: 'black', label: 'Netlink Special',
+      message: 'Awarded directly by the Netlink.bio team as special recognition.',
+      date: null,
+    });
+  }
+  if (profile.business_verified_at) {
+    badges.push(tierEligible
+      ? { color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink.bio team.", date: profile.business_verified_at }
+      : { color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.business_verified_at });
+  }
+  if (profile.identity_verified_at) {
+    badges.push(tierEligible
+      ? { color: 'green', label: 'Verified Person', message: "This profile's identity has been manually verified by the Netlink.bio team.", date: profile.identity_verified_at }
+      : { color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.identity_verified_at });
+  }
+  return badges;
+}
+
+function badgesHtml(profile) {
+  const badges = computeBadges(profile);
+  if (!badges.length) return '';
+  return `<div class="badge-row">${badges.map((b, i) => `
+    <span class="badge-wrap">
+      <button type="button" class="badge-dot badge-${b.color}" onclick="toggleBadgePopup(event, ${i})" title="${escapeHtml(b.label)}">&#10003;</button>
+      <span id="badgePopup${i}" class="badge-popup">
+        <strong class="badge-popup-title">${escapeHtml(b.label)}</strong>
+        ${escapeHtml(b.message)}
+        ${b.date ? `<span class="badge-popup-date">Verified since ${formatBadgeDate(b.date)}</span>` : ''}
+      </span>
+    </span>`).join('')}</div>`;
+}
+
 function iconHtml(iconKey) {
   const slug = BRAND_SLUGS[iconKey];
   if (slug) {
@@ -226,6 +275,18 @@ export default async function handler(req, res) {
   .avatar { width:96px; height:96px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; background:#e2e8f0; }
   .avatar-fallback { width:96px; height:96px; border-radius:50%; margin:0 auto 16px; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:36px; font-weight:700; }
   h1 { text-align:center; font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 4px; }
+  .name-row { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; }
+  .badge-row { display:inline-flex; align-items:center; gap:4px; }
+  .badge-wrap { position:relative; display:inline-flex; }
+  .badge-dot { width:18px; height:18px; border-radius:50%; border:none; padding:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; line-height:1; cursor:pointer; flex-shrink:0; }
+  .badge-green { background:#10b981; }
+  .badge-gold { background:#f59e0b; }
+  .badge-silver { background:#94a3b8; }
+  .badge-black { background:#18181b; }
+  .badge-popup { display:none; position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); width:220px; background:#0f172a; color:#e2e8f0; padding:10px 12px; border-radius:10px; font-size:12px; line-height:1.5; box-shadow:0 10px 25px rgba(0,0,0,0.25); z-index:60; text-align:left; }
+  .badge-popup.active { display:block; }
+  .badge-popup-title { display:block; margin-bottom:4px; }
+  .badge-popup-date { display:block; color:#94a3b8; font-size:11px; margin-top:4px; }
   .handle { text-align:center; color:#64748b; font-size:14px; margin:0 0 14px; }
   .contact-row { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
   .contact-icon { width:38px; height:38px; border-radius:50%; background:white; border:1px solid rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
@@ -299,7 +360,7 @@ export default async function handler(req, res) {
     ${avatar
       ? `<img class="avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`
       : `<div class="avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`}
-    <h1>${escapeHtml(displayName)}</h1>
+    <h1 class="name-row">${escapeHtml(displayName)}${badgesHtml(profile)}</h1>
     <p class="handle">@${escapeHtml(profile.username)}</p>
     ${contactIconsHtml}
 
@@ -323,6 +384,20 @@ export default async function handler(req, res) {
         setTimeout(() => btn.textContent = original, 1500);
       });
     }
+
+    function closeAllBadgePopups() {
+      document.querySelectorAll('.badge-popup').forEach(p => p.classList.remove('active'));
+    }
+    function toggleBadgePopup(event, idx) {
+      event.stopPropagation();
+      const popup = document.getElementById('badgePopup' + idx);
+      const wasActive = popup.classList.contains('active');
+      closeAllBadgePopups();
+      if (!wasActive) popup.classList.add('active');
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.badge-wrap')) closeAllBadgePopups();
+    });
   </script>
 </body>
 </html>`;
