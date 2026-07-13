@@ -15,6 +15,20 @@ function h(type, props, ...children) {
   return { type, props: { ...props, children: children.length <= 1 ? children[0] : children } };
 }
 
+// Same priority/colors as the badge system in bio.js / cv.js / dashboard.html
+// (Black > Business > Person), just simplified to colors only -- the OG
+// image doesn't need labels or popups, just a quick visual trust signal.
+function computeBadgeColors(profile) {
+  if (!profile) return [];
+  const tier = profile.tier || 'basic';
+  const tierEligible = tier === 'gold' || tier === 'platinum';
+  const colors = [];
+  if (profile.is_black_badge) colors.push('#18181b');
+  if (profile.business_verified_at) colors.push(tierEligible ? '#f59e0b' : '#94a3b8');
+  if (profile.identity_verified_at) colors.push(tierEligible ? '#10b981' : '#94a3b8');
+  return colors;
+}
+
 async function fetchProfile(username) {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&select=*`,
@@ -37,6 +51,7 @@ export default async function handler(req) {
   const subtitle = type === 'cv'
     ? (profile?.cv_data?.title || 'View Professional CV')
     : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
+  const badgeColors = computeBadgeColors(profile);
 
   return new ImageResponse(
     h('div', {
@@ -71,6 +86,19 @@ export default async function handler(req) {
       // Text
       h('div', { style: { display: 'flex', flexDirection: 'column', marginLeft: 60 } },
         h('div', { style: { fontSize: 62, fontWeight: 800, color: 'white', lineHeight: 1.1, display: 'flex' } }, displayName),
+        ...(badgeColors.length ? [
+          h('div', { style: { display: 'flex', gap: 10, marginTop: 16 } },
+            ...badgeColors.map((color) =>
+              h('div', {
+                style: {
+                  width: 30, height: 30, borderRadius: '50%', background: color,
+                  border: '2px solid rgba(255,255,255,0.85)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                },
+              }, h('span', { style: { color: 'white', fontSize: 16, fontWeight: 900, display: 'flex' } }, '✓'))
+            )
+          )
+        ] : []),
         h('div', { style: { fontSize: 32, color: 'rgba(255,255,255,0.88)', marginTop: 14, display: 'flex' } }, subtitle)
       )
     ),
