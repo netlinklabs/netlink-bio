@@ -62,18 +62,27 @@ function computeBadges(profile) {
   return badges;
 }
 
-function badgesHtml(profile) {
+function badgeDotsHtml(profile) {
   const badges = computeBadges(profile);
   if (!badges.length) return '';
-  return `<div class="badge-row">${badges.map((b, i) => `
-    <span class="badge-wrap">
-      <button type="button" class="badge-dot badge-${b.color}" onclick="toggleBadgePopup(event, ${i})" title="${escapeHtml(b.label)}">&#10003;</button>
-      <span id="badgePopup${i}" class="badge-popup">
-        <strong class="badge-popup-title">${escapeHtml(b.label)}</strong>
-        ${escapeHtml(b.message)}
-        ${b.date ? `<span class="badge-popup-date">Verified since ${formatBadgeDate(b.date)}</span>` : ''}
-      </span>
-    </span>`).join('')}</div>`;
+  return `<span class="badge-row">${badges.map((b, i) => `
+      <button type="button" class="badge-dot badge-${b.color}" onclick="openBadgeModal(${i})" title="${escapeHtml(b.label)}">&#10003;</button>`).join('')}</span>`;
+}
+
+function badgeModalsHtml(profile) {
+  const badges = computeBadges(profile);
+  if (!badges.length) return '';
+  return badges.map((b, i) => `
+    <div id="badgeModal${i}" class="badge-modal-overlay" onclick="if(event.target===this) closeBadgeModal(${i})">
+      <div class="badge-modal-box">
+        <span class="badge-modal-handle"></span>
+        <button class="badge-modal-close" onclick="closeBadgeModal(${i})">&times;</button>
+        <div class="badge-modal-icon badge-${b.color}">&#10003;</div>
+        <h3 class="badge-modal-title">&#9989; ${escapeHtml(b.label)}</h3>
+        <p class="badge-modal-message">${escapeHtml(b.message)}</p>
+        ${b.date ? `<p class="badge-modal-date">Verified since ${formatBadgeDate(b.date)}</p>` : ''}
+      </div>
+    </div>`).join('\n');
 }
 
 function iconHtml(iconKey) {
@@ -277,16 +286,24 @@ export default async function handler(req, res) {
   h1 { text-align:center; font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 4px; }
   .name-row { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; }
   .badge-row { display:inline-flex; align-items:center; gap:4px; }
-  .badge-wrap { position:relative; display:inline-flex; }
   .badge-dot { width:18px; height:18px; border-radius:50%; border:none; padding:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; line-height:1; cursor:pointer; flex-shrink:0; }
   .badge-green { background:#10b981; }
   .badge-gold { background:#f59e0b; }
   .badge-silver { background:#94a3b8; }
   .badge-black { background:#18181b; }
-  .badge-popup { display:none; position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); width:220px; background:#0f172a; color:#e2e8f0; padding:10px 12px; border-radius:10px; font-size:12px; line-height:1.5; box-shadow:0 10px 25px rgba(0,0,0,0.25); z-index:60; text-align:left; }
-  .badge-popup.active { display:block; }
-  .badge-popup-title { display:block; margin-bottom:4px; }
-  .badge-popup-date { display:block; color:#94a3b8; font-size:11px; margin-top:4px; }
+
+  /* Verification badge modal -- bottom sheet, Linktree-style */
+  .badge-modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:100; align-items:flex-end; justify-content:center; }
+  .badge-modal-overlay.active { display:flex; animation: badge-fade-in 0.2s ease-out; }
+  @keyframes badge-fade-in { from { opacity:0; } to { opacity:1; } }
+  .badge-modal-box { position:relative; background:white; width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:14px 24px 36px; box-shadow:0 -10px 30px rgba(0,0,0,0.2); animation: badge-slide-up 0.25s cubic-bezier(0.16,1,0.3,1); }
+  @keyframes badge-slide-up { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  .badge-modal-handle { display:block; width:36px; height:4px; border-radius:99px; background:#e2e8f0; margin:0 auto 20px; }
+  .badge-modal-close { position:absolute; top:16px; right:18px; width:30px; height:30px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .badge-modal-icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:22px; margin-bottom:16px; }
+  .badge-modal-title { font-family:'Poppins',sans-serif; font-size:19px; font-weight:700; margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+  .badge-modal-message { font-size:14px; color:#475569; line-height:1.6; margin:0 0 12px; }
+  .badge-modal-date { font-size:12px; color:#94a3b8; margin:0; }
   .handle { text-align:center; color:#64748b; font-size:14px; margin:0 0 14px; }
   .contact-row { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
   .contact-icon { width:38px; height:38px; border-radius:50%; background:white; border:1px solid rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
@@ -360,7 +377,7 @@ export default async function handler(req, res) {
     ${avatar
       ? `<img class="avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`
       : `<div class="avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`}
-    <h1 class="name-row">${escapeHtml(displayName)}${badgesHtml(profile)}</h1>
+    <h1 class="name-row">${escapeHtml(displayName)}${badgeDotsHtml(profile)}</h1>
     <p class="handle">@${escapeHtml(profile.username)}</p>
     ${contactIconsHtml}
 
@@ -372,6 +389,7 @@ export default async function handler(req, res) {
   </div>
 
   ${donateModalHtml}
+  ${badgeModalsHtml(profile)}
 
   <script>
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
@@ -386,18 +404,15 @@ export default async function handler(req, res) {
     }
 
     function closeAllBadgePopups() {
-      document.querySelectorAll('.badge-popup').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.badge-modal-overlay').forEach(m => m.classList.remove('active'));
     }
-    function toggleBadgePopup(event, idx) {
-      event.stopPropagation();
-      const popup = document.getElementById('badgePopup' + idx);
-      const wasActive = popup.classList.contains('active');
+    function openBadgeModal(idx) {
       closeAllBadgePopups();
-      if (!wasActive) popup.classList.add('active');
+      document.getElementById('badgeModal' + idx).classList.add('active');
     }
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.badge-wrap')) closeAllBadgePopups();
-    });
+    function closeBadgeModal(idx) {
+      document.getElementById('badgeModal' + idx).classList.remove('active');
+    }
   </script>
 </body>
 </html>`;
