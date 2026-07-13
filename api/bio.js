@@ -72,12 +72,21 @@ function badgeDotsHtml(profile) {
 function badgeModalsHtml(profile) {
   const badges = computeBadges(profile);
   if (!badges.length) return '';
+  const displayName = profile.display_name || profile.username || '';
+  const avatar = profile.avatar_url || '';
+  const avatarHtml = avatar
+    ? `<img class="badge-modal-avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`
+    : `<div class="badge-modal-avatar badge-modal-avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase() || '?')}</div>`;
+
   return badges.map((b, i) => `
     <div id="badgeModal${i}" class="badge-modal-overlay" onclick="if(event.target===this) closeBadgeModal(${i})">
       <div class="badge-modal-box">
         <span class="badge-modal-handle"></span>
         <button class="badge-modal-close" onclick="closeBadgeModal(${i})">&times;</button>
-        <div class="badge-modal-icon badge-${b.color}">&#10003;</div>
+        <div class="badge-modal-avatar-wrap">
+          ${avatarHtml}
+          <span class="badge-modal-avatar-check badge-${b.color}">&#10003;</span>
+        </div>
         <h3 class="badge-modal-title">&#9989; ${escapeHtml(b.label)}</h3>
         <p class="badge-modal-message">${escapeHtml(b.message)}</p>
         ${b.date ? `<p class="badge-modal-date">Verified since ${formatBadgeDate(b.date)}</p>` : ''}
@@ -300,7 +309,10 @@ export default async function handler(req, res) {
   @keyframes badge-slide-up { from { transform:translateY(100%); } to { transform:translateY(0); } }
   .badge-modal-handle { display:block; width:36px; height:4px; border-radius:99px; background:#e2e8f0; margin:0 auto 20px; }
   .badge-modal-close { position:absolute; top:16px; right:18px; width:30px; height:30px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  .badge-modal-icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:22px; margin-bottom:16px; }
+  .badge-modal-avatar-wrap { position:relative; width:64px; height:64px; margin-bottom:16px; }
+  .badge-modal-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; display:block; background:#e2e8f0; }
+  .badge-modal-avatar-fallback { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:24px; font-weight:700; }
+  .badge-modal-avatar-check { position:absolute; bottom:-2px; right:-2px; width:24px; height:24px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; box-sizing:content-box; }
   .badge-modal-title { font-family:'Poppins',sans-serif; font-size:19px; font-weight:700; margin:0 0 10px; display:flex; align-items:center; gap:8px; }
   .badge-modal-message { font-size:14px; color:#475569; line-height:1.6; margin:0 0 12px; }
   .badge-modal-date { font-size:12px; color:#94a3b8; margin:0; }
