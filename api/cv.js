@@ -308,7 +308,10 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item svg { flex-shrink:0; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
-.cv-toolbar { max-width:1100px; margin:0 auto; padding:1rem 1rem 0; display:flex; justify-content:flex-end; gap:0.5rem; }
+.cv-topbar { max-width:1100px; margin:0 auto; padding:1rem 1rem 0; }
+.cv-topbar-logo { display:inline-flex; align-items:center; }
+.cv-topbar-logo img { width:32px; height:32px; border-radius:7px; display:block; }
+.cv-toolbar { max-width:1100px; margin:1.5rem auto 0; padding:0 1rem; display:flex; justify-content:center; gap:0.5rem; }
 .cv-toolbar-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 0.9rem; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.8rem; font-weight:600; color:var(--text-medium); cursor:pointer; }
 .cv-toolbar-btn:hover { background:var(--bg-warm); color:var(--primary); }
 @media (min-width:768px) {
@@ -322,14 +325,14 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
   .cv-toolbar { display:none !important; }
+  .cv-topbar { display:none !important; }
 }
 </style>
 </head>
 <body>
-  <div class="cv-toolbar">
-    <button type="button" class="cv-toolbar-btn" onclick="window.print()" title="Print / Save as PDF">${iconPrint()} Print</button>
-    <button type="button" class="cv-toolbar-btn" onclick="shareCv(event)" title="Share this CV">${iconShare()} Share</button>
-  </div>
+  <header class="cv-topbar">
+    <a href="https://netlink.bio" class="cv-topbar-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
+  </header>
   <div class="cv-container">
     <div class="cv-column left-column">
       <div class="profile-header">
@@ -351,6 +354,10 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
       ${projectsHtml}
       ${certificationsHtml}
     </div>
+  </div>
+  <div class="cv-toolbar">
+    <button type="button" class="cv-toolbar-btn" onclick="window.print()" title="Print / Save as PDF">${iconPrint()} Print</button>
+    <button type="button" class="cv-toolbar-btn" onclick="shareCv(event)" title="Share this CV">${iconShare()} Share</button>
   </div>
   <div class="footer-link"><a href="/">netlink.bio &mdash; build your page free</a></div>
   ${badgeModalsHtml(profile)}
