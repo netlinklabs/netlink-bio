@@ -16,6 +16,72 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ---- Verification badges (Green/Gold/Silver/Black) ----
+// Identical logic to api/bio.js -- color is computed live from stored
+// facts + current tier, never stored directly, so both pages always
+// agree and never need an extra write when a tier changes.
+function formatBadgeDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function computeBadges(profile) {
+  const badges = [];
+  const tier = profile.tier || 'basic';
+  const tierEligible = tier === 'gold' || tier === 'platinum';
+
+  if (profile.is_black_badge) {
+    badges.push({
+      color: 'black', label: 'Netlink Special',
+      message: 'Awarded directly by the Netlink.bio team as special recognition.',
+      date: null,
+    });
+  }
+  if (profile.business_verified_at) {
+    badges.push(tierEligible
+      ? { color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink.bio team.", date: profile.business_verified_at }
+      : { color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.business_verified_at });
+  }
+  if (profile.identity_verified_at) {
+    badges.push(tierEligible
+      ? { color: 'green', label: 'Verified Person', message: "This profile's identity has been manually verified by the Netlink.bio team.", date: profile.identity_verified_at }
+      : { color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.identity_verified_at });
+  }
+  return badges;
+}
+
+function badgeDotsHtml(profile) {
+  const badges = computeBadges(profile);
+  if (!badges.length) return '';
+  return `<span class="badge-row">${badges.map((b, i) => `
+      <button type="button" class="badge-dot badge-${b.color}" onclick="openBadgeModal(${i})" title="${escapeHtml(b.label)}">&#10003;</button>`).join('')}</span>`;
+}
+
+function badgeModalsHtml(profile) {
+  const badges = computeBadges(profile);
+  if (!badges.length) return '';
+  const displayName = profile.display_name || profile.username || '';
+  const avatar = profile.avatar_url || '';
+  const avatarHtml = avatar
+    ? `<img class="badge-modal-avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`
+    : `<div class="badge-modal-avatar badge-modal-avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase() || '?')}</div>`;
+
+  return badges.map((b, i) => `
+    <div id="badgeModal${i}" class="badge-modal-overlay" onclick="if(event.target===this) closeBadgeModal(${i})">
+      <div class="badge-modal-box">
+        <span class="badge-modal-handle"></span>
+        <button class="badge-modal-close" onclick="closeBadgeModal(${i})">&times;</button>
+        <div class="badge-modal-avatar-wrap">
+          ${avatarHtml}
+          <span class="badge-modal-avatar-check badge-${b.color}">&#10003;</span>
+        </div>
+        <h3 class="badge-modal-title">&#9989; ${escapeHtml(b.label)}</h3>
+        <p class="badge-modal-message">${escapeHtml(b.message)}</p>
+        ${b.date ? `<p class="badge-modal-date">Verified since ${formatBadgeDate(b.date)}</p>` : ''}
+      </div>
+    </div>`).join('\n');
+}
+
 async function supabaseGet(path) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
@@ -90,7 +156,7 @@ export default async function handler(req, res) {
   const contactHtml = `
     <div class="contact-list">
       ${profile.contact_email ? `<a href="mailto:${escapeHtml(profile.contact_email)}" class="contact-item">${iconMail()} ${escapeHtml(profile.contact_email)}</a>` : ''}
-      ${profile.contact_whatsapp ? `<a href="https://wa.me/${escapeHtml(profile.contact_whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" class="contact-item">${iconPhone()} ${escapeHtml(profile.contact_whatsapp)}</a>` : ''}
+      ${profile.contact_whatsapp ? `<a href="https://wa.me/${escapeHtml(profile.contact_whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" class="contact-item">${iconPhone()} WhatsApp</a>` : ''}
       <a href="${bioUrl}" class="contact-item">${iconGlobe()} netlink.bio/${escapeHtml(profile.username)}</a>
     </div>`;
 
@@ -152,11 +218,8 @@ export default async function handler(req, res) {
 <meta name="description" content="${escapeHtml(summary || `${displayName}'s CV on Netlink.bio`)}">
 <meta property="og:title" content="${escapeHtml(displayName)} — CV">
 <meta property="og:description" content="${escapeHtml(summary)}">
-<meta property="og:image" content="https://netlink-bio.vercel.app/api/og?username=${encodeURIComponent(profile.username)}&type=cv">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
 <meta property="og:url" content="${pageUrl}">
-<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
 
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
@@ -175,7 +238,29 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .profile-avatar { width:100px; height:100px; margin:0 auto 1rem; border-radius:50%; overflow:hidden; border:3px solid var(--accent); background:linear-gradient(135deg,#1a365d,#2c5282); display:flex; align-items:center; justify-content:center; }
 .profile-avatar img { width:100%; height:100%; object-fit:cover; }
 .profile-avatar-initial { color:white; font-size:2.5rem; font-weight:700; }
-.profile-name { font-size:1.75rem; font-weight:700; color:var(--primary); letter-spacing:-0.025em; margin-bottom:0.25rem; }
+.profile-name { font-size:1.75rem; font-weight:700; color:var(--primary); letter-spacing:-0.025em; margin-bottom:0.25rem; display:flex; align-items:center; justify-content:center; gap:0.4rem; flex-wrap:wrap; }
+.badge-row { display:inline-flex; align-items:center; gap:4px; }
+.badge-dot { width:18px; height:18px; border-radius:50%; border:none; padding:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; line-height:1; cursor:pointer; flex-shrink:0; }
+.badge-green { background:#10b981; }
+.badge-gold { background:#f59e0b; }
+.badge-silver { background:#94a3b8; }
+.badge-black { background:#18181b; }
+
+/* Verification badge modal -- bottom sheet, same as api/bio.js */
+.badge-modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:100; align-items:flex-end; justify-content:center; }
+.badge-modal-overlay.active { display:flex; animation: badge-fade-in 0.2s ease-out; }
+@keyframes badge-fade-in { from { opacity:0; } to { opacity:1; } }
+.badge-modal-box { position:relative; background:white; width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:14px 24px 36px; box-shadow:0 -10px 30px rgba(0,0,0,0.2); animation: badge-slide-up 0.25s cubic-bezier(0.16,1,0.3,1); text-align:left; }
+@keyframes badge-slide-up { from { transform:translateY(100%); } to { transform:translateY(0); } }
+.badge-modal-handle { display:block; width:36px; height:4px; border-radius:99px; background:#e2e8f0; margin:0 auto 20px; }
+.badge-modal-close { position:absolute; top:16px; right:18px; width:30px; height:30px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.badge-modal-avatar-wrap { position:relative; width:64px; height:64px; margin-bottom:16px; }
+.badge-modal-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; display:block; background:#e2e8f0; }
+.badge-modal-avatar-fallback { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; justify-content:center; color:white; font-size:24px; font-weight:700; }
+.badge-modal-avatar-check { position:absolute; bottom:-2px; right:-2px; width:24px; height:24px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; box-sizing:content-box; }
+.badge-modal-title { font-size:19px; font-weight:700; color:var(--text-dark); margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+.badge-modal-message { font-size:14px; color:var(--text-medium); line-height:1.6; margin:0 0 12px; }
+.badge-modal-date { font-size:12px; color:var(--text-light); margin:0; }
 .profile-title { font-size:1rem; color:var(--accent); font-weight:500; margin-bottom:0.5rem; }
 .profile-location { display:inline-flex; align-items:center; gap:0.375rem; color:var(--text-light); font-size:0.875rem; }
 .cv-section { margin-bottom:2rem; }
@@ -219,12 +304,6 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item svg { flex-shrink:0; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
-.cv-actions { display:flex; gap:0.75rem; justify-content:center; margin-top:2rem; flex-wrap:wrap; }
-.btn-action { display:inline-flex; align-items:center; gap:0.5rem; border:none; padding:0.75rem 1.5rem; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
-.btn-print { background:var(--primary); color:white; box-shadow:var(--shadow); }
-.btn-print:hover { background:var(--primary-light); transform:translateY(-1px); box-shadow:var(--shadow-lg); }
-.btn-share { background:white; color:var(--primary); border:1.5px solid var(--border) !important; }
-.btn-share:hover { border-color:var(--primary) !important; transform:translateY(-1px); }
 @media (min-width:768px) {
   .cv-container { grid-template-columns:320px 1fr; }
   .left-column { border-bottom:none; border-right:1px solid var(--border); }
@@ -235,7 +314,6 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   body { background:white; padding:0; }
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
-  .cv-actions { display:none !important; }
 }
 </style>
 </head>
@@ -246,7 +324,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
         <div class="profile-avatar">
           ${avatar ? `<img src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">` : `<span class="profile-avatar-initial">${escapeHtml(displayName.charAt(0).toUpperCase())}</span>`}
         </div>
-        <h1 class="profile-name">${escapeHtml(displayName)}</h1>
+        <h1 class="profile-name">${escapeHtml(displayName)}${badgeDotsHtml(profile)}</h1>
         ${title ? `<p class="profile-title">${escapeHtml(title)}</p>` : ''}
         ${location ? `<div class="profile-location">${iconGlobe()} ${escapeHtml(location)}</div>` : ''}
       </div>
@@ -262,26 +340,18 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
       ${certificationsHtml}
     </div>
   </div>
-  <div class="cv-actions">
-    <button type="button" class="btn-action btn-share" onclick="shareCv()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      Share
-    </button>
-    <button type="button" class="btn-action btn-print" onclick="window.print()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      Print to PDF
-    </button>
-  </div>
   <div class="footer-link"><a href="/">netlink.bio &mdash; build your page free</a></div>
-
+  ${badgeModalsHtml(profile)}
   <script>
-    function shareCv() {
-      const url = window.location.href;
-      if (navigator.share) {
-        navigator.share({ title: document.title, url }).catch(() => {});
-      } else {
-        navigator.clipboard.writeText(url).then(() => alert('CV link copied to clipboard!'));
-      }
+    function closeAllBadgePopups() {
+      document.querySelectorAll('.badge-modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+    function openBadgeModal(idx) {
+      closeAllBadgePopups();
+      document.getElementById('badgeModal' + idx).classList.add('active');
+    }
+    function closeBadgeModal(idx) {
+      document.getElementById('badgeModal' + idx).classList.remove('active');
     }
   </script>
 </body>
