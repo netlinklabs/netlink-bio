@@ -59,6 +59,16 @@
         .modal.active { display: flex; }
         .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); }
+        .badge-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; padding: 0; flex-shrink: 0; }
+        .badge-dot.badge-green { background: #10b981; }
+        .badge-dot.badge-gold { background: #f59e0b; }
+        .badge-dot.badge-silver { background: #94a3b8; }
+        .badge-dot.badge-black { background: #18181b; }
+        .badge-popup { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: 220px; background: #1e293b; color: #e2e8f0; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.5; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 60; text-align: left; }
+        .badge-popup.active { display: block; }
+        .badge-popup .badge-popup-title { font-weight: 700; margin-bottom: 4px; display: block; }
+        .badge-popup .badge-popup-date { color: #94a3b8; font-size: 11px; margin-top: 4px; display: block; }
+        .badge-wrap { position: relative; }
         .notification-panel { display: none; position: absolute; top: 50px; right: 0; width: 320px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; z-index: 50; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .notification-panel.active { display: block; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
@@ -177,10 +187,9 @@
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Analytics</span>
                 <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
             </div>
-            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
+            <a href="#" onclick="event.preventDefault(); scrollToLandingPageCard();" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
-            </div>
+            </a>
             <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
                 <i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Store</span>
                 <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
@@ -196,6 +205,7 @@
                         <p id="sidebarTierLabel" class="text-xs text-muted">Basic Plan</p>
                     </div>
                 </button>
+                <div id="badgeRow" class="flex items-center gap-1 flex-shrink-0"></div>
                 <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
@@ -561,22 +571,53 @@
             </div>
         </div>
 
-        <div class="card locked-card rounded-2xl mb-4 lg:mb-6">
-            <div class="locked-content p-4 lg:p-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="sparkles" class="w-5 h-5 text-yellow-500"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-primary">Pro Features</h3>
-                            <p class="text-sm text-secondary">Landing Page, Premium Template &amp; more</p>
+        <div id="landingPageCard" class="card rounded-2xl mb-4 lg:mb-6">
+            <div class="p-4 lg:p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="globe" class="w-5 h-5 text-purple-500"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-primary">Landing Page</h3>
+                        <p id="landingPageSubtitle" class="text-sm text-secondary">Available from Silver plan and up</p>
+                    </div>
+                </div>
+
+                <!-- Locked state: Basic tier -->
+                <div id="landingPageLocked" class="hidden">
+                    <div class="p-4 bg-surface border border-subtle rounded-xl text-center">
+                        <i data-lucide="lock" class="w-5 h-5 text-muted mx-auto mb-2"></i>
+                        <p class="text-sm text-secondary mb-3">Upgrade to Silver or higher to build a custom landing page.</p>
+                        <button onclick="showToast('Contact us to upgrade your plan')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Upgrade Plan</button>
+                    </div>
+                </div>
+
+                <!-- Empty state: eligible tier, no landing page yet -->
+                <div id="landingPageEmpty" class="hidden">
+                    <button onclick="createLandingPage()" class="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Create Landing Page
+                    </button>
+                </div>
+
+                <!-- Exists state: has a landing page already -->
+                <div id="landingPageExists" class="hidden">
+                    <div class="flex items-center justify-between p-3 bg-surface border border-subtle rounded-xl mb-3">
+                        <div class="min-w-0">
+                            <p id="landingPageTitle" class="text-sm font-medium text-primary truncate">Untitled Page</p>
+                            <p id="landingPageStatus" class="text-xs text-muted">Draft</p>
                         </div>
                     </div>
-                    <button onclick="showToast('Coming soon!')" class="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 border border-yellow-500/30 rounded-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0">
-                        <i data-lucide="sparkles" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Coming Soon</span>
-                    </button>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="editLandingPage()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                        </button>
+                        <button onclick="previewLandingPage()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                        </button>
+                        <button onclick="deleteLandingPage()" class="py-2 hover:bg-red-500/10 border border-subtle rounded-lg text-xs font-medium text-red-500 transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -639,7 +680,7 @@
         let currentUser = null;
         let currentProfile = null;
         let currentLinks = [];
-        const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: Infinity };
+        const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
 
         async function checkAuth() {
             try {
@@ -719,8 +760,76 @@
         async function loadDashboardData() {
             await loadProfile();
             await loadLinks();
+            await loadLandingPageCard();
             updateProfileCompletion();
         }
+
+        function formatBadgeDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        // Badge color is computed live from stored facts + current tier,
+        // never stored directly -- so it always reflects live subscription
+        // status without needing an update whenever tier changes.
+        function computeBadges(profile) {
+            const badges = [];
+            const tier = profile.tier || 'basic';
+            const tierEligible = tier === 'gold' || tier === 'platinum';
+
+            if (profile.is_black_badge) {
+                badges.push({
+                    color: 'black', label: 'Netlink Special',
+                    message: 'Diberikan langsung oleh tim Netlink.bio sebagai bentuk apresiasi khusus.',
+                    date: null
+                });
+            }
+            if (profile.business_verified_at) {
+                badges.push(tierEligible
+                    ? { color: 'gold', label: 'Verified Business', message: 'Legalitas usaha ini sudah diverifikasi manual oleh tim Netlink.bio melalui dokumen resmi perusahaan.', date: profile.business_verified_at }
+                    : { color: 'silver', label: 'Previously Verified', message: 'Identitas pemilik profil ini pernah diverifikasi manual oleh tim Netlink.bio.', date: profile.business_verified_at });
+            }
+            if (profile.identity_verified_at) {
+                badges.push(tierEligible
+                    ? { color: 'green', label: 'Verified Person', message: 'Identitas pemilik profil ini sudah diverifikasi manual oleh tim Netlink.bio melalui dokumen resmi.', date: profile.identity_verified_at }
+                    : { color: 'silver', label: 'Previously Verified', message: 'Identitas pemilik profil ini pernah diverifikasi manual oleh tim Netlink.bio.', date: profile.identity_verified_at });
+            }
+            return badges;
+        }
+
+        function closeAllBadgePopups() {
+            document.querySelectorAll('.badge-popup').forEach(p => p.classList.remove('active'));
+        }
+
+        function toggleBadgePopup(idx) {
+            const popup = document.getElementById('badgePopup' + idx);
+            const wasActive = popup.classList.contains('active');
+            closeAllBadgePopups();
+            if (!wasActive) popup.classList.add('active');
+        }
+
+        function renderBadges(profile) {
+            const badges = computeBadges(profile);
+            const row = document.getElementById('badgeRow');
+            row.innerHTML = badges.map((b, i) => `
+                <div class="badge-wrap">
+                    <button type="button" class="badge-dot badge-${b.color}" onclick="event.stopPropagation(); toggleBadgePopup(${i})" title="${b.label}">
+                        <i data-lucide="check" class="w-3 h-3 text-white"></i>
+                    </button>
+                    <div id="badgePopup${i}" class="badge-popup">
+                        <span class="badge-popup-title">${b.label}</span>
+                        ${b.message}
+                        ${b.date ? `<span class="badge-popup-date">Verified since ${formatBadgeDate(b.date)}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.badge-wrap')) closeAllBadgePopups();
+        });
 
         async function loadProfile() {
             const { data, error } = await supabaseClient
@@ -737,6 +846,7 @@
             document.getElementById('sidebarUserEmail').textContent = label;
             document.getElementById('sidebarTierLabel').textContent =
                 (data.tier || 'basic').charAt(0).toUpperCase() + (data.tier || 'basic').slice(1) + ' Plan';
+            renderBadges(data);
 
             const viewBtn = document.getElementById('viewProfileBtn');
             if (data.username) {
@@ -959,6 +1069,96 @@
         function scrollToCvCard() {
             document.getElementById('cvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
             if (window.innerWidth < 1024) toggleSidebar();
+        }
+
+        function scrollToLandingPageCard() {
+            document.getElementById('landingPageCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (window.innerWidth < 1024) toggleSidebar();
+        }
+
+        let currentLandingPage = null;
+
+        async function loadLandingPageCard() {
+            const tier = currentProfile?.tier || 'basic';
+            const lockedEl = document.getElementById('landingPageLocked');
+            const emptyEl = document.getElementById('landingPageEmpty');
+            const existsEl = document.getElementById('landingPageExists');
+            const subtitleEl = document.getElementById('landingPageSubtitle');
+            lockedEl.classList.add('hidden');
+            emptyEl.classList.add('hidden');
+            existsEl.classList.add('hidden');
+
+            // Basic tier can't create a landing page at all.
+            if (tier === 'basic') {
+                subtitleEl.textContent = 'Available from Silver plan and up';
+                lockedEl.classList.remove('hidden');
+                return;
+            }
+
+            subtitleEl.textContent = 'One custom landing page for your business';
+
+            const { data, error } = await supabaseClient
+                .from('landing_pages').select('*').eq('user_id', currentUser.id).maybeSingle();
+
+            if (error) {
+                console.error('Failed to load landing page:', error);
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            currentLandingPage = data;
+
+            if (!data) {
+                emptyEl.classList.remove('hidden');
+            } else {
+                document.getElementById('landingPageTitle').textContent = data.title || 'Untitled Page';
+                document.getElementById('landingPageStatus').textContent = data.is_published ? 'Published' : 'Draft';
+                existsEl.classList.remove('hidden');
+            }
+        }
+
+        async function createLandingPage() {
+            // NOTE: the Landing Page Builder (page-builder.html) is currently a
+            // standalone prototype that saves to the browser's localStorage --
+            // it isn't wired up to read/write this `landing_pages` table yet.
+            // This just reserves the row so the dashboard state is correct;
+            // connecting the builder itself to Supabase is a separate task.
+            const { data, error } = await supabaseClient
+                .from('landing_pages')
+                .insert({ user_id: currentUser.id, title: 'Untitled Page', content: {}, is_published: false })
+                .select().single();
+
+            if (error) { showToast('Failed to create landing page'); console.error(error); return; }
+
+            currentLandingPage = data;
+            showToast('Landing page created — opening editor...');
+            window.open('page-builder.html', '_blank');
+            await loadLandingPageCard();
+        }
+
+        function editLandingPage() {
+            window.open('page-builder.html', '_blank');
+        }
+
+        function previewLandingPage() {
+            // There's no public-facing rendering endpoint for landing pages yet
+            // (the equivalent of api/bio.js or api/cv.js for this feature isn't
+            // built). Being upfront about that here instead of opening a dead link.
+            showToast('Public preview link is not wired up yet — open the editor to preview inside the builder for now');
+        }
+
+        async function deleteLandingPage() {
+            if (!currentLandingPage) return;
+            if (!confirm('Delete your landing page? This cannot be undone.')) return;
+
+            const { error } = await supabaseClient
+                .from('landing_pages').delete().eq('user_id', currentUser.id);
+
+            if (error) { showToast('Failed to delete landing page'); console.error(error); return; }
+
+            currentLandingPage = null;
+            showToast('Landing page deleted');
+            await loadLandingPageCard();
         }
 
         function getCvUsername() {
@@ -1346,7 +1546,7 @@
             const limit = LINK_LIMITS[tier] ?? 20;
             const shape = currentProfile?.link_icon_shape || 'circle';
 
-            document.getElementById('linkCountLabel').textContent = `${currentLinks.length}/${limit === Infinity ? '∞' : limit} links used`;
+            document.getElementById('linkCountLabel').textContent = `${currentLinks.length}/${limit} links used`;
             list.querySelectorAll('.link-item').forEach(el => el.remove());
 
             if (currentLinks.length === 0) { empty.classList.remove('hidden'); return; }
