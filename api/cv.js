@@ -164,6 +164,8 @@ export default async function handler(req, res) {
   function iconPhone() { return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`; }
   function iconGlobe() { return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`; }
   function iconCheck() { return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a365d" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`; }
+  function iconPrint() { return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`; }
+  function iconShare() { return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`; }
 
   const skillsHtml = skills.length
     ? `<div class="cv-section"><h2 class="section-title">Skills</h2><div class="skill-tags">${skills.map((s) => `<span class="skill-tag">${escapeHtml(s)}</span>`).join('')}</div></div>`
@@ -218,7 +220,9 @@ export default async function handler(req, res) {
 <meta name="description" content="${escapeHtml(summary || `${displayName}'s CV on Netlink.bio`)}">
 <meta property="og:title" content="${escapeHtml(displayName)} — CV">
 <meta property="og:description" content="${escapeHtml(summary)}">
-${avatar ? `<meta property="og:image" content="${escapeHtml(avatar)}">` : ''}
+<meta property="og:image" content="https://netlink-bio.vercel.app/api/og?username=${encodeURIComponent(profile.username)}&type=cv">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="${pageUrl}">
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
 
@@ -304,6 +308,9 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item svg { flex-shrink:0; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
+.cv-toolbar { max-width:1100px; margin:0 auto; padding:1rem 1rem 0; display:flex; justify-content:flex-end; gap:0.5rem; }
+.cv-toolbar-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 0.9rem; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.8rem; font-weight:600; color:var(--text-medium); cursor:pointer; }
+.cv-toolbar-btn:hover { background:var(--bg-warm); color:var(--primary); }
 @media (min-width:768px) {
   .cv-container { grid-template-columns:320px 1fr; }
   .left-column { border-bottom:none; border-right:1px solid var(--border); }
@@ -314,10 +321,15 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   body { background:white; padding:0; }
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
+  .cv-toolbar { display:none !important; }
 }
 </style>
 </head>
 <body>
+  <div class="cv-toolbar">
+    <button type="button" class="cv-toolbar-btn" onclick="window.print()" title="Print / Save as PDF">${iconPrint()} Print</button>
+    <button type="button" class="cv-toolbar-btn" onclick="shareCv(event)" title="Share this CV">${iconShare()} Share</button>
+  </div>
   <div class="cv-container">
     <div class="cv-column left-column">
       <div class="profile-header">
@@ -343,6 +355,20 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   <div class="footer-link"><a href="/">netlink.bio &mdash; build your page free</a></div>
   ${badgeModalsHtml(profile)}
   <script>
+    function shareCv(event) {
+      const shareData = { title: ${JSON.stringify(displayName + ' — CV')}, url: ${JSON.stringify(pageUrl)} };
+      if (navigator.share) {
+        navigator.share(shareData).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(shareData.url).then(() => {
+          const btn = event.currentTarget;
+          const original = btn.innerHTML;
+          btn.textContent = 'Link copied!';
+          setTimeout(() => btn.innerHTML = original, 1500);
+        });
+      }
+    }
+
     function closeAllBadgePopups() {
       document.querySelectorAll('.badge-modal-overlay').forEach(m => m.classList.remove('active'));
     }
