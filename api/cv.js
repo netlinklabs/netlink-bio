@@ -25,6 +25,12 @@ function formatBadgeDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+// Gold and Platinum remove the "netlink.bio -- build your page free" watermark.
+function showWatermark(profile) {
+  const tier = profile?.tier || 'basic';
+  return tier !== 'gold' && tier !== 'platinum';
+}
+
 function computeBadges(profile) {
   const badges = [];
   const tier = profile.tier || 'basic';
@@ -242,7 +248,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .profile-avatar { width:100px; height:100px; margin:0 auto 1rem; border-radius:50%; overflow:hidden; border:3px solid var(--accent); background:linear-gradient(135deg,#1a365d,#2c5282); display:flex; align-items:center; justify-content:center; }
 .profile-avatar img { width:100%; height:100%; object-fit:cover; }
 .profile-avatar-initial { color:white; font-size:2.5rem; font-weight:700; }
-.profile-name { font-size:1.75rem; font-weight:700; color:var(--primary); letter-spacing:-0.025em; margin-bottom:0.25rem; display:flex; align-items:center; justify-content:center; gap:0.4rem; flex-wrap:wrap; }
+.profile-name { font-size:1.4rem; font-weight:700; color:var(--primary); letter-spacing:-0.025em; margin-bottom:0.25rem; display:flex; align-items:center; justify-content:center; gap:0.4rem; flex-wrap:wrap; }
 .badge-row { display:inline-flex; align-items:center; gap:4px; }
 .badge-dot { width:18px; height:18px; border-radius:50%; border:none; padding:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; line-height:1; cursor:pointer; flex-shrink:0; }
 .badge-green { background:#10b981; }
@@ -265,7 +271,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .badge-modal-title { font-size:19px; font-weight:700; color:var(--text-dark); margin:0 0 10px; display:flex; align-items:center; gap:8px; }
 .badge-modal-message { font-size:14px; color:var(--text-medium); line-height:1.6; margin:0 0 12px; }
 .badge-modal-date { font-size:12px; color:var(--text-light); margin:0; }
-.profile-title { font-size:1rem; color:var(--accent); font-weight:500; margin-bottom:0.5rem; }
+.profile-title { font-size:0.85rem; color:var(--accent); font-weight:500; margin-bottom:0.5rem; }
 .profile-location { display:inline-flex; align-items:center; gap:0.375rem; color:var(--text-light); font-size:0.875rem; }
 .cv-section { margin-bottom:2rem; }
 .cv-section:last-child { margin-bottom:0; }
@@ -308,9 +314,9 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item svg { flex-shrink:0; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
-.cv-topbar { max-width:1100px; margin:0 auto; padding:1rem 1rem 0; }
-.cv-topbar-logo { display:inline-flex; align-items:center; }
-.cv-topbar-logo img { width:32px; height:32px; border-radius:7px; display:block; }
+.cv-banner { position:relative; height:56px; margin:-2rem -2rem 1.5rem; padding:12px 16px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; }
+.cv-banner-logo { display:inline-flex; align-items:center; }
+.cv-banner-logo img { width:32px; height:32px; border-radius:7px; display:block; }
 .cv-toolbar { max-width:1100px; margin:1.5rem auto 0; padding:0 1rem; display:flex; justify-content:center; gap:0.5rem; }
 .cv-toolbar-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 0.9rem; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.8rem; font-weight:600; color:var(--text-medium); cursor:pointer; }
 .cv-toolbar-btn:hover { background:var(--bg-warm); color:var(--primary); }
@@ -325,16 +331,17 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
   .cv-toolbar { display:none !important; }
-  .cv-topbar { display:none !important; }
+  .cv-banner { display:none !important; }
+  .cv-banner { display:none !important; }
 }
 </style>
 </head>
 <body>
-  <header class="cv-topbar">
-    <a href="https://netlink.bio" class="cv-topbar-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
-  </header>
   <div class="cv-container">
     <div class="cv-column left-column">
+      <div class="cv-banner">
+        <a href="https://netlink.bio" class="cv-banner-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
+      </div>
       <div class="profile-header">
         <div class="profile-avatar">
           ${avatar ? `<img src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">` : `<span class="profile-avatar-initial">${escapeHtml(displayName.charAt(0).toUpperCase())}</span>`}
@@ -359,7 +366,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
     <button type="button" class="cv-toolbar-btn" onclick="window.print()" title="Print / Save as PDF">${iconPrint()} Print</button>
     <button type="button" class="cv-toolbar-btn" onclick="shareCv(event)" title="Share this CV">${iconShare()} Share</button>
   </div>
-  <div class="footer-link"><a href="/">netlink.bio &mdash; build your page free</a></div>
+  ${showWatermark(profile) ? `<div class="footer-link"><a href="/">netlink.bio &mdash; build your page free</a></div>` : ''}
   ${badgeModalsHtml(profile)}
   <script>
     function shareCv(event) {
