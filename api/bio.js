@@ -37,6 +37,12 @@ function formatBadgeDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+// Gold and Platinum remove the "Made with Netlink.bio" watermark.
+function showWatermark(profile) {
+  const tier = profile?.tier || 'basic';
+  return tier !== 'gold' && tier !== 'platinum';
+}
+
 function computeBadges(profile) {
   const badges = [];
   const tier = profile.tier || 'basic';
@@ -405,9 +411,10 @@ export default async function handler(req, res) {
 
     ${bodyContent || '<p class="empty">This page is still being set up.</p>'}
 
+    ${showWatermark(profile) ? `
     <div class="footer">
       <a href="/">netlink.bio &mdash; build your page free</a>
-    </div>
+    </div>` : ''}
   </div>
 
   ${donateModalHtml}
