@@ -62,7 +62,7 @@ function computeBadges(profile) {
   }
   if (profile.identity_verified_at) {
     badges.push(tierEligible
-      ? { color: 'green', label: 'Verified Person', message: "This profile's identity has been manually verified by the Netlink.bio team.", date: profile.identity_verified_at }
+      ? { color: 'green', label: 'Verified Profile', message: "This profile's identity has been manually verified by the Netlink.bio team.", date: profile.identity_verified_at }
       : { color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.identity_verified_at });
   }
   return badges;
