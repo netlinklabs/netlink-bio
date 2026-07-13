@@ -289,7 +289,10 @@ export default async function handler(req, res) {
 <style>
   * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
   body { margin:0; background:#f8fafc; color:#0f172a; min-height:100vh; }
-  .wrap { max-width: 480px; margin: 0 auto; padding: 48px 20px; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 20px 48px; }
+  .page-topbar { max-width: 480px; margin: 0 auto; padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: none; cursor: pointer; color: #333; text-decoration: none; flex-shrink: 0; }
+  .topbar-icon img { width: 20px; height: 20px; border-radius: 5px; }
   .avatar { width:96px; height:96px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; background:#e2e8f0; }
   .avatar-fallback { width:96px; height:96px; border-radius:50%; margin:0 auto 16px; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:36px; font-weight:700; }
   h1 { text-align:center; font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 4px; }
@@ -385,6 +388,12 @@ export default async function handler(req, res) {
 </style>
 </head>
 <body>
+  <header class="page-topbar">
+    <a href="https://netlink.bio" class="topbar-icon" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
+    <button type="button" class="topbar-icon" onclick="shareProfile(event)" title="Share this page">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+  </header>
   <div class="wrap">
     ${avatar
       ? `<img class="avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`
@@ -404,6 +413,20 @@ export default async function handler(req, res) {
   ${badgeModalsHtml(profile)}
 
   <script>
+    function shareProfile(event) {
+      const shareData = { title: ${JSON.stringify(displayName)}, url: ${JSON.stringify(pageUrl)} };
+      if (navigator.share) {
+        navigator.share(shareData).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(shareData.url).then(() => {
+          const btn = event.currentTarget;
+          const original = btn.innerHTML;
+          btn.textContent = 'Copied!';
+          setTimeout(() => btn.innerHTML = original, 1500);
+        });
+      }
+    }
+
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
     function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); }
     function copyWallet() {
