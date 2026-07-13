@@ -162,7 +162,7 @@ export default async function handler(req, res) {
   const contactHtml = `
     <div class="contact-list">
       ${profile.contact_email ? `<a href="mailto:${escapeHtml(profile.contact_email)}" class="contact-item">${iconMail()} ${escapeHtml(profile.contact_email)}</a>` : ''}
-      ${profile.contact_whatsapp ? `<a href="https://wa.me/${escapeHtml(profile.contact_whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" class="contact-item">${iconPhone()} WhatsApp</a>` : ''}
+      ${profile.contact_whatsapp ? `<a href="https://wa.me/${escapeHtml(profile.contact_whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" class="contact-item">${iconPhone()} ${escapeHtml(profile.contact_whatsapp)}</a>` : ''}
       <a href="${bioUrl}" class="contact-item">${iconGlobe()} netlink.bio/${escapeHtml(profile.username)}</a>
     </div>`;
 
