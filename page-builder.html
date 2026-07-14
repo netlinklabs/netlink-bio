@@ -914,6 +914,28 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let slugCheckTimeout = null;
 
+// Sesuai Slug Length Policy (LOCKED): basic min 5, silver min 4, gold min 3, platinum min 2, maks 25.
+function requiredTierForLength(len) {
+if (len >= 5) return 'basic';
+if (len === 4) return 'silver';
+if (len === 3) return 'gold';
+if (len === 2) return 'platinum';
+return 'reserved';
+}
+const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+let myTier = 'silver'; // fallback aman -- Landing Page minimal Silver
+
+async function loadMyTier() {
+try {
+const { data: { session } } = await supabaseClient.auth.getSession();
+if (!session) return;
+const { data } = await supabaseClient.from('profiles').select('tier').eq('id', session.user.id).single();
+if (data?.tier) myTier = data.tier;
+} catch (err) {
+console.error('Gagal ambil tier user:', err);
+}
+}
+
 function sanitizeSlug(raw) {
 return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
 }
@@ -932,8 +954,8 @@ status.textContent = '';
 status.classList.remove('warning');
 return;
 }
-if (slug.length < 3) {
-status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Must be at least 3 characters.';
+if (slug.length > 25) {
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Maksimal 25 karakter.';
 status.classList.add('warning');
 return;
 }
@@ -944,13 +966,20 @@ status.classList.remove('warning');
 // Debounce so we don't fire a request on every single keystroke.
 slugCheckTimeout = setTimeout(async () => {
 try {
-const { data, error } = await supabaseClient.rpc('is_slug_available', { check_slug: slug });
+const { data, error } = await supabaseClient.rpc('is_slug_available', { check_slug: slug, check_tier: myTier });
 if (error) throw error;
 if (data) {
 status.textContent = `netlink.bio/page/${slug} is available!`;
 status.classList.remove('warning');
 } else {
+const requiredTier = requiredTierForLength(slug.length);
+if (requiredTier === 'reserved') {
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 1 karakter direservasi khusus — hubungi kami.';
+} else if (requiredTier !== myTier && requiredTier !== 'basic') {
+status.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${slug.length} karakter cuma tersedia untuk akun ${TIER_LABEL[requiredTier]} ke atas.`;
+} else {
 status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> That URL is taken or reserved — try another.';
+}
 status.classList.add('warning');
 }
 } catch (err) {
@@ -1926,6 +1955,7 @@ document.getElementById('draftModal').classList.remove('active');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+loadMyTier();
 document.getElementById('currencySelect').value = currentCurrency;
 applyColors();
 renderGallery();
