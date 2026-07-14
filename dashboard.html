@@ -905,6 +905,16 @@
             }
         }
 
+        // Sesuai Slug Length Policy (LOCKED): basic min 5, silver min 4, gold min 3, platinum min 2, maks 25.
+        function requiredTierForLength(len) {
+            if (len >= 5) return 'basic';
+            if (len === 4) return 'silver';
+            if (len === 3) return 'gold';
+            if (len === 2) return 'platinum';
+            return 'reserved';
+        }
+        const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+
         async function checkUsernameLive() {
             const input = document.getElementById('profileUsername');
             const status = document.getElementById('usernameStatus');
@@ -918,15 +928,36 @@
                 status.classList.remove('hidden');
                 return;
             }
-            if (username.length < 3) {
-                status.textContent = 'Must be at least 3 characters (letters, numbers, underscore).';
+            if (username.length > 25) {
+                status.textContent = 'Maksimal 25 karakter.';
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
                 status.classList.remove('hidden');
                 return;
             }
-            const { data } = await supabaseClient.from('profiles').select('id').eq('username', username).maybeSingle();
-            if (data) {
-                status.textContent = `netlink.bio/${username} is taken.`;
+
+            const myTier = currentProfile?.tier || 'basic';
+            const requiredTier = requiredTierForLength(username.length);
+
+            const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
+                check_slug: username,
+                check_tier: myTier,
+            });
+
+            if (error) {
+                status.textContent = 'Gagal mengecek ketersediaan.';
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+                status.classList.remove('hidden');
+                return;
+            }
+
+            if (!isAvailable) {
+                if (requiredTier === 'reserved') {
+                    status.textContent = '1 karakter direservasi khusus — hubungi kami untuk pengajuan.';
+                } else if (requiredTier !== myTier && requiredTier !== 'basic') {
+                    status.innerHTML = `${username.length} karakter cuma tersedia untuk akun <strong>${TIER_LABEL[requiredTier]}</strong> ke atas. Upgrade untuk pakai username pendek.`;
+                } else {
+                    status.textContent = `netlink.bio/${username} is taken.`;
+                }
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
             } else {
                 status.textContent = `netlink.bio/${username} is available!`;
@@ -996,8 +1027,8 @@
                 const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
                 document.getElementById('profileUsername').value = username;
 
-                if (username.length < 3) {
-                    usernameStatus.textContent = 'Username must be at least 3 characters.';
+                if (username.length > 25) {
+                    usernameStatus.textContent = 'Maksimal 25 karakter.';
                     usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
                     usernameStatus.classList.remove('hidden');
                     return;
@@ -1012,6 +1043,11 @@
                 if (error) {
                     if (error.code === '23505') {
                         usernameStatus.textContent = `netlink.bio/${username} is already taken.`;
+                        usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                        usernameStatus.classList.remove('hidden');
+                    } else if (error.message && error.message.includes('tidak memenuhi aturan panjang')) {
+                        const requiredTier = requiredTierForLength(username.length);
+                        usernameStatus.innerHTML = `${username.length} karakter cuma tersedia untuk akun <strong>${TIER_LABEL[requiredTier]}</strong> ke atas. Upgrade untuk pakai username pendek.`;
                         usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
                         usernameStatus.classList.remove('hidden');
                     } else {
@@ -1613,7 +1649,7 @@
             panel.classList.toggle('open');
         }
 
-        function selectLinkIcon(key, label) {
+function selectLinkIcon(key, label) {
             document.getElementById('linkIcon').value = key;
             document.getElementById('iconPickerLabel').textContent = label;
             const { wrapperExtra, inner } = getIconInnerHtml(key);
@@ -1921,3 +1957,4 @@
     </script>
 </body>
 </html>
+    
