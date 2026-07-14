@@ -461,6 +461,16 @@
             return raw.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
         }
 
+        // Sesuai Slug Length Policy (LOCKED): basic min 5, silver min 4, gold min 3, platinum min 2, maks 25.
+        function requiredTierForLength(len) {
+            if (len >= 5) return 'basic';
+            if (len === 4) return 'silver';
+            if (len === 3) return 'gold';
+            if (len === 2) return 'platinum';
+            return 'reserved'; // len === 1
+        }
+        const TIER_LABEL = { basic: 'akun Gratis', silver: 'akun Silver', gold: 'akun Gold', platinum: 'akun Platinum' };
+
         async function checkAvailability() {
             const input = document.getElementById('usernameInput');
             const btn = document.getElementById('claimBtn');
@@ -468,8 +478,22 @@
             const username = sanitizeUsername(input.value);
             input.value = username;
 
-            if (!username || username.length < 3) {
-                result.textContent = 'Username must be at least 3 characters (letters, numbers, underscore only)';
+            if (!username) {
+                result.textContent = 'Masukkan username dulu.';
+                result.className = 'mt-3 text-sm font-medium text-red-500';
+                result.classList.remove('hidden');
+                return;
+            }
+
+            if (username.length > 25) {
+                result.textContent = 'Maksimal 25 karakter.';
+                result.className = 'mt-3 text-sm font-medium text-red-500';
+                result.classList.remove('hidden');
+                return;
+            }
+
+            if (username.length === 1) {
+                result.textContent = '1 karakter direservasi khusus — hubungi kami untuk pengajuan.';
                 result.className = 'mt-3 text-sm font-medium text-red-500';
                 result.classList.remove('hidden');
                 return;
@@ -479,19 +503,35 @@
             btn.textContent = '...';
 
             try {
-                const res = await fetch(
-                    `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&select=id`,
-                    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-                );
-                const rows = await res.json();
-                const isAvailable = rows.length === 0;
+                const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_slug_available`, {
+                    method: 'POST',
+                    headers: {
+                        apikey: SUPABASE_KEY,
+                        Authorization: `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ check_slug: username, check_tier: 'platinum' }),
+                });
+                if (!rpcRes.ok) throw new Error('RPC failed');
+                const isAvailable = await rpcRes.json();
 
-                if (isAvailable) {
-                    result.innerHTML = `<span class="tosca">netlink.bio/${username} is available!</span> <a href="login.html?username=${encodeURIComponent(username)}&mode=signup" class="underline tosca font-semibold">Claim now &rarr;</a>`;
+                if (!isAvailable) {
+                    result.textContent = `netlink.bio/${username} sudah dipakai atau direservasi. Coba nama lain.`;
+                    result.className = 'mt-3 text-sm font-medium text-red-500';
+                    result.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.textContent = 'Claim';
+                    return;
+                }
+
+                const requiredTier = requiredTierForLength(username.length);
+
+                if (requiredTier === 'basic') {
+                    result.innerHTML = `<span class="tosca">netlink.bio/${username} tersedia — bisa langsung pakai akun Gratis!</span> <a href="login.html?username=${encodeURIComponent(username)}&mode=signup" class="underline tosca font-semibold">Claim now &rarr;</a>`;
                     result.className = 'mt-3 text-sm font-medium';
                 } else {
-                    result.textContent = `netlink.bio/${username} is taken. Try another.`;
-                    result.className = 'mt-3 text-sm font-medium text-red-500';
+                    result.innerHTML = `netlink.bio/${username} tersedia, tapi butuh <strong>${TIER_LABEL[requiredTier]}</strong> (min. ${username.length} karakter). <a href="login.html?username=${encodeURIComponent(username)}&mode=signup" class="underline tosca font-semibold">Daftar dulu &rarr;</a>`;
+                    result.className = 'mt-3 text-sm font-medium text-amber-600';
                 }
             } catch (err) {
                 result.textContent = 'Could not check availability. Please try again.';
