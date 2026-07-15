@@ -461,7 +461,7 @@
             return raw.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
         }
 
-        // Sesuai Slug Length Policy (LOCKED): basic min 5, silver min 4, gold min 3, platinum min 2, maks 25.
+        // Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
         function requiredTierForLength(len) {
             if (len >= 5) return 'basic';
             if (len === 4) return 'silver';
@@ -469,7 +469,7 @@
             if (len === 2) return 'platinum';
             return 'reserved'; // len === 1
         }
-        const TIER_LABEL = { basic: 'akun Gratis', silver: 'akun Silver', gold: 'akun Gold', platinum: 'akun Platinum' };
+        const TIER_LABEL = { basic: 'the Free plan', silver: 'the Silver plan', gold: 'the Gold plan', platinum: 'the Platinum plan' };
 
         async function checkAvailability() {
             const input = document.getElementById('usernameInput');
@@ -479,21 +479,21 @@
             input.value = username;
 
             if (!username) {
-                result.textContent = 'Masukkan username dulu.';
+                result.textContent = 'Enter a username first.';
                 result.className = 'mt-3 text-sm font-medium text-red-500';
                 result.classList.remove('hidden');
                 return;
             }
 
             if (username.length > 25) {
-                result.textContent = 'Maksimal 25 karakter.';
+                result.textContent = 'Maximum 25 characters.';
                 result.className = 'mt-3 text-sm font-medium text-red-500';
                 result.classList.remove('hidden');
                 return;
             }
 
             if (username.length === 1) {
-                result.textContent = '1 karakter direservasi khusus — hubungi kami untuk pengajuan.';
+                result.textContent = '1-character usernames are reserved — contact us to request one.';
                 result.className = 'mt-3 text-sm font-medium text-red-500';
                 result.classList.remove('hidden');
                 return;
@@ -516,7 +516,7 @@
                 const isAvailable = await rpcRes.json();
 
                 if (!isAvailable) {
-                    result.textContent = `netlink.bio/${username} sudah dipakai atau direservasi. Coba nama lain.`;
+                    result.textContent = `netlink.bio/${username} is taken or reserved. Try another name.`;
                     result.className = 'mt-3 text-sm font-medium text-red-500';
                     result.classList.remove('hidden');
                     btn.disabled = false;
@@ -527,10 +527,10 @@
                 const requiredTier = requiredTierForLength(username.length);
 
                 if (requiredTier === 'basic') {
-                    result.innerHTML = `<span class="tosca">netlink.bio/${username} tersedia — bisa langsung pakai akun Gratis!</span> <a href="login.html?username=${encodeURIComponent(username)}&mode=signup" class="underline tosca font-semibold">Claim now &rarr;</a>`;
+                    result.innerHTML = `<span class="tosca">netlink.bio/${username} is available — free plan works!</span> <a href="login.html?username=${encodeURIComponent(username)}&mode=signup" class="underline tosca font-semibold">Claim now &rarr;</a>`;
                     result.className = 'mt-3 text-sm font-medium';
                 } else {
-                    result.innerHTML = `netlink.bio/${username} tersedia, tapi butuh <strong>${TIER_LABEL[requiredTier]}</strong> (min. ${username.length} karakter). <a href="login.html?username=${encodeURIComponent(username)}&mode=signup" class="underline tosca font-semibold">Daftar dulu &rarr;</a>`;
+                    result.innerHTML = `netlink.bio/${username} is available, but requires <strong>${TIER_LABEL[requiredTier]}</strong> (min. ${username.length} characters). <a href="login.html?username=${encodeURIComponent(username)}&mode=signup" class="underline tosca font-semibold">Sign up &rarr;</a>`;
                     result.className = 'mt-3 text-sm font-medium text-amber-600';
                 }
             } catch (err) {
