@@ -914,7 +914,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let slugCheckTimeout = null;
 
-// Sesuai Slug Length Policy (LOCKED): basic min 5, silver min 4, gold min 3, platinum min 2, maks 25.
+// Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
 function requiredTierForLength(len) {
 if (len >= 5) return 'basic';
 if (len === 4) return 'silver';
@@ -923,7 +923,7 @@ if (len === 2) return 'platinum';
 return 'reserved';
 }
 const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
-let myTier = 'silver'; // fallback aman -- Landing Page minimal Silver
+let myTier = 'silver'; // safe fallback -- Landing Page requires Silver+
 
 async function loadMyTier() {
 try {
@@ -932,7 +932,7 @@ if (!session) return;
 const { data } = await supabaseClient.from('profiles').select('tier').eq('id', session.user.id).single();
 if (data?.tier) myTier = data.tier;
 } catch (err) {
-console.error('Gagal ambil tier user:', err);
+console.error('Failed to fetch user tier:', err);
 }
 }
 
@@ -955,7 +955,7 @@ status.classList.remove('warning');
 return;
 }
 if (slug.length > 25) {
-status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Maksimal 25 karakter.';
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Maximum 25 characters.';
 status.classList.add('warning');
 return;
 }
@@ -974,9 +974,9 @@ status.classList.remove('warning');
 } else {
 const requiredTier = requiredTierForLength(slug.length);
 if (requiredTier === 'reserved') {
-status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 1 karakter direservasi khusus — hubungi kami.';
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 1-character slugs are reserved — contact us.';
 } else if (requiredTier !== myTier && requiredTier !== 'basic') {
-status.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${slug.length} karakter cuma tersedia untuk akun ${TIER_LABEL[requiredTier]} ke atas.`;
+status.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${slug.length}-character slugs require the ${TIER_LABEL[requiredTier]} plan or higher.`;
 } else {
 status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> That URL is taken or reserved — try another.';
 }
@@ -994,6 +994,9 @@ let logoShape = 'square';
 let lightboxIndex = 0;
 let currentCurrency = 'IDR';
 let currentIconEditingIndex = null;
+
+<!-- ==== END PART 1 -- lanjut ke page-builder_PART2.html, tempel langsung setelah baris ini ==== -->
+    <!-- ==== LANJUTAN DARI PART 1 -- mulai dari sini ==== -->
 
 // Kumpulan 64 Ikon Populer untuk Offerings (Kategori Bisnis, Kuliner, Web3, dll)
 const faIcons = [
@@ -1986,3 +1989,4 @@ handleGalleryUpload(event);
 </script>
 </body>
 </html>
+
