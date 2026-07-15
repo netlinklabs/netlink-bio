@@ -45,7 +45,8 @@
         html.dark .tx-amount-in { color: #34d399; }
         html.dark .tx-amount-out { color: #f87171; }
 
-        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; z-index: 50; transition: right 0.3s ease; overflow-y: auto; border-left: 1px solid rgba(0,0,0,0.08); }
+        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; z-index: 50; transition: right 0.3s ease; overflow: hidden; border-left: 1px solid rgba(0,0,0,0.08); }
+        .sidebar nav { overflow-y: auto; min-height: 0; }
         .sidebar.open { right: 0; }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
         .sidebar-overlay.active { display: block; }
@@ -156,11 +157,11 @@
                 <button class="flex items-center gap-3 flex-1 min-w-0 text-left">
                     <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-lg">👤</div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium truncate text-primary">demo@netlink.bio</p>
-                        <p class="text-xs text-muted">Basic Plan</p>
+                        <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">Loading...</p>
+                        <p id="sidebarTierLabel" class="text-xs text-muted">—</p>
                     </div>
                 </button>
-                <button onclick="showToast('Logged out')" class="text-secondary hover:text-primary transition" title="Log out">
+                <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -335,6 +336,39 @@
             </div>
         </div>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const TIER_DISPLAY = { basic: 'Basic Plan', silver: 'Silver Plan', gold: 'Gold Plan', platinum: 'Platinum Plan' };
+
+        async function loadUserProfile() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                const { data, error } = await supabaseClient
+                    .from('profiles').select('username, display_name, tier').eq('id', session.user.id).single();
+                if (error) throw error;
+
+                const label = data.display_name || data.username || session.user.email;
+                document.getElementById('sidebarUserEmail').textContent = label;
+                document.getElementById('sidebarTierLabel').textContent = TIER_DISPLAY[data.tier || 'basic'];
+            } catch (err) {
+                console.error('Failed to load profile:', err);
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+    </script>
 
     <script>
         let currentWalletAddress = '';
@@ -576,6 +610,7 @@
         lucide.createIcons();
         initTheme();
         updateWalletUI('');
+        loadUserProfile();
     </script>
 </body>
 </html>
