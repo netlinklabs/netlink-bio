@@ -1117,26 +1117,30 @@
         }
 
         async function createLandingPage() {
-            // NOTE: the Landing Page Builder (page-builder.html) is currently a
-            // standalone prototype that saves to the browser's localStorage --
-            // it isn't wired up to read/write this `landing_pages` table yet.
-            // This just reserves the row so the dashboard state is correct;
-            // connecting the builder itself to Supabase is a separate task.
             const { data, error } = await supabaseClient
                 .from('landing_pages')
                 .insert({ user_id: currentUser.id, title: 'Untitled Page', content: {}, is_published: false })
                 .select().single();
 
-            if (error) { showToast('Failed to create landing page'); console.error(error); return; }
+            if (error) {
+                if (error.message && error.message.includes('available from the Silver plan')) {
+                    showToast('Landing Page requires the Silver plan or higher');
+                } else {
+                    showToast('Failed to create landing page');
+                    console.error(error);
+                }
+                return;
+            }
 
             currentLandingPage = data;
             showToast('Landing page created — opening editor...');
-            window.open('page-builder.html', '_blank');
+            window.open(`page-builder.html?id=${data.id}`, '_blank');
             await loadLandingPageCard();
         }
 
         function editLandingPage() {
-            window.open('page-builder.html', '_blank');
+            if (!currentLandingPage) { showToast('No landing page found'); return; }
+            window.open(`page-builder.html?id=${currentLandingPage.id}`, '_blank');
         }
 
         function previewLandingPage() {
@@ -1919,6 +1923,3 @@
     </script>
 </body>
 </html>
-
-
-                    
