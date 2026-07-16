@@ -59,16 +59,6 @@
         .modal.active { display: flex; }
         .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); }
-        .badge-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; padding: 0; flex-shrink: 0; }
-        .badge-dot.badge-green { background: #10b981; }
-        .badge-dot.badge-gold { background: #f59e0b; }
-        .badge-dot.badge-silver { background: #94a3b8; }
-        .badge-dot.badge-black { background: #18181b; }
-        .badge-popup { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: 220px; background: #1e293b; color: #e2e8f0; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.5; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 60; text-align: left; }
-        .badge-popup.active { display: block; }
-        .badge-popup .badge-popup-title { font-weight: 700; margin-bottom: 4px; display: block; }
-        .badge-popup .badge-popup-date { color: #94a3b8; font-size: 11px; margin-top: 4px; display: block; }
-        .badge-wrap { position: relative; }
         .notification-panel { display: none; position: absolute; top: 50px; right: 0; width: 320px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; z-index: 50; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .notification-panel.active { display: block; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
@@ -206,7 +196,6 @@
                         <p id="sidebarTierLabel" class="text-xs text-muted">Basic Plan</p>
                     </div>
                 </button>
-                <div id="badgeRow" class="flex items-center gap-1 flex-shrink-0"></div>
                 <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
@@ -215,10 +204,19 @@
     </aside>
 
     <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8">
-        <div class="hidden lg:flex items-center justify-between mb-8">
-            <div>
-                <h2 class="text-2xl font-bold text-primary">Dashboard</h2>
-                <p class="text-secondary text-sm">Welcome back! Manage your bio links.</p>
+        <div class="hidden lg:flex items-start justify-between mb-8">
+            <div class="flex items-start gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-primary">Dashboard</h2>
+                    <p class="text-secondary text-sm mt-1">Welcome back! Manage your bio links.</p>
+                </div>
+                <div class="flex flex-col items-center gap-1.5">
+                    <div id="headerAvatarWrapDesktop" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <img id="headerAvatarImgDesktop" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                        <span id="headerAvatarInitialDesktop" class="text-xs font-semibold text-blue-500">?</span>
+                    </div>
+                    <span id="headerTierPillDesktop" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch to dark mode">
@@ -243,22 +241,24 @@
                         </div>
                     </div>
                 </div>
-                <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">Basic</span>
                 <a id="viewProfileBtn" href="#" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition">
                     <i data-lucide="external-link" class="w-4 h-4"></i> View Profile
                 </a>
             </div>
         </div>
 
-        <div class="lg:hidden mb-4 flex items-center justify-between">
+        <div class="lg:hidden mb-4 flex items-start justify-between">
             <div>
                 <h2 class="text-xl font-bold text-primary">Dashboard</h2>
-                <p class="text-secondary text-sm">Welcome back!</p>
+                <p class="text-secondary text-sm mt-1">Welcome back!</p>
             </div>
-            <button onclick="scrollToProfileCard()" class="w-10 h-10 rounded-full overflow-hidden bg-blue-500/20 flex items-center justify-center flex-shrink-0" title="Edit profile">
-                <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                <span id="headerAvatarInitial" class="text-sm font-semibold text-blue-500">?</span>
-            </button>
+            <div class="flex flex-col items-center gap-1.5">
+                <button onclick="scrollToProfileCard()" class="w-10 h-10 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0" title="Edit profile">
+                    <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                    <span id="headerAvatarInitial" class="text-sm font-semibold text-blue-500">?</span>
+                </button>
+                <span id="headerTierPillMobile" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
+            </div>
         </div>
 
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
@@ -765,72 +765,24 @@
             updateProfileCompletion();
         }
 
-        function formatBadgeDate(iso) {
-            if (!iso) return '';
-            const d = new Date(iso);
-            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const TIER_PILL_STYLE = {
+            basic: 'border-subtle text-secondary',
+            silver: 'border-slate-400 text-slate-500',
+            gold: 'border-amber-400 text-amber-600',
+            platinum: 'border-purple-400 text-purple-600',
+        };
+
+        function renderTierPill(tier) {
+            const t = tier || 'basic';
+            const label = t.charAt(0).toUpperCase() + t.slice(1);
+            const style = TIER_PILL_STYLE[t] || TIER_PILL_STYLE.basic;
+            ['headerTierPillMobile', 'headerTierPillDesktop'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = label;
+                el.className = `px-2.5 py-0.5 border rounded-full text-[11px] font-medium whitespace-nowrap ${style}`;
+            });
         }
-
-        // Badge color is computed live from stored facts + current tier,
-        // never stored directly -- so it always reflects live subscription
-        // status without needing an update whenever tier changes.
-        function computeBadges(profile) {
-            const badges = [];
-            const tier = profile.tier || 'basic';
-            const tierEligible = tier === 'gold' || tier === 'platinum';
-
-            if (profile.is_black_badge) {
-                badges.push({
-                    color: 'black', label: 'Netlink Special',
-                    message: 'Diberikan langsung oleh tim Netlink.bio sebagai bentuk apresiasi khusus.',
-                    date: null
-                });
-            }
-            if (profile.business_verified_at) {
-                badges.push(tierEligible
-                    ? { color: 'gold', label: 'Verified Business', message: 'Legalitas usaha ini sudah diverifikasi manual oleh tim Netlink.bio melalui dokumen resmi perusahaan.', date: profile.business_verified_at }
-                    : { color: 'silver', label: 'Previously Verified', message: 'Identitas pemilik profil ini pernah diverifikasi manual oleh tim Netlink.bio.', date: profile.business_verified_at });
-            }
-            if (profile.identity_verified_at) {
-                badges.push(tierEligible
-                    ? { color: 'green', label: 'Verified Person', message: 'Identitas pemilik profil ini sudah diverifikasi manual oleh tim Netlink.bio melalui dokumen resmi.', date: profile.identity_verified_at }
-                    : { color: 'silver', label: 'Previously Verified', message: 'Identitas pemilik profil ini pernah diverifikasi manual oleh tim Netlink.bio.', date: profile.identity_verified_at });
-            }
-            return badges;
-        }
-
-        function closeAllBadgePopups() {
-            document.querySelectorAll('.badge-popup').forEach(p => p.classList.remove('active'));
-        }
-
-        function toggleBadgePopup(idx) {
-            const popup = document.getElementById('badgePopup' + idx);
-            const wasActive = popup.classList.contains('active');
-            closeAllBadgePopups();
-            if (!wasActive) popup.classList.add('active');
-        }
-
-        function renderBadges(profile) {
-            const badges = computeBadges(profile);
-            const row = document.getElementById('badgeRow');
-            row.innerHTML = badges.map((b, i) => `
-                <div class="badge-wrap">
-                    <button type="button" class="badge-dot badge-${b.color}" onclick="event.stopPropagation(); toggleBadgePopup(${i})" title="${b.label}">
-                        <i data-lucide="check" class="w-3 h-3 text-white"></i>
-                    </button>
-                    <div id="badgePopup${i}" class="badge-popup">
-                        <span class="badge-popup-title">${b.label}</span>
-                        ${b.message}
-                        ${b.date ? `<span class="badge-popup-date">Verified since ${formatBadgeDate(b.date)}</span>` : ''}
-                    </div>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.badge-wrap')) closeAllBadgePopups();
-        });
 
         async function loadProfile() {
             const { data, error } = await supabaseClient
@@ -847,7 +799,7 @@
             document.getElementById('sidebarUserEmail').textContent = label;
             document.getElementById('sidebarTierLabel').textContent =
                 (data.tier || 'basic').charAt(0).toUpperCase() + (data.tier || 'basic').slice(1) + ' Plan';
-            renderBadges(data);
+            renderTierPill(data.tier);
 
             const viewBtn = document.getElementById('viewProfileBtn');
             if (data.username) {
@@ -884,26 +836,35 @@
 
             const initialEl = document.getElementById('avatarInitial');
             const imgEl = document.getElementById('avatarImg');
-            const headerInitialEl = document.getElementById('headerAvatarInitial');
-            const headerImgEl = document.getElementById('headerAvatarImg');
             const initialChar = (data.display_name || data.username || currentUser.email || '?').charAt(0).toUpperCase();
+
+            const headerTargets = [
+                { img: document.getElementById('headerAvatarImg'), initial: document.getElementById('headerAvatarInitial') },
+                { img: document.getElementById('headerAvatarImgDesktop'), initial: document.getElementById('headerAvatarInitialDesktop') },
+            ];
+
             if (data.avatar_url) {
                 imgEl.src = data.avatar_url;
                 imgEl.classList.remove('hidden');
                 initialEl.classList.add('hidden');
-
-                headerImgEl.src = data.avatar_url;
-                headerImgEl.classList.remove('hidden');
-                headerInitialEl.classList.add('hidden');
             } else {
                 imgEl.classList.add('hidden');
                 initialEl.classList.remove('hidden');
                 initialEl.textContent = initialChar;
-
-                headerImgEl.classList.add('hidden');
-                headerInitialEl.classList.remove('hidden');
-                headerInitialEl.textContent = initialChar;
             }
+
+            headerTargets.forEach(({ img, initial }) => {
+                if (!img || !initial) return;
+                if (data.avatar_url) {
+                    img.src = data.avatar_url;
+                    img.classList.remove('hidden');
+                    initial.classList.add('hidden');
+                } else {
+                    img.classList.add('hidden');
+                    initial.classList.remove('hidden');
+                    initial.textContent = initialChar;
+                }
+            });
         }
 
         // Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
@@ -978,9 +939,6 @@
                 btn.disabled = false;
                 btn.textContent = original;
             }
-
-<!-- ==== END PART 1 -- lanjut ke dashboard_PART2.html, tempel langsung setelah baris ini ==== -->
-    <!-- ==== LANJUTAN DARI PART 1 -- mulai dari sini ==== -->
         }
 
         async function saveWallet() {
@@ -1040,7 +998,8 @@
 
                 const { error } = await supabaseClient.from('profiles').update({
                     username,
-                    show_cv: document.getElementById('profileShowCv').checked,
+<!-- ==== END PART 1 -- lanjut ke dashboard_PART2.html, tempel langsung setelah baris ini ==== -->
+                                        show_cv: document.getElementById('profileShowCv').checked,
                     show_donate: document.getElementById('profileShowDonate').checked,
                 }).eq('id', currentUser.id);
 
@@ -1831,7 +1790,6 @@
                 textEl.classList.add('text-primary');
                 removeBtn.classList.remove('hidden');
 
-                // Jika ada address terpasang di profil, ubah indikator menjadi Connected.
                 if(statusText) statusText.textContent = 'Status: Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
             } else {
@@ -1962,3 +1920,5 @@
 </body>
 </html>
 
+
+                    
