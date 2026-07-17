@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * { font-family: 'Inter', sans-serif; }
         .font-poppins { font-family: 'Poppins', sans-serif; }
@@ -31,13 +32,11 @@
     <div id="toast" class="toast"></div>
 
     <div class="w-full max-w-sm">
-        <!-- Logo -->
         <a href="index.html" class="flex items-center justify-center gap-2 mb-8">
             <img src="/assets/netlinkbio-icon.png" alt="Netlink.bio" class="w-9 h-9 rounded-xl">
             <span class="font-poppins font-bold text-xl text-gray-900">netlink<span class="tosca">.bio</span></span>
         </a>
 
-        <!-- Pending username claim banner -->
         <div id="claimBanner" class="hidden mb-4 p-3 bg-tosca/10 border border-tosca/30 rounded-xl text-center">
             <p class="text-sm text-gray-700">
                 Claiming <span id="claimUsernameLabel" class="font-semibold tosca"></span> — sign up to lock it in
@@ -50,11 +49,11 @@
                 <button id="tabSignUp" onclick="switchTab('signup')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-400">Sign up</button>
             </div>
 
-            <!-- Google Login -->
             <button id="googleBtn" onclick="handleGoogleLogin()" class="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2 mb-4">
                 <svg class="w-4 h-4" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.5 29.6 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13.5 24 13.5c3.1 0 5.8 1.1 8 3l6-6C34.6 7.5 29.6 5.5 24 5.5c-7.7 0-14.3 4.4-17.7 10.9z"/><path fill="#4CAF50" d="M24 44.5c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5c-2 1.5-4.6 2.4-7.6 2.4-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.6 39.9 16.3 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.5 36 44.5 30.5 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
                 Continue with Google
             </button>
+            <p class="text-center text-[11px] text-gray-400 -mt-2 mb-4">Instantly creates your Netlink wallet too</p>
             <div class="flex items-center gap-3 mb-4">
                 <div class="flex-1 h-px bg-gray-100"></div>
                 <span class="text-xs text-gray-400">or</span>
@@ -94,12 +93,11 @@
     <script>
         lucide.createIcons();
 
-        // Netlink.bio - Supabase config
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let mode = 'signin'; // 'signin' | 'signup'
+        let mode = 'signin';
 
         function switchTab(newMode) {
             mode = newMode;
@@ -120,20 +118,19 @@
                 : `Already have an account? <button onclick="switchTab('signin')" class="tosca font-medium hover:underline">Log in</button>`;
         }
 
-        function showToast(message, isSuccess = false) {
+        window.showToast = function (message, isSuccess = false) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.toggle('success', isSuccess);
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 4000);
-        }
+        };
 
         function setLoading(isLoading) {
             document.getElementById('submitBtn').disabled = isLoading;
             document.getElementById('submitSpinner').classList.toggle('hidden', !isLoading);
         }
 
-        // ===== Pending username claim (from index.html "Claim now" link) =====
         const urlParams = new URLSearchParams(window.location.search);
         const claimedUsername = urlParams.get('username');
         const initialMode = urlParams.get('mode');
@@ -147,15 +144,6 @@
             switchTab('signup');
         }
 
-        // ===== Google Login =====
-        async function handleGoogleLogin() {
-            const { error } = await supabaseClient.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.origin + '/dashboard.html' }
-            });
-            if (error) showToast(error.message);
-        }
-
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
@@ -164,29 +152,91 @@
             setLoading(true);
             try {
                 if (mode === 'signin') {
-                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
                     if (error) throw error;
                     window.location.href = 'dashboard.html';
                 } else {
-                    const { error } = await supabaseClient.auth.signUp({ email, password });
+                    const { error } = await window.supabaseClient.auth.signUp({ email, password });
                     if (error) throw error;
-                    // Email confirmation is disabled for this project, so the
-                    // user is already signed in at this point — go straight
-                    // to the dashboard (pendingUsername survives via sessionStorage).
                     window.location.href = 'dashboard.html';
                 }
             } catch (err) {
-                showToast(err.message || 'Something went wrong. Please try again.');
+                window.showToast(err.message || 'Something went wrong. Please try again.');
             } finally {
                 setLoading(false);
             }
         });
 
-        // If already logged in, skip straight to dashboard
         (async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
             if (session) window.location.href = 'dashboard.html';
         })();
+    </script>
+
+    <script type="module">
+        import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
+
+        const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // isi dari Google Cloud Console
+        const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
+        const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
+
+        const sequenceWaas = new SequenceWaaS({
+            network: 'polygon',
+            projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
+            waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
+        });
+
+        async function handleGoogleCredential(response) {
+            const idToken = response.credential;
+            const btn = document.getElementById('googleBtn');
+            btn.disabled = true;
+
+            try {
+                const { error: supaError } = await window.supabaseClient.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: idToken,
+                });
+                if (supaError) throw supaError;
+
+                try {
+                    const walletAddress = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
+                    const { data: { user } } = await window.supabaseClient.auth.getUser();
+                    if (user) {
+                        await window.supabaseClient
+                            .from('profiles')
+                            .update({ wallet_address: walletAddress })
+                            .eq('id', user.id)
+                            .is('wallet_address', null);
+                    }
+                } catch (waasErr) {
+                    console.error('Sequence wallet creation failed (non-blocking):', waasErr);
+                }
+
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                window.showToast(err.message || 'Google sign-in failed. Please try again.');
+                btn.disabled = false;
+            }
+        }
+
+        function initGoogle() {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleCredential,
+            });
+        }
+        window.addEventListener('load', initGoogle);
+
+        window.handleGoogleLogin = function () {
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    window.supabaseClient.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: { redirectTo: window.location.origin + '/dashboard.html' },
+                    });
+                }
+            });
+        };
     </script>
 </body>
 </html>
