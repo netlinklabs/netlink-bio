@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="light">
 <head>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netlink.bio - Dashboard</title>
@@ -300,8 +301,11 @@
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
                 <button id="walletConnectBtn" onclick="connectWallet()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet
-                </button>
+    <i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet
+</button>
+<button id="googleWalletBtn" onclick="connectWalletViaGoogle()" class="flex-1 py-2 border border-subtle hover-surface text-secondary rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
+    <i data-lucide="sparkles" class="w-4 h-4"></i> Instant Wallet (Google)
+</button>
             </div>
             <div class="flex items-center mt-2">
                 <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline flex items-center gap-1 flex-shrink-0">
@@ -1858,6 +1862,8 @@
                 btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet';
                 btn.onclick = connectWallet;
             }
+            const googleWalletBtn = document.getElementById('googleWalletBtn');
+if (googleWalletBtn) googleWalletBtn.classList.toggle('hidden', hasAddress);
             if (window.lucide) lucide.createIcons();
         }
 
@@ -1959,6 +1965,46 @@
         window.disconnectWallet = disconnectWallet;
         window.removeWalletAddress = removeWalletAddress;
     </script>
+    <script type="module">
+    import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
+
+    const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
+    const sequenceWaas = new SequenceWaaS({
+        network: 'polygon',
+        projectAccessKey: 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA',
+        waasConfigKey: 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=',
+    });
+
+    async function handleGoogleWalletCredential(response) {
+        const idToken = response.credential;
+        const btn = document.getElementById('googleWalletBtn');
+        btn.disabled = true;
+        btn.textContent = 'Connecting...';
+        try {
+            const walletAddress = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
+            document.getElementById('walletAddressInput').value = walletAddress;
+            await window.saveWallet();
+            window.renderWalletAddressUI(walletAddress, true);
+            showToast('Wallet created via Google!');
+        } catch (err) {
+            console.error(err);
+            showToast('Could not create wallet — please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Instant Wallet (Google)';
+        }
+    }
+
+    function initGoogleWallet() {
+        if (!window.google) return;
+        google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleWalletCredential });
+    }
+    window.addEventListener('load', initGoogleWallet);
+
+    window.connectWalletViaGoogle = function () {
+        google.accounts.id.prompt();
+    };
+</script>
 </body>
 </html>
 
