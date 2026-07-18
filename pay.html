@@ -322,23 +322,28 @@
             </div>
 
             <!-- Transaction History -->
-            <div class="card rounded-2xl mb-8 overflow-hidden">
-                <div class="w-full flex items-center justify-between p-4 lg:p-5">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                            <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
-                        </div>
-                        <div class="text-left">
-                            <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
-                            <p class="text-xs text-muted">Last 20 transactions</p>
-                        </div>
-                    </div>
-                    <span id="txCountBadge" class="text-xs text-muted bg-surface px-2 py-0.5 rounded-full">0</span>
-                </div>
-                <div id="txList" class="divide-y divide-subtle">
-                    <div class="p-6 text-center text-sm text-muted">Loading transactions...</div>
-                </div>
+<div class="card rounded-2xl mb-8 overflow-hidden">
+    <button onclick="toggleAccordion('txHistoryBody')" class="w-full flex items-center justify-between p-4 lg:p-5">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
             </div>
+            <div class="text-left">
+                <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
+                <p class="text-xs text-muted">Last 20 transactions</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="txCountBadge" class="text-xs text-muted bg-surface px-2 py-0.5 rounded-full">0</span>
+            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="txHistoryBodyChevron"></i>
+        </div>
+    </button>
+    <div id="txHistoryBody" class="accordion-body">
+        <div id="txList" class="divide-y divide-subtle">
+            <div class="p-6 text-center text-sm text-muted">Loading transactions...</div>
+        </div>
+    </div>
+</div>
         </div>
 
         <footer class="text-center pb-8 pt-4">
