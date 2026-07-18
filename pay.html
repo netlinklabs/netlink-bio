@@ -630,6 +630,10 @@
             document.querySelector('.sidebar').classList.toggle('open');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
+        function toggleAccordion(id) {
+    document.getElementById(id).classList.toggle('open');
+    document.getElementById(id + 'Chevron').classList.toggle('open');
+        }
 
         function updateBrandLogo() {
             const isDark = document.documentElement.classList.contains('dark');
