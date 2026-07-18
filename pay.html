@@ -404,6 +404,7 @@
                     <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
                 </div>
                 <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Gas fee paid in POL. This action cannot be undone.</p>
+                <div id="googleReauthBtn" class="hidden mb-3 flex justify-center"></div>
                 <div class="flex gap-2">
                     <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
                     <button id="sendConfirmBtn" onclick="executeSend()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Confirm &amp; Send</button>
@@ -694,15 +695,15 @@
 
         // Sending a transaction requires an active sign-in on THIS SequenceWaaS
         // instance. signIn() called on login.html/dashboard.html doesn't carry
-        // over automatically, so we silently re-authenticate with Google here
-        // whenever a transaction is about to be signed.
+        // over automatically, so we re-authenticate with Google here — via a
+        // real, clickable button (not a silent prompt, which browsers often block).
         let googleInitialized = false;
 
         function initGoogleForWaas() {
             if (googleInitialized || !window.google) return;
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: () => {}, // overridden per-call via ensureSequenceSignedIn
+                callback: () => {},
                 auto_select: true,
             });
             googleInitialized = true;
@@ -717,17 +718,17 @@
                     callback: async (response) => {
                         try {
                             await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                            document.getElementById('googleReauthBtn').classList.add('hidden');
                             resolve();
                         } catch (err) {
                             reject(err);
                         }
                     },
                 });
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        reject(new Error('Please allow the Google sign-in prompt to authorize this transaction.'));
-                    }
-                });
+                const btnWrap = document.getElementById('googleReauthBtn');
+                btnWrap.innerHTML = '';
+                btnWrap.classList.remove('hidden');
+                google.accounts.id.renderButton(btnWrap, { theme: 'outline', size: 'large', width: 300, text: 'continue_with' });
             });
         }
 
@@ -769,6 +770,7 @@
             if (!window.currentWalletAddress) { showToast('No wallet yet'); return; }
             document.getElementById('sendStepForm').classList.remove('hidden');
             document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('googleReauthBtn').classList.add('hidden');
             document.getElementById('sendToAddress').value = '';
             document.getElementById('sendAmount').value = '';
             document.getElementById('sendFormError').classList.add('hidden');
@@ -836,12 +838,14 @@
             document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
             document.getElementById('confirmToAddress').textContent = to;
             document.getElementById('sendConfirmStatus').textContent = 'Gas fee paid in POL. This action cannot be undone.';
+            document.getElementById('googleReauthBtn').classList.add('hidden');
             document.getElementById('sendStepForm').classList.add('hidden');
             document.getElementById('sendStepConfirm').classList.remove('hidden');
         };
 
         window.backToSendForm = function () {
             document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('googleReauthBtn').classList.add('hidden');
             document.getElementById('sendStepForm').classList.remove('hidden');
         };
 
@@ -875,7 +879,7 @@
             } catch (err) {
                 const msg = String(err?.message || err || '');
                 if (msg.toLowerCase().includes('not signed in')) {
-                    statusEl.textContent = 'Confirming your identity — please tap the Google prompt...';
+                    statusEl.textContent = 'Please tap the Google button below to authorize this transaction.';
                     try {
                         await ensureSequenceSignedIn();
                         await performTransfer(token, to, valueWei);
