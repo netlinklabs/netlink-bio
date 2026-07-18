@@ -198,19 +198,20 @@
                 });
                 if (supaError) throw supaError;
 
-                try {
-                    const walletAddress = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
-                    const { data: { user } } = await window.supabaseClient.auth.getUser();
-                    if (user) {
-                        await window.supabaseClient
-                            .from('profiles')
-                            .update({ wallet_address: walletAddress })
-                            .eq('id', user.id)
-                            .is('wallet_address', null);
-                    }
-                } catch (waasErr) {
-                    console.error('Sequence wallet creation failed (non-blocking):', waasErr);
-                }
+               try {
+    const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
+    const walletAddress = waasResult.wallet; // signIn() returns {sessionId, wallet, email} — ambil .wallet aja
+    const { data: { user } } = await window.supabaseClient.auth.getUser();
+    if (user && walletAddress) {
+        await window.supabaseClient
+            .from('profiles')
+            .update({ wallet_address: walletAddress })
+            .eq('id', user.id)
+            .is('wallet_address', null);
+    }
+} catch (waasErr) {
+    console.error('Sequence wallet creation failed (non-blocking):', waasErr);
+}
 
                 window.location.href = 'dashboard.html';
             } catch (err) {
