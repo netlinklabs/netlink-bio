@@ -83,7 +83,15 @@
         .accordion-chevron.open { transform: rotate(180deg); }
 
         .brand-logo { height: 70px; width: auto; }
-.brand-logo-sidebar { height: 60px; width: auto; }
+        .brand-logo-sidebar { height: 60px; width: auto; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: #ffffff; border-radius: 20px; padding: 24px; max-width: 380px; width: 100%; position: relative; }
+        html.dark .modal-box { background: #1e293b; }
+        .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
+        .gas-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
+        html.dark .gas-warning { background: rgba(252,211,77,0.1); border-color: rgba(252,211,77,0.3); color: #fcd34d; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -165,20 +173,20 @@
     <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8 max-w-4xl mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
         <!-- Greeting header -->
         <div class="flex items-center justify-between py-3 mb-3 lg:mb-4">
-    <h2 id="greetingText" class="text-xl lg:text-2xl font-bold text-primary">Halo!</h2>
-    <div class="flex items-center gap-4">
-        <div class="flex flex-col items-center gap-1">
-            <div id="headerAvatarWrap" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
+            <h2 id="greetingText" class="text-xl lg:text-2xl font-bold text-primary">Halo!</h2>
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-center gap-1">
+                    <div id="headerAvatarWrap" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                        <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
+                    </div>
+                    <span id="headerTierPill" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
+                </div>
+                <button onclick="toggleTheme()" class="hidden lg:flex p-2 hover-surface rounded-lg transition" title="Switch theme">
+                    <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
+                </button>
             </div>
-            <span id="headerTierPill" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
-        </div>
-        <button onclick="toggleTheme()" class="hidden lg:flex p-2 hover-surface rounded-lg transition" title="Switch theme">
-            <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-            <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-        </button>
-    </div>
         </div>
 
         <!-- Wallet Address Bar -->
@@ -226,10 +234,10 @@
                         <p id="balanceUsdcFiat" class="text-white/60 text-sm mt-1">≈ $0.00 USD</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button onclick="showToast('Send feature coming soon')" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <button onclick="openSendModal()" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
                             <i data-lucide="send" class="w-4 h-4"></i> Send
                         </button>
-                        <button onclick="showToast('Receive feature coming soon')" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <button onclick="openReceiveModal()" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
                             <i data-lucide="download" class="w-4 h-4"></i> Receive
                         </button>
                         <button onclick="scrollToRamp()" class="flex-1 py-2.5 bg-white hover:bg-white/90 text-blue-700 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
@@ -338,6 +346,66 @@
         </footer>
     </main>
 
+    <!-- Receive Modal -->
+    <div id="receiveModal" class="modal-overlay" onclick="if(event.target===this) closeReceiveModal()">
+        <div class="modal-box text-center">
+            <button class="modal-close" onclick="closeReceiveModal()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Receive</h3>
+            <div style="background:white; padding:12px; border-radius:16px; display:inline-block; margin-bottom:16px;">
+                <img id="receiveQr" src="" alt="QR code" style="width:180px; height:180px; display:block;">
+            </div>
+            <p id="receiveAddress" class="text-xs font-mono text-secondary break-all bg-surface rounded-lg p-3 mb-3"></p>
+            <button onclick="copyWalletAddress()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">Copy address</button>
+            <p class="text-xs text-muted">Network: Polygon PoS (Mainnet)</p>
+        </div>
+    </div>
+
+    <!-- Send Modal -->
+    <div id="sendModal" class="modal-overlay" onclick="if(event.target===this) closeSendModal()">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeSendModal()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Send</h3>
+
+            <div id="sendStepForm">
+                <label class="text-xs font-medium text-secondary block mb-1.5">Token</label>
+                <select id="sendTokenSelect" onchange="onSendTokenChange()" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-1">
+                    <option value="NET">NET — Netlink Token</option>
+                    <option value="USDC">USDC — USD Coin</option>
+                    <option value="POL">POL — Polygon</option>
+                </select>
+                <p id="sendTokenBalance" class="text-xs text-muted mb-3">Balance: 0.00</p>
+
+                <div id="gasWarning" class="gas-warning hidden mb-3">
+                    You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>
+                </div>
+
+                <label class="text-xs font-medium text-secondary block mb-1.5">Recipient address</label>
+                <input id="sendToAddress" type="text" placeholder="0x..." class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-3 font-mono">
+
+                <label class="text-xs font-medium text-secondary block mb-1.5">Amount</label>
+                <input id="sendAmount" type="number" step="any" min="0" placeholder="0.00" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-4">
+
+                <p id="sendFormError" class="text-xs text-red-500 mb-3 hidden"></p>
+
+                <button id="sendContinueBtn" onclick="goToSendConfirm()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Continue</button>
+            </div>
+
+            <div id="sendStepConfirm" class="hidden">
+                <div class="bg-surface rounded-xl p-4 mb-4 text-center">
+                    <p class="text-xs text-muted mb-1">You're sending</p>
+                    <p id="confirmAmountLine" class="text-2xl font-bold text-primary mb-2">0.00 NET</p>
+                    <p class="text-xs text-muted mb-1">To</p>
+                    <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
+                </div>
+                <p class="text-xs text-muted mb-4 text-center">Gas fee paid in POL. This action cannot be undone.</p>
+                <div class="flex gap-2">
+                    <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                    <button id="sendConfirmBtn" onclick="executeSend()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Confirm &amp; Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
@@ -347,6 +415,7 @@
         const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
         let currentUser = null;
         let currentWalletAddress = '';
+        window.currentBalances = { net: '0', usdc: '0', pol: '0' };
 
         function showAuthError(msg) {
             document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
@@ -409,6 +478,7 @@
             });
 
             currentWalletAddress = data.wallet_address || '';
+            window.currentWalletAddress = currentWalletAddress;
             if (currentWalletAddress) {
                 document.getElementById('noWalletState').classList.add('hidden');
                 document.getElementById('walletContent').classList.remove('hidden');
@@ -467,6 +537,8 @@
                 const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
                 if (!res.ok) throw new Error('Failed to fetch balances');
                 const data = await res.json();
+
+                window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
 
                 document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
@@ -594,6 +666,171 @@
         lucide.createIcons();
         initTheme();
         checkAuth();
+    </script>
+
+    <script type="module">
+        import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
+
+        const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
+        const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
+
+        const sequenceWaas = new SequenceWaaS({
+            network: 'polygon',
+            projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
+            waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
+        });
+
+        const TOKEN_CONFIG = {
+            NET: { address: '0x0e893B239094A5c573373d44CF1C7D03576b95cb', decimals: 18 },
+            USDC: { address: '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359', decimals: 6 },
+            POL: { address: null, decimals: 18 }, // native, no contract
+        };
+
+        function toWei(amountStr, decimals) {
+            const [whole, frac = ''] = String(amountStr).split('.');
+            const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+            const wholeBig = BigInt(whole || '0');
+            const fracBig = BigInt(fracPadded || '0');
+            return (wholeBig * (10n ** BigInt(decimals)) + fracBig).toString();
+        }
+
+        function getBalanceForToken(token) {
+            const b = window.currentBalances || { net: '0', usdc: '0', pol: '0' };
+            if (token === 'NET') return b.net;
+            if (token === 'USDC') return b.usdc;
+            return b.pol;
+        }
+
+        // ---- Receive ----
+        window.openReceiveModal = function () {
+            const address = window.currentWalletAddress;
+            if (!address) { showToast('No wallet yet'); return; }
+            document.getElementById('receiveAddress').textContent = address;
+            document.getElementById('receiveQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(address)}`;
+            document.getElementById('receiveModal').classList.add('active');
+        };
+        window.closeReceiveModal = function () {
+            document.getElementById('receiveModal').classList.remove('active');
+        };
+
+        // ---- Send ----
+        window.openSendModal = function () {
+            if (!window.currentWalletAddress) { showToast('No wallet yet'); return; }
+            document.getElementById('sendStepForm').classList.remove('hidden');
+            document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('sendToAddress').value = '';
+            document.getElementById('sendAmount').value = '';
+            document.getElementById('sendFormError').classList.add('hidden');
+            onSendTokenChange();
+            document.getElementById('sendModal').classList.add('active');
+        };
+        window.closeSendModal = function () {
+            document.getElementById('sendModal').classList.remove('active');
+        };
+
+        window.onSendTokenChange = function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const balance = getBalanceForToken(token);
+            document.getElementById('sendTokenBalance').textContent = `Balance: ${parseFloat(balance).toFixed(2)} ${token}`;
+
+            const polBalance = parseFloat(getBalanceForToken('POL'));
+            const gasWarning = document.getElementById('gasWarning');
+            const continueBtn = document.getElementById('sendContinueBtn');
+            if (polBalance <= 0) {
+                gasWarning.classList.remove('hidden');
+                continueBtn.disabled = true;
+                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                gasWarning.classList.add('hidden');
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        };
+
+        function showSendError(msg) {
+            const el = document.getElementById('sendFormError');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        window.goToSendConfirm = function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const to = document.getElementById('sendToAddress').value.trim();
+            const amount = document.getElementById('sendAmount').value.trim();
+            const errorEl = document.getElementById('sendFormError');
+            errorEl.classList.add('hidden');
+
+            if (!/^0x[a-fA-F0-9]{40}$/.test(to)) {
+                showSendError('Invalid recipient address.');
+                return;
+            }
+            const amountNum = parseFloat(amount);
+            if (!amount || isNaN(amountNum) || amountNum <= 0) {
+                showSendError('Enter a valid amount.');
+                return;
+            }
+            const balance = parseFloat(getBalanceForToken(token));
+            if (token === 'POL') {
+                // Leave a small buffer for the transaction's own gas.
+                if (amountNum > balance - 0.01) {
+                    showSendError('Leave at least 0.01 POL in your wallet for gas.');
+                    return;
+                }
+            } else {
+                if (amountNum > balance) {
+                    showSendError('Insufficient balance.');
+                    return;
+                }
+            }
+
+            document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
+            document.getElementById('confirmToAddress').textContent = to;
+            document.getElementById('sendStepForm').classList.add('hidden');
+            document.getElementById('sendStepConfirm').classList.remove('hidden');
+        };
+
+        window.backToSendForm = function () {
+            document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('sendStepForm').classList.remove('hidden');
+        };
+
+        window.executeSend = async function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const to = document.getElementById('sendToAddress').value.trim();
+            const amount = document.getElementById('sendAmount').value.trim();
+            const btn = document.getElementById('sendConfirmBtn');
+            const config = TOKEN_CONFIG[token];
+            const valueWei = toWei(amount, config.decimals);
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                if (token === 'POL') {
+                    await sequenceWaas.sendTransaction({
+                        transactions: [{ to, value: valueWei }],
+                    });
+                } else {
+                    await sequenceWaas.sendERC20({
+                        chainId: 137,
+                        token: config.address,
+                        to,
+                        value: valueWei,
+                    });
+                }
+                showToast(`Sent ${amount} ${token}!`);
+                closeSendModal();
+                fetchWalletBalances(window.currentWalletAddress);
+                fetchTransactionHistory(window.currentWalletAddress);
+            } catch (err) {
+                console.error(err);
+                showToast('Transaction failed — please try again.');
+                backToSendForm();
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirm & Send';
+            }
+        };
     </script>
 </body>
 </html>
