@@ -165,20 +165,20 @@
     <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8 max-w-4xl mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
         <!-- Greeting header -->
         <div class="flex items-center justify-between mb-6 lg:mb-8">
-            <div class="flex items-center gap-4">
-                <h2 id="greetingText" class="text-xl lg:text-2xl font-bold text-primary">Halo!</h2>
-                <div class="flex flex-col items-center gap-1">
-                    <div id="headerAvatarWrap" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                        <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
-                    </div>
-                    <span id="headerTierPill" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
-                </div>
+    <h2 id="greetingText" class="text-xl lg:text-2xl font-bold text-primary">Halo!</h2>
+    <div class="flex items-center gap-4">
+        <div class="flex flex-col items-center gap-1">
+            <div id="headerAvatarWrap" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
             </div>
-            <button onclick="toggleTheme()" class="hidden lg:flex p-2 hover-surface rounded-lg transition" title="Switch theme">
-                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-            </button>
+            <span id="headerTierPill" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
+        </div>
+        <button onclick="toggleTheme()" class="hidden lg:flex p-2 hover-surface rounded-lg transition" title="Switch theme">
+            <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+            <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
+        </button>
+    </div>
         </div>
 
         <!-- Wallet Address Bar -->
