@@ -1981,8 +1981,9 @@ if (googleWalletBtn) googleWalletBtn.classList.toggle('hidden', hasAddress);
         btn.disabled = true;
         btn.textContent = 'Connecting...';
         try {
-            const walletAddress = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
-            document.getElementById('walletAddressInput').value = walletAddress;
+            const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
+const walletAddress = waasResult.wallet;
+document.getElementById('walletAddressInput').value = walletAddress;
             await window.saveWallet();
             window.renderWalletAddressUI(walletAddress, true);
             showToast('Wallet created via Google!');
