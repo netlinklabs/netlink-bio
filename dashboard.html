@@ -1847,7 +1847,8 @@
                 if(statusText) statusText.textContent = 'Status: Not Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
             }
-
+const googleWalletBtn = document.getElementById('googleWalletBtn');
+    if (googleWalletBtn) googleWalletBtn.classList.toggle('hidden', hasAddress);
             setWalletConnectBtnState(isLive);
         }
         window.renderWalletAddressUI = renderWalletAddressUI;
@@ -1862,8 +1863,7 @@
                 btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet';
                 btn.onclick = connectWallet;
             }
-            const googleWalletBtn = document.getElementById('googleWalletBtn');
-if (googleWalletBtn) googleWalletBtn.classList.toggle('hidden', hasAddress);
+            
             if (window.lucide) lucide.createIcons();
         }
 
