@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netlink Pay</title>
+    
+    <!-- Link ke File Manifest PWA -->
+    <link rel="manifest" href="manifest.json">
+    
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -201,6 +205,28 @@
     </style>
 </head>
 <body class="min-h-screen">
+
+    <!-- PWA Install Banner (Muncul dari atas) -->
+    <div id="pwa-install-banner" class="fixed top-0 left-0 right-0 card shadow-lg z-[9999] transform -translate-y-full transition-transform duration-300 hidden">
+        <div class="flex items-center justify-between p-4 max-w-4xl mx-auto">
+            <div class="flex items-center gap-3">
+                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-icon.png" alt="Netlink Pay Icon" class="w-12 h-12 rounded-xl shadow-sm border border-subtle">
+                <div>
+                    <h4 class="font-bold text-primary text-sm">Netlink Pay</h4>
+                    <p class="text-xs text-muted">Install aplikasi untuk akses instan</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="pwa-install-btn" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-md transition-colors">
+                    Install
+                </button>
+                <button id="pwa-close-btn" class="text-secondary hover:text-primary transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="authGate">
         <div class="flex flex-col items-center gap-3 px-6 text-center">
             <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -638,10 +664,9 @@
             const params = new URLSearchParams({
                 crypto: 'USDC',
                 network: 'POLYGON',
-                fiat: 'USD',
-                fiatamount: '100',
+                fiat: 'IDR',
                 theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-                address,
+                address, // Alamat kita kirimkan, biarpun Alchemy mungkin menolaknya jika tanpa API Key, ini amannya sesuai kodenya
             });
             iframe.src = `${baseUrl}?${params.toString()}`;
         }
@@ -1051,6 +1076,63 @@
                 statusEl.textContent = 'Confirm with Google to authorize this transfer.';
                 document.getElementById('googleConfirmWrap').style.opacity = '1';
             }
+        }
+    </script>
+    
+    <!-- ========================================== -->
+    <!-- LOGIKA PWA (SERVICE WORKER & BANNER)       -->
+    <!-- ========================================== -->
+    <script>
+        // Registrasi Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Terdaftar!'))
+                    .catch(err => console.log('Gagal mendaftar Service Worker', err));
+            });
+        }
+
+        // Variabel untuk mengontrol Popup Install
+        let deferredPrompt;
+        const pwaBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const closeBtn = document.getElementById('pwa-close-btn');
+
+        // Menangkap event sebelum prompt install bawaan browser muncul
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Tampilkan custom banner dari atas
+            pwaBanner.classList.remove('hidden');
+            setTimeout(() => {
+                pwaBanner.classList.remove('-translate-y-full');
+            }, 100);
+        });
+
+        // Eksekusi saat tombol Install diklik
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User menginstal aplikasi Netlink Pay');
+                }
+                deferredPrompt = null;
+                hidePwaBanner();
+            }
+        });
+
+        // Tutup banner jika tidak mau install
+        closeBtn.addEventListener('click', () => {
+            hidePwaBanner();
+        });
+
+        function hidePwaBanner() {
+            pwaBanner.classList.add('-translate-y-full');
+            setTimeout(() => {
+                pwaBanner.classList.add('hidden');
+            }, 300);
         }
     </script>
 </body>
