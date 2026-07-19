@@ -825,7 +825,10 @@
                 el.className = `px-2.5 py-0.5 border rounded-full text-[11px] font-medium whitespace-nowrap ${style}`;
             });
         }
-
+function openNetlinkPay() {
+    window.location.href = 'https://netlink-bio.vercel.app/pay.html';
+}
+window.openNetlinkPay = openNetlinkPay;
         async function loadProfile() {
             const { data, error } = await supabaseClient
                 .from('profiles').select('*').eq('id', currentUser.id).single();
