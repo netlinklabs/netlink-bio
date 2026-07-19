@@ -1971,6 +1971,7 @@ const googleWalletBtn = document.getElementById('googleWalletBtn');
         projectAccessKey: 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA',
         waasConfigKey: 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=',
     });
+        window.sequenceWaas = sequenceWaas;
 
     async function handleGoogleWalletCredential(response) {
         const idToken = response.credential;
