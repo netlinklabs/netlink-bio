@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlink Pay</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        .hover-surface:hover { background: rgba(0,0,0,0.03); }
+        .sidebar { background: #ffffff; }
+        .mobile-header { background: #ffffff; }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle, html.dark .border-white\/5 { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .hover-surface:hover, html.dark .hover\:bg-white\/5:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar { background: #1e293b; border-left: 1px solid rgba(255,255,255,0.05); }
+        html.dark .mobile-header { background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        html.dark .sidebar nav a.text-secondary { color: #94a3b8 !important; }
+        html.dark .sidebar nav a.text-secondary:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar .border-t { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar .text-muted { color: #64748b !important; }
+        html.dark .tx-row:hover { background: rgba(255,255,255,0.03); }
+        html.dark .tx-amount-in { color: #34d399; }
+        html.dark .tx-amount-out { color: #f87171; }
+
+        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; height: 100dvh; z-index: 50; transition: right 0.3s ease; overflow: hidden; border-left: 1px solid rgba(0,0,0,0.08); }
+        .sidebar nav { overflow-y: auto; min-height: 0; }
+        .sidebar.open { right: 0; }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        @media (min-width: 1024px) {
+            .sidebar { right: 0; width: 280px; transition: none; }
+            .sidebar-overlay { display: none !important; }
+            .main-content { margin-right: 280px; margin-left: 0; }
+            .mobile-header { display: none; }
+        }
+        @media (max-width: 1023px) {
+            .main-content { margin-right: 0; }
+            .mobile-header { display: flex; }
+        }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); }
+
+        .balance-card-usdc { background: linear-gradient(135deg, #2775ca 0%, #1a5bb0 100%); }
+        .balance-card-net { background: linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%); }
+        .balance-card-pol { background: linear-gradient(135deg, #8247e5 0%, #5b21b6 100%); }
+
+        .tx-row { transition: background 0.15s; }
+        .tx-row:hover { background: rgba(0,0,0,0.02); }
+        .tx-amount-in { color: #059669; }
+        .tx-amount-out { color: #dc2626; }
+
+        .accordion-body { display: none; }
+        .accordion-body.open { display: block; }
+        .accordion-chevron { transition: transform 0.2s; }
+        .accordion-chevron.open { transform: rotate(180deg); }
+
+        .brand-logo { height: 70px; width: auto; }
+        .brand-logo-sidebar { height: 48px; width: auto; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: #ffffff; border-radius: 20px; padding: 24px; max-width: 380px; width: 100%; position: relative; }
+        html.dark .modal-box { background: #1e293b; }
+        .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
+        .gas-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
+        html.dark .gas-warning { background: rgba(252,211,77,0.1); border-color: rgba(252,211,77,0.3); color: #fcd34d; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading Netlink Pay...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Saved successfully!</div>
+
+    <!-- Mobile Header -->
+    <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
+        <a href="dashboard.html" class="flex items-center">
+            <img id="brandLogoMobile" src="" alt="Netlink Pay" class="brand-logo">
+        </a>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch theme">
+                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
+            </button>
+            <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
+                <i data-lucide="menu" class="w-5 h-5 text-secondary"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar text-white flex flex-col">
+        <div class="hidden lg:flex p-4 border-b border-subtle items-center">
+            <a href="dashboard.html" class="flex items-center">
+                <img id="brandLogoDesktop" src="" alt="Netlink Pay" class="brand-logo-sidebar">
+            </a>
+        </div>
+
+        <nav class="flex-1 py-2">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="link" class="w-4 h-4"></i><span>Links</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i><span>CV Builder</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-500 border-l-2 border-blue-500">
+                <i data-lucide="wallet" class="w-4 h-4"></i><span>Netlink Pay</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-subtle">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 flex-1 min-w-0 text-left">
+                    <div id="sidebarAvatarWrap" class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-lg overflow-hidden flex-shrink-0">
+                        <img id="sidebarAvatarImg" src="" alt="" class="w-full h-full object-cover hidden">
+                        <span id="sidebarAvatarInitial">?</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">Loading...</p>
+                        <p id="sidebarTierLabel" class="text-xs text-muted">—</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8 max-w-4xl mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
+        <!-- Greeting header -->
+        <div class="flex items-center justify-between py-3 mb-3 lg:mb-4">
+            <h2 id="greetingText" class="text-xl lg:text-2xl font-bold text-primary">Halo!</h2>
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-center gap-1">
+                    <div id="headerAvatarWrap" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                        <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
+                    </div>
+                    <span id="headerTierPill" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
+                </div>
+                <button onclick="toggleTheme()" class="hidden lg:flex p-2 hover-surface rounded-lg transition" title="Switch theme">
+                    <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Wallet Address Bar -->
+        <div class="card rounded-2xl p-4 lg:p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="wallet" class="w-5 h-5 text-blue-500"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs text-muted">Your Netlink Pay Wallet</p>
+                    <p id="walletAddressDisplay" class="text-sm font-mono font-medium text-primary truncate">Loading...</p>
+                </div>
+            </div>
+            <button id="copyAddressBtn" onclick="copyWalletAddress()" class="px-3 py-2 text-sm font-medium text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 rounded-lg transition flex items-center justify-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+            </button>
+        </div>
+
+        <!-- No-wallet empty state -->
+        <div id="noWalletState" class="hidden card rounded-2xl p-8 mb-5 text-center">
+            <i data-lucide="sparkles" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
+            <p class="text-sm text-secondary mb-4">You don't have a Netlink Pay wallet yet. Go to your Dashboard to create one instantly.</p>
+            <a href="dashboard.html" class="inline-block px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Go to Dashboard</a>
+        </div>
+
+        <div id="walletContent">
+            <!-- USDC Full Card -->
+            <div class="balance-card-usdc rounded-2xl p-6 lg:p-8 mb-5 text-white shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
+                <div class="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                <img src="/assets/usdc-logo.png" alt="USDC" class="w-7 h-7 rounded-full">
+                            </div>
+                            <div>
+                                <p class="text-white/70 text-sm font-medium">USDC Balance</p>
+                                <p class="text-white/50 text-xs">USD Coin (Polygon)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <p id="balanceUsdc" class="text-4xl lg:text-5xl font-bold tracking-tight">0.00</p>
+                        <p id="balanceUsdcFiat" class="text-white/60 text-sm mt-1">≈ $0.00 USD</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="openSendModal()" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                            <i data-lucide="send" class="w-4 h-4"></i> Send
+                        </button>
+                        <button onclick="openReceiveModal()" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> Receive
+                        </button>
+                        <button onclick="scrollToRamp()" class="flex-1 py-2.5 bg-white hover:bg-white/90 text-blue-700 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Buy
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NET & POL Row -->
+            <div class="grid grid-cols-2 gap-4 mb-5">
+                <div class="balance-card-net rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2.5 mb-4">
+                            <div class="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                <img src="/assets/net-logo.png" alt="NET" class="w-5 h-5 rounded-full">
+                            </div>
+                            <div>
+                                <p class="text-white/70 text-xs font-medium">NET</p>
+                                <p class="text-white/40 text-[10px]">Netlink Token</p>
+                            </div>
+                        </div>
+                        <p id="balanceNet" class="text-2xl lg:text-3xl font-bold tracking-tight">0.00</p>
+                        <p id="balanceNetFiat" class="text-white/50 text-xs mt-1">≈ $0.00</p>
+                    </div>
+                </div>
+
+                <div class="balance-card-pol rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2.5 mb-4">
+                            <div class="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                <img src="/assets/polygon-logo.png" alt="POL" class="w-5 h-5 rounded-full">
+                            </div>
+                            <div>
+                                <p class="text-white/70 text-xs font-medium">POL</p>
+                                <p class="text-white/40 text-[10px]">Polygon</p>
+                            </div>
+                        </div>
+                        <p id="balancePol" class="text-2xl lg:text-3xl font-bold tracking-tight">0.00</p>
+                        <p id="balancePolFiat" class="text-white/50 text-xs mt-1">≈ $0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Swap (Coming soon) -->
+            <div class="card rounded-2xl p-4 lg:p-6 mb-5 flex items-center gap-4">
+                <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="repeat" class="w-5 h-5 text-purple-500"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-primary text-sm">Swap</h3>
+                    <p class="text-xs text-muted">Coming soon — NET isn't listed on a DEX yet.</p>
+                </div>
+                <span class="text-xs font-medium bg-surface border border-subtle px-2.5 py-1 rounded-full text-muted whitespace-nowrap">Coming soon</span>
+            </div>
+
+            <!-- Alchemy Pay Ramp Widget -->
+            <div id="rampSection" class="card rounded-2xl p-4 lg:p-6 mb-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
+                        <i data-lucide="credit-card" class="w-4 h-4 text-indigo-500"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-primary text-sm">Buy Crypto</h3>
+                        <p class="text-xs text-muted">Powered by Alchemy Pay</p>
+                    </div>
+                </div>
+                <div class="rounded-xl overflow-hidden border border-subtle" style="height: 520px;">
+                    <iframe
+                        id="alchemyRampFrame"
+                        src=""
+                        allow="accelerometer; autoplay; camera; gyroscope; payment"
+                        width="100%"
+                        height="100%"
+                        frameborder="0"
+                        title="Alchemy Pay Ramp"
+                    ></iframe>
+                </div>
+                <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by Alchemy Pay.</p>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="card rounded-2xl mb-8 overflow-hidden">
+                <button onclick="toggleAccordion('txHistoryBody')" class="w-full flex items-center justify-between p-4 lg:p-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                            <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
+                            <p class="text-xs text-muted">Last 20 transactions</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="txCountBadge" class="text-xs text-muted bg-surface px-2 py-0.5 rounded-full">0</span>
+                        <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="txHistoryBodyChevron"></i>
+                    </div>
+                </button>
+                <div id="txHistoryBody" class="accordion-body">
+                    <div id="txList" class="divide-y divide-subtle">
+                        <div class="p-6 text-center text-sm text-muted">Loading transactions...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center pb-8 pt-4">
+            <p class="text-xs text-muted">Developed by Netlink Labs</p>
+        </footer>
+    </main>
+
+    <!-- Receive Modal -->
+    <div id="receiveModal" class="modal-overlay" onclick="if(event.target===this) closeReceiveModal()">
+        <div class="modal-box text-center">
+            <button class="modal-close" onclick="closeReceiveModal()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Receive</h3>
+            <div style="background:white; padding:12px; border-radius:16px; display:inline-block; margin-bottom:16px;">
+                <img id="receiveQr" src="" alt="QR code" style="width:180px; height:180px; display:block;">
+            </div>
+            <p id="receiveAddress" class="text-xs font-mono text-secondary break-all bg-surface rounded-lg p-3 mb-3"></p>
+            <button onclick="copyWalletAddress()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">Copy address</button>
+            <p class="text-xs text-muted">Network: Polygon PoS (Mainnet)</p>
+        </div>
+    </div>
+
+    <!-- Send Modal -->
+    <div id="sendModal" class="modal-overlay" onclick="if(event.target===this) closeSendModal()">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeSendModal()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Send</h3>
+
+            <div id="sendStepForm">
+                <label class="text-xs font-medium text-secondary block mb-1.5">Token</label>
+                <select id="sendTokenSelect" onchange="onSendTokenChange()" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-1">
+                    <option value="NET">NET — Netlink Token</option>
+                    <option value="USDC">USDC — USD Coin</option>
+                    <option value="POL">POL — Polygon</option>
+                </select>
+                <p id="sendTokenBalance" class="text-xs text-muted mb-3">Balance: 0.00</p>
+
+                <div id="gasWarning" class="gas-warning hidden mb-3">
+                    You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>
+                </div>
+
+                <label class="text-xs font-medium text-secondary block mb-1.5">Recipient address</label>
+                <input id="sendToAddress" type="text" placeholder="0x..." class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-3 font-mono">
+
+                <label class="text-xs font-medium text-secondary block mb-1.5">Amount</label>
+                <input id="sendAmount" type="number" step="any" min="0" placeholder="0.00" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-4">
+
+                <p id="sendFormError" class="text-xs text-red-500 mb-3 hidden"></p>
+
+                <button id="sendContinueBtn" onclick="goToSendConfirm()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Continue</button>
+            </div>
+
+            <div id="sendStepConfirm" class="hidden">
+                <div class="bg-surface rounded-xl p-4 mb-4 text-center">
+                    <p class="text-xs text-muted mb-1">You're sending</p>
+                    <p id="confirmAmountLine" class="text-2xl font-bold text-primary mb-2">0.00 NET</p>
+                    <p class="text-xs text-muted mb-1">To</p>
+                    <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
+                </div>
+                <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Gas fee paid in POL. This action cannot be undone.</p>
+                <div class="flex gap-2">
+                    <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                    <button id="sendConfirmBtn" onclick="executeSend()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Confirm &amp; Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+        let currentUser = null;
+        let currentWalletAddress = '';
+        window.currentBalances = { net: '0', usdc: '0', pol: '0' };
+
+        function showAuthError(msg) {
+            document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
+        }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login.html'; return; }
+                currentUser = session.user;
+                document.getElementById('authGate').style.display = 'none';
+                await loadUserProfile();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        async function loadUserProfile() {
+            const { data, error } = await supabaseClient
+                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address').eq('id', currentUser.id).single();
+
+            if (error) {
+                console.error('Failed to load profile:', error);
+                return;
+            }
+
+            const label = data.display_name || data.username || currentUser.email;
+            const firstName = label.split(' ')[0];
+            document.getElementById('greetingText').textContent = `Halo, ${firstName}!`;
+            document.getElementById('sidebarUserEmail').textContent = label;
+            document.getElementById('sidebarTierLabel').textContent = TIER_DISPLAY[data.tier || 'basic'] + ' Plan';
+
+            const tierLabel = TIER_DISPLAY[data.tier || 'basic'];
+            document.getElementById('headerTierPill').textContent = tierLabel;
+
+            const initialChar = label.charAt(0).toUpperCase();
+            const avatarTargets = [
+                { img: document.getElementById('headerAvatarImg'), initial: document.getElementById('headerAvatarInitial') },
+                { img: document.getElementById('sidebarAvatarImg'), initial: document.getElementById('sidebarAvatarInitial') },
+            ];
+            avatarTargets.forEach(({ img, initial }) => {
+                if (data.avatar_url) {
+                    img.src = data.avatar_url;
+                    img.classList.remove('hidden');
+                    initial.classList.add('hidden');
+                } else {
+                    img.classList.add('hidden');
+                    initial.classList.remove('hidden');
+                    initial.textContent = initialChar;
+                }
+            });
+
+            currentWalletAddress = data.wallet_address || '';
+            window.currentWalletAddress = currentWalletAddress;
+            if (currentWalletAddress) {
+                document.getElementById('noWalletState').classList.add('hidden');
+                document.getElementById('walletContent').classList.remove('hidden');
+                document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
+                document.getElementById('copyAddressBtn').classList.remove('hidden');
+                updateRampIframe(currentWalletAddress);
+                fetchWalletBalances(currentWalletAddress);
+                fetchTransactionHistory(currentWalletAddress);
+            } else {
+                document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
+                document.getElementById('copyAddressBtn').classList.add('hidden');
+                document.getElementById('noWalletState').classList.remove('hidden');
+                document.getElementById('walletContent').classList.add('hidden');
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function truncateAddress(addr) {
+            if (!addr) return '';
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+
+        function copyWalletAddress() {
+            if (!currentWalletAddress) { showToast('No wallet connected'); return; }
+            navigator.clipboard.writeText(currentWalletAddress).then(() => showToast('Address copied!'));
+        }
+
+        function updateRampIframe(address) {
+            const iframe = document.getElementById('alchemyRampFrame');
+            if (!iframe) return;
+            const baseUrl = 'https://ramp.alchemypay.org/#/index';
+            const params = new URLSearchParams({
+                crypto: 'USDC',
+                network: 'POLYGON',
+                fiat: 'USD',
+                fiatamount: '100',
+                theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+                address,
+            });
+            iframe.src = `${baseUrl}?${params.toString()}`;
+        }
+
+        function scrollToRamp() {
+            document.getElementById('rampSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function formatTokenAmount(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return '0.00';
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        async function fetchWalletBalances(address) {
+            try {
+                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
+                if (!res.ok) throw new Error('Failed to fetch balances');
+                const data = await res.json();
+
+                window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
+
+                document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
+                document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
+                document.getElementById('balanceUsdcFiat').textContent = `≈ $${formatTokenAmount(data.usdc)} USD`;
+                document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
+            } catch (err) {
+                console.error(err);
+                showToast('Could not fetch wallet balances');
+            }
+        }
+
+        async function fetchTransactionHistory(address) {
+            const list = document.getElementById('txList');
+            const badge = document.getElementById('txCountBadge');
+            try {
+                const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}`);
+                if (!res.ok) throw new Error('Failed to fetch transactions');
+                const data = await res.json();
+                const txs = data.transactions || [];
+
+                badge.textContent = txs.length;
+
+                if (txs.length === 0) {
+                    list.innerHTML = '<div class="p-6 text-center text-sm text-muted">No transactions yet.</div>';
+                    return;
+                }
+
+                list.innerHTML = txs.map((tx) => {
+                    const isIn = tx.type === 'in';
+                    const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
+                    const colorClass = isIn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500';
+                    const amountClass = isIn ? 'tx-amount-in' : 'tx-amount-out';
+                    const sign = isIn ? '+' : '-';
+                    const timeAgo = formatTimeAgo(tx.timestamp);
+                    const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
+
+                    return `
+                        <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
+                            <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="${icon}" class="w-4 h-4"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-medium text-primary truncate">${isIn ? 'Received' : 'Sent'} ${tx.token}</p>
+                                    <p class="text-sm font-semibold ${amountClass}">${sign}${tx.amount} ${tx.token}</p>
+                                </div>
+                                <div class="flex items-center justify-between mt-0.5">
+                                    <p class="text-xs text-muted truncate">${tx.counterparty ? truncateAddress(tx.counterparty) : '—'}</p>
+                                    <p class="text-xs text-muted">${timeAgo}</p>
+                                </div>
+                            </div>
+                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-muted flex-shrink-0"></i>
+                        </a>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load transaction history.</div>';
+            }
+        }
+
+        function formatTimeAgo(timestamp) {
+            const diffMs = Date.now() - timestamp;
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return `${mins} min ago`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `${hours} hr ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+            return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+
+        function toggleAccordion(id) {
+            document.getElementById(id).classList.toggle('open');
+            document.getElementById(id + 'Chevron').classList.toggle('open');
+        }
+
+        function updateBrandLogo() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const logoUrl = isDark
+                ? 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png'
+                : 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
+            document.getElementById('brandLogoMobile').src = logoUrl;
+            document.getElementById('brandLogoDesktop').src = logoUrl;
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            applyTheme(savedTheme || 'light', false);
+        }
+
+        function applyTheme(theme, save = true) {
+            const html = document.documentElement;
+            const lightIcons = document.querySelectorAll('.theme-icon-light');
+            const darkIcons = document.querySelectorAll('.theme-icon-dark');
+            if (theme === 'dark') {
+                html.classList.add('dark'); html.classList.remove('light');
+                lightIcons.forEach(icon => icon.classList.add('hidden'));
+                darkIcons.forEach(icon => icon.classList.remove('hidden'));
+            } else {
+                html.classList.remove('dark'); html.classList.add('light');
+                lightIcons.forEach(icon => icon.classList.remove('hidden'));
+                darkIcons.forEach(icon => icon.classList.add('hidden'));
+            }
+            if (save) localStorage.setItem('theme', theme);
+            updateBrandLogo();
+            if (currentWalletAddress) updateRampIframe(currentWalletAddress);
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            applyTheme(isDark ? 'light' : 'dark', true);
+        }
+
+        lucide.createIcons();
+        initTheme();
+        checkAuth();
+    </script>
+
+    <script type="module">
+        import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
+
+        const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
+        const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
+        const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
+
+        const sequenceWaas = new SequenceWaaS({
+            network: 'polygon',
+            projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
+            waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
+        });
+
+        // Sending a transaction requires an active sign-in on THIS SequenceWaaS
+        // instance. signIn() called on login.html/dashboard.html doesn't carry
+        // over automatically, so we silently re-authenticate with Google here
+        // whenever a transaction is about to be signed.
+        let googleInitialized = false;
+
+        function initGoogleForWaas() {
+            if (googleInitialized || !window.google) return;
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: () => {}, // overridden per-call via ensureSequenceSignedIn
+                auto_select: true,
+            });
+            googleInitialized = true;
+        }
+        window.addEventListener('load', initGoogleForWaas);
+
+        function ensureSequenceSignedIn() {
+            return new Promise((resolve, reject) => {
+                if (!window.google) { reject(new Error('Google sign-in unavailable')); return; }
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: async (response) => {
+                        try {
+                            await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                            resolve();
+                        } catch (err) {
+                            reject(err);
+                        }
+                    },
+                });
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        reject(new Error('Please allow the Google sign-in prompt to authorize this transaction.'));
+                    }
+                });
+            });
+        }
+
+        const TOKEN_CONFIG = {
+            NET: { address: '0x0e893B239094A5c573373d44CF1C7D03576b95cb', decimals: 18 },
+            USDC: { address: '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359', decimals: 6 },
+            POL: { address: null, decimals: 18 },
+        };
+
+        function toWei(amountStr, decimals) {
+            const [whole, frac = ''] = String(amountStr).split('.');
+            const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+            const wholeBig = BigInt(whole || '0');
+            const fracBig = BigInt(fracPadded || '0');
+            return (wholeBig * (10n ** BigInt(decimals)) + fracBig).toString();
+        }
+
+        function getBalanceForToken(token) {
+            const b = window.currentBalances || { net: '0', usdc: '0', pol: '0' };
+            if (token === 'NET') return b.net;
+            if (token === 'USDC') return b.usdc;
+            return b.pol;
+        }
+
+        // ---- Receive ----
+        window.openReceiveModal = function () {
+            const address = window.currentWalletAddress;
+            if (!address) { showToast('No wallet yet'); return; }
+            document.getElementById('receiveAddress').textContent = address;
+            document.getElementById('receiveQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(address)}`;
+            document.getElementById('receiveModal').classList.add('active');
+        };
+        window.closeReceiveModal = function () {
+            document.getElementById('receiveModal').classList.remove('active');
+        };
+
+        // ---- Send ----
+        window.openSendModal = function () {
+            if (!window.currentWalletAddress) { showToast('No wallet yet'); return; }
+            document.getElementById('sendStepForm').classList.remove('hidden');
+            document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('sendToAddress').value = '';
+            document.getElementById('sendAmount').value = '';
+            document.getElementById('sendFormError').classList.add('hidden');
+            onSendTokenChange();
+            document.getElementById('sendModal').classList.add('active');
+        };
+        window.closeSendModal = function () {
+            document.getElementById('sendModal').classList.remove('active');
+        };
+
+        window.onSendTokenChange = function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const balance = getBalanceForToken(token);
+            document.getElementById('sendTokenBalance').textContent = `Balance: ${parseFloat(balance).toFixed(2)} ${token}`;
+
+            const polBalance = parseFloat(getBalanceForToken('POL'));
+            const gasWarning = document.getElementById('gasWarning');
+            const continueBtn = document.getElementById('sendContinueBtn');
+            if (polBalance <= 0) {
+                gasWarning.classList.remove('hidden');
+                continueBtn.disabled = true;
+                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                gasWarning.classList.add('hidden');
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        };
+
+        function showSendError(msg) {
+            const el = document.getElementById('sendFormError');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        window.goToSendConfirm = function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const to = document.getElementById('sendToAddress').value.trim();
+            const amount = document.getElementById('sendAmount').value.trim();
+            const errorEl = document.getElementById('sendFormError');
+            errorEl.classList.add('hidden');
+
+            if (!/^0x[a-fA-F0-9]{40}$/.test(to)) {
+                showSendError('Invalid recipient address.');
+                return;
+            }
+            const amountNum = parseFloat(amount);
+            if (!amount || isNaN(amountNum) || amountNum <= 0) {
+                showSendError('Enter a valid amount.');
+                return;
+            }
+            const balance = parseFloat(getBalanceForToken(token));
+            if (token === 'POL') {
+                if (amountNum > balance - 0.01) {
+                    showSendError('Leave at least 0.01 POL in your wallet for gas.');
+                    return;
+                }
+            } else {
+                if (amountNum > balance) {
+                    showSendError('Insufficient balance.');
+                    return;
+                }
+            }
+
+            document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
+            document.getElementById('confirmToAddress').textContent = to;
+            document.getElementById('sendConfirmStatus').textContent = 'Gas fee paid in POL. This action cannot be undone.';
+            document.getElementById('sendStepForm').classList.add('hidden');
+            document.getElementById('sendStepConfirm').classList.remove('hidden');
+        };
+
+        window.backToSendForm = function () {
+            document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('sendStepForm').classList.remove('hidden');
+        };
+
+        async function performTransfer(token, to, valueWei) {
+            const config = TOKEN_CONFIG[token];
+            if (token === 'POL') {
+                await sequenceWaas.sendTransaction({ transactions: [{ to, value: valueWei }] });
+            } else {
+                await sequenceWaas.sendERC20({ chainId: 137, token: config.address, to, value: valueWei });
+            }
+        }
+
+        window.executeSend = async function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const to = document.getElementById('sendToAddress').value.trim();
+            const amount = document.getElementById('sendAmount').value.trim();
+            const btn = document.getElementById('sendConfirmBtn');
+            const statusEl = document.getElementById('sendConfirmStatus');
+            const config = TOKEN_CONFIG[token];
+            const valueWei = toWei(amount, config.decimals);
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                await performTransfer(token, to, valueWei);
+                showToast(`Sent ${amount} ${token}!`);
+                closeSendModal();
+                fetchWalletBalances(window.currentWalletAddress);
+                fetchTransactionHistory(window.currentWalletAddress);
+            } catch (err) {
+                const msg = String(err?.message || err || '');
+                if (msg.toLowerCase().includes('not signed in')) {
+                    statusEl.textContent = 'Confirming your identity — please tap the Google prompt...';
+                    try {
+                        await ensureSequenceSignedIn();
+                        await performTransfer(token, to, valueWei);
+                        showToast(`Sent ${amount} ${token}!`);
+                        closeSendModal();
+                        fetchWalletBalances(window.currentWalletAddress);
+                        fetchTransactionHistory(window.currentWalletAddress);
+                    } catch (retryErr) {
+                        console.error(retryErr);
+                        showToast('Could not verify your identity — please try again.');
+                        statusEl.textContent = 'Gas fee paid in POL. This action cannot be undone.';
+                    }
+                } else {
+                    console.error(err);
+                    showToast('Transaction failed — please try again.');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirm & Send';
+            }
+        };
+    </script>
+</body>
+</html>
