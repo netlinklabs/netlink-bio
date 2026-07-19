@@ -910,7 +910,12 @@
                 continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         };
-
+const sequenceWaas = new SequenceWaaS({
+    network: 'polygon',
+    projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
+    waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
+});
+window.sequenceWaas = sequenceWaas;
         function showSendError(msg) {
             const el = document.getElementById('sendFormError');
             el.textContent = msg;
