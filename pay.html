@@ -516,10 +516,10 @@
                     <p class="text-xs text-muted mb-1">To</p>
                     <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
                 </div>
-                <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Gas fee paid in POL. This action cannot be undone.</p>
+                <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Confirm with Google to authorize this transfer.</p>
                 <div class="flex gap-2">
                     <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
-                    <button id="sendConfirmBtn" onclick="executeSend()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Confirm &amp; Send</button>
+                    <div id="googleConfirmWrap" class="flex-1 flex items-center justify-center"></div>
                 </div>
             </div>
         </div>
@@ -811,39 +811,43 @@
             waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
         });
 
-        let googleInitialized = false;
-
-        function initGoogleForWaas() {
-            if (googleInitialized || !window.google) return;
+        // Explicit "Confirm with Google" button rendered inside the Send
+        // confirm step. Replaces the old silent One Tap fallback, which was
+        // unreliable on mobile (silently skipped with no visible error).
+        function renderGoogleConfirmButton() {
+            const container = document.getElementById('googleConfirmWrap');
+            container.innerHTML = '';
+            if (!window.google) {
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                return;
+            }
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: () => {},
-                auto_select: true,
+                callback: onGoogleConfirmCredential,
             });
-            googleInitialized = true;
+            google.accounts.id.renderButton(container, {
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'pill',
+                width: 220,
+            });
         }
-        window.addEventListener('load', initGoogleForWaas);
 
-        function ensureSequenceSignedIn() {
-            return new Promise((resolve, reject) => {
-                if (!window.google) { reject(new Error('Google sign-in unavailable')); return; }
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: async (response) => {
-                        try {
-                            await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
-                            resolve();
-                        } catch (err) {
-                            reject(err);
-                        }
-                    },
-                });
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        reject(new Error('Please allow the Google sign-in prompt to authorize this transaction.'));
-                    }
-                });
-            });
+        async function onGoogleConfirmCredential(response) {
+            const statusEl = document.getElementById('sendConfirmStatus');
+            const container = document.getElementById('googleConfirmWrap');
+            container.style.opacity = '0.5';
+            statusEl.textContent = 'Confirming your identity...';
+            try {
+                await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                await doExecuteSend();
+            } catch (err) {
+                console.error(err);
+                statusEl.textContent = 'Confirm with Google to authorize this transfer.';
+                container.style.opacity = '1';
+                showToast('Could not verify your identity — please try again.');
+            }
         }
 
         const TOKEN_CONFIG = {
@@ -948,9 +952,10 @@ window.sequenceWaas = sequenceWaas;
 
             document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
             document.getElementById('confirmToAddress').textContent = to;
-            document.getElementById('sendConfirmStatus').textContent = 'Gas fee paid in POL. This action cannot be undone.';
+            document.getElementById('sendConfirmStatus').textContent = 'Confirm with Google to authorize this transfer.';
             document.getElementById('sendStepForm').classList.add('hidden');
             document.getElementById('sendStepConfirm').classList.remove('hidden');
+            renderGoogleConfirmButton();
         };
 
         window.backToSendForm = function () {
@@ -967,17 +972,15 @@ window.sequenceWaas = sequenceWaas;
             }
         }
 
-        window.executeSend = async function () {
+        async function doExecuteSend() {
             const token = document.getElementById('sendTokenSelect').value;
             const to = document.getElementById('sendToAddress').value.trim();
             const amount = document.getElementById('sendAmount').value.trim();
-            const btn = document.getElementById('sendConfirmBtn');
             const statusEl = document.getElementById('sendConfirmStatus');
             const config = TOKEN_CONFIG[token];
             const valueWei = toWei(amount, config.decimals);
 
-            btn.disabled = true;
-            btn.textContent = 'Sending...';
+            statusEl.textContent = 'Sending...';
 
             try {
                 await performTransfer(token, to, valueWei);
@@ -986,30 +989,13 @@ window.sequenceWaas = sequenceWaas;
                 fetchWalletBalances(window.currentWalletAddress);
                 fetchTransactionHistory(window.currentWalletAddress);
             } catch (err) {
+                console.error(err);
                 const msg = String(err?.message || err || '');
-                if (msg.toLowerCase().includes('not signed in')) {
-                    statusEl.textContent = 'Confirming your identity — please tap the Google prompt...';
-                    try {
-                        await ensureSequenceSignedIn();
-                        await performTransfer(token, to, valueWei);
-                        showToast(`Sent ${amount} ${token}!`);
-                        closeSendModal();
-                        fetchWalletBalances(window.currentWalletAddress);
-                        fetchTransactionHistory(window.currentWalletAddress);
-                    } catch (retryErr) {
-                        console.error(retryErr);
-                        showToast('Could not verify your identity — please try again.');
-                        statusEl.textContent = 'Gas fee paid in POL. This action cannot be undone.';
-                    }
-                } else {
-                    console.error(err);
-                    showToast(msg || 'Transaction failed');
-                }
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Confirm & Send';
+                showToast(msg || 'Transaction failed');
+                statusEl.textContent = 'Confirm with Google to authorize this transfer.';
+                document.getElementById('googleConfirmWrap').style.opacity = '1';
             }
-        };
+        }
     </script>
 </body>
 </html>
