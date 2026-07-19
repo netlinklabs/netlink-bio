@@ -564,7 +564,6 @@
 
             const label = data.display_name || data.username || currentUser.email;
             const firstName = label.split(' ')[0];
-            document.getElementById('greetingText')?.textContent = `Halo, ${firstName}!`;
             document.getElementById('sidebarUserEmail').textContent = label;
             document.getElementById('sidebarTierLabel').textContent = TIER_DISPLAY[data.tier || 'basic'] + ' Plan';
             document.getElementById('headerDisplayName').textContent = label;
@@ -756,8 +755,8 @@
             const logoUrl = isDark
                 ? 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png'
                 : 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
-            document.getElementById('brandLogoMobile')?.src = logoUrl;
-            document.getElementById('brandLogoDesktop')?.src = logoUrl;
+            const desktopLogo = document.getElementById('brandLogoDesktop');
+            if (desktopLogo) desktopLogo.src = logoUrl;
         }
 
         function initTheme() {
@@ -1007,4 +1006,4 @@
         };
     </script>
 </body>
-</html>
+    </html>
