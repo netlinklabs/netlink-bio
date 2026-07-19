@@ -962,8 +962,6 @@
             document.getElementById('sendStepForm').classList.remove('hidden');
         };
 
-        // --- MULAI PERUBAHAN JS LOGIC FEE GAS MANDIRI ---
-        
         // Fungsi pembantu untuk membungkus perintah kirim token ERC-20
         function encodeErc20Transfer(to, valueWei) {
             const toPadded = to.toLowerCase().replace('0x', '').padStart(64, '0');
@@ -984,22 +982,28 @@
             }
 
             // 2. Minta estimasi opsi biaya gas (fee options) dari relayer
-            const options = await sequenceWaas.feeOptions({ 
+            const resp = await sequenceWaas.feeOptions({ 
                 network: 'polygon', 
                 transactions: transactions 
             });
 
-            // 3. Pilih opsi pembayaran gas menggunakan POL
-            const polFeeOption = options.feeQuotes.find(q => q.token.symbol === 'POL' || q.token.symbol === 'MATIC');
-            if (!polFeeOption) {
-                throw new Error('Opsi pembayaran gas menggunakan POL tidak tersedia.');
+            // WaaS SDK membungkus return data-nya di dalam properti "data"
+            const feeQuote = resp.data?.feeQuote;
+            const feeOptions = resp.data?.feeOptions;
+
+            if (!feeOptions || feeOptions.length === 0) {
+                throw new Error('Opsi pembayaran gas tidak tersedia dari relayer saat ini.');
             }
 
-            // 4. Kirim transaksi dengan menyertakan feeQuote agar user membayar gasnya sendiri
+            // 3. Pilih opsi gas POL/MATIC, jika gagal ambil opsi pertama yang diberikan relayer
+            const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
+
+            // 4. Kirim transaksi dengan menyertakan opsi fee agar user membayar gasnya sendiri
             const tx = await sequenceWaas.sendTransaction({
                 network: 'polygon',
                 transactions: transactions,
-                feeQuote: polFeeOption.quote
+                transactionsFeeOption: polFeeOption,
+                transactionsFeeQuote: feeQuote
             });
 
             // 5. Validasi respons transaksi
@@ -1013,7 +1017,6 @@
             }
             return tx;
         }
-        // --- AKHIR PERUBAHAN ---
 
         async function doExecuteSend() {
             const token = document.getElementById('sendTokenSelect').value;
