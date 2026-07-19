@@ -69,9 +69,114 @@
         .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); }
 
-        .balance-card-usdc { background: linear-gradient(135deg, #2775ca 0%, #1a5bb0 100%); }
-        .balance-card-net { background: linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%); }
-        .balance-card-pol { background: linear-gradient(135deg, #8247e5 0%, #5b21b6 100%); }
+        /* USDC Premium Card */
+        .usdc-card {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(2, 132, 199, 0.3), 0 0 0 1px rgba(255,255,255,0.1) inset;
+        }
+        .usdc-card::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -20%;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            pointer-events: none;
+        }
+        .usdc-card::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -15%;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+            pointer-events: none;
+        }
+
+        /* Token cards - blue theme */
+        .token-card {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
+        }
+        .token-card::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            pointer-events: none;
+        }
+
+        /* Tier badge styles */
+        .tier-badge {
+            border: 1.5px solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(4px);
+        }
+        .tier-badge-basic { border-color: rgba(148, 163, 184, 0.5); background: rgba(148, 163, 184, 0.15); }
+        .tier-badge-silver { border-color: rgba(203, 213, 225, 0.5); background: rgba(203, 213, 225, 0.15); }
+        .tier-badge-gold { border-color: rgba(251, 191, 36, 0.5); background: rgba(251, 191, 36, 0.15); }
+        .tier-badge-platinum { border-color: rgba(167, 139, 250, 0.5); background: rgba(167, 139, 250, 0.15); }
+
+        /* Wallet address card */
+        .wallet-bar {
+            background: #e2e8f0;
+            border-radius: 20px;
+        }
+        html.dark .wallet-bar {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Swap card */
+        .swap-card {
+            background: #e2e8f0;
+            border-radius: 24px;
+            position: relative;
+        }
+        html.dark .swap-card {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .swap-inner {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        html.dark .swap-inner {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .swap-divider {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .swap-arrow-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
 
         .tx-row { transition: background 0.15s; }
         .tx-row:hover { background: rgba(0,0,0,0.02); }
@@ -107,28 +212,30 @@
 
     <!-- Mobile Header -->
     <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
-        <a href="dashboard.html" class="flex items-center">
-            <img id="brandLogoMobile" src="" alt="Netlink Pay" class="brand-logo">
-        </a>
-        <div class="flex items-center gap-2">
-            <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch theme">
-                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-            </button>
-            <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
-                <i data-lucide="menu" class="w-5 h-5 text-secondary"></i>
-            </button>
+        <div class="flex items-center gap-3">
+            <div id="headerAvatarWrap" class="w-10 h-10 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                <span id="headerAvatarInitial" class="text-sm font-semibold text-blue-500">?</span>
+            </div>
         </div>
+        <h1 id="headerDisplayName" class="text-lg font-semibold text-primary">Loading...</h1>
+        <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
+            <i data-lucide="menu" class="w-6 h-6 text-primary"></i>
+        </button>
     </header>
 
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <!-- Sidebar -->
     <aside class="sidebar text-white flex flex-col">
-        <div class="hidden lg:flex p-4 border-b border-subtle items-center">
+        <div class="hidden lg:flex p-4 border-b border-subtle items-center justify-between">
             <a href="dashboard.html" class="flex items-center">
                 <img id="brandLogoDesktop" src="" alt="Netlink Pay" class="brand-logo-sidebar">
             </a>
+            <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch theme">
+                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
+            </button>
         </div>
 
         <nav class="flex-1 py-2">
@@ -171,41 +278,7 @@
         </div>
     </aside>
 
-    <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8 max-w-4xl mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
-        <!-- Greeting header -->
-        <div class="flex items-center justify-between py-3 mb-3 lg:mb-4">
-            <h2 id="greetingText" class="text-xl lg:text-2xl font-bold text-primary">Halo!</h2>
-            <div class="flex items-center gap-4">
-                <div class="flex flex-col items-center gap-1">
-                    <div id="headerAvatarWrap" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                        <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
-                    </div>
-                    <span id="headerTierPill" class="px-2.5 py-0.5 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
-                </div>
-                <button onclick="toggleTheme()" class="hidden lg:flex p-2 hover-surface rounded-lg transition" title="Switch theme">
-                    <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-                    <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Wallet Address Bar -->
-        <div class="card rounded-2xl p-4 lg:p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="wallet" class="w-5 h-5 text-blue-500"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xs text-muted">Your Netlink Pay Wallet</p>
-                    <p id="walletAddressDisplay" class="text-sm font-mono font-medium text-primary truncate">Loading...</p>
-                </div>
-            </div>
-            <button id="copyAddressBtn" onclick="copyWalletAddress()" class="px-3 py-2 text-sm font-medium text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 rounded-lg transition flex items-center justify-center gap-1.5">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
-            </button>
-        </div>
-
+    <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8 max-w-md mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
         <!-- No-wallet empty state -->
         <div id="noWalletState" class="hidden card rounded-2xl p-8 mb-5 text-center">
             <i data-lucide="sparkles" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
@@ -214,87 +287,118 @@
         </div>
 
         <div id="walletContent">
-            <!-- USDC Full Card -->
-            <div class="balance-card-usdc rounded-2xl p-6 lg:p-8 mb-5 text-white shadow-lg relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
-                <div class="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4"></div>
+            <!-- USDC Premium Card -->
+            <div class="usdc-card p-6 lg:p-8 mb-4 text-white relative">
                 <div class="relative z-10">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                <img src="/assets/usdc-logo.png" alt="USDC" class="w-7 h-7 rounded-full">
-                            </div>
-                            <div>
-                                <p class="text-white/70 text-sm font-medium">USDC Balance</p>
-                                <p class="text-white/50 text-xs">USD Coin (Polygon)</p>
-                            </div>
+                    <!-- Header: Title + Logo -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-white font-semibold text-lg">USDC Balance</p>
+                            <p class="text-white/60 text-xs">USDC Coin (Polygon)</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <img src="/assets/netlinkbio-icon.png" alt="Netlink" class="w-6 h-6 rounded-full opacity-90">
+                            <span class="text-white font-bold text-sm">Netlink</span>
+                            <span class="text-emerald-400 font-bold text-sm">Pay</span>
                         </div>
                     </div>
-                    <div class="mb-6">
-                        <p id="balanceUsdc" class="text-4xl lg:text-5xl font-bold tracking-tight">0.00</p>
-                        <p id="balanceUsdcFiat" class="text-white/60 text-sm mt-1">≈ $0.00 USD</p>
+
+                    <!-- Balance -->
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
+                        </div>
+                        <div>
+                            <p id="balanceUsdc" class="text-4xl font-bold tracking-tight">0.00</p>
+                            <p id="balanceUsdcFiat" class="text-white/60 text-sm">= $0.00 USD</p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="openSendModal()" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
-                            <i data-lucide="send" class="w-4 h-4"></i> Send
-                        </button>
-                        <button onclick="openReceiveModal()" class="flex-1 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
-                            <i data-lucide="download" class="w-4 h-4"></i> Receive
-                        </button>
-                        <button onclick="scrollToRamp()" class="flex-1 py-2.5 bg-white hover:bg-white/90 text-blue-700 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Buy
-                        </button>
+
+                    <!-- ID + Tier Badge -->
+                    <div class="flex items-center justify-between">
+                        <p id="cardIdDisplay" class="text-white/70 text-xs font-mono">ID: NET-000000000000</p>
+                        <span id="cardTierBadge" class="tier-badge px-4 py-1.5 rounded-full text-xs font-semibold text-white">Basic</span>
                     </div>
                 </div>
+            </div>
+
+            <!-- Wallet Address Bar -->
+            <div class="wallet-bar p-4 mb-4 flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="wallet" class="w-5 h-5 text-blue-500"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-primary">Netlink Smart Wallet</p>
+                    <p id="walletAddressDisplay" class="text-xs font-mono text-secondary truncate">Loading...</p>
+                </div>
+                <button onclick="copyWalletAddress()" class="p-2 hover-surface rounded-lg transition flex-shrink-0">
+                    <i data-lucide="copy" class="w-5 h-5 text-secondary"></i>
+                </button>
             </div>
 
             <!-- NET & POL Row -->
-            <div class="grid grid-cols-2 gap-4 mb-5">
-                <div class="balance-card-net rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="token-card p-5 text-white relative">
                     <div class="relative z-10">
-                        <div class="flex items-center gap-2.5 mb-4">
-                            <div class="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                <img src="/assets/net-logo.png" alt="NET" class="w-5 h-5 rounded-full">
+                        <p class="text-white font-semibold text-lg mb-0.5">NET</p>
+                        <p class="text-white/60 text-[10px] mb-3">Netlink Token</p>
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 bg-white/15 rounded-full flex items-center justify-center">
+                                <img src="/assets/net-logo.png" alt="NET" class="w-6 h-6 rounded-full">
                             </div>
-                            <div>
-                                <p class="text-white/70 text-xs font-medium">NET</p>
-                                <p class="text-white/40 text-[10px]">Netlink Token</p>
-                            </div>
+                            <p id="balanceNet" class="text-2xl font-bold tracking-tight">0.00</p>
                         </div>
-                        <p id="balanceNet" class="text-2xl lg:text-3xl font-bold tracking-tight">0.00</p>
-                        <p id="balanceNetFiat" class="text-white/50 text-xs mt-1">≈ $0.00</p>
                     </div>
                 </div>
 
-                <div class="balance-card-pol rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
+                <div class="token-card p-5 text-white relative">
                     <div class="relative z-10">
-                        <div class="flex items-center gap-2.5 mb-4">
-                            <div class="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                <img src="/assets/polygon-logo.png" alt="POL" class="w-5 h-5 rounded-full">
+                        <p class="text-white font-semibold text-lg mb-0.5">POL</p>
+                        <p class="text-white/60 text-[10px] mb-3">Polygon</p>
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 bg-white/15 rounded-full flex items-center justify-center">
+                                <img src="/assets/polygon-logo.png" alt="POL" class="w-6 h-6 rounded-full">
                             </div>
-                            <div>
-                                <p class="text-white/70 text-xs font-medium">POL</p>
-                                <p class="text-white/40 text-[10px]">Polygon</p>
-                            </div>
+                            <p id="balancePol" class="text-2xl font-bold tracking-tight">0.00</p>
                         </div>
-                        <p id="balancePol" class="text-2xl lg:text-3xl font-bold tracking-tight">0.00</p>
-                        <p id="balancePolFiat" class="text-white/50 text-xs mt-1">≈ $0.00</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Swap (Coming soon) -->
-            <div class="card rounded-2xl p-4 lg:p-6 mb-5 flex items-center gap-4">
-                <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="repeat" class="w-5 h-5 text-purple-500"></i>
+            <!-- Swap (Coming Soon) -->
+            <div class="swap-card p-4 mb-4 relative">
+                <p class="text-xs text-muted text-center mb-3 font-medium uppercase tracking-wider">Coming Soon</p>
+                <div class="swap-inner p-4 mb-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-muted mb-1">You Pay</p>
+                            <p class="text-2xl font-bold text-primary">0.00</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle">
+                            <img src="/assets/usdc-logo.png" alt="USDC" class="w-6 h-6 rounded-full">
+                            <span class="text-sm font-semibold text-primary">USDC</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-primary text-sm">Swap</h3>
-                    <p class="text-xs text-muted">Coming soon — NET isn't listed on a DEX yet.</p>
+                <div class="swap-divider">
+                    <div class="swap-arrow-btn">
+                        <i data-lucide="arrow-up-down" class="w-4 h-4 text-white"></i>
+                    </div>
                 </div>
-                <span class="text-xs font-medium bg-surface border border-subtle px-2.5 py-1 rounded-full text-muted whitespace-nowrap">Coming soon</span>
+                <div class="swap-inner p-4 mt-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-muted mb-1">You Receive</p>
+                            <p class="text-2xl font-bold text-primary">0.00</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle">
+                            <img src="/assets/net-logo.png" alt="NET" class="w-6 h-6 rounded-full">
+                            <span class="text-sm font-semibold text-primary">NET</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Alchemy Pay Ramp Widget -->
@@ -419,6 +523,7 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+        const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
         let currentUser = null;
         let currentWalletAddress = '';
         window.currentBalances = { net: '0', usdc: '0', pol: '0' };
@@ -459,12 +564,23 @@
 
             const label = data.display_name || data.username || currentUser.email;
             const firstName = label.split(' ')[0];
-            document.getElementById('greetingText').textContent = `Halo, ${firstName}!`;
+            document.getElementById('greetingText')?.textContent = `Halo, ${firstName}!`;
             document.getElementById('sidebarUserEmail').textContent = label;
             document.getElementById('sidebarTierLabel').textContent = TIER_DISPLAY[data.tier || 'basic'] + ' Plan';
+            document.getElementById('headerDisplayName').textContent = label;
 
-            const tierLabel = TIER_DISPLAY[data.tier || 'basic'];
-            document.getElementById('headerTierPill').textContent = tierLabel;
+            const tierKey = (data.tier || 'basic').toLowerCase();
+            const tierLabel = TIER_DISPLAY[tierKey];
+
+            // Update tier badge styling
+            const badge = document.getElementById('cardTierBadge');
+            Object.values(TIER_BADGE_CLASS).forEach(cls => badge.classList.remove(cls));
+            badge.classList.add(TIER_BADGE_CLASS[tierKey] || TIER_BADGE_CLASS.basic);
+            badge.textContent = tierLabel;
+
+            // Generate random ID placeholder
+            const randomId = 'NET-' + Math.floor(Math.random() * 900000000000 + 100000000000);
+            document.getElementById('cardIdDisplay').textContent = 'ID: ' + randomId;
 
             const initialChar = label.charAt(0).toUpperCase();
             const avatarTargets = [
@@ -489,13 +605,11 @@
                 document.getElementById('noWalletState').classList.add('hidden');
                 document.getElementById('walletContent').classList.remove('hidden');
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
-                document.getElementById('copyAddressBtn').classList.remove('hidden');
                 updateRampIframe(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
                 fetchTransactionHistory(currentWalletAddress);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
-                document.getElementById('copyAddressBtn').classList.add('hidden');
                 document.getElementById('noWalletState').classList.remove('hidden');
                 document.getElementById('walletContent').classList.add('hidden');
             }
@@ -548,7 +662,7 @@
 
                 document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
-                document.getElementById('balanceUsdcFiat').textContent = `≈ $${formatTokenAmount(data.usdc)} USD`;
+                document.getElementById('balanceUsdcFiat').textContent = `= $${formatTokenAmount(data.usdc)} USD`;
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
             } catch (err) {
                 console.error(err);
@@ -642,8 +756,8 @@
             const logoUrl = isDark
                 ? 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png'
                 : 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
-            document.getElementById('brandLogoMobile').src = logoUrl;
-            document.getElementById('brandLogoDesktop').src = logoUrl;
+            document.getElementById('brandLogoMobile')?.src = logoUrl;
+            document.getElementById('brandLogoDesktop')?.src = logoUrl;
         }
 
         function initTheme() {
@@ -692,17 +806,13 @@
             waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
         });
 
-        // Sending a transaction requires an active sign-in on THIS SequenceWaaS
-        // instance. signIn() called on login.html/dashboard.html doesn't carry
-        // over automatically, so we silently re-authenticate with Google here
-        // whenever a transaction is about to be signed.
         let googleInitialized = false;
 
         function initGoogleForWaas() {
             if (googleInitialized || !window.google) return;
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: () => {}, // overridden per-call via ensureSequenceSignedIn
+                callback: () => {},
                 auto_select: true,
             });
             googleInitialized = true;
@@ -752,7 +862,6 @@
             return b.pol;
         }
 
-        // ---- Receive ----
         window.openReceiveModal = function () {
             const address = window.currentWalletAddress;
             if (!address) { showToast('No wallet yet'); return; }
@@ -764,7 +873,6 @@
             document.getElementById('receiveModal').classList.remove('active');
         };
 
-        // ---- Send ----
         window.openSendModal = function () {
             if (!window.currentWalletAddress) { showToast('No wallet yet'); return; }
             document.getElementById('sendStepForm').classList.remove('hidden');
