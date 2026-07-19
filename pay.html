@@ -799,7 +799,7 @@
     </script>
 
     <script type="module">
-        import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
+        import { SequenceWaaS, isSentTransactionResponse } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
 
         const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
         const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
@@ -965,11 +965,26 @@ window.sequenceWaas = sequenceWaas;
 
         async function performTransfer(token, to, valueWei) {
             const config = TOKEN_CONFIG[token];
+            let tx;
             if (token === 'POL') {
-                await sequenceWaas.sendTransaction({ transactions: [{ to, value: valueWei }] });
+                tx = await sequenceWaas.sendTransaction({ transactions: [{ to, value: valueWei }] });
             } else {
-                await sequenceWaas.sendERC20({ chainId: 137, token: config.address, to, value: valueWei });
+                tx = await sequenceWaas.sendERC20({ chainId: 137, token: config.address, to, value: valueWei });
             }
+
+            // sendTransaction/sendERC20 can resolve WITHOUT throwing even when
+            // nothing was actually broadcast/confirmed — Sequence's own docs
+            // require checking the response shape explicitly. Skipping this
+            // check is why the success toast used to fire with no real transfer.
+            if (!isSentTransactionResponse(tx)) {
+                console.error('Sequence did not return a sent-transaction response:', tx);
+                throw new Error('Transaction was not sent — please try again.');
+            }
+            if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
+                console.error('Transaction reverted:', tx.receipt);
+                throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
+            }
+            return tx;
         }
 
         async function doExecuteSend() {
