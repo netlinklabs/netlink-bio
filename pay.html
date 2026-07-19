@@ -296,14 +296,8 @@
                             <p class="text-white font-semibold text-lg">USDC Balance</p>
                             <p class="text-white/60 text-xs">USDC Coin (Polygon)</p>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <img src="/assets/netlinkbio-icon.png" alt="Netlink" class="w-6 h-6 rounded-full opacity-90">
-                            <span class="text-white font-bold text-sm">Netlink</span>
-                            <span class="text-emerald-400 font-bold text-sm">Pay</span>
-                        </div>
-                    </div>
-
-                    <!-- Balance -->
+                        <img id="usdcCardLogo" src="" alt="Netlink Pay" class="h-6 w-auto opacity-90">
+                    </div><!-- Balance -->
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
                             <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
@@ -323,17 +317,30 @@
             </div>
 
             <!-- Wallet Address Bar -->
-            <div class="wallet-bar p-4 mb-4 flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="wallet" class="w-5 h-5 text-blue-500"></i>
+            <div class="wallet-bar p-5 mb-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="wallet" class="w-5 h-5 text-blue-500"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-primary">Netlink Smart Wallet</p>
+                        <p id="walletAddressDisplay" class="text-xs font-mono text-secondary truncate">Loading...</p>
+                    </div>
+                    <button onclick="copyWalletAddress()" class="p-2 hover-surface rounded-lg transition flex-shrink-0">
+                        <i data-lucide="copy" class="w-5 h-5 text-secondary"></i>
+                    </button>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-primary">Netlink Smart Wallet</p>
-                    <p id="walletAddressDisplay" class="text-xs font-mono text-secondary truncate">Loading...</p>
+                <div class="flex items-center gap-2">
+                    <button onclick="openSendModal()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i> Send
+                    </button>
+                    <button onclick="openReceiveModal()" class="flex-1 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Receive
+                    </button>
+                    <button onclick="scrollToRamp()" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Buy
+                    </button>
                 </div>
-                <button onclick="copyWalletAddress()" class="p-2 hover-surface rounded-lg transition flex-shrink-0">
-                    <i data-lucide="copy" class="w-5 h-5 text-secondary"></i>
-                </button>
             </div>
 
             <!-- NET & POL Row -->
@@ -757,6 +764,8 @@
                 : 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
             const desktopLogo = document.getElementById('brandLogoDesktop');
             if (desktopLogo) desktopLogo.src = logoUrl;
+            const usdcLogo = document.getElementById('usdcCardLogo');
+            if (usdcLogo) usdcLogo.src = logoUrl;
         }
 
         function initTheme() {
@@ -1006,4 +1015,4 @@
         };
     </script>
 </body>
-    </html>
+</html>
