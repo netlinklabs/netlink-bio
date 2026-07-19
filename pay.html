@@ -656,11 +656,23 @@
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+        async function fetchWithRetry(url, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return await res.json();
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+            }
+        }
+
         async function fetchWalletBalances(address) {
             try {
-                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
-                if (!res.ok) throw new Error('Failed to fetch balances');
-                const data = await res.json();
+                const url = `/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
+                const data = await fetchWithRetry(url);
 
                 window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
 
@@ -678,9 +690,8 @@
             const list = document.getElementById('txList');
             const badge = document.getElementById('txCountBadge');
             try {
-                const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}`);
-                if (!res.ok) throw new Error('Failed to fetch transactions');
-                const data = await res.json();
+                const url = `/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
+                const data = await fetchWithRetry(url);
                 const txs = data.transactions || [];
 
                 badge.textContent = txs.length;
@@ -810,9 +821,6 @@
             waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
         });
 
-        // Explicit "Confirm with Google" button rendered inside the Send
-        // confirm step. Replaces the old silent One Tap fallback, which was
-        // unreliable on mobile (silently skipped with no visible error).
         function renderGoogleConfirmButton() {
             const container = document.getElementById('googleConfirmWrap');
             container.innerHTML = '';
@@ -913,7 +921,9 @@
                 continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         };
+        
         window.sequenceWaas = sequenceWaas;
+        
         function showSendError(msg) {
             const el = document.getElementById('sendFormError');
             el.textContent = msg;
@@ -962,18 +972,16 @@
             document.getElementById('sendStepForm').classList.remove('hidden');
         };
 
-        // Fungsi pembantu untuk membungkus perintah kirim token ERC-20
         function encodeErc20Transfer(to, valueWei) {
             const toPadded = to.toLowerCase().replace('0x', '').padStart(64, '0');
             const valueHex = BigInt(valueWei).toString(16).padStart(64, '0');
-            return '0xa9059cbb' + toPadded + valueHex; // function signature: transfer(address,uint256)
+            return '0xa9059cbb' + toPadded + valueHex; 
         }
 
         async function performTransfer(token, to, valueWei) {
             const config = TOKEN_CONFIG[token];
             let transactions = [];
             
-            // 1. Siapkan format transaksi berdasarkan jenis token
             if (token === 'POL') {
                 transactions = [{ to: to, value: valueWei }];
             } else {
@@ -981,13 +989,11 @@
                 transactions = [{ to: config.address, data: data, value: '0' }];
             }
 
-            // 2. Minta estimasi opsi biaya gas (fee options) dari relayer
             const resp = await sequenceWaas.feeOptions({ 
                 network: 'polygon', 
                 transactions: transactions 
             });
 
-            // WaaS SDK membungkus return data-nya di dalam properti "data"
             const feeQuote = resp.data?.feeQuote;
             const feeOptions = resp.data?.feeOptions;
 
@@ -995,10 +1001,8 @@
                 throw new Error('Opsi pembayaran gas tidak tersedia dari relayer saat ini.');
             }
 
-            // 3. Pilih opsi gas POL/MATIC, jika gagal ambil opsi pertama yang diberikan relayer
             const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
 
-            // 4. Kirim transaksi dengan menyertakan opsi fee agar user membayar gasnya sendiri
             const tx = await sequenceWaas.sendTransaction({
                 network: 'polygon',
                 transactions: transactions,
@@ -1006,7 +1010,6 @@
                 transactionsFeeQuote: feeQuote
             });
 
-            // 5. Validasi respons transaksi
             if (!isSentTransactionResponse(tx)) {
                 console.error('Sequence did not return a sent-transaction response:', tx);
                 throw new Error('Transaction was not sent — please try again.');
@@ -1032,8 +1035,15 @@
                 await performTransfer(token, to, valueWei);
                 showToast(`Sent ${amount} ${token}!`);
                 closeSendModal();
-                fetchWalletBalances(window.currentWalletAddress);
-                fetchTransactionHistory(window.currentWalletAddress);
+                
+                // Jeda 4.5 detik agar transaksi tercatat oleh blockchain
+                setTimeout(() => {
+                    if (window.currentWalletAddress) {
+                        fetchWalletBalances(window.currentWalletAddress);
+                        fetchTransactionHistory(window.currentWalletAddress);
+                    }
+                }, 4500);
+
             } catch (err) {
                 console.error(err);
                 const msg = String(err?.message || err || '');
