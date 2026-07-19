@@ -1857,18 +1857,12 @@ const googleWalletBtn = document.getElementById('googleWalletBtn');
         window.renderWalletAddressUI = renderWalletAddressUI;
 
         function setWalletConnectBtnState(isLive) {
-            const btn = document.getElementById('walletConnectBtn');
-            if (!btn) return;
-            if (isLive) {
-                btn.innerHTML = '<i data-lucide="link-2-off" class="w-4 h-4"></i> Disconnect';
-                btn.onclick = disconnectWallet;
-            } else {
-                btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet';
-                btn.onclick = connectWallet;
-            }
-            
-            if (window.lucide) lucide.createIcons();
-        }
+    const btn = document.getElementById('walletConnectBtn');
+    if (!btn) return;
+    btn.innerHTML = '<i data-lucide="external-link" class="w-4 h-4"></i> Open Wallet';
+    btn.onclick = openNetlinkPay;
+    if (window.lucide) lucide.createIcons();
+}
 
         async function loadEthereumProvider() {
             if (EthereumProviderClass) return EthereumProviderClass;
