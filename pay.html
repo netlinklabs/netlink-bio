@@ -214,7 +214,7 @@
     <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
         <div class="flex items-center gap-3">
             <div id="headerAvatarWrap" class="w-10 h-10 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
+                <img id="headerAvatarImg" alt="Your avatar" class="w-full h-full object-cover hidden">
                 <span id="headerAvatarInitial" class="text-sm font-semibold text-blue-500">?</span>
             </div>
         </div>
@@ -230,7 +230,7 @@
     <aside class="sidebar text-white flex flex-col">
         <div class="hidden lg:flex p-4 border-b border-subtle items-center justify-between">
             <a href="dashboard.html" class="flex items-center">
-                <img id="brandLogoDesktop" src="" alt="Netlink Pay" class="brand-logo-sidebar">
+                <img id="brandLogoDesktop" alt="Netlink Pay" class="brand-logo-sidebar">
             </a>
             <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch theme">
                 <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
@@ -263,7 +263,7 @@
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-3 flex-1 min-w-0 text-left">
                     <div id="sidebarAvatarWrap" class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-lg overflow-hidden flex-shrink-0">
-                        <img id="sidebarAvatarImg" src="" alt="" class="w-full h-full object-cover hidden">
+                        <img id="sidebarAvatarImg" alt="" class="w-full h-full object-cover hidden">
                         <span id="sidebarAvatarInitial">?</span>
                     </div>
                     <div class="flex-1 min-w-0">
@@ -424,7 +424,6 @@
                 <div class="rounded-xl overflow-hidden border border-subtle" style="height: 520px;">
                     <iframe
                         id="alchemyRampFrame"
-                        src=""
                         allow="accelerometer; autoplay; camera; gyroscope; payment"
                         width="100%"
                         height="100%"
@@ -471,7 +470,7 @@
             <button class="modal-close" onclick="closeReceiveModal()">&times;</button>
             <h3 class="font-semibold text-primary text-lg mb-4">Receive</h3>
             <div style="background:white; padding:12px; border-radius:16px; display:inline-block; margin-bottom:16px;">
-                <img id="receiveQr" src="" alt="QR code" style="width:180px; height:180px; display:block;">
+                <img id="receiveQr" alt="QR code" style="width:180px; height:180px; display:block;">
             </div>
             <p id="receiveAddress" class="text-xs font-mono text-secondary break-all bg-surface rounded-lg p-3 mb-3"></p>
             <button onclick="copyWalletAddress()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">Copy address</button>
@@ -914,7 +913,7 @@
                 continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         };
-window.sequenceWaas = sequenceWaas;
+        window.sequenceWaas = sequenceWaas;
         function showSendError(msg) {
             const el = document.getElementById('sendFormError');
             el.textContent = msg;
@@ -963,19 +962,47 @@ window.sequenceWaas = sequenceWaas;
             document.getElementById('sendStepForm').classList.remove('hidden');
         };
 
+        // --- MULAI PERUBAHAN JS LOGIC FEE GAS MANDIRI ---
+        
+        // Fungsi pembantu untuk membungkus perintah kirim token ERC-20
+        function encodeErc20Transfer(to, valueWei) {
+            const toPadded = to.toLowerCase().replace('0x', '').padStart(64, '0');
+            const valueHex = BigInt(valueWei).toString(16).padStart(64, '0');
+            return '0xa9059cbb' + toPadded + valueHex; // function signature: transfer(address,uint256)
+        }
+
         async function performTransfer(token, to, valueWei) {
             const config = TOKEN_CONFIG[token];
-            let tx;
+            let transactions = [];
+            
+            // 1. Siapkan format transaksi berdasarkan jenis token
             if (token === 'POL') {
-                tx = await sequenceWaas.sendTransaction({ transactions: [{ to, value: valueWei }] });
+                transactions = [{ to: to, value: valueWei }];
             } else {
-                tx = await sequenceWaas.sendERC20({ chainId: 137, token: config.address, to, value: valueWei });
+                const data = encodeErc20Transfer(to, valueWei);
+                transactions = [{ to: config.address, data: data, value: '0' }];
             }
 
-            // sendTransaction/sendERC20 can resolve WITHOUT throwing even when
-            // nothing was actually broadcast/confirmed — Sequence's own docs
-            // require checking the response shape explicitly. Skipping this
-            // check is why the success toast used to fire with no real transfer.
+            // 2. Minta estimasi opsi biaya gas (fee options) dari relayer
+            const options = await sequenceWaas.feeOptions({ 
+                network: 'polygon', 
+                transactions: transactions 
+            });
+
+            // 3. Pilih opsi pembayaran gas menggunakan POL
+            const polFeeOption = options.feeQuotes.find(q => q.token.symbol === 'POL' || q.token.symbol === 'MATIC');
+            if (!polFeeOption) {
+                throw new Error('Opsi pembayaran gas menggunakan POL tidak tersedia.');
+            }
+
+            // 4. Kirim transaksi dengan menyertakan feeQuote agar user membayar gasnya sendiri
+            const tx = await sequenceWaas.sendTransaction({
+                network: 'polygon',
+                transactions: transactions,
+                feeQuote: polFeeOption.quote
+            });
+
+            // 5. Validasi respons transaksi
             if (!isSentTransactionResponse(tx)) {
                 console.error('Sequence did not return a sent-transaction response:', tx);
                 throw new Error('Transaction was not sent — please try again.');
@@ -986,6 +1013,7 @@ window.sequenceWaas = sequenceWaas;
             }
             return tx;
         }
+        // --- AKHIR PERUBAHAN ---
 
         async function doExecuteSend() {
             const token = document.getElementById('sendTokenSelect').value;
