@@ -296,8 +296,10 @@
                             <p class="text-white font-semibold text-lg">USDC Balance</p>
                             <p class="text-white/60 text-xs">USDC Coin (Polygon)</p>
                         </div>
-                        <img id="usdcCardLogo" src="" alt="Netlink Pay" class="h-6 w-auto opacity-90">
-                    </div><!-- Balance -->
+                        <img id="usdcCardLogo" src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-10 w-auto opacity-90">
+                    </div>
+
+                    <!-- Balance -->
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
                             <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
@@ -570,7 +572,6 @@
             }
 
             const label = data.display_name || data.username || currentUser.email;
-            const firstName = label.split(' ')[0];
             document.getElementById('sidebarUserEmail').textContent = label;
             document.getElementById('sidebarTierLabel').textContent = TIER_DISPLAY[data.tier || 'basic'] + ' Plan';
             document.getElementById('headerDisplayName').textContent = label;
@@ -578,13 +579,11 @@
             const tierKey = (data.tier || 'basic').toLowerCase();
             const tierLabel = TIER_DISPLAY[tierKey];
 
-            // Update tier badge styling
             const badge = document.getElementById('cardTierBadge');
             Object.values(TIER_BADGE_CLASS).forEach(cls => badge.classList.remove(cls));
             badge.classList.add(TIER_BADGE_CLASS[tierKey] || TIER_BADGE_CLASS.basic);
             badge.textContent = tierLabel;
 
-            // Generate random ID placeholder
             const randomId = 'NET-' + Math.floor(Math.random() * 900000000000 + 100000000000);
             document.getElementById('cardIdDisplay').textContent = 'ID: ' + randomId;
 
@@ -764,8 +763,6 @@
                 : 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
             const desktopLogo = document.getElementById('brandLogoDesktop');
             if (desktopLogo) desktopLogo.src = logoUrl;
-            const usdcLogo = document.getElementById('usdcCardLogo');
-            if (usdcLogo) usdcLogo.src = logoUrl;
         }
 
         function initTheme() {
