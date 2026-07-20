@@ -103,15 +103,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Inisialisasi Awal Lucide Icons
         lucide.createIcons();
 
-        // Konfigurasi Supabase
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Toast Helper
         window.showToast = function(message, isSuccess = true) {
             const toast = document.getElementById('toast');
             const messageEl = document.getElementById('toastMessage');
@@ -120,23 +117,19 @@
             setTimeout(() => toast.classList.remove('show'), 4000);
         };
 
-        // Theme Toggle Dummy (Pertahankan fungsi asli Anda jika ada)
         window.toggleTheme = function() {
             document.documentElement.classList.toggle('dark');
         };
 
-        // Logout Handler
         window.handleLogout = async function() {
             await window.supabaseClient.auth.signOut();
             window.location.href = 'login.html';
         };
 
-        // Dummy Switch Tab
         window.switchTab = function(tabName) {
             console.log("Switching tab to:", tabName);
         };
 
-        // Dummy Save Wallet (Pertahankan backend save milik Anda)
         window.saveWallet = async function() {
             console.log("Wallet address saved successfully to database profile.");
         };
@@ -146,14 +139,33 @@
         };
 
         // =========================================================================
-        // 🚨 KUNCI PERBAIKAN: CRITICAL AUTH GUARD & AUTO PROFILE CREATION 🚨
+        // 🚨 LOGIKA CORE REFACTORING: PENANGANAN ASINKRONUS OAUTH & AUTO PROFILE 🚨
         // =========================================================================
         async function checkUserSession() {
             try {
+                // 1. Cek apakah ini hasil kembalian (hash/query) dari proses pengalihan Google OAuth
+                const hasHashToken = window.location.hash.includes('access_token') || window.location.hash.includes('id_token');
+                const hasQueryCode = window.location.search.includes('code');
+
+                if (hasHashToken || hasQueryCode) {
+                    console.log('Sinyal OAuth terdeteksi. Mengatur jeda tunggu asinkronus Supabase...');
+                    // Polling asinkronus: Beri waktu 2 detik bagi Supabase untuk membaca & menyimpan token dari URL
+                    for (let i = 0; i < 20; i++) {
+                        const { data: { session } } = await window.supabaseClient.auth.getSession();
+                        if (session) {
+                            console.log('Sesi otentikasi Google berhasil diamankan!');
+                            break;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Jeda 100ms per perulangan
+                    }
+                }
+
+                // Baca data sesi final setelah proses asinkronus selesai
                 const { data: { session }, error } = await window.supabaseClient.auth.getSession();
                 
-                // Jika tidak login atau error sesi, langsung kembalikan ke login.html
+                // Jika setelah ditunggu sesi tetap kosong, baru tendang user ke login.html
                 if (error || !session) {
+                    console.log('Sesi kosong atau tidak sah. Dialihkan ke login.html');
                     window.location.href = 'login.html';
                     return;
                 }
@@ -161,23 +173,22 @@
                 const user = session.user;
                 window.currentUser = user;
                 
-                // 1. Ambil data baris profil dari tabel Supabase
+                // 2. Ambil data baris tabel profiles publik di database Supabase Anda
                 let { data: profile, error: profileError } = await window.supabaseClient
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
                     .single();
 
-                // 2. KONDISI KRUSIAL USER BARU GOOGLE: Jika profil tidak ditemukan, JANGAN DITENDANG! Buatkan otomatis.
+                // 3. AUTO-CREATION PROFILE (Penyelamat User Baru): Jika baris data tidak ada, buatkan otomatis saat itu juga
                 if (profileError && (profileError.code === 'PGRST116' || profileError.message?.includes('JSON'))) {
-                    console.log('User baru terdeteksi via Google. Menyiapkan profile otomatis...');
+                    console.log('Profil database kosong. Menjalankan proses pendaftaran profil otomatis...');
                     
-                    // Ambil nama email depan untuk username dasar
                     const emailPrefix = user.email.split('@')[0];
                     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
                     const automaticUsername = `${emailPrefix}-${randomSuffix}`;
 
-                    // Ambil username pending dari sessionStorage (jika ada klaim username di depan)
+                    // Ambil klaim username yang tersimpan di sessionStorage (jika mendaftar via form depan)
                     const pendingUsername = sessionStorage.getItem('pendingUsername');
                     const finalUsername = pendingUsername ? pendingUsername : automaticUsername;
 
@@ -190,7 +201,7 @@
                         link_icon_shape: 'rounded'
                     };
 
-                    // Masukkan baris data ke database
+                    // Injeksi data profil baru ke database Supabase
                     const { data: newProfile, error: insertError } = await window.supabaseClient
                         .from('profiles')
                         .insert([fallbackProfile])
@@ -198,49 +209,46 @@
                         .single();
 
                     if (insertError) {
-                        console.error('Auto-creation profile failed:', insertError);
-                        window.showToast('Gagal menyiapkan profile database akun Anda.', false);
-                        setTimeout(() => { window.location.href = 'login.html'; }, 3000);
+                        console.error('Proses otomatisasi INSERT gagal:', insertError);
+                        alert(`Database INSERT Error: ${insertError.message}\n\nPeriksa konfigurasi aturan RLS (Row Level Security) untuk tabel 'profiles' di Supabase Anda.`);
                         return;
                     }
 
-                    // Bersihkan pending username jika pendaftaran sukses
                     if (pendingUsername) sessionStorage.removeItem('pendingUsername');
-                    
                     profile = newProfile;
-                    window.showToast('Akun Netlink baru Anda berhasil disiapkan!', true);
                 } else if (profileError && !profile) {
-                    // Jika error terjadi karena masalah koneksi database lainnya
-                    console.error('Koneksi Database Error:', profileError);
-                    window.location.href = 'login.html';
+                    console.error('Proses SELECT Database Error:', profileError);
+                    alert(`Database SELECT Error: ${profileError.message}\n\nPeriksa konfigurasi aturan RLS (Row Level Security) untuk tabel 'profiles' di Supabase Anda.`);
                     return;
                 }
 
-                // 3. Pasang Objek Profil Global & Render Informasi User ke UI
+                // 4. Sinkronisasi Data Profil ke Objek Global dan UI Komponen Utama
                 window.currentProfile = profile;
                 
-                document.getElementById('userDisplayName').textContent = profile.display_name || 'Netlink User';
-                document.getElementById('userUsername').textContent = `@${profile.username}`;
-                if (profile.avatar_url) {
+                if (document.getElementById('userDisplayName')) {
+                    document.getElementById('userDisplayName').textContent = profile.display_name || 'Netlink User';
+                }
+                if (document.getElementById('userUsername')) {
+                    document.getElementById('userUsername').textContent = `@${profile.username}`;
+                }
+                if (profile.avatar_url && document.getElementById('userAvatar')) {
                     document.getElementById('userAvatar').src = profile.avatar_url;
                 }
 
-                // Tutup Loading Overlay, Tampilkan Dasbor Utama Anda dengan Mulus
+                // Sembunyikan loading overlay, aplikasi siap digunakan!
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) overlay.classList.add('hidden');
 
-                // Eksekusi fungsi render bawaan dasbor Anda jika ada
                 if (typeof window.renderDashboardUI === 'function') {
                     window.renderDashboardUI(profile);
                 }
 
             } catch (globalErr) {
-                console.error('Global Session Guard Error:', globalErr);
+                console.error('Global Session Guard System Error:', globalErr);
                 window.location.href = 'login.html';
             }
         }
 
-        // Jalankan pengecekan sesi saat halaman dasbor dimuat
         window.addEventListener('DOMContentLoaded', checkUserSession);
     </script>
 
