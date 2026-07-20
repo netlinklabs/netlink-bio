@@ -22,7 +22,7 @@
         .toast {
             position: fixed; bottom: 24px; right: 24px;
             background: #1e293b; color: white; padding: 12px 20px;
-            border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            border-radius: 12px; box-shadow: 0 200px 25px -5px rgba(0,0,0,0.1);
             transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 100; font-size: 14px; display: flex; items-center: center; gap: 8px;
         }
@@ -139,26 +139,32 @@
         };
 
         // =========================================================================
-        // 🚀 LOGIKA CORE: PENANGANAN SESI & PROFIL YANG AMAN
+        // 🚀 LOGIKA CORE: REFACTORING SINKRONISASI SESI OAUTH GOOGLE & PROFIL
         // =========================================================================
         async function checkUserSession() {
             try {
-                // 1. Polling asinkronus (Beri waktu Supabase memproses token Google dari URL)
+                // 1. Polling Asinkronus (Mencegah Race Condition Token Google dari URL)
                 const hasHashToken = window.location.hash.includes('access_token') || window.location.hash.includes('id_token');
                 const hasQueryCode = window.location.search.includes('code');
 
                 if (hasHashToken || hasQueryCode) {
+                    console.log('OAuth redirect terdeteksi. Mengamankan token sesi...');
                     for (let i = 0; i < 20; i++) {
                         const { data: { session } } = await window.supabaseClient.auth.getSession();
-                        if (session) break;
-                        await new Promise(resolve => setTimeout(resolve, 100)); // Jeda 100ms
+                        if (session) {
+                            console.log('Sesi otentikasi Google berhasil diproses!');
+                            break;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Polling per 100ms
                     }
                 }
 
-                // 2. Ambil data sesi final
+                // 2. Tarik data sesi pasca-polling
                 const { data: { session }, error } = await window.supabaseClient.auth.getSession();
                 
+                // Jika setelah ditunggu sesi tetap tidak valid, baru kembalikan ke login
                 if (error || !session) {
+                    console.log('Sesi tidak ditemukan atau kedaluwarsa. Mengalihkan...');
                     window.location.href = 'login.html';
                     return;
                 }
@@ -166,50 +172,74 @@
                 const user = session.user;
                 window.currentUser = user;
                 
-                // 3. Ambil data profil (Seharusnya otomatis sudah ada berkat Trigger SQL kita!)
+                // 3. Tarik data dari tabel profiles publik
                 let { data: profile, error: profileError } = await window.supabaseClient
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
                     .single();
 
-                // 4. Jaring Pengaman Ekstra (Jika Trigger SQL Database Anda mati di kemudian hari)
+                // 4. Jaring Pengaman Otomatisasi (Bypass Trigger SQL Kosong untuk Pembuatan Profil Baru)
                 if (profileError && profileError.code === 'PGRST116') {
+                    console.log('Profil database kosong. Menjalankan penyiapan profil otomatis...');
                     const emailPrefix = user.email.split('@')[0];
+                    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+                    const automaticUsername = `${emailPrefix}-${randomSuffix}`;
+
+                    // Baca username pending jika pendaftaran berasal dari form klaim halaman depan
+                    const pendingUsername = sessionStorage.getItem('pendingUsername');
+                    const finalUsername = pendingUsername ? pendingUsername : automaticUsername;
+
                     const fallbackProfile = {
                         id: user.id,
-                        username: `${emailPrefix}-${Math.floor(1000 + Math.random() * 9000)}`,
+                        username: finalUsername,
                         display_name: user.user_metadata?.full_name || emailPrefix,
                         avatar_url: user.user_metadata?.avatar_url || '',
                         bio: 'Welcome to my Netlink.bio!',
                         link_icon_shape: 'rounded'
                     };
 
+                    // Suntikkan baris data profil baru ke database dengan aman (berkat RLS Policy baru Anda)
                     const { data: newProfile, error: insertError } = await window.supabaseClient
                         .from('profiles')
                         .insert([fallbackProfile])
                         .select()
                         .single();
 
-                    if (!insertError) profile = newProfile;
+                    if (!insertError) {
+                        if (pendingUsername) sessionStorage.removeItem('pendingUsername');
+                        profile = newProfile;
+                        console.log('Profil baru berhasil dicetak oleh Frontend.');
+                    } else {
+                        console.error('Frontend fallback insert failed:', insertError);
+                    }
                 }
 
-                // 5. Render ke Tampilan
+                // 5. Sinkronisasikan Data ke UI Utama Komponen Dasbor
                 if (profile) {
                     window.currentProfile = profile;
-                    if (document.getElementById('userDisplayName')) document.getElementById('userDisplayName').textContent = profile.display_name;
-                    if (document.getElementById('userUsername')) document.getElementById('userUsername').textContent = `@${profile.username}`;
-                    if (profile.avatar_url && document.getElementById('userAvatar')) document.getElementById('userAvatar').src = profile.avatar_url;
+                    if (document.getElementById('userDisplayName')) {
+                        document.getElementById('userDisplayName').textContent = profile.display_name || 'Netlink User';
+                    }
+                    if (document.getElementById('userUsername')) {
+                        document.getElementById('userUsername').textContent = `@${profile.username}`;
+                    }
+                    if (profile.avatar_url && document.getElementById('userAvatar')) {
+                        document.getElementById('userAvatar').src = profile.avatar_url;
+                    }
                 }
 
-                // Buka tirai loading
+                // Hilangkan tirai loading, selamat datang di dasbor!
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) overlay.classList.add('hidden');
 
-                if (typeof window.renderDashboardUI === 'function') window.renderDashboardUI(profile);
+                // Eksekusi fungsi render bawaan agar semua PageBuilder Anda termuat
+                if (typeof window.renderDashboardUI === 'function') {
+                    window.renderDashboardUI(profile);
+                }
 
             } catch (globalErr) {
-                console.error('Session error:', globalErr);
+                console.error('Fatal session guard error:', globalErr);
                 window.location.href = 'login.html';
             }
         }
