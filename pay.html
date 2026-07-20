@@ -587,9 +587,20 @@
             window.location.href = 'login.html';
         }
 
+        // NET ID adalah identitas permanen tersimpan di profiles.net_id, cth.
+        // "NET1234567890" -- prefix "NET" dan 10 digitnya adalah bagian dari
+        // nilai yang tersimpan (branding melekat), tidak pernah dihitung ulang.
+        // Strip di bawah cuma kosmetik, ditambahkan saat render.
+        function formatNetId(rawId) {
+            if (!rawId) return 'ID: —';
+            const digits = rawId.replace(/^NET/i, '');
+            if (digits.length !== 10) return 'ID: ' + rawId;
+            return 'ID: NET-' + digits.slice(0, 5) + '-' + digits.slice(5);
+        }
+
         async function loadUserProfile() {
             const { data, error } = await supabaseClient
-                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address').eq('id', currentUser.id).single();
+                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id').eq('id', currentUser.id).single();
 
             if (error) {
                 console.error('Failed to load profile:', error);
@@ -609,8 +620,7 @@
             badge.classList.add(TIER_BADGE_CLASS[tierKey] || TIER_BADGE_CLASS.basic);
             badge.textContent = tierLabel;
 
-            const randomId = 'NET-' + Math.floor(Math.random() * 900000000000 + 100000000000);
-            document.getElementById('cardIdDisplay').textContent = 'ID: ' + randomId;
+            document.getElementById('cardIdDisplay').textContent = formatNetId(data.net_id);
 
             const initialChar = label.charAt(0).toUpperCase();
             const avatarTargets = [
