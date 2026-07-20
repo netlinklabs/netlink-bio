@@ -124,6 +124,14 @@
             setTimeout(() => toast.classList.remove('show'), 4000);
         };
 
+        // Helper untuk ekstrak pesan error dengan aman
+        function getErrorMessage(err) {
+            if (typeof err === 'string') return err;
+            if (err?.message) return err.message;
+            if (err?.error_description) return err.error_description;
+            return 'Gagal melakukan otentikasi. Silakan periksa kembali data Anda.';
+        }
+
         function setLoading(isLoading) {
             document.getElementById('submitBtn').disabled = isLoading;
             document.getElementById('submitSpinner').classList.toggle('hidden', !isLoading);
@@ -159,7 +167,8 @@
                     window.location.href = 'dashboard.html';
                 }
             } catch (err) {
-                window.showToast(err.message || 'Something went wrong. Please try again.');
+                console.error('Email Auth Error:', err);
+                window.showToast(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -212,21 +221,22 @@
 
                 window.location.href = 'dashboard.html';
             } catch (err) {
-                window.showToast(err.message || 'Google sign-in failed. Please try again.');
+                console.error('Google Auth Error:', err);
+                // Fungsi getErrorMessage sudah dideklarasikan secara global di skrip atas
+                window.showToast(window.getErrorMessage ? window.getErrorMessage(err) : 'Google sign-in failed.');
             }
         }
 
-        // FUNGSI INIT YANG TELAH DIPERBARUI
         function initGoogle() {
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: handleGoogleCredential,
             });
             
-            // Render tombol resmi Google ke dalam container
+            // Lebar diturunkan menjadi 300px agar aman di dalam container padding
             google.accounts.id.renderButton(
                 document.getElementById("googleBtnContainer"),
-                { theme: "outline", size: "large", width: 350, shape: "rectangular" }
+                { theme: "outline", size: "large", width: 300, shape: "rectangular" }
             );
         }
         
