@@ -8,7 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * { font-family: 'Inter', sans-serif; }
         .font-poppins { font-family: 'Poppins', sans-serif; }
@@ -49,11 +48,12 @@
                 <button id="tabSignUp" onclick="switchTab('signup')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-400">Sign up</button>
             </div>
 
-            <button id="googleBtn" onclick="handleGoogleLogin()" class="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2 mb-4">
-                <svg class="w-4 h-4" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.5 29.6 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13.5 24 13.5c3.1 0 5.8 1.1 8 3l6-6C34.6 7.5 29.6 5.5 24 5.5c-7.7 0-14.3 4.4-17.7 10.9z"/><path fill="#4CAF50" d="M24 44.5c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5c-2 1.5-4.6 2.4-7.6 2.4-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.6 39.9 16.3 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.5 36 44.5 30.5 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
+            <button type="button" onclick="handleGoogleLogin()" class="w-full py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl transition flex items-center justify-center gap-3 mb-4 shadow-sm text-sm">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5">
                 Continue with Google
             </button>
-            <p class="text-center text-[11px] text-gray-400 -mt-2 mb-4">Instantly creates your Netlink wallet too</p>
+            
+            <p class="text-center text-[11px] text-gray-400 -mt-2 mb-4">Connect your Web3 Wallet in the dashboard later</p>
             <div class="flex items-center gap-3 mb-4">
                 <div class="flex-1 h-px bg-gray-100"></div>
                 <span class="text-xs text-gray-400">or</span>
@@ -83,10 +83,6 @@
                 <button onclick="switchTab('signup')" class="tosca font-medium hover:underline">Sign up</button>
             </p>
         </div>
-
-        <p class="text-center text-xs text-gray-400 mt-6">
-            <a href="index.html" class="hover:text-gray-600 transition">&larr; Back to homepage</a>
-        </p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -114,8 +110,8 @@
 
             document.getElementById('submitLabel').textContent = isSignIn ? 'Log in' : 'Create account';
             document.getElementById('switchHint').innerHTML = isSignIn
-                ? `Don't have an account? <button onclick="switchTab('signup')" class="tosca font-medium hover:underline">Sign up</button>`
-                : `Already have an account? <button onclick="switchTab('signin')" class="tosca font-medium hover:underline">Log in</button>`;
+                ? `Don't have an account? <button type="button" onclick="switchTab('signup')" class="tosca font-medium hover:underline">Sign up</button>`
+                : `Already have an account? <button type="button" onclick="switchTab('signin')" class="tosca font-medium hover:underline">Log in</button>`;
         }
 
         window.showToast = function (message, isSuccess = false) {
@@ -133,17 +129,31 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const claimedUsername = urlParams.get('username');
-        const initialMode = urlParams.get('mode');
-
         if (claimedUsername) {
             sessionStorage.setItem('pendingUsername', claimedUsername);
             document.getElementById('claimUsernameLabel').textContent = `netlink.bio/${claimedUsername}`;
             document.getElementById('claimBanner').classList.remove('hidden');
         }
-        if (initialMode === 'signup') {
-            switchTab('signup');
-        }
 
+        // ==========================================
+        // 🚀 FUNGSI GOOGLE OAUTH SUPER AMAN
+        // ==========================================
+        window.handleGoogleLogin = async function () {
+            try {
+                const { error } = await window.supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { 
+                        redirectTo: window.location.origin + '/dashboard.html' 
+                    }
+                });
+                if (error) throw error;
+            } catch (err) {
+                console.error('OAuth Error:', err);
+                window.showToast('Gagal terhubung ke Google.');
+            }
+        };
+
+        // Form Manual Email
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
@@ -161,83 +171,17 @@
                     window.location.href = 'dashboard.html';
                 }
             } catch (err) {
-                window.showToast(err.message || 'Something went wrong. Please try again.');
+                window.showToast(err.message || 'Gagal login.');
             } finally {
                 setLoading(false);
             }
         });
 
+        // Redirect jika sudah login
         (async () => {
             const { data: { session } } = await window.supabaseClient.auth.getSession();
             if (session) window.location.href = 'dashboard.html';
         })();
-    </script>
-
-    <script type="module">
-        import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
-
-        const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com'; // isi dari Google Cloud Console
-        const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
-        const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
-
-        const sequenceWaas = new SequenceWaaS({
-            network: 'polygon',
-            projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
-            waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
-        });
-
-        async function handleGoogleCredential(response) {
-            const idToken = response.credential;
-            const btn = document.getElementById('googleBtn');
-            btn.disabled = true;
-
-            try {
-                const { error: supaError } = await window.supabaseClient.auth.signInWithIdToken({
-                    provider: 'google',
-                    token: idToken,
-                });
-                if (supaError) throw supaError;
-
-               try {
-    const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
-    const walletAddress = waasResult.wallet; // signIn() returns {sessionId, wallet, email} — ambil .wallet aja
-    const { data: { user } } = await window.supabaseClient.auth.getUser();
-    if (user && walletAddress) {
-        await window.supabaseClient
-            .from('profiles')
-            .update({ wallet_address: walletAddress })
-            .eq('id', user.id)
-            .is('wallet_address', null);
-    }
-} catch (waasErr) {
-    console.error('Sequence wallet creation failed (non-blocking):', waasErr);
-}
-
-                window.location.href = 'dashboard.html';
-            } catch (err) {
-                window.showToast(err.message || 'Google sign-in failed. Please try again.');
-                btn.disabled = false;
-            }
-        }
-
-        function initGoogle() {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleCredential,
-            });
-        }
-        window.addEventListener('load', initGoogle);
-
-        window.handleGoogleLogin = function () {
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    window.supabaseClient.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: { redirectTo: window.location.origin + '/dashboard.html' },
-                    });
-                }
-            });
-        };
     </script>
 </body>
 </html>
