@@ -138,88 +138,27 @@
             console.log("Wallet address rendered:", address);
         };
 
-       // =========================================================================
-// 🚨 MODE DETEKTIF: PENANGKAP ERROR SILUMAN SUPABASE 🚨
-// =========================================================================
-async function checkUserSession() {
-    try {
-        // Hentikan loading spinner bawaan agar pesan bisa terbaca
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) overlay.style.display = 'none';
+        // =========================================================================
+        // 🚀 LOGIKA CORE: PENANGANAN SESI & PROFIL YANG AMAN
+        // =========================================================================
+        async function checkUserSession() {
+            try {
+                // 1. Polling asinkronus (Beri waktu Supabase memproses token Google dari URL)
+                const hasHashToken = window.location.hash.includes('access_token') || window.location.hash.includes('id_token');
+                const hasQueryCode = window.location.search.includes('code');
 
-        // 1. TANGKAP ERROR DARI URL (Biasanya dikirim oleh Supabase)
-        const hashStr = window.location.hash.substring(1);
-        const queryStr = window.location.search.substring(1);
-        const urlParams = new URLSearchParams(queryStr || hashStr);
+                if (hasHashToken || hasQueryCode) {
+                    for (let i = 0; i < 20; i++) {
+                        const { data: { session } } = await window.supabaseClient.auth.getSession();
+                        if (session) break;
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Jeda 100ms
+                    }
+                }
 
-        if (urlParams.has('error') || urlParams.has('error_description')) {
-            const errDesc = urlParams.get('error_description') || urlParams.get('error');
-            document.body.innerHTML = `
-            <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; padding: 20px;">
-                <div style="background: white; padding: 30px; border-radius: 16px; border: 2px solid #ef4444; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 600px; width: 100%;">
-                    <h1 style="color: #ef4444; font-size: 24px; font-weight: bold; margin-bottom: 10px; font-family: sans-serif;">🚨 ERROR DARI SUPABASE TERTANGKAP!</h1>
-                    <p style="color: #475569; margin-bottom: 20px; font-family: sans-serif;">Proses login Google berhasil, tetapi Database Supabase menolak pengguna masuk karena alasan berikut:</p>
-                    <div style="background: #fef2f2; padding: 15px; border-radius: 8px; color: #991b1b; font-family: monospace; font-size: 16px; word-break: break-all; border: 1px solid #fca5a5;">
-                        ${decodeURIComponent(errDesc.replace(/\+/g, ' '))}
-                    </div>
-                </div>
-            </div>`;
-            return; // Hentikan proses!
-        }
-
-        // 2. TUNGGU SESI (PKCE)
-        for (let i = 0; i < 20; i++) {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (session) break;
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        const { data: { session }, error } = await window.supabaseClient.auth.getSession();
-        
-        // 3. JIKA SESI KOSONG, TAMPILKAN DI LAYAR (JANGAN DITENDANG)
-        if (error || !session) {
-            document.body.innerHTML = `
-            <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; padding: 20px;">
-                <div style="background: white; padding: 30px; border-radius: 16px; border: 2px solid #f59e0b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 600px; width: 100%;">
-                    <h1 style="color: #d97706; font-size: 24px; font-weight: bold; margin-bottom: 10px; font-family: sans-serif;">🛑 SESI KOSONG</h1>
-                    <p style="color: #475569; margin-bottom: 20px; font-family: sans-serif;">Anda tiba di Dasbor, tetapi Supabase gagal memberikan tiket sesi.</p>
-                    <p style="font-family: monospace; background: #f1f5f9; padding: 10px; border-radius: 8px; word-break: break-all; font-size: 14px;">URL: ${window.location.href}</p>
-                </div>
-            </div>`;
-            return;
-        }
-
-        // Jika lolos dari semua jebakan, coba jalankan seperti biasa
-        const user = session.user;
-        window.currentUser = user;
-        
-        let { data: profile, error: profileError } = await window.supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-
-        if (profileError && profileError.code === 'PGRST116') {
-            const fallbackProfile = { id: user.id, username: `user-${Math.floor(1000+Math.random()*9000)}` };
-            const { data: newProfile, error: insertError } = await window.supabaseClient.from('profiles').insert([fallbackProfile]).select().single();
-            if (insertError) {
-                document.body.innerHTML = `<div style="padding:40px; background:white;"><h1>Gagal Insert Profil</h1><p>${insertError.message}</p></div>`;
-                return;
-            }
-            profile = newProfile;
-        }
-
-        // Tampilkan Dashboard Normal jika semuanya aman
-        window.currentProfile = profile;
-        if (document.getElementById('userDisplayName')) document.getElementById('userDisplayName').textContent = profile.display_name || 'Netlink User';
-        if (typeof window.renderDashboardUI === 'function') window.renderDashboardUI(profile);
-
-    } catch (globalErr) {
-        document.body.innerHTML = `<div style="padding:40px; background:white;"><h1>Fatal Error</h1><p>${globalErr.message}</p></div>`;
-    }
-}
-                // Baca data sesi final setelah proses asinkronus selesai
+                // 2. Ambil data sesi final
                 const { data: { session }, error } = await window.supabaseClient.auth.getSession();
                 
-                // Jika setelah ditunggu sesi tetap kosong, baru tendang user ke login.html
                 if (error || !session) {
-                    console.log('Sesi kosong atau tidak sah. Dialihkan ke login.html');
                     window.location.href = 'login.html';
                     return;
                 }
@@ -227,78 +166,50 @@ async function checkUserSession() {
                 const user = session.user;
                 window.currentUser = user;
                 
-                // 2. Ambil data baris tabel profiles publik di database Supabase Anda
+                // 3. Ambil data profil (Seharusnya otomatis sudah ada berkat Trigger SQL kita!)
                 let { data: profile, error: profileError } = await window.supabaseClient
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
                     .single();
 
-                // 3. AUTO-CREATION PROFILE (Penyelamat User Baru): Jika baris data tidak ada, buatkan otomatis saat itu juga
-                if (profileError && (profileError.code === 'PGRST116' || profileError.message?.includes('JSON'))) {
-                    console.log('Profil database kosong. Menjalankan proses pendaftaran profil otomatis...');
-                    
+                // 4. Jaring Pengaman Ekstra (Jika Trigger SQL Database Anda mati di kemudian hari)
+                if (profileError && profileError.code === 'PGRST116') {
                     const emailPrefix = user.email.split('@')[0];
-                    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-                    const automaticUsername = `${emailPrefix}-${randomSuffix}`;
-
-                    // Ambil klaim username yang tersimpan di sessionStorage (jika mendaftar via form depan)
-                    const pendingUsername = sessionStorage.getItem('pendingUsername');
-                    const finalUsername = pendingUsername ? pendingUsername : automaticUsername;
-
                     const fallbackProfile = {
                         id: user.id,
-                        username: finalUsername,
+                        username: `${emailPrefix}-${Math.floor(1000 + Math.random() * 9000)}`,
                         display_name: user.user_metadata?.full_name || emailPrefix,
                         avatar_url: user.user_metadata?.avatar_url || '',
                         bio: 'Welcome to my Netlink.bio!',
                         link_icon_shape: 'rounded'
                     };
 
-                    // Injeksi data profil baru ke database Supabase
                     const { data: newProfile, error: insertError } = await window.supabaseClient
                         .from('profiles')
                         .insert([fallbackProfile])
                         .select()
                         .single();
 
-                    if (insertError) {
-                        console.error('Proses otomatisasi INSERT gagal:', insertError);
-                        alert(`Database INSERT Error: ${insertError.message}\n\nPeriksa konfigurasi aturan RLS (Row Level Security) untuk tabel 'profiles' di Supabase Anda.`);
-                        return;
-                    }
-
-                    if (pendingUsername) sessionStorage.removeItem('pendingUsername');
-                    profile = newProfile;
-                } else if (profileError && !profile) {
-                    console.error('Proses SELECT Database Error:', profileError);
-                    alert(`Database SELECT Error: ${profileError.message}\n\nPeriksa konfigurasi aturan RLS (Row Level Security) untuk tabel 'profiles' di Supabase Anda.`);
-                    return;
+                    if (!insertError) profile = newProfile;
                 }
 
-                // 4. Sinkronisasi Data Profil ke Objek Global dan UI Komponen Utama
-                window.currentProfile = profile;
-                
-                if (document.getElementById('userDisplayName')) {
-                    document.getElementById('userDisplayName').textContent = profile.display_name || 'Netlink User';
-                }
-                if (document.getElementById('userUsername')) {
-                    document.getElementById('userUsername').textContent = `@${profile.username}`;
-                }
-                if (profile.avatar_url && document.getElementById('userAvatar')) {
-                    document.getElementById('userAvatar').src = profile.avatar_url;
+                // 5. Render ke Tampilan
+                if (profile) {
+                    window.currentProfile = profile;
+                    if (document.getElementById('userDisplayName')) document.getElementById('userDisplayName').textContent = profile.display_name;
+                    if (document.getElementById('userUsername')) document.getElementById('userUsername').textContent = `@${profile.username}`;
+                    if (profile.avatar_url && document.getElementById('userAvatar')) document.getElementById('userAvatar').src = profile.avatar_url;
                 }
 
-                // Sembunyikan loading overlay, aplikasi siap digunakan!
+                // Buka tirai loading
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) overlay.classList.add('hidden');
 
-                if (typeof window.renderDashboardUI === 'function') {
-                    window.renderDashboardUI(profile);
-                }
+                if (typeof window.renderDashboardUI === 'function') window.renderDashboardUI(profile);
 
             } catch (globalErr) {
-                console.error('Global Session Guard System Error:', globalErr);
+                console.error('Session error:', globalErr);
                 window.location.href = 'login.html';
             }
         }
