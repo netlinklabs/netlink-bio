@@ -297,32 +297,35 @@
                 </button>
             </div>
             <div class="flex items-center gap-2">
-                <button id="walletRemoveBtn" onclick="removeWalletAddress()" title="Remove saved wallet address" class="hidden flex-shrink-0 p-2.5 text-red-500 hover:bg-red-500/10 border border-subtle rounded-lg transition">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-                <button id="walletConnectBtn" onclick="openNetlinkPay()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
-    <i data-lucide="external-link" class="w-4 h-4"></i> Open Wallet
-</button>
-<!-- Google Wallet Button: invisible iframe on top of custom visual button -->
-<div id="googleWalletWrapper" class="relative flex-1" style="min-height:36px;">
-    <!-- Visual button (what user sees) -->
-    <button id="googleWalletBtn" class="w-full py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 hover:text-gray-900 rounded-lg text-sm font-medium transition shadow-sm hover:shadow flex items-center justify-center gap-2" style="position:relative;z-index:1;" tabindex="-1">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Connect / Create Smart Wallet
+    <button id="walletConnectBtn" onclick="openNetlinkPay()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
+        <i data-lucide="external-link" class="w-4 h-4"></i> Open Wallet
     </button>
-    <!-- Invisible Google Sign-In button overlay (captures clicks) -->
-    <div id="googleWalletHiddenBtn" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;overflow:hidden;"></div>
+    <button id="connectSmartWalletBtn" onclick="openConnectWalletModal()" class="flex-1 py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 hover:text-gray-900 rounded-lg text-sm font-medium transition shadow-sm hover:shadow flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Connect Smart Wallet
+    </button>
+    <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Disconnect
+    </button>
 </div>
-<!-- Disconnect Wallet button (shown when wallet is connected) -->
-<button id="disconnectWalletBtn" onclick="removeWalletAddress()" class="hidden flex-1 py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 hover:text-gray-900 rounded-lg text-sm font-medium transition shadow-sm hover:shadow flex items-center justify-center gap-2">
-    <i data-lucide="log-out" class="w-4 h-4"></i> Disconnect
-</button>
-            </div>
             <div class="flex items-center mt-2">
                 <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline flex items-center gap-1 flex-shrink-0">
                     About wallet <i data-lucide="info" class="w-3 h-3"></i>
                 </button>
             </div>
+
+    <!-- Connect Wallet Modal -->
+    <div id="connectWalletModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-primary">Connect Your Wallet</h3>
+                <button onclick="closeConnectWalletModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-sm text-secondary mb-6">Choose a Google account to link with your wallet. You'll use the same account to access your wallet next time.</p>
+            <div id="googleSignInContainer" class="flex justify-center"></div>
+        </div>
+    </div>
+
         </div>
 
 
@@ -1824,6 +1827,10 @@ window.openNetlinkPay = openNetlinkPay;
             if (e.target === this) closeLinkModal();
         });
 
+    document.getElementById('connectWalletModal').addEventListener('click', function(e) {
+        if (e.target === this) closeConnectWalletModal();
+    });
+
         // Tidak perlu panggil manual di sini — onAuthStateChange di atas
         // otomatis fire event INITIAL_SESSION begitu listener didaftarkan,
         // itulah yang memicu alur masuk dashboard / redirect ke login.
@@ -1908,10 +1915,9 @@ window.openNetlinkPay = openNetlinkPay;
 
         function renderWalletAddressUI(address, isLive) {
             const textEl = document.getElementById('walletAddressText');
-            const removeBtn = document.getElementById('walletRemoveBtn');
             const statusDot = document.getElementById('walletStatusDot');
             const statusText = document.getElementById('walletStatusText');
-            const googleWalletWrapper = document.getElementById('googleWalletWrapper');
+            const connectBtn = document.getElementById('connectSmartWalletBtn');
             const disconnectBtn = document.getElementById('disconnectWalletBtn');
             const hasAddress = !!address;
 
@@ -1919,25 +1925,23 @@ window.openNetlinkPay = openNetlinkPay;
                 textEl.textContent = truncateAddress(address);
                 textEl.classList.remove('text-muted');
                 textEl.classList.add('text-primary');
-                removeBtn.classList.remove('hidden');
 
                 if(statusText) statusText.textContent = 'Status: Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
 
-                // Hide Google button, show Disconnect button
-                if (googleWalletWrapper) googleWalletWrapper.classList.add('hidden');
+                // Show Disconnect, hide Connect
+                if (connectBtn) connectBtn.classList.add('hidden');
                 if (disconnectBtn) disconnectBtn.classList.remove('hidden');
             } else {
                 textEl.textContent = 'Not connected';
                 textEl.classList.add('text-muted');
                 textEl.classList.remove('text-primary');
-                removeBtn.classList.add('hidden');
 
                 if(statusText) statusText.textContent = 'Status: Not Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
 
-                // Show Google button, hide Disconnect button
-                if (googleWalletWrapper) googleWalletWrapper.classList.remove('hidden');
+                // Show Connect, hide Disconnect
+                if (connectBtn) connectBtn.classList.remove('hidden');
                 if (disconnectBtn) disconnectBtn.classList.add('hidden');
             }
             setWalletConnectBtnState(isLive);
@@ -2029,7 +2033,6 @@ window.openNetlinkPay = openNetlinkPay;
     async function removeWalletAddress() {
             const current = document.getElementById('walletAddressInput').value;
             if (!current) { showToast('No wallet address saved'); return; }
-            if (!confirm('Remove your saved wallet address? It will disappear from your public bio page until you connect again.')) return;
 
             try {
                 if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
@@ -2066,8 +2069,9 @@ window.openNetlinkPay = openNetlinkPay;
     const MAX_INIT_ATTEMPTS = 30;
 
     async function handleGoogleWalletCredential(response) {
+        closeConnectWalletModal();
         const idToken = response.credential;
-        const btn = document.getElementById('googleWalletBtn');
+        const btn = document.getElementById('connectSmartWalletBtn');
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<span class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block mr-2"></span>Connecting...';
@@ -2078,14 +2082,14 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('walletAddressInput').value = walletAddress;
             await window.saveWallet();
             window.renderWalletAddressUI(walletAddress, true);
-            showToast('Wallet created via Google!');
+            showToast('Wallet connected via Google!');
         } catch (err) {
             console.error(err);
             showToast('Could not create wallet — please try again.');
         } finally {
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Create Wallet';
+                btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Connect Smart Wallet';
             }
         }
     }
@@ -2108,34 +2112,38 @@ window.openNetlinkPay = openNetlinkPay;
             itp_support: true,
         });
         googleWalletReady = true;
-
-        // Render the Google button inside the overlay container
-        // The iframe will be nearly invisible but still clickable
-        const hiddenContainer = document.getElementById('googleWalletHiddenBtn');
-        if (hiddenContainer) {
-            google.accounts.id.renderButton(hiddenContainer, {
-                type: 'standard',
-                size: 'large',
-                theme: 'outline',
-                text: 'signin_with',
-                width: '100%',
-            });
-            // Make the Google iframe nearly invisible but keep it clickable
-            const gsiFrame = hiddenContainer.querySelector('iframe');
-            if (gsiFrame) {
-                gsiFrame.style.opacity = '0.01';
-                gsiFrame.style.width = '100%';
-                gsiFrame.style.height = '100%';
-            }
-        }
     }
 
-    window.connectWalletViaGoogle = function () {
-        // The Google Sign-In button overlay handles clicks directly.
-        // This function exists only as a fallback if called programmatically.
+    window.openConnectWalletModal = function () {
         if (!googleWalletReady) {
             showToast('Google Sign-In is still loading, please wait a moment...');
             return;
+        }
+        const modal = document.getElementById('connectWalletModal');
+        const container = document.getElementById('googleSignInContainer');
+        if (!modal || !container) return;
+
+        // Clear previous button and render fresh
+        container.innerHTML = '';
+        google.accounts.id.renderButton(container, {
+            type: 'standard',
+            size: 'large',
+            theme: 'outline',
+            text: 'signin_with',
+            width: '100%',
+        });
+
+        modal.classList.add('active');
+    };
+
+    window.closeConnectWalletModal = function () {
+        const modal = document.getElementById('connectWalletModal');
+        if (modal) modal.classList.remove('active');
+    };
+
+    window.confirmDisconnectWallet = function () {
+        if (confirm('Make sure you use the same Google account to access your wallet next time. Are you sure you want to disconnect?')) {
+            removeWalletAddress();
         }
     };
 
