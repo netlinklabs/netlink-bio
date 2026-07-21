@@ -300,7 +300,7 @@
                 <button id="walletRemoveBtn" onclick="removeWalletAddress()" title="Remove saved wallet address" class="hidden flex-shrink-0 p-2.5 text-red-500 hover:bg-red-500/10 border border-subtle rounded-lg transition">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
-                <button id="walletConnectBtn<button id="walletConnectBtn" onclick="openNetlinkPay()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
+                <button id="walletConnectBtn" onclick="openNetlinkPay()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
     <i data-lucide="external-link" class="w-4 h-4"></i> Open Wallet
 </button>
 <button id="googleWalletBtn" onclick="connectWalletViaGoogle()" class="flex-1 py-2 border border-subtle hover-surface text-secondary rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
@@ -704,6 +704,18 @@
         </div>
     </div>
 
+    <div id="googleWalletModal" class="modal" onclick="if(event.target===this) closeGoogleWalletModal()">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4 text-center">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-primary">Sign in with Google</h3>
+                <button onclick="closeGoogleWalletModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-sm text-secondary mb-5">Pilih akun Google untuk membuat/menghubungkan wallet instan kamu.</p>
+            <div id="googleWalletBtnContainer" class="flex items-center justify-center min-h-[44px]"></div>
+            <p id="googleWalletModalError" class="text-xs text-red-500 mt-3 hidden"></p>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         function showAuthError(msg) {
@@ -725,33 +737,13 @@
         let currentLinks = [];
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
 
-        // ==========================================
-        // AUTH GATE — FIX untuk race condition setelah redirect Google OAuth
-        // ------------------------------------------
-        // Sebelumnya kode memanggil getSession() langsung saat halaman load.
-        // Masalahnya: begitu Google redirect balik ke dashboard.html, token
-        // masih ada di URL (#access_token=...) dan Supabase client butuh
-        // waktu sepersekian detik untuk mem-parsingnya lalu menyimpan sesi.
-        // Kalau getSession() dipanggil SEBELUM proses itu selesai, ia bisa
-        // return null padahal user sebenarnya baru saja berhasil login —
-        // akibatnya user "sempat lihat dashboard" lalu dilempar balik ke
-        // login.html. Ini paling kentara untuk akun BARU karena ada beban
-        // tambahan (trigger INSERT ke profiles, generate net_id, dst) yang
-        // memperlebar celah race-nya.
-        //
-        // Fix: dengarkan event onAuthStateChange dan tunggu event
-        // INITIAL_SESSION (dikirim otomatis sekali oleh Supabase setelah ia
-        // selesai memeriksa URL/localStorage untuk sesi yang ada). Baru
-        // setelah event itu kita putuskan redirect ke login atau lanjut ke
-        // dashboard — bukan menebak lebih awal dengan getSession().
-        // ==========================================
-        let authResolved = false;
-
-        async function enterDashboard(session) {
-            authResolved = true;
-            currentUser = session.user;
-            document.getElementById('authGate').style.display = 'none';
+        async function checkAuth() {
             try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login.html'; return; }
+                currentUser = session.user;
+                document.getElementById('authGate').style.display = 'none';
                 await loadDashboardData();
                 applyPendingUsernameClaim();
             } catch (err) {
@@ -759,21 +751,6 @@
                 showAuthError(err.message || String(err));
             }
         }
-
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            if (authResolved) return; // sudah diputuskan sekali, jangan diulang
-
-            if (event === 'INITIAL_SESSION') {
-                if (session) {
-                    await enterDashboard(session);
-                } else {
-                    window.location.href = 'login.html';
-                }
-            } else if (event === 'SIGNED_IN' && session) {
-                // Jaga-jaga kalau INITIAL_SESSION belum sempat fire duluan
-                await enterDashboard(session);
-            }
-        });
 
         function applyPendingUsernameClaim() {
             const pending = sessionStorage.getItem('pendingUsername');
@@ -864,25 +841,9 @@ function openNetlinkPay() {
     window.location.href = 'https://netlink-bio.vercel.app/pay.html';
 }
 window.openNetlinkPay = openNetlinkPay;
-        // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
-        // trigger handle_new_user() di sisi database, hampir bersamaan
-        // dengan sesi auth tapi tidak 100% instan. Kalau dashboard sempat
-        // query sepersekian detik lebih cepat dari trigger selesai, .single()
-        // akan gagal (0 rows). Retry singkat ini menutup celah itu tanpa
-        // mengganggu akun lama (yang profilnya sudah pasti ada, jadi retry
-        // ini langsung berhasil di percobaan pertama).
-        async function fetchProfileWithRetry(maxAttempts = 4, delayMs = 600) {
-            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                const { data, error } = await supabaseClient
-                    .from('profiles').select('*').eq('id', currentUser.id).single();
-                if (!error && data) return { data, error: null };
-                if (attempt < maxAttempts) await new Promise(r => setTimeout(r, delayMs));
-                else return { data, error };
-            }
-        }
-
         async function loadProfile() {
-            const { data, error } = await fetchProfileWithRetry();
+            const { data, error } = await supabaseClient
+                .from('profiles').select('*').eq('id', currentUser.id).single();
 
             if (error) {
                 console.error('Failed to load profile:', error);
@@ -973,15 +934,7 @@ window.openNetlinkPay = openNetlinkPay;
         }
         const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
 
-        // Token guard: setiap pemanggilan checkUsernameLive() atau proses
-        // save akan menaikkan angka ini. Kalau hasil RPC pengecekan
-        // "pulang" belakangan (setelah proses save/pengecekan yang lebih
-        // baru dimulai), token-nya sudah tidak cocok lagi -> hasil lama
-        // diabaikan, tidak menimpa status yang sudah benar di layar.
-        let usernameCheckToken = 0;
-
         async function checkUsernameLive() {
-            const myToken = ++usernameCheckToken;
             const input = document.getElementById('profileUsername');
             const status = document.getElementById('usernameStatus');
             const username = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -998,10 +951,7 @@ window.openNetlinkPay = openNetlinkPay;
                 status.textContent = 'Maximum 25 characters.';
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
                 status.classList.remove('hidden');
-
-<!-- ==== END PART 1 -- lanjut ke dashboard_PART2.html, tempel langsung setelah baris ini ==== -->
-
-                    return;
+                return;
             }
 
             const myTier = currentProfile?.tier || 'basic';
@@ -1011,10 +961,6 @@ window.openNetlinkPay = openNetlinkPay;
                 check_slug: username,
                 check_tier: myTier,
             });
-
-            // Ada pengecekan/proses save lain yang mulai setelah kita —
-            // hasil kita sudah basi, jangan render apa pun.
-            if (myToken !== usernameCheckToken) return;
 
             if (error) {
                 status.textContent = 'Failed to check availability.';
@@ -1072,7 +1018,8 @@ window.openNetlinkPay = openNetlinkPay;
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        async function fetchWalletBalances(address) {
+<== Batas bagian 1 ==>
+    async function fetchWalletBalances(address) {
             if (!address) {
                 document.getElementById('balanceNet').textContent = '0.00';
                 document.getElementById('balanceUsdc').textContent = '0.00';
@@ -1096,9 +1043,7 @@ window.openNetlinkPay = openNetlinkPay;
 
         async function saveLinkCardSettings() {
             await withSaving('linkCardSaveBtn', async () => {
-                usernameCheckToken++; // batalkan pengecekan username yang mungkin masih menggantung
                 const usernameStatus = document.getElementById('usernameStatus');
-                usernameStatus.classList.add('hidden'); // sembunyikan status lama selagi proses save jalan
                 const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
                 document.getElementById('profileUsername').value = username;
 
@@ -1813,9 +1758,7 @@ window.openNetlinkPay = openNetlinkPay;
             if (e.target === this) closeLinkModal();
         });
 
-        // Tidak perlu panggil manual di sini — onAuthStateChange di atas
-        // otomatis fire event INITIAL_SESSION begitu listener didaftarkan,
-        // itulah yang memicu alur masuk dashboard / redirect ke login.
+        checkAuth();
     </script>
 
     <script>
@@ -2053,6 +1996,7 @@ const walletAddress = waasResult.wallet;
 document.getElementById('walletAddressInput').value = walletAddress;
             await window.saveWallet();
             window.renderWalletAddressUI(walletAddress, true);
+            closeGoogleWalletModal();
             showToast('Wallet created via Google!');
         } catch (err) {
             console.error(err);
@@ -2063,16 +2007,39 @@ document.getElementById('walletAddressInput').value = walletAddress;
         }
     }
 
-    function initGoogleWallet() {
-        if (!window.google) return;
-        google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleWalletCredential });
-    }
-    window.addEventListener('load', initGoogleWallet);
+    // Invisible One Tap (prompt()) is unreliable on repeat clicks / new
+    // accounts due to Chrome cooldown + FedCM behavior. We open our own
+    // modal and let Google render its real button inside it instead --
+    // that's a direct user gesture on Google's own element, so it always
+    // shows up.
+    function openGoogleWalletModal() {
+        document.getElementById('googleWalletModal').classList.add('active');
+        document.getElementById('googleWalletModalError').classList.add('hidden');
+        const container = document.getElementById('googleWalletBtnContainer');
+        container.innerHTML = '';
 
-    window.connectWalletViaGoogle = function () {
-        google.accounts.id.prompt();
-    };
+        if (!window.google) {
+            document.getElementById('googleWalletModalError').textContent = 'Google sign-in belum siap — cek koneksi internet kamu.';
+            document.getElementById('googleWalletModalError').classList.remove('hidden');
+            return;
+        }
+
+        google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleWalletCredential });
+        google.accounts.id.renderButton(container, {
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'pill',
+            width: 260,
+        });
+    }
+
+    function closeGoogleWalletModal() {
+        document.getElementById('googleWalletModal').classList.remove('active');
+    }
+
+    window.connectWalletViaGoogle = openGoogleWalletModal;
+    window.closeGoogleWalletModal = closeGoogleWalletModal;
 </script>
 </body>
 </html>
-
