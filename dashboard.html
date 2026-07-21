@@ -725,13 +725,33 @@
         let currentLinks = [];
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
 
-        async function checkAuth() {
+        // ==========================================
+        // AUTH GATE — FIX untuk race condition setelah redirect Google OAuth
+        // ------------------------------------------
+        // Sebelumnya kode memanggil getSession() langsung saat halaman load.
+        // Masalahnya: begitu Google redirect balik ke dashboard.html, token
+        // masih ada di URL (#access_token=...) dan Supabase client butuh
+        // waktu sepersekian detik untuk mem-parsingnya lalu menyimpan sesi.
+        // Kalau getSession() dipanggil SEBELUM proses itu selesai, ia bisa
+        // return null padahal user sebenarnya baru saja berhasil login —
+        // akibatnya user "sempat lihat dashboard" lalu dilempar balik ke
+        // login.html. Ini paling kentara untuk akun BARU karena ada beban
+        // tambahan (trigger INSERT ke profiles, generate net_id, dst) yang
+        // memperlebar celah race-nya.
+        //
+        // Fix: dengarkan event onAuthStateChange dan tunggu event
+        // INITIAL_SESSION (dikirim otomatis sekali oleh Supabase setelah ia
+        // selesai memeriksa URL/localStorage untuk sesi yang ada). Baru
+        // setelah event itu kita putuskan redirect ke login atau lanjut ke
+        // dashboard — bukan menebak lebih awal dengan getSession().
+        // ==========================================
+        let authResolved = false;
+
+        async function enterDashboard(session) {
+            authResolved = true;
+            currentUser = session.user;
+            document.getElementById('authGate').style.display = 'none';
             try {
-                const { data: { session }, error } = await supabaseClient.auth.getSession();
-                if (error) throw error;
-                if (!session) { window.location.href = 'login.html'; return; }
-                currentUser = session.user;
-                document.getElementById('authGate').style.display = 'none';
                 await loadDashboardData();
                 applyPendingUsernameClaim();
             } catch (err) {
@@ -739,6 +759,21 @@
                 showAuthError(err.message || String(err));
             }
         }
+
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            if (authResolved) return; // sudah diputuskan sekali, jangan diulang
+
+            if (event === 'INITIAL_SESSION') {
+                if (session) {
+                    await enterDashboard(session);
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } else if (event === 'SIGNED_IN' && session) {
+                // Jaga-jaga kalau INITIAL_SESSION belum sempat fire duluan
+                await enterDashboard(session);
+            }
+        });
 
         function applyPendingUsernameClaim() {
             const pending = sessionStorage.getItem('pendingUsername');
@@ -829,9 +864,25 @@ function openNetlinkPay() {
     window.location.href = 'https://netlink-bio.vercel.app/pay.html';
 }
 window.openNetlinkPay = openNetlinkPay;
+        // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
+        // trigger handle_new_user() di sisi database, hampir bersamaan
+        // dengan sesi auth tapi tidak 100% instan. Kalau dashboard sempat
+        // query sepersekian detik lebih cepat dari trigger selesai, .single()
+        // akan gagal (0 rows). Retry singkat ini menutup celah itu tanpa
+        // mengganggu akun lama (yang profilnya sudah pasti ada, jadi retry
+        // ini langsung berhasil di percobaan pertama).
+        async function fetchProfileWithRetry(maxAttempts = 4, delayMs = 600) {
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                const { data, error } = await supabaseClient
+                    .from('profiles').select('*').eq('id', currentUser.id).single();
+                if (!error && data) return { data, error: null };
+                if (attempt < maxAttempts) await new Promise(r => setTimeout(r, delayMs));
+                else return { data, error };
+            }
+        }
+
         async function loadProfile() {
-            const { data, error } = await supabaseClient
-                .from('profiles').select('*').eq('id', currentUser.id).single();
+            const { data, error } = await fetchProfileWithRetry();
 
             if (error) {
                 console.error('Failed to load profile:', error);
@@ -947,6 +998,9 @@ window.openNetlinkPay = openNetlinkPay;
 
             const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
                 check_slug: username,
+
+<!-- ==== END PART 1 -- lanjut ke dashboard_PART2.html, tempel langsung setelah baris ini ==== -->
+                
                 check_tier: myTier,
             });
 
@@ -1746,7 +1800,9 @@ window.openNetlinkPay = openNetlinkPay;
             if (e.target === this) closeLinkModal();
         });
 
-        checkAuth();
+        // Tidak perlu panggil manual di sini — onAuthStateChange di atas
+        // otomatis fire event INITIAL_SESSION begitu listener didaftarkan,
+        // itulah yang memicu alur masuk dashboard / redirect ke login.
     </script>
 
     <script>
