@@ -296,15 +296,21 @@
                     <i data-lucide="copy" class="w-4 h-4"></i>
                 </button>
             </div>
-            <div class="flex items-center gap-2">
-    <button id="walletConnectBtn" onclick="openNetlinkPay()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
-        <i data-lucide="external-link" class="w-4 h-4"></i> Open Wallet
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+    <button id="walletConnectBtn" onclick="openNetlinkPay()" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="external-link" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="hidden sm:inline">Open Wallet</span>
+        <span class="sm:hidden">Wallet</span>
     </button>
-    <button id="connectSmartWalletBtn" onclick="openConnectWalletModal()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
-        <i data-lucide="wallet" class="w-4 h-4"></i> Connect Smart Wallet
+    <button id="connectSmartWalletBtn" onclick="openConnectWalletModal()" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="wallet" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="hidden sm:inline">Connect Smart Wallet</span>
+        <span class="sm:hidden">Connect</span>
     </button>
-    <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5">
-        <i data-lucide="log-out" class="w-4 h-4"></i> Disconnect
+    <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="hidden sm:inline">Disconnect</span>
+        <span class="sm:hidden">Disconnect</span>
     </button>
 </div>
             <div class="flex items-center mt-2">
