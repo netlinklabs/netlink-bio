@@ -973,7 +973,15 @@ window.openNetlinkPay = openNetlinkPay;
         }
         const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
 
+        // Token guard: setiap pemanggilan checkUsernameLive() atau proses
+        // save akan menaikkan angka ini. Kalau hasil RPC pengecekan
+        // "pulang" belakangan (setelah proses save/pengecekan yang lebih
+        // baru dimulai), token-nya sudah tidak cocok lagi -> hasil lama
+        // diabaikan, tidak menimpa status yang sudah benar di layar.
+        let usernameCheckToken = 0;
+
         async function checkUsernameLive() {
+            const myToken = ++usernameCheckToken;
             const input = document.getElementById('profileUsername');
             const status = document.getElementById('usernameStatus');
             const username = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -990,7 +998,10 @@ window.openNetlinkPay = openNetlinkPay;
                 status.textContent = 'Maximum 25 characters.';
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
                 status.classList.remove('hidden');
-                return;
+
+<!-- ==== END PART 1 -- lanjut ke dashboard_PART2.html, tempel langsung setelah baris ini ==== -->
+
+                    return;
             }
 
             const myTier = currentProfile?.tier || 'basic';
@@ -998,11 +1009,12 @@ window.openNetlinkPay = openNetlinkPay;
 
             const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
                 check_slug: username,
-
-<!-- ==== END PART 1 -- lanjut ke dashboard_PART2.html, tempel langsung setelah baris ini ==== -->
-                
                 check_tier: myTier,
             });
+
+            // Ada pengecekan/proses save lain yang mulai setelah kita —
+            // hasil kita sudah basi, jangan render apa pun.
+            if (myToken !== usernameCheckToken) return;
 
             if (error) {
                 status.textContent = 'Failed to check availability.';
@@ -1084,7 +1096,9 @@ window.openNetlinkPay = openNetlinkPay;
 
         async function saveLinkCardSettings() {
             await withSaving('linkCardSaveBtn', async () => {
+                usernameCheckToken++; // batalkan pengecekan username yang mungkin masih menggantung
                 const usernameStatus = document.getElementById('usernameStatus');
+                usernameStatus.classList.add('hidden'); // sembunyikan status lama selagi proses save jalan
                 const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
                 document.getElementById('profileUsername').value = username;
 
@@ -1097,8 +1111,7 @@ window.openNetlinkPay = openNetlinkPay;
 
                 const { error } = await supabaseClient.from('profiles').update({
                     username,
-<!-- ==== END PART 1 -- lanjut ke dashboard_PART2.html, tempel langsung setelah baris ini ==== -->
-                                        show_cv: document.getElementById('profileShowCv').checked,
+                    show_cv: document.getElementById('profileShowCv').checked,
                     show_donate: document.getElementById('profileShowDonate').checked,
                 }).eq('id', currentUser.id);
 
