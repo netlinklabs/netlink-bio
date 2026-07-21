@@ -2042,14 +2042,23 @@ window.openNetlinkPay = openNetlinkPay;
             try {
                 if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
                 const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to remove wallet address'); return; }
+                if (error) {
+                    console.error('Supabase error removing wallet:', error);
+                    // Continue anyway - update UI to reflect disconnected state
+                }
                 document.getElementById('walletAddressInput').value = '';
                 renderWalletAddressUI('', false);
                 fetchWalletBalances('');
                 updateProfileCompletion();
+                showToast('Wallet disconnected');
             } catch (err) {
-                console.error(err);
-                showToast('Failed to remove wallet address');
+                console.error('Disconnect error:', err);
+                // Even if there's an error, try to update UI
+                document.getElementById('walletAddressInput').value = '';
+                renderWalletAddressUI('', false);
+                fetchWalletBalances('');
+                updateProfileCompletion();
+                showToast('Wallet disconnected');
             }
         }
 
@@ -2082,14 +2091,34 @@ window.openNetlinkPay = openNetlinkPay;
         }
         try {
             const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
-            const walletAddress = waasResult.wallet;
+
+            // Guard: check if result is valid
+            if (!waasResult) {
+                throw new Error('No response from wallet service');
+            }
+
+            // Sequence WaaS can return wallet address directly or as property
+            const walletAddress = waasResult.wallet || waasResult;
+
+            if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
+                console.error('Invalid wallet response:', waasResult);
+                throw new Error('Invalid wallet address received');
+            }
+
             document.getElementById('walletAddressInput').value = walletAddress;
             await window.saveWallet(true);
             window.renderWalletAddressUI(walletAddress, true);
-            showToast('Wallet connected via Google!');
+            showToast('Wallet connected!');
         } catch (err) {
-            console.error(err);
-            showToast('Could not create wallet — please try again.');
+            console.error('Wallet connection error:', err);
+            const msg = err?.message || '';
+            if (msg.includes('already exists') || msg.includes('conflict')) {
+                showToast('This Google account is already linked to a wallet.');
+            } else if (msg.includes('network') || msg.includes('fetch')) {
+                showToast('Network error. Please check your connection and try again.');
+            } else {
+                showToast('Could not connect wallet. Please try again.');
+            }
         } finally {
             if (btn) {
                 btn.disabled = false;
