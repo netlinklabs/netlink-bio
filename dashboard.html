@@ -305,7 +305,7 @@
     <button id="connectSmartWalletBtn" onclick="openConnectWalletModal()" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
         <i data-lucide="wallet" class="w-4 h-4 flex-shrink-0"></i>
         <span class="hidden sm:inline">Connect Smart Wallet</span>
-        <span class="sm:hidden">Connect / Create Smart Wallet</span>
+        <span class="sm:hidden">Connect</span>
     </button>
     <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
         <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
@@ -2037,7 +2037,7 @@ window.openNetlinkPay = openNetlinkPay;
 
     async function removeWalletAddress() {
             const current = document.getElementById('walletAddressInput').value;
-            if (!current) { showToast('No wallet address saved'); return; }
+            if (!current) return;
 
             try {
                 if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
@@ -2047,7 +2047,6 @@ window.openNetlinkPay = openNetlinkPay;
                 renderWalletAddressUI('', false);
                 fetchWalletBalances('');
                 updateProfileCompletion();
-                showToast('Wallet address removed');
             } catch (err) {
                 console.error(err);
                 showToast('Failed to remove wallet address');
@@ -2085,7 +2084,7 @@ window.openNetlinkPay = openNetlinkPay;
             const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
             const walletAddress = waasResult.wallet;
             document.getElementById('walletAddressInput').value = walletAddress;
-            await window.saveWallet();
+            await window.saveWallet(true);
             window.renderWalletAddressUI(walletAddress, true);
             showToast('Wallet connected via Google!');
         } catch (err) {
