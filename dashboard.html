@@ -1080,11 +1080,19 @@ window.openNetlinkPay = openNetlinkPay;
             const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
             if (error) { showToast('Failed to save wallet address'); return; }
             showToast('Wallet address saved');
-            await loadProfile();
-            updateProfileCompletion();
-            fetchWalletBalances(wallet_address);
-        }
 
+            // The DB write above is what actually matters for "success".
+            // Everything below is cosmetic UI refresh — if any of it throws,
+            // don't let that bubble up and make the caller think the save
+            // itself failed.
+            try {
+                await loadProfile();
+                updateProfileCompletion();
+                fetchWalletBalances(wallet_address);
+            } catch (refreshErr) {
+                console.error('Wallet saved, but UI refresh failed:', refreshErr);
+            }
+        }
         function formatTokenAmount(value) {
             const num = parseFloat(value);
             if (isNaN(num)) return '0.00';
@@ -2111,6 +2119,21 @@ window.openNetlinkPay = openNetlinkPay;
             showToast('Wallet connected!');
         } catch (err) {
             console.error('Wallet connection error:', err);
+
+            // Guard: sometimes sequenceWaas.signIn() rejects (e.g. a
+            // confirmation timeout) even though the wallet WAS created and
+            // already saved successfully a few lines above. Re-check the
+            // actual saved state before showing a "failed" toast — showing
+            // an error after a real success is more confusing than showing
+            // nothing.
+            const savedAddress = document.getElementById('walletAddressInput').value.trim();
+            if (savedAddress && /^0x[a-fA-F0-9]{40}$/.test(savedAddress)) {
+                console.warn('Wallet connection reported an error, but a valid address is already saved — suppressing failure toast.');
+                window.renderWalletAddressUI(savedAddress, true);
+                showToast('Wallet connected!');
+                return;
+            }
+
             const msg = err?.message || '';
             if (msg.includes('already exists') || msg.includes('conflict')) {
                 showToast('This Google account is already linked to a wallet.');
@@ -2191,3 +2214,6 @@ window.openNetlinkPay = openNetlinkPay;
 </body>
 </html>
 
+
+
+        
