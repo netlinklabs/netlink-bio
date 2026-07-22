@@ -1,7 +1,7 @@
 {
   "name": "Netlink Pay",
-  "short_name": "NetlinkPay",
-  "description": "Dompet Kripto Komunitas Netlink",
+  "short_name": "Netlink Pay",
+  "description": "Wallet for Netlink Ecosystem",
   "start_url": "./pay.html",
   "display": "standalone",
   "background_color": "#ffffff",
