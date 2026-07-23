@@ -747,13 +747,35 @@
                 }
 
                 list.innerHTML = txs.map((tx) => {
+                    const timeAgo = formatTimeAgo(tx.timestamp);
+                    const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
+
+                    if (tx.type === 'swap') {
+                        return `
+                            <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
+                                <div class="w-9 h-9 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-sm font-medium text-primary truncate">Swapped ${tx.fromToken} to ${tx.toToken}</p>
+                                        <p class="text-sm font-semibold text-primary">${tx.fromAmount} → ${tx.toAmount}</p>
+                                    </div>
+                                    <div class="flex items-center justify-between mt-0.5">
+                                        <p class="text-xs text-muted truncate">${tx.fromToken} / ${tx.toToken}</p>
+                                        <p class="text-xs text-muted">${timeAgo}</p>
+                                    </div>
+                                </div>
+                                <i data-lucide="external-link" class="w-3.5 h-3.5 text-muted flex-shrink-0"></i>
+                            </a>
+                        `;
+                    }
+
                     const isIn = tx.type === 'in';
                     const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
                     const colorClass = isIn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500';
                     const amountClass = isIn ? 'tx-amount-in' : 'tx-amount-out';
                     const sign = isIn ? '+' : '-';
-                    const timeAgo = formatTimeAgo(tx.timestamp);
-                    const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
 
                     return `
                         <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
