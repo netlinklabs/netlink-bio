@@ -96,13 +96,53 @@ export default async function handler(req, res) {
     // gas refund patterns) — dedupe by hash+token+type+amount so we don't
     // double-count the same movement.
     const seen = new Set();
-    const merged = [...nativeTxs, ...internalTxs, ...tokenTxs]
-      .filter((tx) => {
-        const key = `${tx.hash}-${tx.token}-${tx.type}-${tx.amount}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
+    const allLegs = [...nativeTxs, ...internalTxs, ...tokenTxs].filter((tx) => {
+      const key = `${tx.hash}-${tx.token}-${tx.type}-${tx.amount}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Group legs by tx hash. A swap (even multi-hop, with several internal
+    // POL legs) nets out to one token going out and a different token coming
+    // in on the same hash — collapse that into a single "swap" entry instead
+    // of showing every intermediate hop.
+    const byHash = new Map();
+    for (const leg of allLegs) {
+      if (!byHash.has(leg.hash)) byHash.set(leg.hash, []);
+      byHash.get(leg.hash).push(leg);
+    }
+
+    const grouped = [];
+    for (const [hash, legs] of byHash) {
+      const netByToken = {};
+      for (const leg of legs) {
+        const signed = (leg.type === 'in' ? 1 : -1) * parseFloat(leg.amount);
+        netByToken[leg.token] = (netByToken[leg.token] || 0) + signed;
+      }
+      const tokensInvolved = Object.keys(netByToken).filter((t) => Math.abs(netByToken[t]) > 0.0000001);
+      const outToken = tokensInvolved.find((t) => netByToken[t] < 0);
+      const inToken = tokensInvolved.find((t) => netByToken[t] > 0);
+
+      if (outToken && inToken && tokensInvolved.length === 2) {
+        // Clean swap: exactly one token net-out, one token net-in.
+        grouped.push({
+          hash,
+          type: 'swap',
+          fromToken: outToken,
+          fromAmount: Math.abs(netByToken[outToken]).toFixed(2),
+          toToken: inToken,
+          toAmount: Math.abs(netByToken[inToken]).toFixed(2),
+          timestamp: legs[0].timestamp,
+        });
+      } else {
+        // Not a simple two-token swap (plain send/receive, or a hash with
+        // only same-token legs) — keep as-is, one row per leg.
+        grouped.push(...legs);
+      }
+    }
+
+    const merged = grouped
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 20);
 
