@@ -95,7 +95,13 @@
         /* Icon picker popup */
         .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; max-height: 280px; overflow-y: auto; }
         .icon-picker-panel.open { display: grid; }
-    </style>
+    
+        /* Theme-aware logo images */
+        .theme-logo-light { display: block; }
+        .theme-logo-dark { display: none; }
+        html.dark .theme-logo-light { display: none; }
+        html.dark .theme-logo-dark { display: block; }
+</style>
 </head>
 <body class="min-h-screen">
     <div id="authGate">
@@ -110,8 +116,8 @@
 
     <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
         <div class="flex items-center gap-2">
-            <img src="/assets/netlinkbio-icon.png" alt="Netlink.bio" class="w-8 h-8 rounded-lg">
-            <span class="font-bold text-primary">Netlink.bio</span>
+            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-lightBG.png" alt="Netlink.bio" class="h-8 w-auto theme-logo-light">
+            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" class="h-8 w-auto theme-logo-dark hidden">
         </div>
         <div class="flex items-center gap-2">
             <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch to dark mode">
@@ -147,11 +153,8 @@
     <aside class="sidebar text-white flex flex-col">
         <div class="hidden lg:block p-4 border-b border-subtle">
             <a href="index.html" class="flex items-center gap-3">
-                <img src="/assets/netlinkbio-icon.png" alt="Netlink.bio" class="w-10 h-10 rounded-xl">
-                <div>
-                    <h1 class="font-bold text-lg text-primary">netlink.bio</h1>
-                    <p class="text-xs text-muted">Dashboard</p>
-                </div>
+                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-lightBG.png" alt="Netlink.bio" class="h-10 w-auto theme-logo-light">
+                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" class="h-10 w-auto theme-logo-dark hidden">
             </a>
         </div>
 
@@ -205,7 +208,7 @@
     </aside>
 
     <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8">
-        <div class="hidden lg:flex items-center justify-between mb-8">
+        <div class="hidden lg:flex items-center justify-between mb-6">
             <!-- Left: Title area wrapped in card -->
             <div class="card rounded-2xl px-6 py-4 flex items-center gap-5 flex-1 mr-4">
                 <div class="flex-1 min-w-0">
@@ -214,13 +217,13 @@
                 </div>
                 <!-- Vertical divider -->
                 <div class="w-px h-10 bg-subtle flex-shrink-0"></div>
-                <!-- Avatar + Tier badge -->
+                <!-- Tier badge + Avatar (swapped order) -->
                 <div class="flex items-center gap-3 flex-shrink-0">
+                    <span id="headerTierPillDesktop" class="px-3 py-1 border border-subtle rounded-full text-xs font-medium text-secondary whitespace-nowrap">Basic</span>
                     <div id="headerAvatarWrapDesktop" class="w-10 h-10 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                         <img id="headerAvatarImgDesktop" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
                         <span id="headerAvatarInitialDesktop" class="text-sm font-semibold text-blue-500">?</span>
                     </div>
-                    <span id="headerTierPillDesktop" class="px-3 py-1 border border-subtle rounded-full text-xs font-medium text-secondary whitespace-nowrap">Basic</span>
                 </div>
             </div>
             <!-- Right: Action buttons -->
@@ -261,11 +264,11 @@
                 </div>
                 <div class="w-px h-8 bg-subtle flex-shrink-0"></div>
                 <div class="flex items-center gap-2.5 flex-shrink-0">
+                    <span id="headerTierPillMobile" class="px-2.5 py-1 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
                     <button onclick="scrollToProfileCard()" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0" title="Edit profile">
                         <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
                         <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
                     </button>
-                    <span id="headerTierPillMobile" class="px-2.5 py-1 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
                 </div>
             </div>
         </div>
@@ -312,8 +315,8 @@
     </button>
     <button id="connectSmartWalletBtn" onclick="openConnectWalletModal()" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
         <i data-lucide="wallet" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="hidden sm:inline">Connect Smart Wallet</span>
-        <span class="sm:hidden">Connect</span>
+        <span class="hidden sm:inline">Connect / Create Smart Wallet</span>
+        <span class="sm:hidden">Connect / Create</span>
     </button>
     <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
         <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
@@ -561,22 +564,29 @@
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Professional Title</label>
-                        <input id="cvTitle" type="text" placeholder="e.g. Senior Product Designer" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Location</label>
-                        <input id="cvLocation" type="text" placeholder="e.g. Jakarta, Indonesia" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Professional Summary</label>
-                        <textarea id="cvSummary" rows="3" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Skills <span class="text-muted">(comma separated)</span></label>
-                        <input id="cvSkills" type="text" placeholder="Figma, React, Project Management, ..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                <!-- Personal Details - now collapsed accordion -->
+                <div class="border border-subtle rounded-xl overflow-hidden">
+                    <button onclick="toggleAccordion('cvPersonalBody')" class="w-full flex items-center justify-between p-4 bg-surface hover-surface transition">
+                        <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Personal Details</span>
+                        <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvPersonalBodyChevron"></i>
+                    </button>
+                    <div id="cvPersonalBody" class="accordion-body px-4 pb-4 space-y-3">
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Professional Title</label>
+                            <input id="cvTitle" type="text" placeholder="e.g. Senior Product Designer" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Location</label>
+                            <input id="cvLocation" type="text" placeholder="e.g. Jakarta, Indonesia" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Professional Summary</label>
+                            <textarea id="cvSummary" rows="3" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Skills <span class="text-muted">(comma separated)</span></label>
+                            <input id="cvSkills" type="text" placeholder="Figma, React, Project Management, ..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        </div>
                     </div>
                 </div>
 
@@ -699,6 +709,10 @@
                 </div>
             </div>
         </div>
+            <!-- Footer -->
+        <footer class="text-center py-6 mt-2">
+            <p class="text-xs text-muted">Developed by Netlink Labs</p>
+        </footer>
     </main>
 
     <!-- Disconnect Wallet Confirmation Modal -->
