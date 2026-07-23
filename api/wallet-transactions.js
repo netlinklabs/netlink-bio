@@ -13,6 +13,13 @@ const TOKEN_INFO = {
   '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359': { symbol: 'USDC', decimals: 6 },
 };
 
+// Sequence WaaS relayer fee address. Smart-contract wallet transactions often
+// bundle a small separate POL transfer to this address (sponsorship/relayer
+// fee) inside the SAME tx hash as a swap or send. It must be excluded from
+// swap net-amount calculations, or the "swapped" amount ends up inflated by
+// this unrelated fee.
+const RELAYER_FEE_ADDRESS = '0x7e08701cc9194ef4ffd82421dd0d986d1b43d521';
+
 function fromWei(rawValue, decimals) {
   if (!rawValue) return '0.00';
   const value = BigInt(rawValue);
@@ -94,9 +101,11 @@ export default async function handler(req, res) {
 
     // Same tx hash can produce both a top-level and an internal entry (e.g.
     // gas refund patterns) — dedupe by hash+token+type+amount so we don't
-    // double-count the same movement.
+    // double-count the same movement. Also drop legs going to the known
+    // relayer fee address so they don't inflate swap net amounts.
     const seen = new Set();
     const allLegs = [...nativeTxs, ...internalTxs, ...tokenTxs].filter((tx) => {
+      if (tx.counterparty?.toLowerCase() === RELAYER_FEE_ADDRESS) return false;
       const key = `${tx.hash}-${tx.token}-${tx.type}-${tx.amount}`;
       if (seen.has(key)) return false;
       seen.add(key);
