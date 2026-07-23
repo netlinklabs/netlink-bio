@@ -43,8 +43,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [nativeRes, tokenRes] = await Promise.all([
+    const [nativeRes, internalRes, tokenRes] = await Promise.all([
       polygonscanGet({ module: 'account', action: 'txlist', address, sort: 'desc', page: 1, offset: 20 }),
+      polygonscanGet({ module: 'account', action: 'txlistinternal', address, sort: 'desc', page: 1, offset: 20 }),
       polygonscanGet({ module: 'account', action: 'tokentx', address, sort: 'desc', page: 1, offset: 40 }),
     ]);
 
@@ -52,6 +53,21 @@ export default async function handler(req, res) {
 
     const nativeTxs = (Array.isArray(nativeRes.result) ? nativeRes.result : [])
       .filter((tx) => tx.value !== '0')
+      .map((tx) => ({
+        hash: tx.hash,
+        token: 'POL',
+        amount: fromWei(tx.value, 18),
+        type: tx.to?.toLowerCase() === lowerAddr ? 'in' : 'out',
+        counterparty: tx.to?.toLowerCase() === lowerAddr ? tx.from : tx.to,
+        timestamp: parseInt(tx.timeStamp, 10) * 1000,
+      }));
+
+    // Smart-contract wallets (Sequence WaaS) move native POL through internal
+    // calls when the transfer happens as part of a contract interaction (e.g.
+    // a swap). PolygonScan's plain `txlist` only sees top-level transactions,
+    // so those internal POL movements are invisible without this endpoint.
+    const internalTxs = (Array.isArray(internalRes.result) ? internalRes.result : [])
+      .filter((tx) => tx.value !== '0' && tx.isError === '0')
       .map((tx) => ({
         hash: tx.hash,
         token: 'POL',
@@ -76,7 +92,17 @@ export default async function handler(req, res) {
       })
       .filter(Boolean);
 
-    const merged = [...nativeTxs, ...tokenTxs]
+    // Same tx hash can produce both a top-level and an internal entry (e.g.
+    // gas refund patterns) — dedupe by hash+token+type+amount so we don't
+    // double-count the same movement.
+    const seen = new Set();
+    const merged = [...nativeTxs, ...internalTxs, ...tokenTxs]
+      .filter((tx) => {
+        const key = `${tx.hash}-${tx.token}-${tx.type}-${tx.amount}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 20);
 
