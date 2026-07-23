@@ -400,40 +400,49 @@
                 </div>
             </div>
 
-            <!-- Swap (Coming Soon) -->
+            <!-- Swap POL <-> USDC via LI.FI -->
             <div class="swap-card p-4 mb-4 relative">
-                <p class="text-xs text-muted text-center mb-3 font-medium uppercase tracking-wider">Coming Soon</p>
+                <p class="text-xs text-muted text-center mb-3 font-medium uppercase tracking-wider">Swap</p>
                 <div class="swap-inner p-4 mb-2">
                     <div class="flex items-center justify-between">
-                        <div>
+                        <div class="flex-1 min-w-0">
                             <p class="text-xs text-muted mb-1">You Pay</p>
-                            <p class="text-2xl font-bold text-primary">0.00</p>
+                            <input id="swapFromAmount" type="number" step="any" min="0" placeholder="0.00" oninput="onSwapAmountInput()" class="text-2xl font-bold text-primary bg-transparent outline-none w-full">
                         </div>
-                        <div class="flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle">
-                            <img src="/assets/usdc-logo.png" alt="USDC" class="w-6 h-6 rounded-full">
-                            <span class="text-sm font-semibold text-primary">USDC</span>
+                        <button type="button" onclick="toggleSwapTokenPicker('from')" class="flex-shrink-0 flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle">
+                            <img id="swapFromLogo" src="/assets/polygon-logo.png" alt="" class="w-6 h-6 rounded-full">
+                            <span id="swapFromSymbol" class="text-sm font-semibold text-primary">POL</span>
                             <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
-                        </div>
+                        </button>
                     </div>
+                    <p id="swapFromBalance" class="text-xs text-muted mt-2">Balance: 0.00</p>
                 </div>
                 <div class="swap-divider">
-                    <div class="swap-arrow-btn">
+                    <button type="button" onclick="flipSwapTokens()" class="swap-arrow-btn" title="Flip">
                         <i data-lucide="arrow-up-down" class="w-4 h-4 text-white"></i>
-                    </div>
+                    </button>
                 </div>
                 <div class="swap-inner p-4 mt-2">
                     <div class="flex items-center justify-between">
-                        <div>
+                        <div class="flex-1 min-w-0">
                             <p class="text-xs text-muted mb-1">You Receive</p>
-                            <p class="text-2xl font-bold text-primary">0.00</p>
+                            <p id="swapToAmount" class="text-2xl font-bold text-primary">0.00</p>
                         </div>
-                        <div class="flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle">
-                            <img src="/assets/net-logo.png" alt="NET" class="w-6 h-6 rounded-full">
-                            <span class="text-sm font-semibold text-primary">NET</span>
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
+                        <div class="flex-shrink-0 flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle opacity-70">
+                            <img id="swapToLogo" src="/assets/usdc-logo.png" alt="" class="w-6 h-6 rounded-full">
+                            <span id="swapToSymbol" class="text-sm font-semibold text-primary">USDC</span>
                         </div>
                     </div>
+                    <p id="swapToBalance" class="text-xs text-muted mt-2">Balance: 0.00</p>
                 </div>
+
+                <p id="swapRateInfo" class="text-xs text-muted text-center mt-3 hidden"></p>
+                <p id="swapErrorMsg" class="text-xs text-red-500 text-center mt-2 hidden"></p>
+
+                <button id="swapActionBtn" onclick="handleSwapAction()" disabled class="w-full mt-3 py-2.5 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
+                    Enter an amount
+                </button>
+                <p class="text-[10px] text-muted text-center mt-2">Swap rates powered by LI.FI &middot; Polygon network</p>
             </div>
 
             <!-- Alchemy Pay Ramp Widget -->
@@ -715,6 +724,7 @@
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
                 document.getElementById('balanceUsdcFiat').textContent = `= $${formatTokenAmount(data.usdc)} USD`;
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
+                if (window.renderSwapTokens) window.renderSwapTokens();
             } catch (err) {
                 console.error(err);
                 showToast('Could not fetch wallet balances');
@@ -1144,6 +1154,248 @@
                 pwaBanner.classList.add('hidden');
             }, 300);
         }
+    </script>
+
+    <!-- ========================================== -->
+    <!-- SWAP POL <-> USDC VIA LI.FI                -->
+    <!-- ========================================== -->
+    <script type="module">
+        // Reuses window.sequenceWaas (defined in the Send-flow module above)
+        // and window.currentBalances / window.currentWalletAddress.
+
+        const SWAP_TOKENS = {
+            POL:  { symbol: 'POL',  logo: '/assets/polygon-logo.png', decimals: 18, address: null },
+            USDC: { symbol: 'USDC', logo: '/assets/usdc-logo.png',    decimals: 6,  address: '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359' },
+        };
+
+        let swapFrom = 'POL';
+        let swapTo = 'USDC';
+        let swapQuoteData = null;      // last quote response from our backend
+        let swapDebounceTimer = null;
+        let swapQuoteToken = 0;        // guard against stale async responses
+
+        function getSwapBalance(sym) {
+            const b = window.currentBalances || { net: '0', usdc: '0', pol: '0' };
+            return sym === 'POL' ? b.pol : b.usdc;
+        }
+
+        function renderSwapTokens() {
+            const fromSymbolEl = document.getElementById('swapFromSymbol');
+            if (!fromSymbolEl) return; // swap card not on this page load yet
+            fromSymbolEl.textContent = swapFrom;
+            document.getElementById('swapFromLogo').src = SWAP_TOKENS[swapFrom].logo;
+            document.getElementById('swapToSymbol').textContent = swapTo;
+            document.getElementById('swapToLogo').src = SWAP_TOKENS[swapTo].logo;
+            document.getElementById('swapFromBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapFrom)).toFixed(2)}`;
+            document.getElementById('swapToBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapTo)).toFixed(2)}`;
+        }
+        window.renderSwapTokens = renderSwapTokens;
+
+        window.flipSwapTokens = function () {
+            [swapFrom, swapTo] = [swapTo, swapFrom];
+            renderSwapTokens();
+            document.getElementById('swapFromAmount').value = '';
+            resetSwapQuote();
+        };
+
+        // Simple picker: only 2 tokens exist for now, so "picking" just means
+        // flipping if the user taps the non-active side. Kept as a named hook
+        // in case more tokens get added later.
+        window.toggleSwapTokenPicker = function (side) {
+            if ((side === 'from' && swapFrom !== 'POL') || (side === 'to' && swapTo !== 'POL')) {
+                window.flipSwapTokens();
+            }
+        };
+
+        function toSwapWei(amountStr, decimals) {
+            const [whole, frac = ''] = String(amountStr).split('.');
+            const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+            const wholeBig = BigInt(whole || '0');
+            const fracBig = BigInt(fracPadded || '0');
+            return (wholeBig * (10n ** BigInt(decimals)) + fracBig).toString();
+        }
+
+        function fromSwapWei(weiStr, decimals) {
+            if (!weiStr) return '0';
+            const value = BigInt(weiStr);
+            const divisor = 10n ** BigInt(decimals);
+            const whole = value / divisor;
+            const frac = value % divisor;
+            const fracStr = frac.toString().padStart(decimals, '0').slice(0, 6).replace(/0+$/, '');
+            return fracStr ? `${whole}.${fracStr}` : whole.toString();
+        }
+
+        function resetSwapQuote() {
+            swapQuoteData = null;
+            document.getElementById('swapToAmount').textContent = '0.00';
+            document.getElementById('swapRateInfo').classList.add('hidden');
+            document.getElementById('swapErrorMsg').classList.add('hidden');
+            const btn = document.getElementById('swapActionBtn');
+            btn.disabled = true;
+            btn.textContent = 'Enter an amount';
+            btn.className = 'w-full mt-3 py-2.5 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
+        }
+
+        window.onSwapAmountInput = function () {
+            clearTimeout(swapDebounceTimer);
+            const amount = document.getElementById('swapFromAmount').value.trim();
+            const errorEl = document.getElementById('swapErrorMsg');
+            errorEl.classList.add('hidden');
+
+            if (!amount || parseFloat(amount) <= 0) {
+                resetSwapQuote();
+                return;
+            }
+
+            const balance = parseFloat(getSwapBalance(swapFrom));
+            if (parseFloat(amount) > balance) {
+                resetSwapQuote();
+                errorEl.textContent = 'Insufficient balance.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            const btn = document.getElementById('swapActionBtn');
+            btn.disabled = true;
+            btn.textContent = 'Fetching quote...';
+            btn.className = 'w-full mt-3 py-2.5 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
+
+            swapDebounceTimer = setTimeout(fetchSwapQuote, 600);
+        };
+
+        async function fetchSwapQuote() {
+            const myToken = ++swapQuoteToken;
+            const amount = document.getElementById('swapFromAmount').value.trim();
+            const errorEl = document.getElementById('swapErrorMsg');
+            const address = window.currentWalletAddress;
+
+            if (!address) { errorEl.textContent = 'No wallet connected.'; errorEl.classList.remove('hidden'); return; }
+
+            try {
+                const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
+                const url = `/api/lifi-quote?fromToken=${swapFrom}&toToken=${swapTo}&fromAmount=${fromAmountWei}&fromAddress=${address}`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (myToken !== swapQuoteToken) return; // a newer request superseded this one
+
+                if (!res.ok) throw new Error(data.error || 'Quote failed');
+
+                swapQuoteData = data;
+                const toAmountReadable = fromSwapWei(data.toAmount, SWAP_TOKENS[swapTo].decimals);
+                document.getElementById('swapToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
+
+                const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
+                const rateInfo = document.getElementById('swapRateInfo');
+                rateInfo.textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
+                rateInfo.classList.remove('hidden');
+
+                const btn = document.getElementById('swapActionBtn');
+                btn.disabled = false;
+                btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
+                btn.className = 'w-full mt-3 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm';
+            } catch (err) {
+                if (myToken !== swapQuoteToken) return;
+                console.error(err);
+                errorEl.textContent = 'Could not get a quote right now — try again.';
+                errorEl.classList.remove('hidden');
+                resetSwapQuote();
+            }
+        }
+
+        function encodeSwapErc20Approve(spender, valueWei) {
+            const spenderPadded = spender.toLowerCase().replace('0x', '').padStart(64, '0');
+            const valueHex = BigInt(valueWei).toString(16).padStart(64, '0');
+            return '0x095ea7b3' + spenderPadded + valueHex;
+        }
+
+        // ERC20 allowance(owner, spender) — read-only call via public RPC so we
+        // only prompt for an approve tx when the current allowance is actually
+        // insufficient (skips an unnecessary approve on repeat swaps).
+        async function getSwapAllowance(owner, spender, tokenAddress) {
+            const data = '0xdd62ed3e'
+                + owner.toLowerCase().replace('0x', '').padStart(64, '0')
+                + spender.toLowerCase().replace('0x', '').padStart(64, '0');
+            const res = await fetch('https://polygon-rpc.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: tokenAddress, data }, 'latest'] }),
+            });
+            const json = await res.json();
+            return BigInt(json.result || '0x0');
+        }
+
+        window.handleSwapAction = async function () {
+            if (!swapQuoteData) return;
+            const btn = document.getElementById('swapActionBtn');
+            const errorEl = document.getElementById('swapErrorMsg');
+            errorEl.classList.add('hidden');
+            btn.disabled = true;
+
+            try {
+                const amount = document.getElementById('swapFromAmount').value.trim();
+                const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
+                const fromTokenInfo = SWAP_TOKENS[swapFrom];
+
+                // Approve step only needed when paying with an ERC20 (USDC).
+                // Native POL doesn't need approval.
+                if (fromTokenInfo.address) {
+                    btn.textContent = 'Checking approval...';
+                    const allowance = await getSwapAllowance(
+                        window.currentWalletAddress,
+                        swapQuoteData.approvalAddress,
+                        fromTokenInfo.address
+                    );
+                    if (allowance < BigInt(fromAmountWei)) {
+                        btn.textContent = 'Approve in wallet...';
+                        const approveData = encodeSwapErc20Approve(swapQuoteData.approvalAddress, fromAmountWei);
+                        await executeSwapTx({ to: fromTokenInfo.address, data: approveData, value: '0' });
+                    }
+                }
+
+                btn.textContent = 'Swapping...';
+                const tr = swapQuoteData.transactionRequest;
+                await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
+
+                showToast(`Swapped ${amount} ${swapFrom} to ${swapTo}!`);
+                document.getElementById('swapFromAmount').value = '';
+                resetSwapQuote();
+
+                setTimeout(() => {
+                    if (window.currentWalletAddress) {
+                        fetchWalletBalances(window.currentWalletAddress);
+                        fetchTransactionHistory(window.currentWalletAddress);
+                    }
+                }, 4500);
+            } catch (err) {
+                console.error(err);
+                errorEl.textContent = String(err?.message || 'Swap failed — please try again.');
+                errorEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
+            }
+        };
+
+        async function executeSwapTx(transaction) {
+            const resp = await window.sequenceWaas.feeOptions({ network: 'polygon', transactions: [transaction] });
+            const feeOptions = resp.data?.feeOptions;
+            if (!feeOptions || feeOptions.length === 0) throw new Error('No gas fee options available right now.');
+            const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
+
+            const tx = await window.sequenceWaas.sendTransaction({
+                network: 'polygon',
+                transactions: [transaction],
+                transactionsFeeOption: polFeeOption,
+                transactionsFeeQuote: resp.data?.feeQuote,
+            });
+            if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
+                throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
+            }
+            return tx;
+        }
+
+        renderSwapTokens();
+        resetSwapQuote();
     </script>
 </body>
 </html>
