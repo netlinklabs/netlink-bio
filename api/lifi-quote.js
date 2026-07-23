@@ -11,7 +11,7 @@ const LIFI_FEE_PERCENT = 0.005; // 0.5% — ubah di sini kalau mau beda
 // Native POL uses this placeholder address on LI.FI's API (standard across
 // most aggregators for native gas tokens).
 const NATIVE_POL = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-const USDC_CONTRACT = '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359';
+const USDC_CONTRACT = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359';
 const POLYGON_CHAIN_ID = 137;
 
 const TOKEN_ADDRESS = { POL: NATIVE_POL, USDC: USDC_CONTRACT };
