@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netlink Pay</title>
-    
-    <!-- Link ke File Manifest PWA -->
+
     <link rel="manifest" href="manifest.json">
-    
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -73,7 +71,6 @@
         .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); }
 
-        /* USDC Premium Card */
         .usdc-card {
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
             position: relative;
@@ -104,7 +101,6 @@
             pointer-events: none;
         }
 
-        /* Token cards - blue theme */
         .token-card {
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
             position: relative;
@@ -124,7 +120,6 @@
             pointer-events: none;
         }
 
-        /* Tier badge styles */
         .tier-badge {
             border: 1.5px solid rgba(255,255,255,0.4);
             background: rgba(255,255,255,0.1);
@@ -135,7 +130,6 @@
         .tier-badge-gold { border-color: rgba(251, 191, 36, 0.5); background: rgba(251, 191, 36, 0.15); }
         .tier-badge-platinum { border-color: rgba(167, 139, 250, 0.5); background: rgba(167, 139, 250, 0.15); }
 
-        /* Wallet address card */
         .wallet-bar {
             background: #e2e8f0;
             border-radius: 20px;
@@ -145,41 +139,166 @@
             border: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* Swap card */
+        /* === ELEGANT SWAP CARD === */
         .swap-card {
-            background: #e2e8f0;
+            background: #e8ecf1;
             border-radius: 24px;
             position: relative;
+            border: 1px solid rgba(0,0,0,0.04);
         }
         html.dark .swap-card {
-            background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.05);
+            background: #1a2236;
+            border: 1px solid rgba(255,255,255,0.06);
         }
         .swap-inner {
             background: #ffffff;
             border-radius: 20px;
             border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
         }
         html.dark .swap-inner {
             background: #0f172a;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .swap-divider {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
+        .swap-inner:hover {
+            border-color: rgba(14, 165, 233, 0.2);
         }
-        .swap-arrow-btn {
-            width: 40px;
-            height: 40px;
+
+        .swap-flip-btn {
+            position: relative;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: #475569;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border: 3px solid #e8ecf1;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.35), 0 0 0 4px rgba(14, 165, 233, 0.08);
+            z-index: 10;
+        }
+        html.dark .swap-flip-btn {
+            border-color: #1a2236;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25), 0 0 0 4px rgba(14, 165, 233, 0.06);
+        }
+        .swap-flip-btn:hover {
+            transform: rotate(180deg) scale(1.08);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45), 0 0 0 6px rgba(14, 165, 233, 0.1);
+        }
+        .swap-flip-btn:active {
+            transform: rotate(180deg) scale(0.95);
+        }
+        .swap-flip-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .swap-confirm-modal {
+            max-width: 400px;
+            width: 100%;
+        }
+        .swap-details-card {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(2, 132, 199, 0.03) 100%);
+            border: 1px solid rgba(14, 165, 233, 0.12);
+            border-radius: 16px;
+        }
+        html.dark .swap-details-card {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(2, 132, 199, 0.04) 100%);
+            border: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        .swipe-container {
+            position: relative;
+            width: 100%;
+            height: 56px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border-radius: 28px;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+        .swipe-track {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .swipe-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .swipe-hint-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            letter-spacing: 0.5px;
+        }
+        .swipe-hint-arrows {
+            display: flex;
+            align-items: center;
+        }
+        .swipe-thumb {
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: left 0.1s ease-out, background 0.3s ease;
+            z-index: 2;
+        }
+        .swipe-thumb i {
+            color: #0284c7;
+            transition: transform 0.3s ease;
+        }
+        .swipe-thumb:active {
+            cursor: grabbing;
+            transform: translateY(-50%) scale(1.05);
+        }
+        .swipe-thumb.dragging i {
+            transform: translateX(2px);
+        }
+        .swipe-success {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .swipe-success.show {
+            opacity: 1;
+        }
+        .swipe-container.confirmed {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .swipe-container.confirmed .swipe-thumb {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .swipe-container.confirmed .swipe-hint {
+            opacity: 0;
         }
 
         .tx-row { transition: background 0.15s; }
@@ -205,8 +324,7 @@
     </style>
 </head>
 <body class="min-h-screen">
-
-    <!-- PWA Install Banner (Muncul dari atas) -->
+    <!-- PWA Install Banner -->
     <div id="pwa-install-banner" class="fixed top-0 left-0 right-0 card shadow-lg z-[9999] transform -translate-y-full transition-transform duration-300 hidden">
         <div class="flex items-center justify-between p-4 max-w-4xl mx-auto">
             <div class="flex items-center gap-3">
@@ -217,12 +335,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <button id="pwa-install-btn" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-md transition-colors">
-                    Install
-                </button>
-                <button id="pwa-close-btn" class="text-secondary hover:text-primary transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button id="pwa-install-btn" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-md transition-colors">Install</button>
+                <button id="pwa-close-btn" class="text-secondary hover:text-primary transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
         </div>
     </div>
@@ -316,7 +430,6 @@
             <!-- USDC Premium Card -->
             <div class="usdc-card p-6 lg:p-8 mb-4 text-white relative">
                 <div class="relative z-10">
-                    <!-- Header: Title + Logo -->
                     <div class="flex items-start justify-between mb-4">
                         <div>
                             <p class="text-white font-semibold text-lg">USDC Balance</p>
@@ -324,8 +437,6 @@
                         </div>
                         <img id="usdcCardLogo" src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-16 w-auto opacity-90">
                     </div>
-
-                    <!-- Balance -->
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
                             <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
@@ -335,8 +446,6 @@
                             <p id="balanceUsdcFiat" class="text-white/60 text-sm">= $0.00 USD</p>
                         </div>
                     </div>
-
-                    <!-- ID + Tier Badge -->
                     <div class="flex items-center justify-between">
                         <p id="cardIdDisplay" class="text-white/70 text-xs font-mono">ID: NET-000000000000</p>
                         <span id="cardTierBadge" class="tier-badge px-4 py-1.5 rounded-full text-xs font-semibold text-white">Basic</span>
@@ -385,7 +494,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="token-card p-5 text-white relative">
                     <div class="relative z-10">
                         <p class="text-white font-semibold text-lg mb-0.5">POL</p>
@@ -401,15 +509,22 @@
             </div>
 
             <!-- Swap POL <-> USDC via LI.FI -->
-            <div class="swap-card p-4 mb-4 relative">
-                <p class="text-xs text-muted text-center mb-3 font-medium uppercase tracking-wider">Swap</p>
-                <div class="swap-inner p-4 mb-2">
+            <div class="swap-card p-5 mb-5 relative">
+                <div class="flex items-center justify-center gap-2 mb-4">
+                    <div class="w-7 h-7 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                        <i data-lucide="arrow-left-right" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <p class="text-sm font-semibold text-primary">Swap Tokens</p>
+                </div>
+
+                <!-- You Pay -->
+                <div class="swap-inner p-4 mb-1 relative z-[2]">
                     <div class="flex items-center justify-between">
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs text-muted mb-1">You Pay</p>
-                            <input id="swapFromAmount" type="number" step="any" min="0" placeholder="0.00" oninput="onSwapAmountInput()" class="text-2xl font-bold text-primary bg-transparent outline-none w-full">
+                            <p class="text-xs text-muted mb-1 font-medium">You Pay</p>
+                            <input id="swapFromAmount" type="number" step="any" min="0" placeholder="0.00" oninput="onSwapAmountInput()" class="text-2xl font-bold text-primary bg-transparent outline-none w-full placeholder:text-muted/50">
                         </div>
-                        <button type="button" onclick="toggleSwapTokenPicker('from')" class="flex-shrink-0 flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle">
+                        <button type="button" onclick="toggleSwapTokenPicker('from')" class="flex-shrink-0 flex items-center gap-2 bg-surface hover:bg-surface/80 px-3 py-2 rounded-full border border-subtle transition-colors">
                             <img id="swapFromLogo" src="/assets/polygon-logo.png" alt="" class="w-6 h-6 rounded-full">
                             <span id="swapFromSymbol" class="text-sm font-semibold text-primary">POL</span>
                             <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
@@ -417,15 +532,21 @@
                     </div>
                     <p id="swapFromBalance" class="text-xs text-muted mt-2">Balance: 0.00</p>
                 </div>
-                <div class="swap-divider">
-                    <button type="button" onclick="flipSwapTokens()" class="swap-arrow-btn" title="Flip">
-                        <i data-lucide="arrow-up-down" class="w-4 h-4 text-white"></i>
+
+                <!-- Swap Flip Button - Centered Divider -->
+                <div class="flex justify-center -my-3 relative z-[5]">
+                    <button type="button" onclick="flipSwapTokens()" class="swap-flip-btn" title="Flip tokens">
+                        <div class="swap-flip-inner">
+                            <i data-lucide="arrow-up-down" class="w-4 h-4 text-white"></i>
+                        </div>
                     </button>
                 </div>
-                <div class="swap-inner p-4 mt-2">
+
+                <!-- You Receive -->
+                <div class="swap-inner p-4 mt-1 relative z-[2]">
                     <div class="flex items-center justify-between">
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs text-muted mb-1">You Receive</p>
+                            <p class="text-xs text-muted mb-1 font-medium">You Receive</p>
                             <p id="swapToAmount" class="text-2xl font-bold text-primary">0.00</p>
                         </div>
                         <div class="flex-shrink-0 flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle opacity-70">
@@ -436,13 +557,13 @@
                     <p id="swapToBalance" class="text-xs text-muted mt-2">Balance: 0.00</p>
                 </div>
 
-                <p id="swapRateInfo" class="text-xs text-muted text-center mt-3 hidden"></p>
+                <p id="swapRateInfo" class="text-xs text-muted text-center mt-4 hidden"></p>
                 <p id="swapErrorMsg" class="text-xs text-red-500 text-center mt-2 hidden"></p>
 
-                <button id="swapActionBtn" onclick="handleSwapAction()" disabled class="w-full mt-3 py-2.5 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
+                <button id="swapActionBtn" onclick="openSwapConfirmModal()" disabled class="w-full mt-4 py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl transition text-sm cursor-not-allowed">
                     Enter an amount
                 </button>
-                <p class="text-[10px] text-muted text-center mt-2">Swap rates powered by LI.FI &middot; Polygon network</p>
+                <p class="text-[10px] text-muted text-center mt-3">Swap rates powered by LI.FI &middot; Polygon network</p>
             </div>
 
             <!-- Alchemy Pay Ramp Widget -->
@@ -457,14 +578,7 @@
                     </div>
                 </div>
                 <div class="rounded-xl overflow-hidden border border-subtle" style="height: 520px;">
-                    <iframe
-                        id="alchemyRampFrame"
-                        allow="accelerometer; autoplay; camera; gyroscope; payment"
-                        width="100%"
-                        height="100%"
-                        frameborder="0"
-                        title="Alchemy Pay Ramp"
-                    ></iframe>
+                    <iframe id="alchemyRampFrame" allow="accelerometer; autoplay; camera; gyroscope; payment" width="100%" height="100%" frameborder="0" title="Alchemy Pay Ramp"></iframe>
                 </div>
                 <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by Alchemy Pay.</p>
             </div>
@@ -498,6 +612,85 @@
             <p class="text-xs text-muted">Developed by Netlink Labs</p>
         </footer>
     </main>
+    <!-- Swap Confirmation Modal -->
+    <div id="swapConfirmModal" class="modal-overlay" onclick="if(event.target===this) closeSwapConfirmModal()">
+        <div class="modal-box swap-confirm-modal">
+            <button class="modal-close" onclick="closeSwapConfirmModal()">&times;</button>
+
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
+                </div>
+                <h3 class="font-bold text-primary text-lg">Confirm Swap</h3>
+                <p class="text-xs text-muted mt-1">Review your transaction details</p>
+            </div>
+
+            <!-- Swap Details Card -->
+            <div class="swap-details-card p-4 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <img id="confirmFromLogo" src="/assets/polygon-logo.png" alt="" class="w-6 h-6 rounded-full">
+                        <span id="confirmFromSymbol" class="text-sm font-semibold text-primary">POL</span>
+                    </div>
+                    <span id="confirmFromAmount" class="text-lg font-bold text-primary">0.00</span>
+                </div>
+
+                <div class="flex justify-center my-2">
+                    <div class="w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center">
+                        <i data-lucide="arrow-down" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <img id="confirmToLogo" src="/assets/usdc-logo.png" alt="" class="w-6 h-6 rounded-full">
+                        <span id="confirmToSymbol" class="text-sm font-semibold text-primary">USDC</span>
+                    </div>
+                    <span id="confirmToAmount" class="text-lg font-bold text-emerald-500">0.00</span>
+                </div>
+            </div>
+
+            <!-- Rate & Slippage Info -->
+            <div class="bg-surface rounded-xl p-3 mb-4 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-muted">Rate</span>
+                    <span id="confirmRate" class="text-xs font-medium text-primary">—</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-muted">Slippage Tolerance</span>
+                    <span class="text-xs font-semibold text-blue-500">0.5%</span>
+                </div>
+                <div class="border-t border-subtle pt-2 mt-2">
+                    <p class="text-[11px] text-muted leading-relaxed">
+                        <i data-lucide="info" class="w-3 h-3 inline-block mr-1 text-blue-500"></i>
+                        Slippage tolerance adalah batas perbedaan harga yang dapat Anda terima. Jika harga berubah lebih dari 0.5% saat transaksi diproses, transaksi akan dibatalkan untuk melindungi dana Anda.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Swipe to Confirm -->
+            <div class="swipe-container" id="swipeContainer">
+                <div class="swipe-track">
+                    <div class="swipe-hint">
+                        <span class="swipe-hint-text">Slide to Swap Now</span>
+                        <div class="swipe-hint-arrows">
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-white/60"></i>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-white/40 -ml-2"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="swipe-thumb" id="swipeThumb">
+                    <i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>
+                </div>
+                <div class="swipe-success" id="swipeSuccess">
+                    <i data-lucide="check" class="w-5 h-5 text-white"></i>
+                    <span class="text-sm font-semibold text-white ml-2">Confirmed!</span>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-muted text-center mt-3">Swipe the button to the right to confirm</p>
+        </div>
+    </div>
 
     <!-- Receive Modal -->
     <div id="receiveModal" class="modal-overlay" onclick="if(event.target===this) closeReceiveModal()">
@@ -558,7 +751,6 @@
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
@@ -596,10 +788,6 @@
             window.location.href = 'login.html';
         }
 
-        // NET ID adalah identitas permanen tersimpan di profiles.net_id, cth.
-        // "NET1234567890" -- prefix "NET" dan 10 digitnya adalah bagian dari
-        // nilai yang tersimpan (branding melekat), tidak pernah dihitung ulang.
-        // Strip di bawah cuma kosmetik, ditambahkan saat render.
         function formatNetId(rawId) {
             if (!rawId) return 'ID: —';
             const digits = rawId.replace(/^NET/i, '');
@@ -685,7 +873,7 @@
                 network: 'POLYGON',
                 fiat: 'IDR',
                 theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-                address, // Alamat kita kirimkan, biarpun Alchemy mungkin menolaknya jika tanpa API Key, ini amannya sesuai kodenya
+                address,
             });
             iframe.src = `${baseUrl}?${params.toString()}`;
         }
@@ -717,9 +905,7 @@
             try {
                 const url = `/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
                 const data = await fetchWithRetry(url);
-
                 window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
-
                 document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
                 document.getElementById('balanceUsdcFiat').textContent = `= $${formatTokenAmount(data.usdc)} USD`;
@@ -738,18 +924,14 @@
                 const url = `/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
                 const data = await fetchWithRetry(url);
                 const txs = data.transactions || [];
-
                 badge.textContent = txs.length;
-
                 if (txs.length === 0) {
                     list.innerHTML = '<div class="p-6 text-center text-sm text-muted">No transactions yet.</div>';
                     return;
                 }
-
                 list.innerHTML = txs.map((tx) => {
                     const timeAgo = formatTimeAgo(tx.timestamp);
                     const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
-
                     if (tx.type === 'swap') {
                         return `
                             <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
@@ -770,13 +952,11 @@
                             </a>
                         `;
                     }
-
                     const isIn = tx.type === 'in';
                     const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
                     const colorClass = isIn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500';
                     const amountClass = isIn ? 'tx-amount-in' : 'tx-amount-out';
                     const sign = isIn ? '+' : '-';
-
                     return `
                         <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
                             <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center flex-shrink-0">
@@ -796,7 +976,6 @@
                         </a>
                     `;
                 }).join('');
-
                 lucide.createIcons();
             } catch (err) {
                 console.error(err);
@@ -874,7 +1053,6 @@
         initTheme();
         checkAuth();
     </script>
-
     <script type="module">
         import { SequenceWaaS, isSentTransactionResponse } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
 
@@ -974,7 +1152,6 @@
             const token = document.getElementById('sendTokenSelect').value;
             const balance = getBalanceForToken(token);
             document.getElementById('sendTokenBalance').textContent = `Balance: ${parseFloat(balance).toFixed(2)} ${token}`;
-
             const polBalance = parseFloat(getBalanceForToken('POL'));
             const gasWarning = document.getElementById('gasWarning');
             const continueBtn = document.getElementById('sendContinueBtn');
@@ -988,9 +1165,9 @@
                 continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         };
-        
+
         window.sequenceWaas = sequenceWaas;
-        
+
         function showSendError(msg) {
             const el = document.getElementById('sendFormError');
             el.textContent = msg;
@@ -1003,7 +1180,6 @@
             const amount = document.getElementById('sendAmount').value.trim();
             const errorEl = document.getElementById('sendFormError');
             errorEl.classList.add('hidden');
-
             if (!/^0x[a-fA-F0-9]{40}$/.test(to)) {
                 showSendError('Invalid recipient address.');
                 return;
@@ -1025,7 +1201,6 @@
                     return;
                 }
             }
-
             document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
             document.getElementById('confirmToAddress').textContent = to;
             document.getElementById('sendConfirmStatus').textContent = 'Confirm with Google to authorize this transfer.';
@@ -1048,35 +1223,28 @@
         async function performTransfer(token, to, valueWei) {
             const config = TOKEN_CONFIG[token];
             let transactions = [];
-            
             if (token === 'POL') {
                 transactions = [{ to: to, value: valueWei }];
             } else {
                 const data = encodeErc20Transfer(to, valueWei);
                 transactions = [{ to: config.address, data: data, value: '0' }];
             }
-
             const resp = await sequenceWaas.feeOptions({ 
                 network: 'polygon', 
                 transactions: transactions 
             });
-
             const feeQuote = resp.data?.feeQuote;
             const feeOptions = resp.data?.feeOptions;
-
             if (!feeOptions || feeOptions.length === 0) {
                 throw new Error('Opsi pembayaran gas tidak tersedia dari relayer saat ini.');
             }
-
             const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
-
             const tx = await sequenceWaas.sendTransaction({
                 network: 'polygon',
                 transactions: transactions,
                 transactionsFeeOption: polFeeOption,
                 transactionsFeeQuote: feeQuote
             });
-
             if (!isSentTransactionResponse(tx)) {
                 console.error('Sequence did not return a sent-transaction response:', tx);
                 throw new Error('Transaction was not sent — please try again.');
@@ -1095,22 +1263,17 @@
             const statusEl = document.getElementById('sendConfirmStatus');
             const config = TOKEN_CONFIG[token];
             const valueWei = toWei(amount, config.decimals);
-
             statusEl.textContent = 'Sending...';
-
             try {
                 await performTransfer(token, to, valueWei);
                 showToast(`Sent ${amount} ${token}!`);
                 closeSendModal();
-                
-                // Jeda 4.5 detik agar transaksi tercatat oleh blockchain
                 setTimeout(() => {
                     if (window.currentWalletAddress) {
                         fetchWalletBalances(window.currentWalletAddress);
                         fetchTransactionHistory(window.currentWalletAddress);
                     }
                 }, 4500);
-
             } catch (err) {
                 console.error(err);
                 const msg = String(err?.message || err || '');
@@ -1120,71 +1283,10 @@
             }
         }
     </script>
-    
-    <!-- ========================================== -->
-    <!-- LOGIKA PWA (SERVICE WORKER & BANNER)       -->
-    <!-- ========================================== -->
-    <script>
-        // Registrasi Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Terdaftar!'))
-                    .catch(err => console.log('Gagal mendaftar Service Worker', err));
-            });
-        }
-
-        // Variabel untuk mengontrol Popup Install
-        let deferredPrompt;
-        const pwaBanner = document.getElementById('pwa-install-banner');
-        const installBtn = document.getElementById('pwa-install-btn');
-        const closeBtn = document.getElementById('pwa-close-btn');
-
-        // Menangkap event sebelum prompt install bawaan browser muncul
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // Tampilkan custom banner dari atas
-            pwaBanner.classList.remove('hidden');
-            setTimeout(() => {
-                pwaBanner.classList.remove('-translate-y-full');
-            }, 100);
-        });
-
-        // Eksekusi saat tombol Install diklik
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('User menginstal aplikasi Netlink Pay');
-                }
-                deferredPrompt = null;
-                hidePwaBanner();
-            }
-        });
-
-        // Tutup banner jika tidak mau install
-        closeBtn.addEventListener('click', () => {
-            hidePwaBanner();
-        });
-
-        function hidePwaBanner() {
-            pwaBanner.classList.add('-translate-y-full');
-            setTimeout(() => {
-                pwaBanner.classList.add('hidden');
-            }, 300);
-        }
-    </script>
-
     <!-- ========================================== -->
     <!-- SWAP POL <-> USDC VIA LI.FI                -->
     <!-- ========================================== -->
     <script type="module">
-        // Reuses window.sequenceWaas (defined in the Send-flow module above)
-        // and window.currentBalances / window.currentWalletAddress.
-
         const SWAP_TOKENS = {
             POL:  { symbol: 'POL',  logo: '/assets/polygon-logo.png', decimals: 18, address: null },
             USDC: { symbol: 'USDC', logo: '/assets/usdc-logo.png',    decimals: 6,  address: '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359' },
@@ -1192,9 +1294,9 @@
 
         let swapFrom = 'POL';
         let swapTo = 'USDC';
-        let swapQuoteData = null;      // last quote response from our backend
+        let swapQuoteData = null;
         let swapDebounceTimer = null;
-        let swapQuoteToken = 0;        // guard against stale async responses
+        let swapQuoteToken = 0;
 
         function getSwapBalance(sym) {
             const b = window.currentBalances || { net: '0', usdc: '0', pol: '0' };
@@ -1203,7 +1305,7 @@
 
         function renderSwapTokens() {
             const fromSymbolEl = document.getElementById('swapFromSymbol');
-            if (!fromSymbolEl) return; // swap card not on this page load yet
+            if (!fromSymbolEl) return;
             fromSymbolEl.textContent = swapFrom;
             document.getElementById('swapFromLogo').src = SWAP_TOKENS[swapFrom].logo;
             document.getElementById('swapToSymbol').textContent = swapTo;
@@ -1220,9 +1322,6 @@
             resetSwapQuote();
         };
 
-        // Simple picker: only 2 tokens exist for now, so "picking" just means
-        // flipping if the user taps the non-active side. Kept as a named hook
-        // in case more tokens get added later.
         window.toggleSwapTokenPicker = function (side) {
             if ((side === 'from' && swapFrom !== 'POL') || (side === 'to' && swapTo !== 'POL')) {
                 window.flipSwapTokens();
@@ -1255,7 +1354,7 @@
             const btn = document.getElementById('swapActionBtn');
             btn.disabled = true;
             btn.textContent = 'Enter an amount';
-            btn.className = 'w-full mt-3 py-2.5 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
+            btn.className = 'w-full mt-4 py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl transition text-sm cursor-not-allowed';
         }
 
         window.onSwapAmountInput = function () {
@@ -1263,12 +1362,10 @@
             const amount = document.getElementById('swapFromAmount').value.trim();
             const errorEl = document.getElementById('swapErrorMsg');
             errorEl.classList.add('hidden');
-
             if (!amount || parseFloat(amount) <= 0) {
                 resetSwapQuote();
                 return;
             }
-
             const balance = parseFloat(getSwapBalance(swapFrom));
             if (parseFloat(amount) > balance) {
                 resetSwapQuote();
@@ -1276,12 +1373,10 @@
                 errorEl.classList.remove('hidden');
                 return;
             }
-
             const btn = document.getElementById('swapActionBtn');
             btn.disabled = true;
             btn.textContent = 'Fetching quote...';
-            btn.className = 'w-full mt-3 py-2.5 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
-
+            btn.className = 'w-full mt-4 py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl transition text-sm cursor-not-allowed';
             swapDebounceTimer = setTimeout(fetchSwapQuote, 600);
         };
 
@@ -1290,32 +1385,25 @@
             const amount = document.getElementById('swapFromAmount').value.trim();
             const errorEl = document.getElementById('swapErrorMsg');
             const address = window.currentWalletAddress;
-
             if (!address) { errorEl.textContent = 'No wallet connected.'; errorEl.classList.remove('hidden'); return; }
-
             try {
                 const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
                 const url = `/api/lifi-quote?fromToken=${swapFrom}&toToken=${swapTo}&fromAmount=${fromAmountWei}&fromAddress=${address}`;
                 const res = await fetch(url);
                 const data = await res.json();
-
-                if (myToken !== swapQuoteToken) return; // a newer request superseded this one
-
+                if (myToken !== swapQuoteToken) return;
                 if (!res.ok) throw new Error(data.error || 'Quote failed');
-
                 swapQuoteData = data;
                 const toAmountReadable = fromSwapWei(data.toAmount, SWAP_TOKENS[swapTo].decimals);
                 document.getElementById('swapToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
-
                 const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
                 const rateInfo = document.getElementById('swapRateInfo');
                 rateInfo.textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
                 rateInfo.classList.remove('hidden');
-
                 const btn = document.getElementById('swapActionBtn');
                 btn.disabled = false;
                 btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
-                btn.className = 'w-full mt-3 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm';
+                btn.className = 'w-full mt-4 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition text-sm';
             } catch (err) {
                 if (myToken !== swapQuoteToken) return;
                 console.error(err);
@@ -1331,9 +1419,6 @@
             return '0x095ea7b3' + spenderPadded + valueHex;
         }
 
-        // ERC20 allowance(owner, spender) — read-only call via public RPC so we
-        // only prompt for an approve tx when the current allowance is actually
-        // insufficient (skips an unnecessary approve on repeat swaps).
         async function getSwapAllowance(owner, spender, tokenAddress) {
             const data = '0xdd62ed3e'
                 + owner.toLowerCase().replace('0x', '').padStart(64, '0')
@@ -1347,20 +1432,132 @@
             return BigInt(json.result || '0x0');
         }
 
+        // === SWAP CONFIRMATION MODAL & SWIPE BUTTON ===
+        let isSwiping = false;
+        let swipeStartX = 0;
+        let swipeCurrentX = 0;
+        const SWIPE_THRESHOLD = 0.75;
+
+        window.openSwapConfirmModal = function () {
+            if (!swapQuoteData) return;
+            const amount = document.getElementById('swapFromAmount').value.trim();
+            const toAmount = document.getElementById('swapToAmount').textContent;
+            document.getElementById('confirmFromAmount').textContent = amount;
+            document.getElementById('confirmFromSymbol').textContent = swapFrom;
+            document.getElementById('confirmFromLogo').src = SWAP_TOKENS[swapFrom].logo;
+            document.getElementById('confirmToAmount').textContent = toAmount;
+            document.getElementById('confirmToSymbol').textContent = swapTo;
+            document.getElementById('confirmToLogo').src = SWAP_TOKENS[swapTo].logo;
+            const rate = (parseFloat(toAmount) / parseFloat(amount)).toFixed(6);
+            document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
+            resetSwipeState();
+            document.getElementById('swapConfirmModal').classList.add('active');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeSwapConfirmModal = function () {
+            document.getElementById('swapConfirmModal').classList.remove('active');
+            resetSwipeState();
+        };
+
+        function resetSwipeState() {
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            const success = document.getElementById('swipeSuccess');
+            container.classList.remove('confirmed');
+            thumb.style.left = '4px';
+            thumb.classList.remove('dragging');
+            success.classList.remove('show');
+            isSwiping = false;
+            const hint = container.querySelector('.swipe-hint');
+            if (hint) hint.style.opacity = '1';
+        }
+
+        function initSwipeButton() {
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            if (!container || !thumb) return;
+            thumb.addEventListener('mousedown', onSwipeStart);
+            document.addEventListener('mousemove', onSwipeMove);
+            document.addEventListener('mouseup', onSwipeEnd);
+            thumb.addEventListener('touchstart', onSwipeStart, { passive: false });
+            document.addEventListener('touchmove', onSwipeMove, { passive: false });
+            document.addEventListener('touchend', onSwipeEnd);
+        }
+
+        function onSwipeStart(e) {
+            e.preventDefault();
+            isSwiping = true;
+            const thumb = document.getElementById('swipeThumb');
+            thumb.classList.add('dragging');
+            swipeStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            swipeCurrentX = swipeStartX;
+        }
+
+        function onSwipeMove(e) {
+            if (!isSwiping) return;
+            e.preventDefault();
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            const containerWidth = container.offsetWidth;
+            const thumbWidth = thumb.offsetWidth;
+            const maxLeft = containerWidth - thumbWidth - 8;
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const deltaX = clientX - swipeStartX;
+            let newLeft = 4 + deltaX;
+            newLeft = Math.max(4, Math.min(newLeft, maxLeft));
+            thumb.style.left = newLeft + 'px';
+            const progress = (newLeft - 4) / maxLeft;
+            const hint = container.querySelector('.swipe-hint');
+            if (hint) hint.style.opacity = Math.max(0, 1 - progress * 2);
+        }
+
+        function onSwipeEnd(e) {
+            if (!isSwiping) return;
+            isSwiping = false;
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            const containerWidth = container.offsetWidth;
+            const thumbWidth = thumb.offsetWidth;
+            const maxLeft = containerWidth - thumbWidth - 8;
+            const currentLeft = parseFloat(thumb.style.left) || 4;
+            const progress = (currentLeft - 4) / maxLeft;
+            thumb.classList.remove('dragging');
+            if (progress >= SWIPE_THRESHOLD) {
+                thumb.style.left = maxLeft + 'px';
+                container.classList.add('confirmed');
+                document.getElementById('swipeSuccess').classList.add('show');
+                setTimeout(() => {
+                    closeSwapConfirmModal();
+                    executeSwapFromModal();
+                }, 600);
+            } else {
+                thumb.style.transition = 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                thumb.style.left = '4px';
+                const hint = container.querySelector('.swipe-hint');
+                if (hint) hint.style.opacity = '1';
+                setTimeout(() => {
+                    thumb.style.transition = 'left 0.1s ease-out, background 0.3s ease';
+                }, 300);
+            }
+        }
+
+        async function executeSwapFromModal() {
+            await handleSwapAction();
+        }
+
+        document.addEventListener('DOMContentLoaded', initSwipeButton);
+
         window.handleSwapAction = async function () {
             if (!swapQuoteData) return;
             const btn = document.getElementById('swapActionBtn');
             const errorEl = document.getElementById('swapErrorMsg');
             errorEl.classList.add('hidden');
             btn.disabled = true;
-
             try {
                 const amount = document.getElementById('swapFromAmount').value.trim();
                 const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
                 const fromTokenInfo = SWAP_TOKENS[swapFrom];
-
-                // Approve step only needed when paying with an ERC20 (USDC).
-                // Native POL doesn't need approval.
                 if (fromTokenInfo.address) {
                     btn.textContent = 'Checking approval...';
                     const allowance = await getSwapAllowance(
@@ -1374,15 +1571,12 @@
                         await executeSwapTx({ to: fromTokenInfo.address, data: approveData, value: '0' });
                     }
                 }
-
                 btn.textContent = 'Swapping...';
                 const tr = swapQuoteData.transactionRequest;
                 await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
-
                 showToast(`Swapped ${amount} ${swapFrom} to ${swapTo}!`);
                 document.getElementById('swapFromAmount').value = '';
                 resetSwapQuote();
-
                 setTimeout(() => {
                     if (window.currentWalletAddress) {
                         fetchWalletBalances(window.currentWalletAddress);
@@ -1403,7 +1597,6 @@
             const feeOptions = resp.data?.feeOptions;
             if (!feeOptions || feeOptions.length === 0) throw new Error('No gas fee options available right now.');
             const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
-
             const tx = await window.sequenceWaas.sendTransaction({
                 network: 'polygon',
                 transactions: [transaction],
@@ -1418,6 +1611,55 @@
 
         renderSwapTokens();
         resetSwapQuote();
+    </script>
+    <!-- ========================================== -->
+    <!-- LOGIKA PWA (SERVICE WORKER & BANNER)       -->
+    <!-- ========================================== -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Terdaftar!'))
+                    .catch(err => console.log('Gagal mendaftar Service Worker', err));
+            });
+        }
+
+        let deferredPrompt;
+        const pwaBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const closeBtn = document.getElementById('pwa-close-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaBanner.classList.remove('hidden');
+            setTimeout(() => {
+                pwaBanner.classList.remove('-translate-y-full');
+            }, 100);
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User menginstal aplikasi Netlink Pay');
+                }
+                deferredPrompt = null;
+                hidePwaBanner();
+            }
+        });
+
+        closeBtn.addEventListener('click', () => {
+            hidePwaBanner();
+        });
+
+        function hidePwaBanner() {
+            pwaBanner.classList.add('-translate-y-full');
+            setTimeout(() => {
+                pwaBanner.classList.add('hidden');
+            }, 300);
+        }
     </script>
 </body>
 </html>
