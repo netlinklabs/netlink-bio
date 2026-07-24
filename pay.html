@@ -424,6 +424,9 @@
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
             </a>
+            <a href="tx.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="history" class="w-4 h-4"></i><span>Transaction History</span>
+            </a>
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
             </a>
@@ -613,29 +616,19 @@
                 <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by Alchemy Pay.</p>
             </div>
 
-            <!-- Transaction History -->
-            <div class="card rounded-2xl mb-8 overflow-hidden">
-                <button onclick="toggleAccordion('txHistoryBody')" class="w-full flex items-center justify-between p-4 lg:p-5">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                            <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
-                        </div>
-                        <div class="text-left">
-                            <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
-                            <p class="text-xs text-muted">Last 20 transactions</p>
-                        </div>
+            <!-- Transaction History moved to its own page: tx.html -->
+            <a href="tx.html" class="card rounded-2xl mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                        <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span id="txCountBadge" class="text-xs text-muted bg-surface px-2 py-0.5 rounded-full">0</span>
-                        <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="txHistoryBodyChevron"></i>
-                    </div>
-                </button>
-                <div id="txHistoryBody" class="accordion-body">
-                    <div id="txList" class="divide-y divide-subtle">
-                        <div class="p-6 text-center text-sm text-muted">Loading transactions...</div>
+                    <div class="text-left">
+                        <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
+                        <p class="text-xs text-muted">View all &amp; download receipts</p>
                     </div>
                 </div>
-            </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted"></i>
+            </a>
         </div>
 
         <footer class="text-center pb-8 pt-4">
@@ -792,6 +785,23 @@
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window.supabaseClient = supabaseClient;
+
+        // Records a completed on-chain action into wallet_transactions so
+        // tx.html has an instant, accurate source of truth for anything WE
+        // initiated (send/swap) — no need to wait for PolygonScan indexing.
+        async function recordTransaction(row) {
+            try {
+                const { error } = await supabaseClient.from('wallet_transactions').insert({
+                    owner_id: currentUser.id,
+                    ...row,
+                });
+                if (error) console.error('Failed to record transaction:', error);
+            } catch (err) {
+                console.error('Failed to record transaction:', err);
+            }
+        }
+        window.recordTransaction = recordTransaction;
 
         const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
         const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
@@ -880,7 +890,6 @@
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
                 updateRampIframe(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
-                fetchTransactionHistory(currentWalletAddress);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
                 document.getElementById('noWalletState').classList.remove('hidden');
@@ -950,72 +959,6 @@
             } catch (err) {
                 console.error(err);
                 showToast('Could not fetch wallet balances');
-            }
-        }
-
-        async function fetchTransactionHistory(address) {
-            const list = document.getElementById('txList');
-            const badge = document.getElementById('txCountBadge');
-            try {
-                const url = `/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
-                const data = await fetchWithRetry(url);
-                const txs = data.transactions || [];
-                badge.textContent = txs.length;
-                if (txs.length === 0) {
-                    list.innerHTML = '<div class="p-6 text-center text-sm text-muted">No transactions yet.</div>';
-                    return;
-                }
-                list.innerHTML = txs.map((tx) => {
-                    const timeAgo = formatTimeAgo(tx.timestamp);
-                    const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
-                    if (tx.type === 'swap') {
-                        return `
-                            <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
-                                <div class="w-9 h-9 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between">
-                                        <p class="text-sm font-medium text-primary truncate">Swapped ${tx.fromToken} to ${tx.toToken}</p>
-                                        <p class="text-sm font-semibold text-primary">${tx.fromAmount} → ${tx.toAmount}</p>
-                                    </div>
-                                    <div class="flex items-center justify-between mt-0.5">
-                                        <p class="text-xs text-muted truncate">${tx.fromToken} / ${tx.toToken}</p>
-                                        <p class="text-xs text-muted">${timeAgo}</p>
-                                    </div>
-                                </div>
-                                <i data-lucide="external-link" class="w-3.5 h-3.5 text-muted flex-shrink-0"></i>
-                            </a>
-                        `;
-                    }
-                    const isIn = tx.type === 'in';
-                    const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
-                    const colorClass = isIn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500';
-                    const amountClass = isIn ? 'tx-amount-in' : 'tx-amount-out';
-                    const sign = isIn ? '+' : '-';
-                    return `
-                        <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
-                            <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="${icon}" class="w-4 h-4"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="text-sm font-medium text-primary truncate">${isIn ? 'Received' : 'Sent'} ${tx.token}</p>
-                                    <p class="text-sm font-semibold ${amountClass}">${sign}${tx.amount} ${tx.token}</p>
-                                </div>
-                                <div class="flex items-center justify-between mt-0.5">
-                                    <p class="text-xs text-muted truncate">${tx.counterparty ? truncateAddress(tx.counterparty) : '—'}</p>
-                                    <p class="text-xs text-muted">${timeAgo}</p>
-                                </div>
-                            </div>
-                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-muted flex-shrink-0"></i>
-                        </a>
-                    `;
-                }).join('');
-                lucide.createIcons();
-            } catch (err) {
-                console.error(err);
-                list.innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load transaction history.</div>';
             }
         }
 
@@ -1301,13 +1244,28 @@
             const valueWei = toWei(amount, config.decimals);
             statusEl.textContent = 'Sending...';
             try {
-                await performTransfer(token, to, valueWei);
+                const tx = await performTransfer(token, to, valueWei);
                 showToast(`Sent ${amount} ${token}!`);
                 closeSendModal();
+
+                if (window.recordTransaction) {
+                    const txHash = tx.txHash || tx.hash || tx.data?.txHash || tx.receipt?.transactionHash;
+                    if (txHash) {
+                        window.recordTransaction({
+                            hash: txHash,
+                            type: 'send',
+                            token,
+                            amount,
+                            counterparty_address: to,
+                        });
+                    } else {
+                        console.warn('Could not determine tx hash — transaction not recorded:', tx);
+                    }
+                }
+
                 setTimeout(() => {
                     if (window.currentWalletAddress) {
                         fetchWalletBalances(window.currentWalletAddress);
-                        fetchTransactionHistory(window.currentWalletAddress);
                     }
                 }, 4500);
             } catch (err) {
@@ -1692,14 +1650,31 @@
                 }
                 btn.textContent = 'Swapping...';
                 const tr = swapQuoteData.transactionRequest;
-                await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
+                const swapTx = await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
+                const toAmountDisplayed = document.getElementById('swapToAmount').textContent;
                 showToast(`Swapped ${amount} ${swapFrom} to ${swapTo}!`);
+
+                if (window.recordTransaction) {
+                    const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
+                    if (txHash) {
+                        window.recordTransaction({
+                            hash: txHash,
+                            type: 'swap',
+                            token: swapFrom,
+                            amount,
+                            to_token: swapTo,
+                            to_amount: toAmountDisplayed,
+                        });
+                    } else {
+                        console.warn('Could not determine swap tx hash — transaction not recorded:', swapTx);
+                    }
+                }
+
                 document.getElementById('swapFromAmount').value = '';
                 resetSwapQuote();
                 setTimeout(() => {
                     if (window.currentWalletAddress) {
                         fetchWalletBalances(window.currentWalletAddress);
-                        fetchTransactionHistory(window.currentWalletAddress);
                     }
                 }, 4500);
             } catch (err) {
