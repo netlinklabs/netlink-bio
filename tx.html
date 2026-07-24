@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transaction History — Netlink Pay</title>
+    <title>Netlink Pay</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -34,8 +35,8 @@
         html.dark .text-secondary { color: #94a3b8 !important; }
         html.dark .text-muted { color: #64748b !important; }
         html.dark .bg-surface { background: #0f172a !important; }
-        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
-        html.dark .hover-surface:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .border-subtle, html.dark .border-white\/5 { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .hover-surface:hover, html.dark .hover\:bg-white\/5:hover { background: rgba(255,255,255,0.05) !important; }
         html.dark .sidebar { background: #1e293b; border-left: 1px solid rgba(255,255,255,0.05); }
         html.dark .mobile-header { background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.05); }
         html.dark .sidebar nav a.text-secondary { color: #94a3b8 !important; }
@@ -69,29 +70,325 @@
         .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); }
 
+        .usdc-card {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(2, 132, 199, 0.3), 0 0 0 1px rgba(255,255,255,0.1) inset;
+        }
+        .usdc-card::before {
+            content: '';
+            position: absolute;
+            top: -40%; right: -20%;
+            width: 250px; height: 250px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            pointer-events: none;
+        }
+        .usdc-card::after {
+            content: '';
+            position: absolute;
+            bottom: -30%; left: -15%;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+            pointer-events: none;
+        }
+
+        .token-card {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
+        }
+        .token-card::before {
+            content: '';
+            position: absolute;
+            top: -30%; right: -20%;
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            pointer-events: none;
+        }
+
+        .tier-badge {
+            border: 1.5px solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(4px);
+        }
+        .tier-badge-basic { border-color: rgba(148, 163, 184, 0.5); background: rgba(148, 163, 184, 0.15); }
+        .tier-badge-silver { border-color: rgba(203, 213, 225, 0.5); background: rgba(203, 213, 225, 0.15); }
+        .tier-badge-gold { border-color: rgba(251, 191, 36, 0.5); background: rgba(251, 191, 36, 0.15); }
+        .tier-badge-platinum { border-color: rgba(167, 139, 250, 0.5); background: rgba(167, 139, 250, 0.15); }
+
+        .wallet-bar {
+            background: #e2e8f0;
+            border-radius: 20px;
+        }
+        html.dark .wallet-bar {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* === ELEGANT SWAP CARD === */
+        .swap-card {
+            background: #e8ecf1;
+            border-radius: 24px;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        html.dark .swap-card {
+            background: #1a2236;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .swap-inner {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+        }
+        html.dark .swap-inner {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .swap-inner:hover {
+            border-color: rgba(14, 165, 233, 0.2);
+        }
+
+        .swap-flip-btn {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border: 3px solid #e8ecf1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.35), 0 0 0 4px rgba(14, 165, 233, 0.08);
+            z-index: 10;
+        }
+        html.dark .swap-flip-btn {
+            border-color: #1a2236;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25), 0 0 0 4px rgba(14, 165, 233, 0.06);
+        }
+        .swap-flip-btn:hover {
+            transform: rotate(180deg) scale(1.08);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45), 0 0 0 6px rgba(14, 165, 233, 0.1);
+        }
+        .swap-flip-btn:active {
+            transform: rotate(180deg) scale(0.95);
+        }
+        .swap-flip-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* === SWAP CONFIRMATION MODAL === */
+        .swap-confirm-modal {
+            max-width: 400px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .swap-details-card {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(2, 132, 199, 0.03) 100%);
+            border: 1px solid rgba(14, 165, 233, 0.12);
+            border-radius: 16px;
+        }
+        html.dark .swap-details-card {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(2, 132, 199, 0.04) 100%);
+            border: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        /* === COUNTDOWN BAR === */
+        .countdown-wrap {
+            position: relative;
+            width: 100%;
+            height: 3px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        html.dark .countdown-wrap {
+            background: rgba(255,255,255,0.06);
+        }
+        .countdown-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
+            border-radius: 2px;
+            transform-origin: left;
+            transition: none;
+        }
+        .countdown-bar.paused {
+            transition: none;
+        }
+        .countdown-text {
+            font-size: 11px;
+            color: #64748b;
+            text-align: right;
+            margin-top: 4px;
+        }
+        html.dark .countdown-text {
+            color: #94a3b8;
+        }
+
+        /* === SWIPE TO CONFIRM BUTTON === */
+        .swipe-container {
+            position: relative;
+            width: 100%;
+            height: 56px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border-radius: 28px;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+        .swipe-track {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .swipe-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .swipe-hint-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            letter-spacing: 0.5px;
+        }
+        .swipe-hint-arrows {
+            display: flex;
+            align-items: center;
+        }
+        .swipe-thumb {
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: left 0.1s ease-out, background 0.3s ease;
+            z-index: 2;
+        }
+        .swipe-thumb i {
+            color: #0284c7;
+            transition: transform 0.3s ease;
+        }
+        .swipe-thumb:active {
+            cursor: grabbing;
+            transform: translateY(-50%) scale(1.05);
+        }
+        .swipe-thumb.dragging i {
+            transform: translateX(2px);
+        }
+        .swipe-success {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .swipe-success.show {
+            opacity: 1;
+        }
+        .swipe-container.confirmed {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .swipe-container.confirmed .swipe-thumb {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .swipe-container.confirmed .swipe-hint {
+            opacity: 0;
+        }
+
         .tx-row { transition: background 0.15s; }
         .tx-row:hover { background: rgba(0,0,0,0.02); }
         .tx-amount-in { color: #059669; }
         .tx-amount-out { color: #dc2626; }
 
-        .filter-pill { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid rgba(0,0,0,0.08); color: #475569; background: white; cursor: pointer; white-space: nowrap; }
-        .filter-pill.active { background: #3b82f6; border-color: #3b82f6; color: white; }
-        html.dark .filter-pill { background: #1e293b; border-color: rgba(255,255,255,0.08); color: #94a3b8; }
-        html.dark .filter-pill.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+        .accordion-body { display: none; }
+        .accordion-body.open { display: block; }
+        .accordion-chevron { transition: transform 0.2s; }
+        .accordion-chevron.open { transform: rotate(180deg); }
+
+        .brand-logo { height: 70px; width: auto; }
+        .brand-logo-sidebar { height: 48px; width: auto; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: #ffffff; border-radius: 20px; padding: 24px; max-width: 380px; width: 100%; position: relative; }
+        html.dark .modal-box { background: #1e293b; }
+        .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
+        .gas-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
+        html.dark .gas-warning { background: rgba(252,211,77,0.1); border-color: rgba(252,211,77,0.3); color: #fcd34d; }
     </style>
 </head>
 <body class="min-h-screen">
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="fixed top-0 left-0 right-0 card shadow-lg z-[9999] transform -translate-y-full transition-transform duration-300 hidden">
+        <div class="flex items-center justify-between p-4 max-w-4xl mx-auto">
+            <div class="flex items-center gap-3">
+                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-icon.png" alt="Netlink Pay Icon" class="w-12 h-12 rounded-xl shadow-sm border border-subtle">
+                <div>
+                    <h4 class="font-bold text-primary text-sm">Netlink Pay</h4>
+                    <p class="text-xs text-muted">Install the app for instant access</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="pwa-install-btn" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-md transition-colors">Install</button>
+                <button id="pwa-close-btn" class="text-secondary hover:text-primary transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+        </div>
+    </div>
+
     <div id="authGate">
         <div class="flex flex-col items-center gap-3 px-6 text-center">
             <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p id="authGateText" class="text-sm text-slate-400">Loading transaction history...</p>
+            <p id="authGateText" class="text-sm text-slate-400">Loading Netlink Pay...</p>
         </div>
     </div>
 
     <div id="toast" class="toast">Saved successfully!</div>
 
+    <!-- Mobile Header -->
     <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
-        <h1 class="text-lg font-semibold text-primary">Transaction History</h1>
+        <div class="flex items-center gap-3">
+            <div id="headerAvatarWrap" class="w-10 h-10 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <img id="headerAvatarImg" alt="Your avatar" class="w-full h-full object-cover hidden">
+                <span id="headerAvatarInitial" class="text-sm font-semibold text-blue-500">?</span>
+            </div>
+        </div>
+        <h1 id="headerDisplayName" class="text-lg font-semibold text-primary">Loading...</h1>
         <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
             <i data-lucide="menu" class="w-6 h-6 text-primary"></i>
         </button>
@@ -99,36 +396,53 @@
 
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
+    <!-- Sidebar -->
     <aside class="sidebar text-white flex flex-col">
         <div class="flex p-4 border-b border-subtle items-center justify-between">
-            <a href="dashboard.html" class="flex items-center gap-2">
-                <img src="/assets/netlinkbio-icon.png" alt="Netlink.bio" class="w-8 h-8 rounded-lg">
-                <span class="text-primary font-bold">netlink<span class="text-blue-500">.bio</span></span>
+            <a href="dashboard.html" class="flex items-center">
+                <img id="brandLogoDesktop" alt="Netlink Pay" class="brand-logo-sidebar">
             </a>
+            <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch theme">
+                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
+                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
+            </button>
         </div>
+
         <nav class="flex-1 py-2">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
             </a>
-            <a href="pay.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="wallet" class="w-4 h-4"></i><span>Netlink Pay</span>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="link" class="w-4 h-4"></i><span>Links</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i><span>CV Builder</span>
             </a>
             <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-500 border-l-2 border-blue-500">
+                <i data-lucide="wallet" class="w-4 h-4"></i><span>Netlink Pay</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
+            </a>
+            <a href="tx.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="history" class="w-4 h-4"></i><span>Transaction History</span>
             </a>
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
             </a>
         </nav>
+
         <div class="p-4 border-t border-subtle">
             <div class="flex items-center gap-3">
-                <div id="sidebarAvatarWrap" class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-lg overflow-hidden flex-shrink-0">
-                    <img id="sidebarAvatarImg" alt="" class="w-full h-full object-cover hidden">
-                    <span id="sidebarAvatarInitial">?</span>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">Loading...</p>
-                    <p id="sidebarTierLabel" class="text-xs text-muted">—</p>
+                <div class="flex items-center gap-3 flex-1 min-w-0 text-left">
+                    <div id="sidebarAvatarWrap" class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-lg overflow-hidden flex-shrink-0">
+                        <img id="sidebarAvatarImg" alt="" class="w-full h-full object-cover hidden">
+                        <span id="sidebarAvatarInitial">?</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">Loading...</p>
+                        <p id="sidebarTierLabel" class="text-xs text-muted">—</p>
+                    </div>
                 </div>
                 <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -137,84 +451,370 @@
         </div>
     </aside>
 
-    <main class="main-content px-4 pt-20 pb-8 lg:px-8 lg:pt-8 max-w-2xl mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
-        <div class="hidden lg:block mb-6">
-            <h2 class="text-2xl font-bold text-primary">Transaction History</h2>
-            <p class="text-secondary text-sm mt-1">All your sends, receives, and swaps.</p>
-        </div>
-
+    <main class="main-content px-4 pt-20 pb-8 lg:px-8 lg:pt-20 max-w-md mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
+        <!-- No-wallet empty state -->
         <div id="noWalletState" class="hidden card rounded-2xl p-8 mb-5 text-center">
             <i data-lucide="sparkles" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
-            <p class="text-sm text-secondary mb-4">You don't have a Netlink Pay wallet yet.</p>
+            <p class="text-sm text-secondary mb-4">You don't have a Netlink Pay wallet yet. Go to your Dashboard to create one instantly.</p>
             <a href="dashboard.html" class="inline-block px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Go to Dashboard</a>
         </div>
 
-        <div id="txContent" class="hidden">
-            <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
-                <button class="filter-pill active" data-filter="all" onclick="setFilter('all')">All</button>
-                <button class="filter-pill" data-filter="send" onclick="setFilter('send')">Sent</button>
-                <button class="filter-pill" data-filter="receive" onclick="setFilter('receive')">Received</button>
-                <button class="filter-pill" data-filter="swap" onclick="setFilter('swap')">Swaps</button>
-            </div>
-
-            <div class="card rounded-2xl overflow-hidden">
-                <div id="txList" class="divide-y divide-subtle">
-                    <div class="p-6 text-center text-sm text-muted">Loading transactions...</div>
+        <div id="walletContent">
+            <!-- USDC Premium Card -->
+            <div class="usdc-card p-6 lg:p-8 mb-4 text-white relative">
+                <div class="relative z-10">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-white font-semibold text-lg">USDC Balance</p>
+                            <p class="text-white/60 text-xs">USDC Coin (Polygon)</p>
+                        </div>
+                        <img id="usdcCardLogo" src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-16 w-auto opacity-90">
+                    </div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
+                        </div>
+                        <div>
+                            <p id="balanceUsdc" class="text-4xl font-bold tracking-tight">0.00</p>
+                            <p id="balanceUsdcFiat" class="text-white/60 text-sm">= $0.00 USD</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <p id="cardIdDisplay" class="text-white/70 text-xs font-mono">ID: NET-000000000000</p>
+                        <span id="cardTierBadge" class="tier-badge px-4 py-1.5 rounded-full text-xs font-semibold text-white">Basic</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="text-center mt-4">
-                <button id="loadMoreBtn" onclick="loadMoreTransactions()" class="hidden text-sm text-blue-500 hover:text-blue-600 font-medium">Load more</button>
+            <!-- Wallet Address Bar -->
+            <div class="wallet-bar p-5 mb-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="wallet" class="w-5 h-5 text-blue-500"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-primary">Netlink Smart Wallet</p>
+                        <p id="walletAddressDisplay" class="text-xs font-mono text-secondary truncate">Loading...</p>
+                    </div>
+                    <button onclick="copyWalletAddress()" class="p-2 hover-surface rounded-lg transition flex-shrink-0">
+                        <i data-lucide="copy" class="w-5 h-5 text-secondary"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openSendModal()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i> Send
+                    </button>
+                    <button onclick="openReceiveModal()" class="flex-1 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Receive
+                    </button>
+                    <button onclick="scrollToRamp()" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Buy
+                    </button>
+                </div>
             </div>
+
+            <!-- NET & POL Row -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="token-card p-5 text-white relative">
+                    <div class="relative z-10">
+                        <p class="text-white font-semibold text-lg mb-0.5">NET</p>
+                        <p class="text-white/60 text-[10px] mb-3">Netlink Token</p>
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 bg-white/15 rounded-full flex items-center justify-center">
+                                <img src="/assets/net-logo.png" alt="NET" class="w-6 h-6 rounded-full">
+                            </div>
+                            <p id="balanceNet" class="text-2xl font-bold tracking-tight">0.00</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="token-card p-5 text-white relative">
+                    <div class="relative z-10">
+                        <p class="text-white font-semibold text-lg mb-0.5">POL</p>
+                        <p class="text-white/60 text-[10px] mb-3">Polygon</p>
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 bg-white/15 rounded-full flex items-center justify-center">
+                                <img src="/assets/polygon-logo.png" alt="POL" class="w-6 h-6 rounded-full">
+                            </div>
+                            <p id="balancePol" class="text-2xl font-bold tracking-tight">0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Swap POL <-> USDC via LI.FI -->
+            <div class="swap-card p-5 mb-5 relative">
+                <div class="flex items-center justify-center gap-2 mb-4">
+                    <div class="w-7 h-7 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                        <i data-lucide="arrow-left-right" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <p class="text-sm font-semibold text-primary">Swap Tokens</p>
+                </div>
+
+                <!-- You Pay -->
+                <div class="swap-inner p-4 mb-1 relative z-[2]">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-muted mb-1 font-medium">You Pay</p>
+                            <input id="swapFromAmount" type="number" step="any" min="0" placeholder="0.00" oninput="onSwapAmountInput()" class="text-2xl font-bold text-primary bg-transparent outline-none w-full placeholder:text-muted/50">
+                        </div>
+                        <button type="button" onclick="toggleSwapTokenPicker('from')" class="flex-shrink-0 flex items-center gap-2 bg-surface hover:bg-surface/80 px-3 py-2 rounded-full border border-subtle transition-colors">
+                            <img id="swapFromLogo" src="/assets/polygon-logo.png" alt="" class="w-6 h-6 rounded-full">
+                            <span id="swapFromSymbol" class="text-sm font-semibold text-primary">POL</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
+                        </button>
+                    </div>
+                    <p id="swapFromBalance" class="text-xs text-muted mt-2">Balance: 0.00</p>
+                </div>
+
+                <!-- Swap Flip Button - Centered Divider -->
+                <div class="flex justify-center -my-3 relative z-[5]">
+                    <button type="button" onclick="flipSwapTokens()" class="swap-flip-btn" title="Flip tokens">
+                        <div class="swap-flip-inner">
+                            <i data-lucide="arrow-up-down" class="w-4 h-4 text-white"></i>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- You Receive -->
+                <div class="swap-inner p-4 mt-1 relative z-[2]">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-muted mb-1 font-medium">You Receive</p>
+                            <p id="swapToAmount" class="text-2xl font-bold text-primary">0.00</p>
+                        </div>
+                        <div class="flex-shrink-0 flex items-center gap-2 bg-surface px-3 py-2 rounded-full border border-subtle opacity-70">
+                            <img id="swapToLogo" src="/assets/usdc-logo.png" alt="" class="w-6 h-6 rounded-full">
+                            <span id="swapToSymbol" class="text-sm font-semibold text-primary">USDC</span>
+                        </div>
+                    </div>
+                    <p id="swapToBalance" class="text-xs text-muted mt-2">Balance: 0.00</p>
+                </div>
+
+                <p id="swapRateInfo" class="text-xs text-muted text-center mt-4 hidden"></p>
+                <p id="swapErrorMsg" class="text-xs text-red-500 text-center mt-2 hidden"></p>
+
+                <button id="swapActionBtn" onclick="openSwapConfirmModal()" disabled class="w-full mt-4 py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl transition text-sm cursor-not-allowed">
+                    Enter an amount
+                </button>
+                <p class="text-[10px] text-muted text-center mt-3">Swap rates powered by LI.FI &middot; Polygon network</p>
+            </div>
+
+            <!-- Alchemy Pay Ramp Widget -->
+            <div id="rampSection" class="card rounded-2xl p-4 lg:p-6 mb-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
+                        <i data-lucide="credit-card" class="w-4 h-4 text-indigo-500"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-primary text-sm">Buy Crypto</h3>
+                        <p class="text-xs text-muted">Powered by Alchemy Pay</p>
+                    </div>
+                </div>
+                <div class="rounded-xl overflow-hidden border border-subtle" style="height: 520px;">
+                    <iframe id="alchemyRampFrame" allow="accelerometer; autoplay; camera; gyroscope; payment" width="100%" height="100%" frameborder="0" title="Alchemy Pay Ramp"></iframe>
+                </div>
+                <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by Alchemy Pay.</p>
+            </div>
+
+            <!-- Transaction History moved to its own page: tx.html -->
+            <a href="tx.html" class="card rounded-2xl mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                        <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
+                        <p class="text-xs text-muted">View all &amp; download receipts</p>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted"></i>
+            </a>
         </div>
 
-        <footer class="text-center pb-8 pt-8">
+        <footer class="text-center pb-8 pt-4">
             <p class="text-xs text-muted">Developed by Netlink Labs</p>
         </footer>
     </main>
+    <!-- Swap Confirmation Modal -->
+    <div id="swapConfirmModal" class="modal-overlay" onclick="if(event.target===this) closeSwapConfirmModal()">
+        <div class="modal-box swap-confirm-modal">
+            <button class="modal-close" onclick="closeSwapConfirmModal()">&times;</button>
 
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
+                </div>
+                <h3 class="font-bold text-primary text-lg">Confirm Swap</h3>
+                <p class="text-xs text-muted mt-1">Review your transaction details</p>
+            </div>
+
+            <!-- Countdown Bar -->
+            <div class="countdown-wrap">
+                <div class="countdown-bar" id="countdownBar"></div>
+            </div>
+            <p class="countdown-text" id="countdownText">Fetching latest price...</p>
+
+            <!-- Swap Details Card -->
+            <div class="swap-details-card p-4 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <img id="confirmFromLogo" src="/assets/polygon-logo.png" alt="" class="w-6 h-6 rounded-full">
+                        <span id="confirmFromSymbol" class="text-sm font-semibold text-primary">POL</span>
+                    </div>
+                    <span id="confirmFromAmount" class="text-lg font-bold text-primary">0.00</span>
+                </div>
+
+                <div class="flex justify-center my-2">
+                    <div class="w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center">
+                        <i data-lucide="arrow-down" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <img id="confirmToLogo" src="/assets/usdc-logo.png" alt="" class="w-6 h-6 rounded-full">
+                        <span id="confirmToSymbol" class="text-sm font-semibold text-primary">USDC</span>
+                    </div>
+                    <span id="confirmToAmount" class="text-lg font-bold text-emerald-500">0.00</span>
+                </div>
+            </div>
+
+            <!-- Rate & Slippage Info -->
+            <div class="bg-surface rounded-xl p-3 mb-4 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-muted">Rate</span>
+                    <span id="confirmRate" class="text-xs font-medium text-primary">—</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-muted">Slippage Protection</span>
+                    <span class="text-xs font-semibold text-blue-500">0.5%</span>
+                </div>
+                <div class="border-t border-subtle pt-2 mt-2">
+                    <p class="text-[11px] text-muted leading-relaxed">
+                        <i data-lucide="info" class="w-3 h-3 inline-block mr-1 text-blue-500"></i>
+                        Your swap is protected: if the price moves more than 0.5%, it will be cancelled automatically.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Swipe to Confirm -->
+            <div class="swipe-container" id="swipeContainer">
+                <div class="swipe-track">
+                    <div class="swipe-hint">
+                        <span class="swipe-hint-text">Slide to Swap Now</span>
+                        <div class="swipe-hint-arrows">
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-white/60"></i>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-white/40 -ml-2"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="swipe-thumb" id="swipeThumb">
+                    <i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>
+                </div>
+                <div class="swipe-success" id="swipeSuccess">
+                    <i data-lucide="check" class="w-5 h-5 text-white"></i>
+                    <span class="text-sm font-semibold text-white ml-2">Confirmed!</span>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-muted text-center mt-3">Swipe the button to the right to confirm</p>
+        </div>
+    </div>
+
+    <!-- Receive Modal -->
+    <div id="receiveModal" class="modal-overlay" onclick="if(event.target===this) closeReceiveModal()">
+        <div class="modal-box text-center">
+            <button class="modal-close" onclick="closeReceiveModal()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Receive</h3>
+            <div style="background:white; padding:12px; border-radius:16px; display:inline-block; margin-bottom:16px;">
+                <img id="receiveQr" alt="QR code" style="width:180px; height:180px; display:block;">
+            </div>
+            <p id="receiveAddress" class="text-xs font-mono text-secondary break-all bg-surface rounded-lg p-3 mb-3"></p>
+            <button onclick="copyWalletAddress()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">Copy address</button>
+            <p class="text-xs text-muted">Network: Polygon PoS (Mainnet)</p>
+        </div>
+    </div>
+
+    <!-- Send Modal -->
+    <div id="sendModal" class="modal-overlay" onclick="if(event.target===this) closeSendModal()">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeSendModal()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Send</h3>
+
+            <div id="sendStepForm">
+                <label class="text-xs font-medium text-secondary block mb-1.5">Token</label>
+                <select id="sendTokenSelect" onchange="onSendTokenChange()" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-1">
+                    <option value="NET">NET — Netlink Token</option>
+                    <option value="USDC">USDC — USD Coin</option>
+                    <option value="POL">POL — Polygon</option>
+                </select>
+                <p id="sendTokenBalance" class="text-xs text-muted mb-3">Balance: 0.00</p>
+
+                <div id="gasWarning" class="gas-warning hidden mb-3">
+                    You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>
+                </div>
+
+                <label class="text-xs font-medium text-secondary block mb-1.5">Recipient address</label>
+                <input id="sendToAddress" type="text" placeholder="0x..." class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-3 font-mono">
+
+                <label class="text-xs font-medium text-secondary block mb-1.5">Amount</label>
+                <input id="sendAmount" type="number" step="any" min="0" placeholder="0.00" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-4">
+
+                <p id="sendFormError" class="text-xs text-red-500 mb-3 hidden"></p>
+
+                <button id="sendContinueBtn" onclick="goToSendConfirm()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Continue</button>
+            </div>
+
+            <div id="sendStepConfirm" class="hidden">
+                <div class="bg-surface rounded-xl p-4 mb-4 text-center">
+                    <p class="text-xs text-muted mb-1">You're sending</p>
+                    <p id="confirmAmountLine" class="text-2xl font-bold text-primary mb-2">0.00 NET</p>
+                    <p class="text-xs text-muted mb-1">To</p>
+                    <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
+                </div>
+                <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Confirm with Google to authorize this transfer.</p>
+                <div class="flex gap-2">
+                    <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                    <div id="googleConfirmWrap" class="flex-1 flex items-center justify-center"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window.supabaseClient = supabaseClient;
 
-        const RECEIPT_LOGO_URL = 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
+        // Records a completed on-chain action into wallet_transactions so
+        // tx.html has an instant, accurate source of truth for anything WE
+        // initiated (send/swap) — no need to wait for PolygonScan indexing.
+        async function recordTransaction(row) {
+            try {
+                const { error } = await supabaseClient.from('wallet_transactions').insert({
+                    owner_id: currentUser.id,
+                    occurred_at: new Date().toISOString(),
+                    ...row,
+                });
+                if (error) console.error('Failed to record transaction:', error);
+            } catch (err) {
+                console.error('Failed to record transaction:', err);
+            }
+        }
+        window.recordTransaction = recordTransaction;
 
+        const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+        const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
         let currentUser = null;
-        let currentProfile = null;
-        let allTx = [];
-        let currentFilter = 'all';
-        const PAGE_SIZE = 30;
-        let loadedCount = 0;
+        let currentWalletAddress = '';
+        window.currentBalances = { net: '0', usdc: '0', pol: '0' };
 
         function showAuthError(msg) {
             document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
         }
         window.addEventListener('error', (e) => showAuthError(e.message));
         window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('open');
-            document.querySelector('.sidebar-overlay').classList.toggle('active');
-        }
-
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = 'login.html';
-        }
-
-        function truncateAddress(addr) {
-            if (!addr) return '';
-            return addr.slice(0, 6) + '...' + addr.slice(-4);
-        }
 
         async function checkAuth() {
             try {
@@ -230,116 +830,141 @@
             }
         }
 
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        function formatNetId(rawId) {
+            if (!rawId) return 'ID: —';
+            const digits = rawId.replace(/^NET/i, '');
+            if (digits.length !== 10) return 'ID: ' + rawId;
+            return 'ID: NET-' + digits.slice(0, 5) + '-' + digits.slice(5);
+        }
+
         async function loadUserProfile() {
             const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('username, display_name, avatar_url, tier, wallet_address, show_name_on_receipt')
-                .eq('id', currentUser.id).single();
+                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id').eq('id', currentUser.id).single();
 
-            if (error) { console.error('Failed to load profile:', error); return; }
-            currentProfile = data;
+            if (error) {
+                console.error('Failed to load profile:', error);
+                return;
+            }
 
             const label = data.display_name || data.username || currentUser.email;
             document.getElementById('sidebarUserEmail').textContent = label;
-            document.getElementById('sidebarTierLabel').textContent =
-                (data.tier || 'basic').charAt(0).toUpperCase() + (data.tier || 'basic').slice(1) + ' Plan';
+            document.getElementById('sidebarTierLabel').textContent = TIER_DISPLAY[data.tier || 'basic'] + ' Plan';
+            document.getElementById('headerDisplayName').textContent = label;
+
+            const tierKey = (data.tier || 'basic').toLowerCase();
+            const tierLabel = TIER_DISPLAY[tierKey];
+
+            const badge = document.getElementById('cardTierBadge');
+            Object.values(TIER_BADGE_CLASS).forEach(cls => badge.classList.remove(cls));
+            badge.classList.add(TIER_BADGE_CLASS[tierKey] || TIER_BADGE_CLASS.basic);
+            badge.textContent = tierLabel;
+
+            document.getElementById('cardIdDisplay').textContent = formatNetId(data.net_id);
 
             const initialChar = label.charAt(0).toUpperCase();
-            const img = document.getElementById('sidebarAvatarImg');
-            const initial = document.getElementById('sidebarAvatarInitial');
-            if (data.avatar_url) {
-                img.src = data.avatar_url; img.classList.remove('hidden'); initial.classList.add('hidden');
-            } else {
-                img.classList.add('hidden'); initial.classList.remove('hidden'); initial.textContent = initialChar;
-            }
-
-            if (!data.wallet_address) {
-                document.getElementById('noWalletState').classList.remove('hidden');
-                document.getElementById('txContent').classList.add('hidden');
-                if (window.lucide) lucide.createIcons();
-                return;
-            }
-
-            document.getElementById('txContent').classList.remove('hidden');
-            if (window.lucide) lucide.createIcons();
-
-            await syncIncomingTransactions(data.wallet_address);
-            await loadTransactions();
-        }
-
-        // Incoming transfers (someone sending TO this wallet) can't be known
-        // in advance — they weren't initiated from this app. We poll
-        // PolygonScan (via the existing proxy) just for the 'in' side, and
-        // only insert hashes we don't already have. Everything WE initiate
-        // (send/swap) is recorded directly at the moment it happens in
-        // pay.html, so this sync never needs to touch those.
-        async function syncIncomingTransactions(address) {
-            try {
-                const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`);
-                if (!res.ok) return;
-                const data = await res.json();
-                const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash);
-                if (!incoming.length) return;
-
-                const { data: existing } = await supabaseClient
-                    .from('wallet_transactions').select('hash').eq('owner_id', currentUser.id);
-                const existingHashes = new Set((existing || []).map((r) => r.hash));
-
-                const newRows = incoming
-                    .filter((t) => !existingHashes.has(t.hash))
-                    .map((t) => ({
-                        owner_id: currentUser.id,
-                        hash: t.hash,
-                        type: 'receive',
-                        token: t.token,
-                        amount: t.amount,
-                        counterparty_address: t.counterparty || null,
-                    }));
-
-                if (newRows.length) {
-                    const { error } = await supabaseClient.from('wallet_transactions').insert(newRows);
-                    if (error) console.error('Failed to sync incoming transactions:', error);
+            const avatarTargets = [
+                { img: document.getElementById('headerAvatarImg'), initial: document.getElementById('headerAvatarInitial') },
+                { img: document.getElementById('sidebarAvatarImg'), initial: document.getElementById('sidebarAvatarInitial') },
+            ];
+            avatarTargets.forEach(({ img, initial }) => {
+                if (data.avatar_url) {
+                    img.src = data.avatar_url;
+                    img.classList.remove('hidden');
+                    initial.classList.add('hidden');
+                } else {
+                    img.classList.add('hidden');
+                    initial.classList.remove('hidden');
+                    initial.textContent = initialChar;
                 }
-            } catch (err) {
-                console.error('Incoming sync failed:', err);
-            }
-        }
-
-        async function loadTransactions() {
-            const { data, error } = await supabaseClient
-                .from('wallet_transactions')
-                .select('*')
-                .eq('owner_id', currentUser.id)
-                .order('created_at', { ascending: false })
-                .limit(200);
-
-            if (error) {
-                console.error('Failed to load transactions:', error);
-                document.getElementById('txList').innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load transaction history.</div>';
-                return;
-            }
-
-            allTx = data || [];
-            loadedCount = 0;
-            renderTransactions(true);
-        }
-
-        function setFilter(filter) {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-pill').forEach((btn) => {
-                btn.classList.toggle('active', btn.dataset.filter === filter);
             });
-            loadedCount = 0;
-            renderTransactions(true);
+
+            currentWalletAddress = data.wallet_address || '';
+            window.currentWalletAddress = currentWalletAddress;
+            if (currentWalletAddress) {
+                document.getElementById('noWalletState').classList.add('hidden');
+                document.getElementById('walletContent').classList.remove('hidden');
+                document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
+                updateRampIframe(currentWalletAddress);
+                fetchWalletBalances(currentWalletAddress);
+            } else {
+                document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
+                document.getElementById('noWalletState').classList.remove('hidden');
+                document.getElementById('walletContent').classList.add('hidden');
+            }
+
+            if (window.lucide) lucide.createIcons();
         }
 
-        function loadMoreTransactions() {
-            renderTransactions(false);
+        function truncateAddress(addr) {
+            if (!addr) return '';
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
         }
 
-        function formatTimeAgo(isoOrDate) {
-            const ts = typeof isoOrDate === 'string' ? new Date(isoOrDate).getTime() : isoOrDate;
-            const diffMs = Date.now() - ts;
+        function copyWalletAddress() {
+            if (!currentWalletAddress) { showToast('No wallet connected'); return; }
+            navigator.clipboard.writeText(currentWalletAddress).then(() => showToast('Address copied!'));
+        }
+
+        function updateRampIframe(address) {
+            const iframe = document.getElementById('alchemyRampFrame');
+            if (!iframe) return;
+            const baseUrl = 'https://ramp.alchemypay.org/#/index';
+            const params = new URLSearchParams({
+                crypto: 'USDC',
+                network: 'POLYGON',
+                fiat: 'IDR',
+                theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+                address,
+            });
+            iframe.src = `${baseUrl}?${params.toString()}`;
+        }
+
+        function scrollToRamp() {
+            document.getElementById('rampSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function formatTokenAmount(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return '0.00';
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        async function fetchWithRetry(url, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return await res.json();
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+            }
+        }
+
+        async function fetchWalletBalances(address) {
+            try {
+                const url = `/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
+                const data = await fetchWithRetry(url);
+                window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
+                document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
+                document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
+                document.getElementById('balanceUsdcFiat').textContent = `= $${formatTokenAmount(data.usdc)} USD`;
+                document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
+                if (window.renderSwapTokens) window.renderSwapTokens();
+            } catch (err) {
+                console.error(err);
+                showToast('Could not fetch wallet balances');
+            }
+        }
+
+        function formatTimeAgo(timestamp) {
+            const diffMs = Date.now() - timestamp;
             const mins = Math.floor(diffMs / 60000);
             if (mins < 1) return 'Just now';
             if (mins < 60) return `${mins} min ago`;
@@ -347,308 +972,786 @@
             if (hours < 24) return `${hours} hr ago`;
             const days = Math.floor(hours / 24);
             if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-            return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
-        function renderTransactions(reset) {
-            const list = document.getElementById('txList');
-            const filtered = currentFilter === 'all' ? allTx : allTx.filter((t) => t.type === currentFilter);
-
-            if (reset) list.innerHTML = '';
-
-            if (filtered.length === 0) {
-                list.innerHTML = '<div class="p-6 text-center text-sm text-muted">No transactions yet.</div>';
-                document.getElementById('loadMoreBtn').classList.add('hidden');
-                return;
-            }
-
-            const slice = filtered.slice(loadedCount, loadedCount + PAGE_SIZE);
-            loadedCount += slice.length;
-
-            const rowsHtml = slice.map((tx) => rowHtml(tx)).join('');
-            list.insertAdjacentHTML('beforeend', rowsHtml);
-
-            const moreBtn = document.getElementById('loadMoreBtn');
-            moreBtn.classList.toggle('hidden', loadedCount >= filtered.length);
-
-            if (window.lucide) lucide.createIcons();
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        function rowHtml(tx) {
-            const timeAgo = formatTimeAgo(tx.created_at);
-            const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
 
-            if (tx.type === 'swap') {
-                return `
-                    <div class="tx-row p-4 flex items-center gap-3">
-                        <div class="w-9 h-9 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center justify-between">
-                                <p class="text-sm font-medium text-primary truncate">Swapped ${tx.token} to ${tx.to_token}</p>
-                                <p class="text-sm font-semibold text-primary">${tx.amount} → ${tx.to_amount}</p>
-                            </div>
-                            <div class="flex items-center justify-between mt-0.5">
-                                <p class="text-xs text-muted">${timeAgo}</p>
-                                <a href="${explorerUrl}" target="_blank" rel="noopener" class="text-xs text-blue-500 hover:underline">View</a>
-                            </div>
-                        </div>
-                    </div>`;
+        function toggleAccordion(id) {
+            document.getElementById(id).classList.toggle('open');
+            document.getElementById(id + 'Chevron').classList.toggle('open');
+        }
+
+        function updateBrandLogo() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const logoUrl = isDark
+                ? 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png'
+                : 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
+            const desktopLogo = document.getElementById('brandLogoDesktop');
+            if (desktopLogo) desktopLogo.src = logoUrl;
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            applyTheme(savedTheme || 'light', false);
+        }
+
+        function applyTheme(theme, save = true) {
+            const html = document.documentElement;
+            const lightIcons = document.querySelectorAll('.theme-icon-light');
+            const darkIcons = document.querySelectorAll('.theme-icon-dark');
+            if (theme === 'dark') {
+                html.classList.add('dark'); html.classList.remove('light');
+                lightIcons.forEach(icon => icon.classList.add('hidden'));
+                darkIcons.forEach(icon => icon.classList.remove('hidden'));
+            } else {
+                html.classList.remove('dark'); html.classList.add('light');
+                lightIcons.forEach(icon => icon.classList.remove('hidden'));
+                darkIcons.forEach(icon => icon.classList.add('hidden'));
             }
+            if (save) localStorage.setItem('theme', theme);
+            updateBrandLogo();
+            if (currentWalletAddress) updateRampIframe(currentWalletAddress);
+        }
 
-            const isIn = tx.type === 'receive';
-            const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
-            const colorClass = isIn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500';
-            const amountClass = isIn ? 'tx-amount-in' : 'tx-amount-out';
-            const sign = isIn ? '+' : '-';
-
-            return `
-                <div class="tx-row p-4 flex items-center gap-3">
-                    <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="${icon}" class="w-4 h-4"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between">
-                            <p class="text-sm font-medium text-primary truncate">${isIn ? 'Received' : 'Sent'} ${tx.token}</p>
-                            <p class="text-sm font-semibold ${amountClass}">${sign}${tx.amount} ${tx.token}</p>
-                        </div>
-                        <div class="flex items-center justify-between mt-0.5">
-                            <p class="text-xs text-muted truncate">${tx.counterparty_address ? truncateAddress(tx.counterparty_address) : '—'}</p>
-                            <p class="text-xs text-muted">${timeAgo}</p>
-                        </div>
-                    </div>
-                    <button onclick="downloadReceipt('${tx.id}')" class="p-2 hover-surface rounded-lg transition flex-shrink-0" title="Download receipt">
-                        <i data-lucide="download" class="w-4 h-4 text-secondary"></i>
-                    </button>
-                </div>`;
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            applyTheme(isDark ? 'light' : 'dark', true);
         }
 
         lucide.createIcons();
+        initTheme();
         checkAuth();
     </script>
+    <script type="module">
+        import { SequenceWaaS, isSentTransactionResponse } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
 
-    <script>
-        // ==========================================
-        // PDF RECEIPT GENERATION
-        // ==========================================
-        // Names resolve LIVE at download time (not stored), so if either
-        // side changes their display name or their privacy toggle later,
-        // a re-downloaded receipt always reflects the current state.
+        const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
+        const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
+        const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
 
-        async function resolveCounterpartyName(address) {
-            if (!address) return null;
+        const sequenceWaas = new SequenceWaaS({
+            network: 'polygon',
+            projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
+            waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
+        });
+
+        function renderGoogleConfirmButton() {
+            const container = document.getElementById('googleConfirmWrap');
+            container.innerHTML = '';
+            if (!window.google) {
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                return;
+            }
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: onGoogleConfirmCredential,
+            });
+            google.accounts.id.renderButton(container, {
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'pill',
+                width: 220,
+            });
+        }
+
+        async function onGoogleConfirmCredential(response) {
+            const statusEl = document.getElementById('sendConfirmStatus');
+            const container = document.getElementById('googleConfirmWrap');
+            container.style.opacity = '0.5';
+            statusEl.textContent = 'Confirming your identity...';
             try {
-                const { data, error } = await supabaseClient.rpc('resolve_wallet_owner_name', { check_address: address });
-                if (error) { console.error(error); return null; }
-                return data || null;
+                await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                await doExecuteSend();
             } catch (err) {
-                console.error('Failed to resolve counterparty name:', err);
-                return null;
+                console.error(err);
+                statusEl.textContent = 'Confirm with Google to authorize this transfer.';
+                container.style.opacity = '1';
+                showToast('Could not verify your identity — please try again.');
             }
         }
 
-        // Fetches gas fee for a tx hash directly from a public Polygon RPC —
-        // no backend endpoint needed, same pattern already used elsewhere
-        // in this app (e.g. checking ERC20 allowance before a swap).
-        async function fetchGasFee(hash) {
-            try {
-                const rpcCall = async (method, params) => {
-                    const res = await fetch('https://polygon-rpc.com', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-                    });
-                    const json = await res.json();
-                    return json.result;
-                };
+        const TOKEN_CONFIG = {
+            NET: { address: '0x0e893B239094A5c573373d44CF1C7D03576b95cb', decimals: 18 },
+            USDC: { address: '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359', decimals: 6 },
+            POL: { address: null, decimals: 18 },
+        };
 
-                const receipt = await rpcCall('eth_getTransactionReceipt', [hash]);
-                if (!receipt) return null;
+        function toWei(amountStr, decimals) {
+            const [whole, frac = ''] = String(amountStr).split('.');
+            const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+            const wholeBig = BigInt(whole || '0');
+            const fracBig = BigInt(fracPadded || '0');
+            return (wholeBig * (10n ** BigInt(decimals)) + fracBig).toString();
+        }
 
-                const gasUsed = BigInt(receipt.gasUsed || '0x0');
-                let gasPrice = receipt.effectiveGasPrice;
-                if (!gasPrice) {
-                    const txDetail = await rpcCall('eth_getTransactionByHash', [hash]);
-                    gasPrice = txDetail?.gasPrice || '0x0';
+        function getBalanceForToken(token) {
+            const b = window.currentBalances || { net: '0', usdc: '0', pol: '0' };
+            if (token === 'NET') return b.net;
+            if (token === 'USDC') return b.usdc;
+            return b.pol;
+        }
+
+        window.openReceiveModal = function () {
+            const address = window.currentWalletAddress;
+            if (!address) { showToast('No wallet yet'); return; }
+            document.getElementById('receiveAddress').textContent = address;
+            document.getElementById('receiveQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(address)}`;
+            document.getElementById('receiveModal').classList.add('active');
+        };
+        window.closeReceiveModal = function () {
+            document.getElementById('receiveModal').classList.remove('active');
+        };
+
+        window.openSendModal = function () {
+            if (!window.currentWalletAddress) { showToast('No wallet yet'); return; }
+            document.getElementById('sendStepForm').classList.remove('hidden');
+            document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('sendToAddress').value = '';
+            document.getElementById('sendAmount').value = '';
+            document.getElementById('sendFormError').classList.add('hidden');
+            onSendTokenChange();
+            document.getElementById('sendModal').classList.add('active');
+        };
+        window.closeSendModal = function () {
+            document.getElementById('sendModal').classList.remove('active');
+        };
+
+        window.onSendTokenChange = function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const balance = getBalanceForToken(token);
+            document.getElementById('sendTokenBalance').textContent = `Balance: ${parseFloat(balance).toFixed(2)} ${token}`;
+            const polBalance = parseFloat(getBalanceForToken('POL'));
+            const gasWarning = document.getElementById('gasWarning');
+            const continueBtn = document.getElementById('sendContinueBtn');
+            if (polBalance <= 0) {
+                gasWarning.classList.remove('hidden');
+                continueBtn.disabled = true;
+                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                gasWarning.classList.add('hidden');
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        };
+
+        window.sequenceWaas = sequenceWaas;
+
+        function showSendError(msg) {
+            const el = document.getElementById('sendFormError');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        window.goToSendConfirm = function () {
+            const token = document.getElementById('sendTokenSelect').value;
+            const to = document.getElementById('sendToAddress').value.trim();
+            const amount = document.getElementById('sendAmount').value.trim();
+            const errorEl = document.getElementById('sendFormError');
+            errorEl.classList.add('hidden');
+            if (!/^0x[a-fA-F0-9]{40}$/.test(to)) {
+                showSendError('Invalid recipient address.');
+                return;
+            }
+            const amountNum = parseFloat(amount);
+            if (!amount || isNaN(amountNum) || amountNum <= 0) {
+                showSendError('Enter a valid amount.');
+                return;
+            }
+            const balance = parseFloat(getBalanceForToken(token));
+            if (token === 'POL') {
+                if (amountNum > balance - 0.01) {
+                    showSendError('Leave at least 0.01 POL in your wallet for gas.');
+                    return;
                 }
-                const feeWei = gasUsed * BigInt(gasPrice);
-                const divisor = 10n ** 18n;
-                const whole = feeWei / divisor;
-                const frac = feeWei % divisor;
-                const fracStr = frac.toString().padStart(18, '0').slice(0, 4);
-                return `${whole}.${fracStr}`;
-            } catch (err) {
-                console.error('Failed to fetch gas fee:', err);
-                return null;
+            } else {
+                if (amountNum > balance) {
+                    showSendError('Insufficient balance.');
+                    return;
+                }
             }
+            document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
+            document.getElementById('confirmToAddress').textContent = to;
+            document.getElementById('sendConfirmStatus').textContent = 'Confirm with Google to authorize this transfer.';
+            document.getElementById('sendStepForm').classList.add('hidden');
+            document.getElementById('sendStepConfirm').classList.remove('hidden');
+            renderGoogleConfirmButton();
+        };
+
+        window.backToSendForm = function () {
+            document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('sendStepForm').classList.remove('hidden');
+        };
+
+        function encodeErc20Transfer(to, valueWei) {
+            const toPadded = to.toLowerCase().replace('0x', '').padStart(64, '0');
+            const valueHex = BigInt(valueWei).toString(16).padStart(64, '0');
+            return '0xa9059cbb' + toPadded + valueHex; 
         }
 
-        async function fetchPolPriceUsd() {
+        async function performTransfer(token, to, valueWei) {
+            const config = TOKEN_CONFIG[token];
+            let transactions = [];
+            if (token === 'POL') {
+                transactions = [{ to: to, value: valueWei }];
+            } else {
+                const data = encodeErc20Transfer(to, valueWei);
+                transactions = [{ to: config.address, data: data, value: '0' }];
+            }
+            const resp = await sequenceWaas.feeOptions({ 
+                network: 'polygon', 
+                transactions: transactions 
+            });
+            const feeQuote = resp.data?.feeQuote;
+            const feeOptions = resp.data?.feeOptions;
+            if (!feeOptions || feeOptions.length === 0) {
+                throw new Error('Opsi pembayaran gas tidak tersedia dari relayer saat ini.');
+            }
+            const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
+            const tx = await sequenceWaas.sendTransaction({
+                network: 'polygon',
+                transactions: transactions,
+                transactionsFeeOption: polFeeOption,
+                transactionsFeeQuote: feeQuote
+            });
+            if (!isSentTransactionResponse(tx)) {
+                console.error('Sequence did not return a sent-transaction response:', tx);
+                throw new Error('Transaction was not sent — please try again.');
+            }
+            if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
+                console.error('Transaction reverted:', tx.receipt);
+                throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
+            }
+            return tx;
+        }
+
+        async function doExecuteSend() {
+            const token = document.getElementById('sendTokenSelect').value;
+            const to = document.getElementById('sendToAddress').value.trim();
+            const amount = document.getElementById('sendAmount').value.trim();
+            const statusEl = document.getElementById('sendConfirmStatus');
+            const config = TOKEN_CONFIG[token];
+            const valueWei = toWei(amount, config.decimals);
+            statusEl.textContent = 'Sending...';
             try {
-                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd');
-                const json = await res.json();
-                return json['polygon-ecosystem-token']?.usd || null;
-            } catch (err) {
-                return null;
-            }
-        }
+                const tx = await performTransfer(token, to, valueWei);
+                showToast(`Sent ${amount} ${token}!`);
+                closeSendModal();
 
-        async function imageUrlToDataUrl(url) {
-            try {
-                const res = await fetch(url);
-                const blob = await res.blob();
-                return await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            } catch (err) {
-                console.error('Failed to load image for PDF:', err);
-                return null;
-            }
-        }
-
-        async function downloadReceipt(txId) {
-            const tx = allTx.find((t) => t.id === txId);
-            if (!tx) { showToast('Transaction not found'); return; }
-            if (tx.type === 'swap') { showToast('Receipts are only available for sends and receives'); return; }
-
-            showToast('Generating receipt...');
-
-            const isSend = tx.type === 'send';
-            const selfName = currentProfile.display_name || currentProfile.username || 'You';
-            const selfAddress = currentProfile.wallet_address || '';
-            const counterpartyAddress = tx.counterparty_address || '';
-
-            const counterpartyName = await resolveCounterpartyName(counterpartyAddress);
-            const [gasFee, logoDataUrl, qrDataUrl] = await Promise.all([
-                fetchGasFee(tx.hash),
-                imageUrlToDataUrl(RECEIPT_LOGO_URL),
-                imageUrlToDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://polygonscan.com/tx/' + tx.hash)}`),
-            ]);
-
-            let fiatLine = '';
-            if (tx.token === 'USDC') {
-                fiatLine = `≈ $${parseFloat(tx.amount).toFixed(2)}`;
-            } else if (tx.token === 'POL') {
-                const price = await fetchPolPriceUsd();
-                if (price) fiatLine = `≈ $${(parseFloat(tx.amount) * price).toFixed(2)}`;
-            }
-
-            const senderLabel = isSend ? selfName : (counterpartyName || truncateAddress(counterpartyAddress));
-            const senderAddr = isSend ? selfAddress : counterpartyAddress;
-            const recipientLabel = isSend ? (counterpartyName || truncateAddress(counterpartyAddress)) : selfName;
-            const recipientAddr = isSend ? counterpartyAddress : selfAddress;
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'pt', format: [420, 620] });
-
-            const tealColor = [20, 184, 166];
-            const darkColor = [15, 23, 42];
-            const grayColor = [100, 116, 139];
-            const lightBg = [248, 250, 252];
-
-            let y = 40;
-
-            // Header: title + logo
-            doc.setFontSize(22); doc.setFont(undefined, 'bold'); doc.setTextColor(...darkColor);
-            doc.text('Receipt', 40, y);
-            doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(...grayColor);
-            doc.text('Digital Asset Transfer', 40, y + 16);
-            if (logoDataUrl) {
-                try { doc.addImage(logoDataUrl, 'PNG', 280, y - 22, 100, 34); } catch (e) {}
-            }
-            y += 45;
-
-            // Status box
-            doc.setFillColor(...lightBg);
-            doc.roundedRect(40, y, 340, 44, 6, 6, 'F');
-            doc.setFontSize(10); doc.setTextColor(...grayColor);
-            doc.text('Status', 52, y + 17);
-            doc.text('Date & Time', 52, y + 33);
-            doc.setFont(undefined, 'bold'); doc.setTextColor(...darkColor);
-            doc.text(': Success', 130, y + 17);
-            const dateStr = new Date(tx.created_at).toUTCString().replace('GMT', '+UTC');
-            doc.text(`: ${dateStr}`, 130, y + 33);
-            doc.setFont(undefined, 'normal');
-            y += 60;
-
-            // Sender / Recipient box
-            doc.setFillColor(...lightBg);
-            doc.roundedRect(40, y, 340, 66, 6, 6, 'F');
-            doc.setFontSize(9); doc.setTextColor(...grayColor);
-            doc.text('Sender :', 52, y + 16);
-            doc.text('Recipient :', 210, y + 16);
-            doc.setFont(undefined, 'bold'); doc.setFontSize(11); doc.setTextColor(...darkColor);
-            doc.text(senderLabel, 52, y + 30);
-            doc.text(recipientLabel, 210, y + 30);
-            doc.setFont(undefined, 'normal'); doc.setFontSize(8); doc.setTextColor(...grayColor);
-            doc.text('Wallet Address:', 52, y + 44);
-            doc.text('Wallet Address:', 210, y + 44);
-            const senderAddrLines = doc.splitTextToSize(senderAddr, 140);
-            const recipientAddrLines = doc.splitTextToSize(recipientAddr, 140);
-            doc.text(senderAddrLines, 52, y + 55);
-            doc.text(recipientAddrLines, 210, y + 55);
-            y += 82;
-
-            // Asset / Amount rows
-            function fieldRow(label, valueLines, valueBold) {
-                doc.setFontSize(10); doc.setTextColor(...grayColor);
-                doc.text(label, 40, y);
-                doc.setTextColor(...darkColor);
-                doc.setFont(undefined, valueBold ? 'bold' : 'normal');
-                if (Array.isArray(valueLines)) {
-                    doc.text(valueLines[0], 380, y, { align: 'right' });
-                    if (valueLines[1]) {
-                        doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(...grayColor);
-                        doc.text(valueLines[1], 380, y + 12, { align: 'right' });
-                        y += 12;
+                if (window.recordTransaction) {
+                    const txHash = tx.txHash || tx.hash || tx.data?.txHash || tx.receipt?.transactionHash;
+                    if (txHash) {
+                        window.recordTransaction({
+                            hash: txHash,
+                            type: 'send',
+                            token,
+                            amount,
+                            counterparty_address: to,
+                        });
+                    } else {
+                        console.warn('Could not determine tx hash — transaction not recorded:', tx);
                     }
-                } else {
-                    doc.text(valueLines, 380, y, { align: 'right' });
                 }
-                doc.setFont(undefined, 'normal');
-                y += 20;
-                doc.setDrawColor(230, 230, 230);
-                doc.line(40, y - 8, 380, y - 8);
+
+                setTimeout(() => {
+                    if (window.currentWalletAddress) {
+                        fetchWalletBalances(window.currentWalletAddress);
+                    }
+                }, 4500);
+            } catch (err) {
+                console.error(err);
+                const msg = String(err?.message || err || '');
+                showToast(msg || 'Transaction failed');
+                statusEl.textContent = 'Confirm with Google to authorize this transfer.';
+                document.getElementById('googleConfirmWrap').style.opacity = '1';
             }
-
-            y += 6;
-            fieldRow('Asset', tx.token, true);
-            fieldRow('Amount', fiatLine ? [tx.amount, fiatLine] : [tx.amount], true);
-            fieldRow('Network', 'Polygon (PoS)', false);
-            fieldRow('Gas Fee', gasFee ? `${gasFee} POL` : '—', false);
-
-            // Transaction hash + QR
-            y += 10;
-            doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(...darkColor);
-            doc.text('Transaction Hash', 40, y);
-            y += 14;
-            doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(...grayColor);
-            const hashLines = doc.splitTextToSize(tx.hash, 220);
-            doc.text(hashLines, 40, y);
-
-            if (qrDataUrl) {
-                try { doc.addImage(qrDataUrl, 'PNG', 300, y - 40, 80, 80); } catch (e) {}
-            }
-            y += hashLines.length * 10 + 16;
-
-            doc.setFontSize(8);
-            doc.text('Block Explorer: polygonscan.com', 40, y);
-            y += 20;
-
-            doc.setFontSize(7.5); doc.setTextColor(...grayColor);
-            const footerLines = doc.splitTextToSize(
-                'This document summarizes an on-chain transaction recorded on the Polygon Network.', 340
-            );
-            doc.text(footerLines, 40, y);
-
-            doc.save(`netlinkpay-receipt-${tx.hash.slice(0, 10)}.pdf`);
         }
-        window.downloadReceipt = downloadReceipt;
+    </script>
+    <script type="module">
+        const SWAP_TOKENS = {
+            POL:  { symbol: 'POL',  logo: '/assets/polygon-logo.png', decimals: 18, address: null },
+            USDC: { symbol: 'USDC', logo: '/assets/usdc-logo.png',    decimals: 6,  address: '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359' },
+        };
+
+        let swapFrom = 'POL';
+        let swapTo = 'USDC';
+        let swapQuoteData = null;
+        let swapDebounceTimer = null;
+        let swapQuoteToken = 0;
+
+        // Countdown state
+        let countdownInterval = null;
+        let countdownRemaining = 30;
+        let countdownPaused = false;
+        const COUNTDOWN_DURATION = 30;
+
+        function getSwapBalance(sym) {
+            const b = window.currentBalances || { net: '0', usdc: '0', pol: '0' };
+            return sym === 'POL' ? b.pol : b.usdc;
+        }
+
+        function renderSwapTokens() {
+            const fromSymbolEl = document.getElementById('swapFromSymbol');
+            if (!fromSymbolEl) return;
+            fromSymbolEl.textContent = swapFrom;
+            document.getElementById('swapFromLogo').src = SWAP_TOKENS[swapFrom].logo;
+            document.getElementById('swapToSymbol').textContent = swapTo;
+            document.getElementById('swapToLogo').src = SWAP_TOKENS[swapTo].logo;
+            document.getElementById('swapFromBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapFrom)).toFixed(2)}`;
+            document.getElementById('swapToBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapTo)).toFixed(2)}`;
+        }
+        window.renderSwapTokens = renderSwapTokens;
+
+        window.flipSwapTokens = function () {
+            [swapFrom, swapTo] = [swapTo, swapFrom];
+            renderSwapTokens();
+            document.getElementById('swapFromAmount').value = '';
+            resetSwapQuote();
+        };
+
+        window.toggleSwapTokenPicker = function (side) {
+            if ((side === 'from' && swapFrom !== 'POL') || (side === 'to' && swapTo !== 'POL')) {
+                window.flipSwapTokens();
+            }
+        };
+
+        function toSwapWei(amountStr, decimals) {
+            const [whole, frac = ''] = String(amountStr).split('.');
+            const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+            const wholeBig = BigInt(whole || '0');
+            const fracBig = BigInt(fracPadded || '0');
+            return (wholeBig * (10n ** BigInt(decimals)) + fracBig).toString();
+        }
+
+        function fromSwapWei(weiStr, decimals) {
+            if (!weiStr) return '0';
+            const value = BigInt(weiStr);
+            const divisor = 10n ** BigInt(decimals);
+            const whole = value / divisor;
+            const frac = value % divisor;
+            const fracStr = frac.toString().padStart(decimals, '0').slice(0, 6).replace(/0+$/, '');
+            return fracStr ? `${whole}.${fracStr}` : whole.toString();
+        }
+
+        function resetSwapQuote() {
+            swapQuoteData = null;
+            document.getElementById('swapToAmount').textContent = '0.00';
+            document.getElementById('swapRateInfo').classList.add('hidden');
+            document.getElementById('swapErrorMsg').classList.add('hidden');
+            const btn = document.getElementById('swapActionBtn');
+            btn.disabled = true;
+            btn.textContent = 'Enter an amount';
+            btn.className = 'w-full mt-4 py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl transition text-sm cursor-not-allowed';
+        }
+
+        window.onSwapAmountInput = function () {
+            clearTimeout(swapDebounceTimer);
+            const amount = document.getElementById('swapFromAmount').value.trim();
+            const errorEl = document.getElementById('swapErrorMsg');
+            errorEl.classList.add('hidden');
+            if (!amount || parseFloat(amount) <= 0) {
+                resetSwapQuote();
+                return;
+            }
+            const balance = parseFloat(getSwapBalance(swapFrom));
+            if (parseFloat(amount) > balance) {
+                resetSwapQuote();
+                errorEl.textContent = 'Insufficient balance.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            const btn = document.getElementById('swapActionBtn');
+            btn.disabled = true;
+            btn.textContent = 'Fetching quote...';
+            btn.className = 'w-full mt-4 py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl transition text-sm cursor-not-allowed';
+            swapDebounceTimer = setTimeout(fetchSwapQuote, 600);
+        };
+
+        async function fetchSwapQuote() {
+            const myToken = ++swapQuoteToken;
+            const amount = document.getElementById('swapFromAmount').value.trim();
+            const errorEl = document.getElementById('swapErrorMsg');
+            const address = window.currentWalletAddress;
+            if (!address) { errorEl.textContent = 'No wallet connected.'; errorEl.classList.remove('hidden'); return; }
+            try {
+                const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
+                const url = `/api/lifi-quote?fromToken=${swapFrom}&toToken=${swapTo}&fromAmount=${fromAmountWei}&fromAddress=${address}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (myToken !== swapQuoteToken) return;
+                if (!res.ok) throw new Error(data.error || 'Quote failed');
+                swapQuoteData = data;
+                const toAmountReadable = fromSwapWei(data.toAmount, SWAP_TOKENS[swapTo].decimals);
+                document.getElementById('swapToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
+                const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
+                const rateInfo = document.getElementById('swapRateInfo');
+                rateInfo.textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
+                rateInfo.classList.remove('hidden');
+                const btn = document.getElementById('swapActionBtn');
+                btn.disabled = false;
+                btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
+                btn.className = 'w-full mt-4 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition text-sm';
+            } catch (err) {
+                if (myToken !== swapQuoteToken) return;
+                console.error(err);
+                errorEl.textContent = 'Could not get a quote right now — try again.';
+                errorEl.classList.remove('hidden');
+                resetSwapQuote();
+            }
+        }
+
+        function encodeSwapErc20Approve(spender, valueWei) {
+            const spenderPadded = spender.toLowerCase().replace('0x', '').padStart(64, '0');
+            const valueHex = BigInt(valueWei).toString(16).padStart(64, '0');
+            return '0x095ea7b3' + spenderPadded + valueHex;
+        }
+
+        async function getSwapAllowance(owner, spender, tokenAddress) {
+            const data = '0xdd62ed3e'
+                + owner.toLowerCase().replace('0x', '').padStart(64, '0')
+                + spender.toLowerCase().replace('0x', '').padStart(64, '0');
+            const res = await fetch('https://polygon-rpc.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: tokenAddress, data }, 'latest'] }),
+            });
+            const json = await res.json();
+            return BigInt(json.result || '0x0');
+        }
+
+        // === COUNTDOWN FUNCTIONS ===
+        function startCountdown() {
+            countdownRemaining = COUNTDOWN_DURATION;
+            countdownPaused = false;
+            updateCountdownUI();
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                if (countdownPaused) return;
+                countdownRemaining--;
+                updateCountdownUI();
+                if (countdownRemaining <= 0) {
+                    // Time's up - requote
+                    requoteInModal();
+                }
+            }, 1000);
+        }
+
+        function pauseCountdown() {
+            countdownPaused = true;
+        }
+
+        function resumeCountdown() {
+            countdownPaused = false;
+        }
+
+        function stopCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        }
+
+        function updateCountdownUI() {
+            const bar = document.getElementById('countdownBar');
+            const text = document.getElementById('countdownText');
+            if (!bar || !text) return;
+            const progress = countdownRemaining / COUNTDOWN_DURATION;
+            bar.style.transform = `scaleX(${progress})`;
+            if (countdownRemaining > 0) {
+                text.textContent = `Quote refreshes in ${countdownRemaining}s`;
+            } else {
+                text.textContent = 'Refreshing price...';
+            }
+        }
+
+        async function requoteInModal() {
+            const amount = document.getElementById('swapFromAmount').value.trim();
+            const address = window.currentWalletAddress;
+            const text = document.getElementById('countdownText');
+            if (!address || !amount) return;
+            text.textContent = 'Fetching latest price...';
+            try {
+                const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
+                const url = `/api/lifi-quote?fromToken=${swapFrom}&toToken=${swapTo}&fromAmount=${fromAmountWei}&fromAddress=${address}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Quote failed');
+                swapQuoteData = data;
+                const toAmountReadable = fromSwapWei(data.toAmount, SWAP_TOKENS[swapTo].decimals);
+                // Update modal display
+                document.getElementById('confirmToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
+                const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
+                document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
+                // Restart countdown
+                startCountdown();
+            } catch (err) {
+                console.error(err);
+                text.textContent = 'Could not refresh price — please try again';
+                // Restart countdown anyway to retry
+                setTimeout(startCountdown, 2000);
+            }
+        }
+
+        // === SWAP CONFIRMATION MODAL & SWIPE BUTTON ===
+        let isSwiping = false;
+        let swipeStartX = 0;
+        let swipeCurrentX = 0;
+        const SWIPE_THRESHOLD = 0.75;
+
+        window.openSwapConfirmModal = function () {
+            if (!swapQuoteData) return;
+            const amount = document.getElementById('swapFromAmount').value.trim();
+            const toAmount = document.getElementById('swapToAmount').textContent;
+            document.getElementById('confirmFromAmount').textContent = amount;
+            document.getElementById('confirmFromSymbol').textContent = swapFrom;
+            document.getElementById('confirmFromLogo').src = SWAP_TOKENS[swapFrom].logo;
+            document.getElementById('confirmToAmount').textContent = toAmount;
+            document.getElementById('confirmToSymbol').textContent = swapTo;
+            document.getElementById('confirmToLogo').src = SWAP_TOKENS[swapTo].logo;
+            const rate = (parseFloat(toAmount) / parseFloat(amount)).toFixed(6);
+            document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
+            resetSwipeState();
+            document.getElementById('swapConfirmModal').classList.add('active');
+            // Start countdown when modal opens
+            startCountdown();
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeSwapConfirmModal = function () {
+            document.getElementById('swapConfirmModal').classList.remove('active');
+            resetSwipeState();
+            stopCountdown();
+        };
+
+        function resetSwipeState() {
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            const success = document.getElementById('swipeSuccess');
+            container.classList.remove('confirmed');
+            thumb.style.left = '4px';
+            thumb.classList.remove('dragging');
+            success.classList.remove('show');
+            isSwiping = false;
+            const hint = container.querySelector('.swipe-hint');
+            if (hint) hint.style.opacity = '1';
+        }
+
+        function initSwipeButton() {
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            if (!container || !thumb) return;
+            thumb.addEventListener('mousedown', onSwipeStart);
+            document.addEventListener('mousemove', onSwipeMove);
+            document.addEventListener('mouseup', onSwipeEnd);
+            thumb.addEventListener('touchstart', onSwipeStart, { passive: false });
+            document.addEventListener('touchmove', onSwipeMove, { passive: false });
+            document.addEventListener('touchend', onSwipeEnd);
+        }
+
+        function onSwipeStart(e) {
+            e.preventDefault();
+            isSwiping = true;
+            const thumb = document.getElementById('swipeThumb');
+            thumb.classList.add('dragging');
+            swipeStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            swipeCurrentX = swipeStartX;
+            // Pause countdown while swiping
+            pauseCountdown();
+        }
+
+        function onSwipeMove(e) {
+            if (!isSwiping) return;
+            e.preventDefault();
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            const containerWidth = container.offsetWidth;
+            const thumbWidth = thumb.offsetWidth;
+            const maxLeft = containerWidth - thumbWidth - 8;
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const deltaX = clientX - swipeStartX;
+            let newLeft = 4 + deltaX;
+            newLeft = Math.max(4, Math.min(newLeft, maxLeft));
+            thumb.style.left = newLeft + 'px';
+            const progress = (newLeft - 4) / maxLeft;
+            const hint = container.querySelector('.swipe-hint');
+            if (hint) hint.style.opacity = Math.max(0, 1 - progress * 2);
+        }
+
+        function onSwipeEnd(e) {
+            if (!isSwiping) return;
+            isSwiping = false;
+            const container = document.getElementById('swipeContainer');
+            const thumb = document.getElementById('swipeThumb');
+            const containerWidth = container.offsetWidth;
+            const thumbWidth = thumb.offsetWidth;
+            const maxLeft = containerWidth - thumbWidth - 8;
+            const currentLeft = parseFloat(thumb.style.left) || 4;
+            const progress = (currentLeft - 4) / maxLeft;
+            thumb.classList.remove('dragging');
+            if (progress >= SWIPE_THRESHOLD) {
+                thumb.style.left = maxLeft + 'px';
+                container.classList.add('confirmed');
+                document.getElementById('swipeSuccess').classList.add('show');
+                setTimeout(() => {
+                    closeSwapConfirmModal();
+                    executeSwapFromModal();
+                }, 600);
+            } else {
+                thumb.style.transition = 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                thumb.style.left = '4px';
+                const hint = container.querySelector('.swipe-hint');
+                if (hint) hint.style.opacity = '1';
+                setTimeout(() => {
+                    thumb.style.transition = 'left 0.1s ease-out, background 0.3s ease';
+                }, 300);
+                // Resume countdown if swipe cancelled
+                resumeCountdown();
+            }
+        }
+
+        async function executeSwapFromModal() {
+            await handleSwapAction();
+        }
+
+        document.addEventListener('DOMContentLoaded', initSwipeButton);
+
+        window.handleSwapAction = async function () {
+            if (!swapQuoteData) return;
+            const btn = document.getElementById('swapActionBtn');
+            const errorEl = document.getElementById('swapErrorMsg');
+            errorEl.classList.add('hidden');
+            btn.disabled = true;
+            try {
+                const amount = document.getElementById('swapFromAmount').value.trim();
+                const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
+                const fromTokenInfo = SWAP_TOKENS[swapFrom];
+                if (fromTokenInfo.address) {
+                    btn.textContent = 'Checking approval...';
+                    const allowance = await getSwapAllowance(
+                        window.currentWalletAddress,
+                        swapQuoteData.approvalAddress,
+                        fromTokenInfo.address
+                    );
+                    if (allowance < BigInt(fromAmountWei)) {
+                        btn.textContent = 'Approve in wallet...';
+                        const approveData = encodeSwapErc20Approve(swapQuoteData.approvalAddress, fromAmountWei);
+                        await executeSwapTx({ to: fromTokenInfo.address, data: approveData, value: '0' });
+                    }
+                }
+                btn.textContent = 'Swapping...';
+                const tr = swapQuoteData.transactionRequest;
+                const swapTx = await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
+                const toAmountDisplayed = document.getElementById('swapToAmount').textContent;
+                showToast(`Swapped ${amount} ${swapFrom} to ${swapTo}!`);
+
+                if (window.recordTransaction) {
+                    const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
+                    if (txHash) {
+                        window.recordTransaction({
+                            hash: txHash,
+                            type: 'swap',
+                            token: swapFrom,
+                            amount,
+                            to_token: swapTo,
+                            to_amount: toAmountDisplayed,
+                        });
+                    } else {
+                        console.warn('Could not determine swap tx hash — transaction not recorded:', swapTx);
+                    }
+                }
+
+                document.getElementById('swapFromAmount').value = '';
+                resetSwapQuote();
+                setTimeout(() => {
+                    if (window.currentWalletAddress) {
+                        fetchWalletBalances(window.currentWalletAddress);
+                    }
+                }, 4500);
+            } catch (err) {
+                console.error(err);
+                errorEl.textContent = String(err?.message || 'Swap failed — please try again.');
+                errorEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
+            }
+        };
+
+        async function executeSwapTx(transaction) {
+            const resp = await window.sequenceWaas.feeOptions({ network: 'polygon', transactions: [transaction] });
+            const feeOptions = resp.data?.feeOptions;
+            if (!feeOptions || feeOptions.length === 0) throw new Error('No gas fee options available right now.');
+            const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
+            const tx = await window.sequenceWaas.sendTransaction({
+                network: 'polygon',
+                transactions: [transaction],
+                transactionsFeeOption: polFeeOption,
+                transactionsFeeQuote: resp.data?.feeQuote,
+            });
+            if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
+                throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
+            }
+            return tx;
+        }
+
+        renderSwapTokens();
+        resetSwapQuote();
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Terdaftar!'))
+                    .catch(err => console.log('Gagal mendaftar Service Worker', err));
+            });
+        }
+
+        let deferredPrompt;
+        const pwaBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const closeBtn = document.getElementById('pwa-close-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaBanner.classList.remove('hidden');
+            setTimeout(() => {
+                pwaBanner.classList.remove('-translate-y-full');
+            }, 100);
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User menginstal aplikasi Netlink Pay');
+                }
+                deferredPrompt = null;
+                hidePwaBanner();
+            }
+        });
+
+        closeBtn.addEventListener('click', () => {
+            hidePwaBanner();
+        });
+
+        function hidePwaBanner() {
+            pwaBanner.classList.add('-translate-y-full');
+            setTimeout(() => {
+                pwaBanner.classList.add('hidden');
+            }, 300);
+        }
     </script>
 </body>
 </html>
-
