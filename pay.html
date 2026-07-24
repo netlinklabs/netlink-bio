@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netlink Pay</title>
+
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -80,8 +81,10 @@
         .usdc-card::before {
             content: '';
             position: absolute;
-            top: -40%; right: -20%;
-            width: 250px; height: 250px;
+            top: -40%;
+            right: -20%;
+            width: 250px;
+            height: 250px;
             border-radius: 50%;
             background: rgba(255,255,255,0.06);
             pointer-events: none;
@@ -89,8 +92,10 @@
         .usdc-card::after {
             content: '';
             position: absolute;
-            bottom: -30%; left: -15%;
-            width: 180px; height: 180px;
+            bottom: -30%;
+            left: -15%;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
             background: rgba(255,255,255,0.04);
             pointer-events: none;
@@ -106,8 +111,10 @@
         .token-card::before {
             content: '';
             position: absolute;
-            top: -30%; right: -20%;
-            width: 120px; height: 120px;
+            top: -30%;
+            right: -20%;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             background: rgba(255,255,255,0.05);
             pointer-events: none;
@@ -193,11 +200,9 @@
             justify-content: center;
         }
 
-        /* === SWAP CONFIRMATION MODAL === */
         .swap-confirm-modal {
             max-width: 400px;
             width: 100%;
-            overflow: hidden;
         }
         .swap-details-card {
             background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(2, 132, 199, 0.03) 100%);
@@ -209,41 +214,6 @@
             border: 1px solid rgba(14, 165, 233, 0.1);
         }
 
-        /* === COUNTDOWN BAR === */
-        .countdown-wrap {
-            position: relative;
-            width: 100%;
-            height: 3px;
-            background: rgba(0,0,0,0.06);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-        html.dark .countdown-wrap {
-            background: rgba(255,255,255,0.06);
-        }
-        .countdown-bar {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
-            border-radius: 2px;
-            transform-origin: left;
-            transition: none;
-        }
-        .countdown-bar.paused {
-            transition: none;
-        }
-        .countdown-text {
-            font-size: 11px;
-            color: #64748b;
-            text-align: right;
-            margin-top: 4px;
-        }
-        html.dark .countdown-text {
-            color: #94a3b8;
-        }
-
-        /* === SWIPE TO CONFIRM BUTTON === */
         .swipe-container {
             position: relative;
             width: 100%;
@@ -423,6 +393,9 @@
             </a>
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
+            </a>
+            <a href="tx.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="history" class="w-4 h-4"></i><span>Transaction History</span>
             </a>
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
@@ -613,29 +586,19 @@
                 <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by Alchemy Pay.</p>
             </div>
 
-            <!-- Transaction History -->
-            <div class="card rounded-2xl mb-8 overflow-hidden">
-                <button onclick="toggleAccordion('txHistoryBody')" class="w-full flex items-center justify-between p-4 lg:p-5">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                            <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
-                        </div>
-                        <div class="text-left">
-                            <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
-                            <p class="text-xs text-muted">Last 20 transactions</p>
-                        </div>
+            <!-- Transaction History moved to its own page: tx.html -->
+            <a href="tx.html" class="card rounded-2xl mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                        <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span id="txCountBadge" class="text-xs text-muted bg-surface px-2 py-0.5 rounded-full">0</span>
-                        <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="txHistoryBodyChevron"></i>
-                    </div>
-                </button>
-                <div id="txHistoryBody" class="accordion-body">
-                    <div id="txList" class="divide-y divide-subtle">
-                        <div class="p-6 text-center text-sm text-muted">Loading transactions...</div>
+                    <div class="text-left">
+                        <h3 class="font-semibold text-primary text-sm">Transaction History</h3>
+                        <p class="text-xs text-muted">View all &amp; download receipts</p>
                     </div>
                 </div>
-            </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted"></i>
+            </a>
         </div>
 
         <footer class="text-center pb-8 pt-4">
@@ -654,12 +617,6 @@
                 <h3 class="font-bold text-primary text-lg">Confirm Swap</h3>
                 <p class="text-xs text-muted mt-1">Review your transaction details</p>
             </div>
-
-            <!-- Countdown Bar -->
-            <div class="countdown-wrap">
-                <div class="countdown-bar" id="countdownBar"></div>
-            </div>
-            <p class="countdown-text" id="countdownText">Fetching latest price...</p>
 
             <!-- Swap Details Card -->
             <div class="swap-details-card p-4 mb-4">
@@ -693,13 +650,13 @@
                     <span id="confirmRate" class="text-xs font-medium text-primary">—</span>
                 </div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs text-muted">Slippage Protection</span>
+                    <span class="text-xs text-muted">Slippage Tolerance</span>
                     <span class="text-xs font-semibold text-blue-500">0.5%</span>
                 </div>
                 <div class="border-t border-subtle pt-2 mt-2">
                     <p class="text-[11px] text-muted leading-relaxed">
                         <i data-lucide="info" class="w-3 h-3 inline-block mr-1 text-blue-500"></i>
-                        Your swap is protected: if the price moves more than 0.5%, it will be cancelled automatically.
+                        Your swap is protected: if the price moves more than 0.5%, it will be cancelled automatically
                     </p>
                 </div>
             </div>
@@ -792,6 +749,23 @@
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window.supabaseClient = supabaseClient;
+
+        // Records a completed on-chain action into wallet_transactions so
+        // tx.html has an instant, accurate source of truth for anything WE
+        // initiated (send/swap) — no need to wait for PolygonScan indexing.
+        async function recordTransaction(row) {
+            try {
+                const { error } = await supabaseClient.from('wallet_transactions').insert({
+                    owner_id: currentUser.id,
+                    ...row,
+                });
+                if (error) console.error('Failed to record transaction:', error);
+            } catch (err) {
+                console.error('Failed to record transaction:', err);
+            }
+        }
+        window.recordTransaction = recordTransaction;
 
         const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
         const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
@@ -880,7 +854,6 @@
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
                 updateRampIframe(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
-                fetchTransactionHistory(currentWalletAddress);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
                 document.getElementById('noWalletState').classList.remove('hidden');
@@ -950,72 +923,6 @@
             } catch (err) {
                 console.error(err);
                 showToast('Could not fetch wallet balances');
-            }
-        }
-
-        async function fetchTransactionHistory(address) {
-            const list = document.getElementById('txList');
-            const badge = document.getElementById('txCountBadge');
-            try {
-                const url = `/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
-                const data = await fetchWithRetry(url);
-                const txs = data.transactions || [];
-                badge.textContent = txs.length;
-                if (txs.length === 0) {
-                    list.innerHTML = '<div class="p-6 text-center text-sm text-muted">No transactions yet.</div>';
-                    return;
-                }
-                list.innerHTML = txs.map((tx) => {
-                    const timeAgo = formatTimeAgo(tx.timestamp);
-                    const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
-                    if (tx.type === 'swap') {
-                        return `
-                            <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
-                                <div class="w-9 h-9 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between">
-                                        <p class="text-sm font-medium text-primary truncate">Swapped ${tx.fromToken} to ${tx.toToken}</p>
-                                        <p class="text-sm font-semibold text-primary">${tx.fromAmount} → ${tx.toAmount}</p>
-                                    </div>
-                                    <div class="flex items-center justify-between mt-0.5">
-                                        <p class="text-xs text-muted truncate">${tx.fromToken} / ${tx.toToken}</p>
-                                        <p class="text-xs text-muted">${timeAgo}</p>
-                                    </div>
-                                </div>
-                                <i data-lucide="external-link" class="w-3.5 h-3.5 text-muted flex-shrink-0"></i>
-                            </a>
-                        `;
-                    }
-                    const isIn = tx.type === 'in';
-                    const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
-                    const colorClass = isIn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500';
-                    const amountClass = isIn ? 'tx-amount-in' : 'tx-amount-out';
-                    const sign = isIn ? '+' : '-';
-                    return `
-                        <a href="${explorerUrl}" target="_blank" rel="noopener" class="tx-row p-4 flex items-center gap-3 no-underline">
-                            <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="${icon}" class="w-4 h-4"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="text-sm font-medium text-primary truncate">${isIn ? 'Received' : 'Sent'} ${tx.token}</p>
-                                    <p class="text-sm font-semibold ${amountClass}">${sign}${tx.amount} ${tx.token}</p>
-                                </div>
-                                <div class="flex items-center justify-between mt-0.5">
-                                    <p class="text-xs text-muted truncate">${tx.counterparty ? truncateAddress(tx.counterparty) : '—'}</p>
-                                    <p class="text-xs text-muted">${timeAgo}</p>
-                                </div>
-                            </div>
-                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-muted flex-shrink-0"></i>
-                        </a>
-                    `;
-                }).join('');
-                lucide.createIcons();
-            } catch (err) {
-                console.error(err);
-                list.innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load transaction history.</div>';
             }
         }
 
@@ -1301,13 +1208,28 @@
             const valueWei = toWei(amount, config.decimals);
             statusEl.textContent = 'Sending...';
             try {
-                await performTransfer(token, to, valueWei);
+                const tx = await performTransfer(token, to, valueWei);
                 showToast(`Sent ${amount} ${token}!`);
                 closeSendModal();
+
+                if (window.recordTransaction) {
+                    const txHash = tx.txHash || tx.hash || tx.data?.txHash || tx.receipt?.transactionHash;
+                    if (txHash) {
+                        window.recordTransaction({
+                            hash: txHash,
+                            type: 'send',
+                            token,
+                            amount,
+                            counterparty_address: to,
+                        });
+                    } else {
+                        console.warn('Could not determine tx hash — transaction not recorded:', tx);
+                    }
+                }
+
                 setTimeout(() => {
                     if (window.currentWalletAddress) {
                         fetchWalletBalances(window.currentWalletAddress);
-                        fetchTransactionHistory(window.currentWalletAddress);
                     }
                 }, 4500);
             } catch (err) {
@@ -1319,6 +1241,9 @@
             }
         }
     </script>
+    <!-- ========================================== -->
+    <!-- SWAP POL <-> USDC VIA LI.FI                -->
+    <!-- ========================================== -->
     <script type="module">
         const SWAP_TOKENS = {
             POL:  { symbol: 'POL',  logo: '/assets/polygon-logo.png', decimals: 18, address: null },
@@ -1330,12 +1255,6 @@
         let swapQuoteData = null;
         let swapDebounceTimer = null;
         let swapQuoteToken = 0;
-
-        // Countdown state
-        let countdownInterval = null;
-        let countdownRemaining = 30;
-        let countdownPaused = false;
-        const COUNTDOWN_DURATION = 30;
 
         function getSwapBalance(sym) {
             const b = window.currentBalances || { net: '0', usdc: '0', pol: '0' };
@@ -1471,79 +1390,6 @@
             return BigInt(json.result || '0x0');
         }
 
-        // === COUNTDOWN FUNCTIONS ===
-        function startCountdown() {
-            countdownRemaining = COUNTDOWN_DURATION;
-            countdownPaused = false;
-            updateCountdownUI();
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                if (countdownPaused) return;
-                countdownRemaining--;
-                updateCountdownUI();
-                if (countdownRemaining <= 0) {
-                    // Time's up - requote
-                    requoteInModal();
-                }
-            }, 1000);
-        }
-
-        function pauseCountdown() {
-            countdownPaused = true;
-        }
-
-        function resumeCountdown() {
-            countdownPaused = false;
-        }
-
-        function stopCountdown() {
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-            }
-        }
-
-        function updateCountdownUI() {
-            const bar = document.getElementById('countdownBar');
-            const text = document.getElementById('countdownText');
-            if (!bar || !text) return;
-            const progress = countdownRemaining / COUNTDOWN_DURATION;
-            bar.style.transform = `scaleX(${progress})`;
-            if (countdownRemaining > 0) {
-                text.textContent = `Quote refreshes in ${countdownRemaining}s`;
-            } else {
-                text.textContent = 'Refreshing price...';
-            }
-        }
-
-        async function requoteInModal() {
-            const amount = document.getElementById('swapFromAmount').value.trim();
-            const address = window.currentWalletAddress;
-            const text = document.getElementById('countdownText');
-            if (!address || !amount) return;
-            text.textContent = 'Fetching latest price...';
-            try {
-                const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
-                const url = `/api/lifi-quote?fromToken=${swapFrom}&toToken=${swapTo}&fromAmount=${fromAmountWei}&fromAddress=${address}`;
-                const res = await fetch(url);
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Quote failed');
-                swapQuoteData = data;
-                const toAmountReadable = fromSwapWei(data.toAmount, SWAP_TOKENS[swapTo].decimals);
-                // Update modal display
-                document.getElementById('confirmToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
-                const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
-                document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
-                // Restart countdown
-                startCountdown();
-            } catch (err) {
-                console.error(err);
-                text.textContent = 'Could not refresh price — please try again';
-                // Restart countdown anyway to retry
-                setTimeout(startCountdown, 2000);
-            }
-        }
-
         // === SWAP CONFIRMATION MODAL & SWIPE BUTTON ===
         let isSwiping = false;
         let swipeStartX = 0;
@@ -1564,15 +1410,12 @@
             document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
             resetSwipeState();
             document.getElementById('swapConfirmModal').classList.add('active');
-            // Start countdown when modal opens
-            startCountdown();
             if (window.lucide) lucide.createIcons();
         };
 
         window.closeSwapConfirmModal = function () {
             document.getElementById('swapConfirmModal').classList.remove('active');
             resetSwipeState();
-            stopCountdown();
         };
 
         function resetSwipeState() {
@@ -1607,8 +1450,6 @@
             thumb.classList.add('dragging');
             swipeStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             swipeCurrentX = swipeStartX;
-            // Pause countdown while swiping
-            pauseCountdown();
         }
 
         function onSwipeMove(e) {
@@ -1656,8 +1497,6 @@
                 setTimeout(() => {
                     thumb.style.transition = 'left 0.1s ease-out, background 0.3s ease';
                 }, 300);
-                // Resume countdown if swipe cancelled
-                resumeCountdown();
             }
         }
 
@@ -1692,14 +1531,31 @@
                 }
                 btn.textContent = 'Swapping...';
                 const tr = swapQuoteData.transactionRequest;
-                await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
+                const swapTx = await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
+                const toAmountDisplayed = document.getElementById('swapToAmount').textContent;
                 showToast(`Swapped ${amount} ${swapFrom} to ${swapTo}!`);
+
+                if (window.recordTransaction) {
+                    const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
+                    if (txHash) {
+                        window.recordTransaction({
+                            hash: txHash,
+                            type: 'swap',
+                            token: swapFrom,
+                            amount,
+                            to_token: swapTo,
+                            to_amount: toAmountDisplayed,
+                        });
+                    } else {
+                        console.warn('Could not determine swap tx hash — transaction not recorded:', swapTx);
+                    }
+                }
+
                 document.getElementById('swapFromAmount').value = '';
                 resetSwapQuote();
                 setTimeout(() => {
                     if (window.currentWalletAddress) {
                         fetchWalletBalances(window.currentWalletAddress);
-                        fetchTransactionHistory(window.currentWalletAddress);
                     }
                 }, 4500);
             } catch (err) {
@@ -1731,6 +1587,9 @@
         renderSwapTokens();
         resetSwapQuote();
     </script>
+    <!-- ========================================== -->
+    <!-- LOGIKA PWA (SERVICE WORKER & BANNER)       -->
+    <!-- ========================================== -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
