@@ -794,6 +794,7 @@
             try {
                 const { error } = await supabaseClient.from('wallet_transactions').insert({
                     owner_id: currentUser.id,
+                    occurred_at: new Date().toISOString(),
                     ...row,
                 });
                 if (error) console.error('Failed to record transaction:', error);
