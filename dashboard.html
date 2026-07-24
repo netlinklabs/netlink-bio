@@ -185,6 +185,9 @@
             <a href="#" onclick="event.preventDefault(); scrollToLandingPageCard();" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
                 <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
             </a>
+            <a href="tx.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="history" class="w-4 h-4"></i><span>Transaction History</span>
+            </a>
             <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
                 <i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Store</span>
                 <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
@@ -353,12 +356,15 @@
             </div>
             <p id="usernameStatus" class="mt-1.5 text-xs font-medium hidden"></p>
 
-            <div class="mt-4 flex items-center gap-6">
+            <div class="mt-4 flex items-center gap-6 flex-wrap">
                 <label class="flex items-center gap-2 text-sm text-secondary">
                     <input id="profileShowCv" type="checkbox" class="rounded"> Show CV
                 </label>
                 <label class="flex items-center gap-2 text-sm text-secondary">
                     <input id="profileShowDonate" type="checkbox" class="rounded"> Show Wallet
+                </label>
+                <label class="flex items-center gap-2 text-sm text-secondary">
+                    <input id="profileShowNameOnReceipt" type="checkbox" class="rounded"> Show name on receipts
                 </label>
             </div>
 
@@ -980,6 +986,7 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('profileUsername').value = data.username || '';
             document.getElementById('profileShowCv').checked = data.show_cv !== false;
             document.getElementById('profileShowDonate').checked = data.show_donate === true;
+            document.getElementById('profileShowNameOnReceipt').checked = data.show_name_on_receipt === true;
 
             document.getElementById('profileDisplayName').value = data.display_name || '';
             document.getElementById('profileEmail').value = data.contact_email || '';
@@ -1189,6 +1196,7 @@ window.openNetlinkPay = openNetlinkPay;
                     username,
                     show_cv: document.getElementById('profileShowCv').checked,
                     show_donate: document.getElementById('profileShowDonate').checked,
+                    show_name_on_receipt: document.getElementById('profileShowNameOnReceipt').checked,
                 }).eq('id', currentUser.id);
 
                 if (error) {
