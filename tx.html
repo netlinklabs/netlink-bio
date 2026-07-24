@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History — Netlink Pay</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        .hover-surface:hover { background: rgba(0,0,0,0.03); }
+        .sidebar { background: #ffffff; }
+        .mobile-header { background: #ffffff; }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .hover-surface:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar { background: #1e293b; border-left: 1px solid rgba(255,255,255,0.05); }
+        html.dark .mobile-header { background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        html.dark .sidebar nav a.text-secondary { color: #94a3b8 !important; }
+        html.dark .sidebar nav a.text-secondary:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar .border-t { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar .text-muted { color: #64748b !important; }
+        html.dark .tx-row:hover { background: rgba(255,255,255,0.03); }
+        html.dark .tx-amount-in { color: #34d399; }
+        html.dark .tx-amount-out { color: #f87171; }
+
+        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; height: 100dvh; z-index: 50; transition: right 0.3s ease; overflow: hidden; border-left: 1px solid rgba(0,0,0,0.08); }
+        .sidebar nav { overflow-y: auto; min-height: 0; }
+        .sidebar.open { right: 0; }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        @media (min-width: 1024px) {
+            .sidebar { right: 0; width: 280px; transition: none; }
+            .sidebar-overlay { display: none !important; }
+            .main-content { margin-right: 280px; margin-left: 0; }
+            .mobile-header { display: none; }
+        }
+        @media (max-width: 1023px) {
+            .main-content { margin-right: 0; }
+            .mobile-header { display: flex; }
+        }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); }
+
+        .tx-row { transition: background 0.15s; }
+        .tx-row:hover { background: rgba(0,0,0,0.02); }
+        .tx-amount-in { color: #059669; }
+        .tx-amount-out { color: #dc2626; }
+
+        .filter-pill { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid rgba(0,0,0,0.08); color: #475569; background: white; cursor: pointer; white-space: nowrap; }
+        .filter-pill.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+        html.dark .filter-pill { background: #1e293b; border-color: rgba(255,255,255,0.08); color: #94a3b8; }
+        html.dark .filter-pill.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading transaction history...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Saved successfully!</div>
+
+    <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
+        <h1 class="text-lg font-semibold text-primary">Transaction History</h1>
+        <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
+            <i data-lucide="menu" class="w-6 h-6 text-primary"></i>
+        </button>
+    </header>
+
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar text-white flex flex-col">
+        <div class="flex p-4 border-b border-subtle items-center justify-between">
+            <a href="dashboard.html" class="flex items-center gap-2">
+                <img src="/assets/netlinkbio-icon.png" alt="Netlink.bio" class="w-8 h-8 rounded-lg">
+                <span class="text-primary font-bold">netlink<span class="text-blue-500">.bio</span></span>
+            </a>
+        </div>
+        <nav class="flex-1 py-2">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
+            </a>
+            <a href="pay.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="wallet" class="w-4 h-4"></i><span>Netlink Pay</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-500 border-l-2 border-blue-500">
+                <i data-lucide="history" class="w-4 h-4"></i><span>Transaction History</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
+                <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
+            </a>
+        </nav>
+        <div class="p-4 border-t border-subtle">
+            <div class="flex items-center gap-3">
+                <div id="sidebarAvatarWrap" class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-lg overflow-hidden flex-shrink-0">
+                    <img id="sidebarAvatarImg" alt="" class="w-full h-full object-cover hidden">
+                    <span id="sidebarAvatarInitial">?</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">Loading...</p>
+                    <p id="sidebarTierLabel" class="text-xs text-muted">—</p>
+                </div>
+                <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content px-4 pt-20 pb-8 lg:px-8 lg:pt-8 max-w-2xl mx-auto lg:mr-[calc(280px+2rem)] xl:mr-[calc(280px+4rem)]">
+        <div class="hidden lg:block mb-6">
+            <h2 class="text-2xl font-bold text-primary">Transaction History</h2>
+            <p class="text-secondary text-sm mt-1">All your sends, receives, and swaps.</p>
+        </div>
+
+        <div id="noWalletState" class="hidden card rounded-2xl p-8 mb-5 text-center">
+            <i data-lucide="sparkles" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
+            <p class="text-sm text-secondary mb-4">You don't have a Netlink Pay wallet yet.</p>
+            <a href="dashboard.html" class="inline-block px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Go to Dashboard</a>
+        </div>
+
+        <div id="txContent" class="hidden">
+            <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+                <button class="filter-pill active" data-filter="all" onclick="setFilter('all')">All</button>
+                <button class="filter-pill" data-filter="send" onclick="setFilter('send')">Sent</button>
+                <button class="filter-pill" data-filter="receive" onclick="setFilter('receive')">Received</button>
+                <button class="filter-pill" data-filter="swap" onclick="setFilter('swap')">Swaps</button>
+            </div>
+
+            <div class="card rounded-2xl overflow-hidden">
+                <div id="txList" class="divide-y divide-subtle">
+                    <div class="p-6 text-center text-sm text-muted">Loading transactions...</div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button id="loadMoreBtn" onclick="loadMoreTransactions()" class="hidden text-sm text-blue-500 hover:text-blue-600 font-medium">Load more</button>
+            </div>
+        </div>
+
+        <footer class="text-center pb-8 pt-8">
+            <p class="text-xs text-muted">Developed by Netlink Labs</p>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const RECEIPT_LOGO_URL = 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
+
+        let currentUser = null;
+        let currentProfile = null;
+        let allTx = [];
+        let currentFilter = 'all';
+        const PAGE_SIZE = 30;
+        let loadedCount = 0;
+
+        function showAuthError(msg) {
+            document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
+        }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        function truncateAddress(addr) {
+            if (!addr) return '';
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login.html'; return; }
+                currentUser = session.user;
+                document.getElementById('authGate').style.display = 'none';
+                await loadUserProfile();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        async function loadUserProfile() {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('username, display_name, avatar_url, tier, wallet_address, show_name_on_receipt')
+                .eq('id', currentUser.id).single();
+
+            if (error) { console.error('Failed to load profile:', error); return; }
+            currentProfile = data;
+
+            const label = data.display_name || data.username || currentUser.email;
+            document.getElementById('sidebarUserEmail').textContent = label;
+            document.getElementById('sidebarTierLabel').textContent =
+                (data.tier || 'basic').charAt(0).toUpperCase() + (data.tier || 'basic').slice(1) + ' Plan';
+
+            const initialChar = label.charAt(0).toUpperCase();
+            const img = document.getElementById('sidebarAvatarImg');
+            const initial = document.getElementById('sidebarAvatarInitial');
+            if (data.avatar_url) {
+                img.src = data.avatar_url; img.classList.remove('hidden'); initial.classList.add('hidden');
+            } else {
+                img.classList.add('hidden'); initial.classList.remove('hidden'); initial.textContent = initialChar;
+            }
+
+            if (!data.wallet_address) {
+                document.getElementById('noWalletState').classList.remove('hidden');
+                document.getElementById('txContent').classList.add('hidden');
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            document.getElementById('txContent').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+
+            await syncIncomingTransactions(data.wallet_address);
+            await loadTransactions();
+        }
+
+        // Incoming transfers (someone sending TO this wallet) can't be known
+        // in advance — they weren't initiated from this app. We poll
+        // PolygonScan (via the existing proxy) just for the 'in' side, and
+        // only insert hashes we don't already have. Everything WE initiate
+        // (send/swap) is recorded directly at the moment it happens in
+        // pay.html, so this sync never needs to touch those.
+        async function syncIncomingTransactions(address) {
+            try {
+                const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash);
+                if (!incoming.length) return;
+
+                const { data: existing } = await supabaseClient
+                    .from('wallet_transactions').select('hash').eq('owner_id', currentUser.id);
+                const existingHashes = new Set((existing || []).map((r) => r.hash));
+
+                const newRows = incoming
+                    .filter((t) => !existingHashes.has(t.hash))
+                    .map((t) => ({
+                        owner_id: currentUser.id,
+                        hash: t.hash,
+                        type: 'receive',
+                        token: t.token,
+                        amount: t.amount,
+                        counterparty_address: t.counterparty || null,
+                    }));
+
+                if (newRows.length) {
+                    const { error } = await supabaseClient.from('wallet_transactions').insert(newRows);
+                    if (error) console.error('Failed to sync incoming transactions:', error);
+                }
+            } catch (err) {
+                console.error('Incoming sync failed:', err);
+            }
+        }
+
+        async function loadTransactions() {
+            const { data, error } = await supabaseClient
+                .from('wallet_transactions')
+                .select('*')
+                .eq('owner_id', currentUser.id)
+                .order('created_at', { ascending: false })
+                .limit(200);
+
+            if (error) {
+                console.error('Failed to load transactions:', error);
+                document.getElementById('txList').innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load transaction history.</div>';
+                return;
+            }
+
+            allTx = data || [];
+            loadedCount = 0;
+            renderTransactions(true);
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-pill').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            loadedCount = 0;
+            renderTransactions(true);
+        }
+
+        function loadMoreTransactions() {
+            renderTransactions(false);
+        }
+
+        function formatTimeAgo(isoOrDate) {
+            const ts = typeof isoOrDate === 'string' ? new Date(isoOrDate).getTime() : isoOrDate;
+            const diffMs = Date.now() - ts;
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return `${mins} min ago`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `${hours} hr ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+            return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function renderTransactions(reset) {
+            const list = document.getElementById('txList');
+            const filtered = currentFilter === 'all' ? allTx : allTx.filter((t) => t.type === currentFilter);
+
+            if (reset) list.innerHTML = '';
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="p-6 text-center text-sm text-muted">No transactions yet.</div>';
+                document.getElementById('loadMoreBtn').classList.add('hidden');
+                return;
+            }
+
+            const slice = filtered.slice(loadedCount, loadedCount + PAGE_SIZE);
+            loadedCount += slice.length;
+
+            const rowsHtml = slice.map((tx) => rowHtml(tx)).join('');
+            list.insertAdjacentHTML('beforeend', rowsHtml);
+
+            const moreBtn = document.getElementById('loadMoreBtn');
+            moreBtn.classList.toggle('hidden', loadedCount >= filtered.length);
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function rowHtml(tx) {
+            const timeAgo = formatTimeAgo(tx.created_at);
+            const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
+
+            if (tx.type === 'swap') {
+                return `
+                    <div class="tx-row p-4 flex items-center gap-3">
+                        <div class="w-9 h-9 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm font-medium text-primary truncate">Swapped ${tx.token} to ${tx.to_token}</p>
+                                <p class="text-sm font-semibold text-primary">${tx.amount} → ${tx.to_amount}</p>
+                            </div>
+                            <div class="flex items-center justify-between mt-0.5">
+                                <p class="text-xs text-muted">${timeAgo}</p>
+                                <a href="${explorerUrl}" target="_blank" rel="noopener" class="text-xs text-blue-500 hover:underline">View</a>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            const isIn = tx.type === 'receive';
+            const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
+            const colorClass = isIn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500';
+            const amountClass = isIn ? 'tx-amount-in' : 'tx-amount-out';
+            const sign = isIn ? '+' : '-';
+
+            return `
+                <div class="tx-row p-4 flex items-center gap-3">
+                    <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="${icon}" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm font-medium text-primary truncate">${isIn ? 'Received' : 'Sent'} ${tx.token}</p>
+                            <p class="text-sm font-semibold ${amountClass}">${sign}${tx.amount} ${tx.token}</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-0.5">
+                            <p class="text-xs text-muted truncate">${tx.counterparty_address ? truncateAddress(tx.counterparty_address) : '—'}</p>
+                            <p class="text-xs text-muted">${timeAgo}</p>
+                        </div>
+                    </div>
+                    <button onclick="downloadReceipt('${tx.id}')" class="p-2 hover-surface rounded-lg transition flex-shrink-0" title="Download receipt">
+                        <i data-lucide="download" class="w-4 h-4 text-secondary"></i>
+                    </button>
+                </div>`;
+        }
+
+        lucide.createIcons();
+        checkAuth();
+    </script>
+
+    <script>
+        // ==========================================
+        // PDF RECEIPT GENERATION
+        // ==========================================
+        // Names resolve LIVE at download time (not stored), so if either
+        // side changes their display name or their privacy toggle later,
+        // a re-downloaded receipt always reflects the current state.
+
+        async function resolveCounterpartyName(address) {
+            if (!address) return null;
+            try {
+                const { data, error } = await supabaseClient.rpc('resolve_wallet_owner_name', { check_address: address });
+                if (error) { console.error(error); return null; }
+                return data || null;
+            } catch (err) {
+                console.error('Failed to resolve counterparty name:', err);
+                return null;
+            }
+        }
+
+        // Fetches gas fee for a tx hash directly from a public Polygon RPC —
+        // no backend endpoint needed, same pattern already used elsewhere
+        // in this app (e.g. checking ERC20 allowance before a swap).
+        async function fetchGasFee(hash) {
+            try {
+                const rpcCall = async (method, params) => {
+                    const res = await fetch('https://polygon-rpc.com', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+                    });
+                    const json = await res.json();
+                    return json.result;
+                };
+
+                const receipt = await rpcCall('eth_getTransactionReceipt', [hash]);
+                if (!receipt) return null;
+
+                const gasUsed = BigInt(receipt.gasUsed || '0x0');
+                let gasPrice = receipt.effectiveGasPrice;
+                if (!gasPrice) {
+                    const txDetail = await rpcCall('eth_getTransactionByHash', [hash]);
+                    gasPrice = txDetail?.gasPrice || '0x0';
+                }
+                const feeWei = gasUsed * BigInt(gasPrice);
+                const divisor = 10n ** 18n;
+                const whole = feeWei / divisor;
+                const frac = feeWei % divisor;
+                const fracStr = frac.toString().padStart(18, '0').slice(0, 4);
+                return `${whole}.${fracStr}`;
+            } catch (err) {
+                console.error('Failed to fetch gas fee:', err);
+                return null;
+            }
+        }
+
+        async function fetchPolPriceUsd() {
+            try {
+                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd');
+                const json = await res.json();
+                return json['polygon-ecosystem-token']?.usd || null;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        async function imageUrlToDataUrl(url) {
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                console.error('Failed to load image for PDF:', err);
+                return null;
+            }
+        }
+
+        async function downloadReceipt(txId) {
+            const tx = allTx.find((t) => t.id === txId);
+            if (!tx) { showToast('Transaction not found'); return; }
+            if (tx.type === 'swap') { showToast('Receipts are only available for sends and receives'); return; }
+
+            showToast('Generating receipt...');
+
+            const isSend = tx.type === 'send';
+            const selfName = currentProfile.display_name || currentProfile.username || 'You';
+            const selfAddress = currentProfile.wallet_address || '';
+            const counterpartyAddress = tx.counterparty_address || '';
+
+            const counterpartyName = await resolveCounterpartyName(counterpartyAddress);
+            const [gasFee, logoDataUrl, qrDataUrl] = await Promise.all([
+                fetchGasFee(tx.hash),
+                imageUrlToDataUrl(RECEIPT_LOGO_URL),
+                imageUrlToDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://polygonscan.com/tx/' + tx.hash)}`),
+            ]);
+
+            let fiatLine = '';
+            if (tx.token === 'USDC') {
+                fiatLine = `≈ $${parseFloat(tx.amount).toFixed(2)}`;
+            } else if (tx.token === 'POL') {
+                const price = await fetchPolPriceUsd();
+                if (price) fiatLine = `≈ $${(parseFloat(tx.amount) * price).toFixed(2)}`;
+            }
+
+            const senderLabel = isSend ? selfName : (counterpartyName || truncateAddress(counterpartyAddress));
+            const senderAddr = isSend ? selfAddress : counterpartyAddress;
+            const recipientLabel = isSend ? (counterpartyName || truncateAddress(counterpartyAddress)) : selfName;
+            const recipientAddr = isSend ? counterpartyAddress : selfAddress;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: [420, 620] });
+
+            const tealColor = [20, 184, 166];
+            const darkColor = [15, 23, 42];
+            const grayColor = [100, 116, 139];
+            const lightBg = [248, 250, 252];
+
+            let y = 40;
+
+            // Header: title + logo
+            doc.setFontSize(22); doc.setFont(undefined, 'bold'); doc.setTextColor(...darkColor);
+            doc.text('Receipt', 40, y);
+            doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(...grayColor);
+            doc.text('Digital Asset Transfer', 40, y + 16);
+            if (logoDataUrl) {
+                try { doc.addImage(logoDataUrl, 'PNG', 280, y - 22, 100, 34); } catch (e) {}
+            }
+            y += 45;
+
+            // Status box
+            doc.setFillColor(...lightBg);
+            doc.roundedRect(40, y, 340, 44, 6, 6, 'F');
+            doc.setFontSize(10); doc.setTextColor(...grayColor);
+            doc.text('Status', 52, y + 17);
+            doc.text('Date & Time', 52, y + 33);
+            doc.setFont(undefined, 'bold'); doc.setTextColor(...darkColor);
+            doc.text(': Success', 130, y + 17);
+            const dateStr = new Date(tx.created_at).toUTCString().replace('GMT', '+UTC');
+            doc.text(`: ${dateStr}`, 130, y + 33);
+            doc.setFont(undefined, 'normal');
+            y += 60;
+
+            // Sender / Recipient box
+            doc.setFillColor(...lightBg);
+            doc.roundedRect(40, y, 340, 66, 6, 6, 'F');
+            doc.setFontSize(9); doc.setTextColor(...grayColor);
+            doc.text('Sender :', 52, y + 16);
+            doc.text('Recipient :', 210, y + 16);
+            doc.setFont(undefined, 'bold'); doc.setFontSize(11); doc.setTextColor(...darkColor);
+            doc.text(senderLabel, 52, y + 30);
+            doc.text(recipientLabel, 210, y + 30);
+            doc.setFont(undefined, 'normal'); doc.setFontSize(8); doc.setTextColor(...grayColor);
+            doc.text('Wallet Address:', 52, y + 44);
+            doc.text('Wallet Address:', 210, y + 44);
+            const senderAddrLines = doc.splitTextToSize(senderAddr, 140);
+            const recipientAddrLines = doc.splitTextToSize(recipientAddr, 140);
+            doc.text(senderAddrLines, 52, y + 55);
+            doc.text(recipientAddrLines, 210, y + 55);
+            y += 82;
+
+            // Asset / Amount rows
+            function fieldRow(label, valueLines, valueBold) {
+                doc.setFontSize(10); doc.setTextColor(...grayColor);
+                doc.text(label, 40, y);
+                doc.setTextColor(...darkColor);
+                doc.setFont(undefined, valueBold ? 'bold' : 'normal');
+                if (Array.isArray(valueLines)) {
+                    doc.text(valueLines[0], 380, y, { align: 'right' });
+                    if (valueLines[1]) {
+                        doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(...grayColor);
+                        doc.text(valueLines[1], 380, y + 12, { align: 'right' });
+                        y += 12;
+                    }
+                } else {
+                    doc.text(valueLines, 380, y, { align: 'right' });
+                }
+                doc.setFont(undefined, 'normal');
+                y += 20;
+                doc.setDrawColor(230, 230, 230);
+                doc.line(40, y - 8, 380, y - 8);
+            }
+
+            y += 6;
+            fieldRow('Asset', tx.token, true);
+            fieldRow('Amount', fiatLine ? [tx.amount, fiatLine] : [tx.amount], true);
+            fieldRow('Network', 'Polygon (PoS)', false);
+            fieldRow('Gas Fee', gasFee ? `${gasFee} POL` : '—', false);
+
+            // Transaction hash + QR
+            y += 10;
+            doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(...darkColor);
+            doc.text('Transaction Hash', 40, y);
+            y += 14;
+            doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(...grayColor);
+            const hashLines = doc.splitTextToSize(tx.hash, 220);
+            doc.text(hashLines, 40, y);
+
+            if (qrDataUrl) {
+                try { doc.addImage(qrDataUrl, 'PNG', 300, y - 40, 80, 80); } catch (e) {}
+            }
+            y += hashLines.length * 10 + 16;
+
+            doc.setFontSize(8);
+            doc.text('Block Explorer: polygonscan.com', 40, y);
+            y += 20;
+
+            doc.setFontSize(7.5); doc.setTextColor(...grayColor);
+            const footerLines = doc.splitTextToSize(
+                'This document summarizes an on-chain transaction recorded on the Polygon Network.', 340
+            );
+            doc.text(footerLines, 40, y);
+
+            doc.save(`netlinkpay-receipt-${tx.hash.slice(0, 10)}.pdf`);
+        }
+        window.downloadReceipt = downloadReceipt;
+    </script>
+</body>
+</html>
+
