@@ -17,13 +17,13 @@
   <meta property="og:description" content="Create your Link in Bio, Professional CV, Business Page, and Crypto Wallet — all connected in one simple profile.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://netlink.bio">
-  <meta property="og:image" content="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/linkbio-banner.svg">
+  <meta property="og:image" content="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/linkbio-banner.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Netlink.bio — Build Your Digital Identity">
   <meta name="twitter:description" content="Create your Link in Bio, Professional CV, Business Page, and Crypto Wallet — all connected in one simple profile.">
-  <meta name="twitter:image" content="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/linkbio-banner.svg">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/linkbio-banner.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-icon.png">
@@ -233,8 +233,9 @@
     .footer { background-color: var(--footer-bg); border-top: 1px solid var(--footer-border); padding-top: var(--space-10); padding-bottom: var(--space-5); }
     .footer-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-6); margin-bottom: var(--space-8); }
     .footer-brand-block { max-width: 320px; }
-    .footer-brand { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
-    .footer-brand img { height: 36px; width: auto; }
+    .footer-brand { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
+    .footer-brand img { height: 48px; width: auto; }
+    .footer-brand-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.125rem; color: var(--footer-title); margin-bottom: var(--space-2); }
     .footer-brand-desc { font-size: 0.9375rem; color: var(--footer-text); line-height: 1.7; }
     .footer-col-title { font-family: var(--font-heading); font-size: 0.875rem; font-weight: 600; color: var(--footer-title); margin-bottom: var(--space-3); letter-spacing: 0.02em; }
     .footer-links { display: flex; flex-direction: column; gap: 10px; }
@@ -288,7 +289,7 @@
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
         <a href="#docs">Documentation</a>
-        <a href="#login">Login</a>
+        <a href="https://netlink-bio.vercel.app/login.html">Login</a>
       </nav>
       <div class="header-cta">
         <a href="https://netlink-bio.vercel.app/login.html" class="btn btn-primary">Get Started Free</a>
@@ -304,7 +305,7 @@
     <a href="#features">Features</a>
     <a href="#how-it-works">How It Works</a>
     <a href="#docs">Documentation</a>
-    <a href="#login">Login</a>
+    <a href="https://netlink-bio.vercel.app/login.html">Login</a>
   </nav>
 
   <main id="main-content">
@@ -456,8 +457,9 @@
       <div class="footer-grid">
         <div class="footer-brand-block">
           <div class="footer-brand">
-            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" width="160" height="36">
+            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" width="200" height="48">
           </div>
+          <h4 class="footer-brand-title">About</h4>
           <p class="footer-brand-desc">Netlink.bio is a modern digital identity platform that helps individuals and businesses create a trusted online presence, showcase their work, connect with opportunities, receive payments, and build an AI-ready profile — all from a single trusted identity.</p>
         </div>
         <div>
@@ -467,6 +469,7 @@
             <a href="#digital-cv">Digital CV</a>
             <a href="#business-profile">Business Profile</a>
             <a href="#netlink-pay">Netlink Pay</a>
+            <a href="#netlink-token">Netlink Token (NET)</a>
             <a href="#verification">Verification</a>
           </div>
         </div>
@@ -589,21 +592,23 @@
       const checkerForm = document.querySelector('.checker-form');
       const checkerInput = document.querySelector('.checker-input');
       const checkerBtn = document.querySelector('.checker-btn');
-      checkerForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const username = checkerInput.value.trim();
-        if (!username) {
-          checkerInput.style.borderColor = '#ef4444';
-          checkerInput.focus();
-          setTimeout(function() { checkerInput.style.borderColor = ''; }, 2000);
-          return;
-        }
-        const originalText = checkerBtn.textContent;
-        checkerBtn.textContent = 'Checking...';
-        checkerBtn.disabled = true;
-        checkerBtn.style.opacity = '0.7';
-        setTimeout(function() { checkerBtn.textContent = originalText; checkerBtn.disabled = false; checkerBtn.style.opacity = ''; }, 1500);
-      });
+      if (checkerForm && checkerInput && checkerBtn) {
+        checkerForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const username = checkerInput.value.trim();
+          if (!username) {
+            checkerInput.style.borderColor = '#ef4444';
+            checkerInput.focus();
+            setTimeout(function() { checkerInput.style.borderColor = ''; }, 2000);
+            return;
+          }
+          const originalText = checkerBtn.textContent;
+          checkerBtn.textContent = 'Checking...';
+          checkerBtn.disabled = true;
+          checkerBtn.style.opacity = '0.7';
+          setTimeout(function() { checkerBtn.textContent = originalText; checkerBtn.disabled = false; checkerBtn.style.opacity = ''; }, 1500);
+        });
+      }
     })();
   </script>
 </body>
