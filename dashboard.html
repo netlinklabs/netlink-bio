@@ -1,2300 +1,1635 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netlink.bio - Dashboard</title>
-    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
-        }
-    </script>
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        body { background: #f8fafc; color: #1e293b; }
-        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .text-primary { color: #0f172a; }
-        .text-secondary { color: #475569; }
-        .text-muted { color: #64748b; }
-        .bg-surface { background: #f1f5f9; }
-        .border-subtle { border-color: rgba(0,0,0,0.06); }
-        .hover-surface:hover { background: rgba(0,0,0,0.03); }
-        .sidebar { background: #ffffff; }
-        .mobile-header { background: #ffffff; }
-        .notification-panel { background: #ffffff; }
-        .progress-bar { background: #e2e8f0; }
-        .locked-card::before { background: rgba(241, 245, 249, 0.92); }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-        html.dark body { background: #0f172a; color: #e2e8f0; }
-        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
-        html.dark .text-primary { color: #f8fafc !important; }
-        html.dark .text-secondary { color: #94a3b8 !important; }
-        html.dark .text-muted { color: #64748b !important; }
-        html.dark .bg-surface { background: #0f172a !important; }
-        html.dark .border-subtle, html.dark .border-white\/5 { border-color: rgba(255,255,255,0.05) !important; }
-        html.dark .border-white\/10 { border-color: rgba(255,255,255,0.08) !important; }
-        html.dark .hover-surface:hover, html.dark .hover\:bg-white\/5:hover { background: rgba(255,255,255,0.05) !important; }
-        html.dark .sidebar { background: #1e293b; border-left: 1px solid rgba(255,255,255,0.05); }
-        html.dark .mobile-header { background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        html.dark .notification-panel { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        html.dark .progress-bar { background: #0f172a; }
-        html.dark .locked-card::before { background: rgba(15, 23, 42, 0.85); }
-        html.dark .toast { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        html.dark .sidebar nav a.text-secondary { color: #94a3b8 !important; }
-        html.dark .sidebar nav a.text-secondary:hover { background: rgba(255,255,255,0.05) !important; }
-        html.dark .sidebar .border-t { border-color: rgba(255,255,255,0.05) !important; }
-        html.dark .sidebar .text-muted { color: #64748b !important; }
-        html.dark .upgrade-option { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
-        html.dark .upgrade-option:hover { border-color: #3b82f6 !important; }
-        html.dark .link-item { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
-        html.dark .cv-item .bg-white { background: #0f172a !important; color: #f8fafc !important; border-color: rgba(255,255,255,0.12) !important; }
-        html.dark .cv-item .bg-white::placeholder { color: #64748b; }
+  <!-- SEO Meta Tags -->
+  <title>Netlink.bio — Build Your Digital Identity</title>
+  <meta name="description" content="Create your Link in Bio, Professional CV, Business Page, and Crypto Wallet — all connected in one simple profile.">
+  <meta name="keywords" content="link in bio, digital identity, professional CV, crypto wallet, personal branding, online presence">
+  <meta name="author" content="Netlink Labs">
+  <meta name="robots" content="index, follow">
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
-        .modal.active { display: flex; }
-        .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
-        .toast.show { transform: translateY(0); }
-        .notification-panel { display: none; position: absolute; top: 50px; right: 0; width: 320px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; z-index: 50; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .notification-panel.active { display: block; }
-        .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
-        .progress-bar { border-radius: 999px; height: 8px; overflow: hidden; }
-        .progress-fill { background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; border-radius: 999px; transition: width 0.5s ease; }
-        .locked-card { position: relative; overflow: hidden; }
-        .locked-card::before { content: ''; position: absolute; inset: 0; z-index: 10; }
-        .locked-content { position: relative; z-index: 20; }
-        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; height: 100dvh; z-index: 50; transition: right 0.3s ease; overflow: hidden; border-left: 1px solid rgba(0,0,0,0.08); }
-        .sidebar nav { overflow-y: auto; min-height: 0; }
-        .sidebar.open { right: 0; }
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
-        .sidebar-overlay.active { display: block; }
-        @media (min-width: 1024px) {
-            .sidebar { right: 0; width: 280px; transition: none; }
-            .sidebar-overlay { display: none !important; }
-            .main-content { margin-right: 280px; margin-left: 0; }
-            .mobile-header { display: none; }
-        }
-        @media (max-width: 1023px) {
-            .main-content { margin-right: 0; }
-            .mobile-header { display: flex; }
-        }
-        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
-        html.dark #authGate { background: #0f172a; }
+  <!-- Open Graph -->
+  <meta property="og:title" content="Netlink.bio — Build Your Digital Identity">
+  <meta property="og:description" content="Create your Link in Bio, Professional CV, Business Page, and Crypto Wallet — all connected in one simple profile.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://netlink.bio">
+  <meta property="og:image" content="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/linkbio-banner.png">
 
-        /* Accordion */
-        .accordion-body { display: none; }
-        .accordion-body.open { display: block; }
-        .accordion-chevron { transition: transform 0.2s; }
-        .accordion-chevron.open { transform: rotate(180deg); }
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Netlink.bio — Build Your Digital Identity">
+  <meta name="twitter:description" content="Create your Link in Bio, Professional CV, Business Page, and Crypto Wallet — all connected in one simple profile.">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/linkbio-banner.png">
 
-        /* Icon picker popup */
-        .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; max-height: 280px; overflow-y: auto; }
-        .icon-picker-panel.open { display: grid; }
-    
-        /* Theme-aware logo images */
-        .theme-logo-light { display: block; }
-        .theme-logo-dark { display: none; }
-        html.dark .theme-logo-light { display: none; }
-        html.dark .theme-logo-dark { display: block; }
-</style>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-icon.png">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-icon.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================
+       CSS CUSTOM PROPERTIES (Design Tokens)
+       ============================================ */
+    :root {
+      /* Colors */
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F5F7FA;
+      --color-primary: #16C6C8;
+      --color-primary-dark: #12A5A7;
+      --color-primary-light: #2DD4D6;
+      --text-primary: #222222;
+      --text-secondary: #6B7280;
+      --border-color: #E5E7EB;
+
+      /* Dark Theme Colors */
+      --dark-bg: #0A1929;
+      --dark-bg-mid: #0F1D2E;
+      --dark-surface: rgba(255, 255, 255, 0.04);
+      --dark-border: rgba(255, 255, 255, 0.08);
+      --text-on-dark: #FFFFFF;
+      --text-on-dark-secondary: rgba(255, 255, 255, 0.60);
+
+      /* Footer Dark */
+      --footer-bg: #0D1117;
+      --footer-border: rgba(255, 255, 255, 0.06);
+      --footer-text: rgba(255, 255, 255, 0.55);
+      --footer-text-hover: #16C6C8;
+      --footer-title: rgba(255, 255, 255, 0.90);
+
+      /* Buttons */
+      --btn-primary-bg: #161616;
+      --btn-primary-text: #FFFFFF;
+      --btn-secondary-bg: #112B45;
+      --btn-secondary-text: #FFFFFF;
+
+      /* Radius */
+      --radius-card: 15px;
+      --radius-btn: 12px;
+      --radius-input: 12px;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08);
+      --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.10);
+      --shadow-glow: 0 0 80px rgba(22, 198, 200, 0.18);
+
+      /* Spacing (8px grid) */
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+      --space-5: 40px;
+      --space-6: 48px;
+      --space-8: 64px;
+      --space-10: 80px;
+      --space-12: 96px;
+      --space-16: 128px;
+
+      /* Typography */
+      --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+      /* Transitions */
+      --transition-fast: 150ms ease;
+      --transition-base: 300ms ease;
+      --transition-slow: 500ms ease;
+
+      /* Z-index layers */
+      --z-header: 1000;
+      --z-modal: 2000;
+    }
+
+    /* ============================================
+       RESET & BASE STYLES
+       ============================================ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background-color: var(--bg-primary);
+      overflow-x: hidden;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+      transition: color var(--transition-fast);
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    ul, ol {
+      list-style: none;
+    }
+
+    input, textarea {
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: var(--space-2);
+      z-index: calc(var(--z-header) + 1);
+      background: var(--color-primary);
+      color: var(--text-on-dark);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-btn);
+      font-weight: 600;
+      transition: top var(--transition-fast);
+    }
+
+    .skip-link:focus {
+      top: var(--space-2);
+    }
+
+    /* ============================================
+       UTILITY CLASSES
+       ============================================ */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-left: var(--space-3);
+      padding-right: var(--space-3);
+    }
+
+    .section {
+      padding-top: var(--space-10);
+      padding-bottom: var(--space-10);
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: var(--space-3);
+    }
+
+    .section-subtitle {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto var(--space-8);
+      line-height: 1.6;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity var(--transition-slow), transform var(--transition-slow);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+      padding: 14px 28px;
+      font-family: var(--font-body);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      border-radius: var(--radius-btn);
+      transition: all var(--transition-base);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background-color: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:hover {
+      background-color: #2a2a2a;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Hero CTA Button — Luxurious Green */
+    .btn-hero {
+      background: linear-gradient(135deg, #16C6C8 0%, #0EA5A7 50%, #0D9488 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 20px rgba(22, 198, 200, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 500ms ease;
+    }
+
+    .btn-hero:hover {
+      background: linear-gradient(135deg, #2DD4D6 0%, #16C6C8 50%, #0EA5A7 100%);
+      box-shadow: 0 6px 28px rgba(22, 198, 200, 0.45), 0 0 0 1px rgba(255,255,255,0.15) inset;
+      transform: translateY(-2px);
+    }
+
+    .btn-hero:hover::before {
+      left: 100%;
+    }
+
+    .btn-hero:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background-color: var(--btn-secondary-bg);
+      color: var(--btn-secondary-text);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary:hover {
+      background-color: #1a3d5c;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary:active {
+      transform: translateY(0);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      color: var(--text-primary);
+      border: 1.5px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Dark button variant */
+    .btn-outline-dark {
+      background-color: transparent;
+      color: var(--text-on-dark);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+    }
+
+    .btn-outline-dark:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      transform: translateY(-2px);
+    }
+
+    /* ============================================
+       HEADER
+       ============================================ */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: var(--z-header);
+      padding: var(--space-2) 0;
+      transition: background-color var(--transition-base), 
+                  backdrop-filter var(--transition-base),
+                  box-shadow var(--transition-base);
+    }
+
+    .header.scrolled {
+      background-color: rgba(10, 25, 41, 0.92);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-3);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-logo img {
+      height: 48px;
+      width: auto;
+    }
+
+    .header-nav {
+      display: none;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .header-nav a {
+      padding: 8px 16px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.70);
+      border-radius: var(--radius-btn);
+      transition: all var(--transition-fast);
+    }
+
+    .header-nav a:hover {
+      color: var(--text-on-dark);
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .header-cta {
+      display: none;
+    }
+
+    /* Mobile menu toggle */
+    .menu-toggle {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      gap: 5px;
+      padding: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background-color: var(--text-on-dark);
+      border-radius: 2px;
+      transition: all var(--transition-base);
+    }
+
+    .menu-toggle.active span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    .menu-toggle.active span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-toggle.active span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* Mobile nav overlay */
+    .mobile-nav {
+      position: fixed;
+      top: 72px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(10, 25, 41, 0.98);
+      backdrop-filter: blur(20px);
+      padding: var(--space-4) var(--space-3);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transform: translateX(100%);
+      transition: transform var(--transition-base);
+      z-index: calc(var(--z-header) - 1);
+    }
+
+    .mobile-nav.active {
+      transform: translateX(0);
+    }
+
+    .mobile-nav a {
+      padding: var(--space-2) var(--space-3);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.80);
+      border-radius: var(--radius-btn);
+      transition: all var(--transition-fast);
+    }
+
+    .mobile-nav a:hover {
+      color: var(--text-on-dark);
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    /* ============================================
+       HERO SECTION (DARK)
+       ============================================ */
+    .hero {
+      background: linear-gradient(180deg, var(--dark-bg) 0%, var(--dark-bg-mid) 50%, var(--dark-bg) 100%);
+      padding-top: calc(96px + var(--space-8));
+      padding-bottom: var(--space-12);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 700px;
+      background: radial-gradient(ellipse, rgba(22, 198, 200, 0.12) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: linear-gradient(to bottom, transparent, var(--bg-primary));
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-image-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: var(--space-6);
+      padding: 0 var(--space-2);
+    }
+
+    .hero-image {
+      width: 100%;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-14px); }
+    }
+
+    .hero-image-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 95%;
+      height: 95%;
+      background: radial-gradient(ellipse, rgba(22, 198, 200, 0.18) 0%, transparent 70%);
+      z-index: -1;
+      filter: blur(50px);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      max-width: 640px;
+      padding: 0 var(--space-3);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background-color: rgba(22, 198, 200, 0.12);
+      color: var(--color-primary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      border-radius: 100px;
+      margin-bottom: var(--space-4);
+      border: 1px solid rgba(22, 198, 200, 0.25);
+    }
+
+    .hero-badge svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .hero-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2.25rem, 5.5vw, 3.75rem);
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--text-on-dark);
+      margin-bottom: var(--space-4);
+      letter-spacing: -0.03em;
+    }
+
+    .hero-description {
+      font-size: 1.125rem;
+      color: var(--text-on-dark-secondary);
+      margin-bottom: var(--space-5);
+      line-height: 1.7;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ============================================
+       USERNAME CHECKER SECTION
+       ============================================ */
+    .checker-section {
+      padding-top: var(--space-4);
+      padding-bottom: var(--space-10);
+    }
+
+    .checker-box {
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, #ffffff 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: var(--space-6) var(--space-4);
+      max-width: 640px;
+      margin: 0 auto;
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+
+    .checker-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--space-4);
+      color: var(--text-primary);
+    }
+
+    .checker-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .checker-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .checker-prefix {
+      position: absolute;
+      left: 16px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      pointer-events: none;
+    }
+
+    .checker-input {
+      width: 100%;
+      padding: 14px 16px 14px 110px;
+      font-size: 1rem;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-input);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .checker-input::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.7;
+    }
+
+    .checker-input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(22, 198, 200, 0.15);
+      outline: none;
+    }
+
+    .checker-btn {
+      width: 100%;
+      padding: 14px 28px;
+    }
+
+    /* ============================================
+       FEATURES SECTION
+       ============================================ */
+    .features-section {
+      padding-top: var(--space-10);
+      padding-bottom: var(--space-10);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      transition: transform var(--transition-base), box-shadow var(--transition-base);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-primary), transparent);
+      opacity: 0;
+      transition: opacity var(--transition-base);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background-color: rgba(22, 198, 200, 0.1);
+      color: var(--color-primary-dark);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: 6px;
+      margin-bottom: var(--space-2);
+    }
+
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      margin-bottom: var(--space-3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(22, 198, 200, 0.12), rgba(22, 198, 200, 0.04));
+      border-radius: 16px;
+    }
+
+    .feature-icon svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .feature-title {
+      font-family: var(--font-heading);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+      color: var(--text-primary);
+    }
+
+    .feature-description {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ============================================
+       HOW IT WORKS SECTION
+       ============================================ */
+    .how-section {
+      background-color: var(--bg-secondary);
+      padding-top: var(--space-10);
+      padding-bottom: var(--space-10);
+    }
+
+    .how-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .how-timeline::before {
+      content: '';
+      position: absolute;
+      left: 28px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-primary), rgba(22, 198, 200, 0.2));
+      z-index: 0;
+    }
+
+    .how-step {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      position: relative;
+      z-index: 1;
+    }
+
+    .how-step-number {
+      flex-shrink: 0;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+      color: white;
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(22, 198, 200, 0.3);
+    }
+
+    .how-step-content {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+      flex: 1;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition-base), transform var(--transition-base);
+    }
+
+    .how-step-content:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateX(4px);
+    }
+
+    .how-step-title {
+      font-family: var(--font-heading);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .how-step-description {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ============================================
+       HIGHLIGHTS SECTION — TEAL CARDS
+       ============================================ */
+    .highlights-section {
+      padding-top: var(--space-10);
+      padding-bottom: var(--space-10);
+    }
+
+    .highlights-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .highlight-card {
+      background: linear-gradient(145deg, #0B8E8F 0%, #0A7A7B 50%, #096869 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-card);
+      padding: var(--space-6);
+      position: relative;
+      overflow: hidden;
+      transition: transform var(--transition-base), box-shadow var(--transition-base);
+      color: #fff;
+    }
+
+    .highlight-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 50px rgba(22, 198, 200, 0.25);
+    }
+
+    .highlight-card::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -30%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 60%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .highlight-card::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      left: -20%;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(22, 198, 200, 0.15) 0%, transparent 60%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .highlight-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: var(--space-3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .highlight-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: #fff;
+    }
+
+    .highlight-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--space-2);
+      color: #fff;
+      position: relative;
+      z-index: 1;
+    }
+
+    .highlight-description {
+      font-size: 1.0625rem;
+      color: rgba(255, 255, 255, 0.75);
+      line-height: 1.7;
+      max-width: 440px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ============================================
+       CTA SECTION
+       ============================================ */
+    .cta-section {
+      padding-top: var(--space-12);
+      padding-bottom: var(--space-12);
+      background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(22, 198, 200, 0.06) 50%, var(--bg-primary) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(22, 198, 200, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .cta-inner {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .cta-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .cta-text {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-5);
+      line-height: 1.7;
+    }
+
+    /* ============================================
+       FOOTER — DARK
+       ============================================ */
+    .footer {
+      background-color: var(--footer-bg);
+      border-top: 1px solid var(--footer-border);
+      padding-top: var(--space-10);
+      padding-bottom: var(--space-5);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+      margin-bottom: var(--space-8);
+    }
+
+    .footer-col-title {
+      font-family: var(--font-heading);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--footer-title);
+      margin-bottom: var(--space-3);
+    }
+
+    .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-links a {
+      font-size: 0.9375rem;
+      color: var(--footer-text);
+      transition: color var(--transition-fast);
+    }
+
+    .footer-links a:hover {
+      color: var(--footer-text-hover);
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--footer-border);
+      padding-top: var(--space-4);
+      text-align: center;
+    }
+
+    .footer-bottom p {
+      font-size: 0.875rem;
+      color: var(--footer-text);
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+    }
+
+    .footer-brand img {
+      height: 32px;
+      width: auto;
+    }
+
+    .footer-brand span {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.125rem;
+      color: var(--footer-title);
+    }
+
+    /* ============================================
+       RESPONSIVE STYLES (Tablet & Desktop)
+       ============================================ */
+    @media (min-width: 640px) {
+      .hero-buttons {
+        flex-direction: row;
+        justify-content: center;
+      }
+
+      .checker-form {
+        flex-direction: row;
+      }
+
+      .checker-input-wrapper {
+        flex: 1;
+      }
+
+      .checker-btn {
+        width: auto;
+      }
+
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (min-width: 768px) {
+      .header-nav {
+        display: flex;
+      }
+
+      .header-cta {
+        display: block;
+      }
+
+      .menu-toggle {
+        display: none;
+      }
+
+      .hero-inner {
+        padding-top: var(--space-4);
+      }
+
+      .highlights-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .features-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .how-timeline {
+        flex-direction: row;
+        gap: var(--space-4);
+      }
+
+      .how-timeline::before {
+        left: 0;
+        right: 0;
+        top: 28px;
+        width: auto;
+        height: 2px;
+        background: linear-gradient(to right, var(--color-primary), rgba(22, 198, 200, 0.2));
+      }
+
+      .how-step {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        flex: 1;
+      }
+
+      .how-step-content {
+        margin-top: var(--space-3);
+      }
+
+      .how-step-content:hover {
+        transform: translateY(-4px);
+      }
+    }
+
+    /* Reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      html {
+        scroll-behavior: auto;
+      }
+    }
+  </style>
 </head>
-<body class="min-h-screen">
-    <div id="authGate">
-        <div class="flex flex-col items-center gap-3 px-6 text-center">
-            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p id="authGateText" class="text-sm text-slate-400">Loading your dashboard...</p>
-            <p id="authGateError" class="text-xs text-red-500 font-mono break-all hidden max-w-sm"></p>
-        </div>
+<body>
+  <!-- Skip to main content for accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ============================================
+       HEADER
+       ============================================ -->
+  <header class="header" id="header" role="banner">
+    <div class="header-inner">
+      <a href="#" class="header-logo" aria-label="Netlink.bio Home">
+        <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio Logo" width="200" height="48">
+      </a>
+
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="#hero">Home</a>
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#docs">Documentation</a>
+        <a href="#login">Login</a>
+      </nav>
+
+      <div class="header-cta">
+        <a href="https://netlink-bio.vercel.app/login.html" class="btn btn-primary">Get Started Free</a>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
+  </header>
 
-    <div id="toast" class="toast">Saved successfully!</div>
+  <!-- Mobile Navigation (No button inside) -->
+  <nav class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
+    <a href="#hero">Home</a>
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#docs">Documentation</a>
+    <a href="#login">Login</a>
+  </nav>
 
-    <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
-        <div class="flex items-center gap-2">
-            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-lightBG.png" alt="Netlink.bio" class="h-8 w-auto theme-logo-light">
-            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" class="h-8 w-auto theme-logo-dark hidden">
+  <!-- ============================================
+       MAIN CONTENT
+       ============================================ -->
+  <main id="main-content">
+
+    <!-- ============================================
+         HERO SECTION — DARK, IMAGE ON TOP, BIGGER
+         ============================================ -->
+    <section class="hero" id="hero" aria-label="Hero">
+      <div class="container">
+        <div class="hero-inner">
+          <!-- Hero Image: Transparent, no frame, floating above text, BIGGER -->
+          <div class="hero-image-wrapper reveal">
+            <div class="hero-image-glow" aria-hidden="true"></div>
+            <img 
+              src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/linkbio-banner.png" 
+              alt="Netlink.bio Dashboard Preview" 
+              class="hero-image"
+              width="800"
+              height="540"
+              loading="eager"
+            >
+          </div>
+
+          <div class="hero-content reveal">
+            <div class="hero-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              Building Digital Identity
+            </div>
+            <h1 class="hero-title">Your Digital Identity in One Link</h1>
+            <p class="hero-description">Create your Link in Bio, Professional CV, Business Page, and Crypto Wallet — all connected in one simple profile.</p>
+            <div class="hero-buttons">
+              <a href="https://netlink-bio.vercel.app/login.html" class="btn btn-hero">Get Started Free</a>
+              <a href="#docs" class="btn btn-outline-dark">View Documentation</a>
+            </div>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch to dark mode">
-                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-            </button>
-            <div class="relative">
-                <button onclick="toggleNotifications(this)" class="p-2 hover-surface rounded-lg transition relative">
-                    <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
-                <div id="notificationPanelMobile" class="notification-panel">
-                    <div class="p-4 border-b border-subtle flex items-center justify-between">
-                        <h4 class="font-semibold text-sm text-primary">Notifications</h4>
-                        <button onclick="markAllRead()" class="text-xs text-blue-500 hover:text-blue-600">Mark all read</button>
-                    </div>
-                    <div class="max-h-80 overflow-y-auto">
-                        <div class="p-4 hover-surface cursor-pointer transition">
-                            <p class="text-sm text-primary">Welcome to Netlink.bio!</p>
-                            <p class="text-xs text-secondary mt-1">Finish setting up your page below.</p>
-                        </div>
-                    </div>
-                </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         USERNAME CHECKER SECTION
+         ============================================ -->
+    <section class="checker-section" id="checker" aria-label="Username Availability Checker">
+      <div class="container">
+        <div class="checker-box reveal">
+          <h2 class="checker-title">Check Your Bio Link Availability</h2>
+          <form class="checker-form" onsubmit="event.preventDefault();" aria-label="Username checker form">
+            <div class="checker-input-wrapper">
+              <span class="checker-prefix" aria-hidden="true">netlink.bio/</span>
+              <input 
+                type="text" 
+                class="checker-input" 
+                placeholder="Choose your username..." 
+                aria-label="Choose your username"
+                autocomplete="off"
+                spellcheck="false"
+              >
             </div>
-            <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
-                <i data-lucide="menu" class="w-5 h-5 text-secondary"></i>
-            </button>
+            <button type="submit" class="btn btn-primary checker-btn">Check Availability</button>
+          </form>
         </div>
-    </header>
+      </div>
+    </section>
 
-    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <!-- ============================================
+         FEATURES SECTION
+         ============================================ -->
+    <section class="features-section" id="features" aria-label="Features">
+      <div class="container">
+        <h2 class="section-title reveal">Everything You Need in One Platform</h2>
+        <p class="section-subtitle reveal">Powerful tools designed to help you grow your digital presence with confidence.</p>
 
-    <aside class="sidebar text-white flex flex-col">
-        <div class="hidden lg:block p-4 border-b border-subtle">
-            <a href="index.html" class="flex items-center gap-3">
-                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-lightBG.png" alt="Netlink.bio" class="h-10 w-auto theme-logo-light">
-                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" class="h-10 w-auto theme-logo-dark hidden">
-            </a>
+        <div class="features-grid">
+          <!-- Card 1: Link in Bio -->
+          <article class="feature-card reveal">
+            <span class="feature-badge">Free</span>
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Link in Bio</h3>
+            <p class="feature-description">Create a beautiful profile page that brings all your important links together in one place.</p>
+          </article>
+
+          <!-- Card 2: Professional CV -->
+          <article class="feature-card reveal">
+            <span class="feature-badge">Free</span>
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Professional CV</h3>
+            <p class="feature-description">Build a modern, professional resume that helps you attract clients, employers, and new opportunities.</p>
+          </article>
+
+          <!-- Card 3: Netlink Pay -->
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+                <circle cx="7" cy="15" r="1"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Netlink Pay</h3>
+            <p class="feature-description">Receive and manage crypto payments instantly with your built-in digital wallet.</p>
+          </article>
+
+          <!-- Card 4: Business Landing Page -->
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Business Landing Page</h3>
+            <p class="feature-description">Create a simple business page that builds trust and explains your products or services.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         HOW IT WORKS SECTION
+         ============================================ -->
+    <section class="how-section" id="how-it-works" aria-label="How It Works">
+      <div class="container">
+        <h2 class="section-title reveal">Get Started in 3 Simple Steps</h2>
+        <p class="section-subtitle reveal">From signup to your first payment in minutes. No technical skills required.</p>
+
+        <div class="how-timeline">
+          <!-- Step 1 -->
+          <div class="how-step reveal">
+            <div class="how-step-number" aria-hidden="true">1</div>
+            <div class="how-step-content">
+              <h3 class="how-step-title">Choose Your Username</h3>
+              <p class="how-step-description">Find an available username and create your account in seconds.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="how-step reveal">
+            <div class="how-step-number" aria-hidden="true">2</div>
+            <div class="how-step-content">
+              <h3 class="how-step-title">Build Your Profile</h3>
+              <p class="how-step-description">Create your Bio, Professional CV, and Business Page in minutes.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="how-step reveal">
+            <div class="how-step-number" aria-hidden="true">3</div>
+            <div class="how-step-content">
+              <h3 class="how-step-title">Activate Your Wallet</h3>
+              <p class="how-step-description">Get an instant crypto wallet ready to receive payments worldwide.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         HIGHLIGHTS SECTION — TEAL CARDS
+         ============================================ -->
+    <section class="highlights-section" id="highlights" aria-label="Highlights">
+      <div class="container">
+        <div class="highlights-grid">
+          <!-- Highlight 1: AI Ready -->
+          <article class="highlight-card reveal">
+            <div class="highlight-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/>
+                <path d="M9 21h6"/>
+                <line x1="12" y1="11" x2="12" y2="11"/>
+                <line x1="8" y1="9" x2="8" y2="9"/>
+                <line x1="16" y1="9" x2="16" y2="9"/>
+              </svg>
+            </div>
+            <h3 class="highlight-title">AI Ready</h3>
+            <p class="highlight-description">Every profile, resume, and business page is optimized to be easily discovered and understood by modern AI search engines.</p>
+          </article>
+
+          <!-- Highlight 2: Verified Identity -->
+          <article class="highlight-card reveal">
+            <div class="highlight-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <h3 class="highlight-title">Verified Identity</h3>
+            <p class="highlight-description">Boost global client confidence with verifiable profile and business pages backed by KYC/KYB standards.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         CTA SECTION
+         ============================================ -->
+    <section class="cta-section" id="get-started" aria-label="Call to Action">
+      <div class="container">
+        <div class="cta-inner reveal">
+          <h2 class="cta-title">Start Building Your Digital Identity Today</h2>
+          <p class="cta-text">Join thousands of creators, freelancers, professionals, and businesses building their digital presence with Netlink.bio.</p>
+          <a href="https://netlink-bio.vercel.app/login.html" class="btn btn-hero" style="padding: 16px 36px; font-size: 1rem;">Get Started Free</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================
+       FOOTER — DARK
+       ============================================ -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <!-- Column 1: Company -->
+        <div>
+          <div class="footer-brand">
+            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-icon.png" alt="" width="32" height="32" aria-hidden="true">
+            <span>Netlink.bio</span>
+          </div>
+          <h4 class="footer-col-title">Company</h4>
+          <div class="footer-links">
+            <a href="#about">About Netlink</a>
+            <a href="#story">Our Story</a>
+            <a href="#team">Our Team</a>
+          </div>
         </div>
 
-        <nav class="flex-1 py-2">
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-500 border-l-2 border-blue-500">
-                <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="link" class="w-4 h-4"></i><span>Links</span>
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="palette" class="w-4 h-4"></i><span>Appearance</span>
-            </a>
-            <a href="#" onclick="event.preventDefault(); scrollToCvCard();" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="file-text" class="w-4 h-4"></i><span>CV Builder</span>
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
-            </a>
-            <div class="my-2 px-4">
-                <div class="border-t border-subtle"></div>
-                <p class="text-xs text-muted mt-2 mb-1">Pro Features</p>
-            </div>
-            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Analytics</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
-            </div>
-            <a href="#" onclick="event.preventDefault(); scrollToLandingPageCard();" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
-            </a>
-            <a href="tx.html" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="history" class="w-4 h-4"></i><span>Transaction History</span>
-            </a>
-            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
-                <i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Store</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
-            </div>
-        </nav>
-
-        <div class="p-4 border-t border-subtle">
-            <div class="flex items-center gap-3">
-                <button onclick="scrollToProfileCard()" class="flex items-center gap-3 flex-1 min-w-0 text-left">
-                    <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-lg">👤</div>
-                    <div class="flex-1 min-w-0">
-                        <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">username</p>
-                        <p id="sidebarTierLabel" class="text-xs text-muted">Basic Plan</p>
-                    </div>
-                </button>
-                <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </div>
-    </aside>
-
-    <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8">
-        <div class="hidden lg:flex items-center justify-between mb-6">
-            <!-- Left: Title area wrapped in card -->
-            <div class="card rounded-2xl px-6 py-4 flex items-center gap-5 flex-1 mr-4">
-                <div class="flex-1 min-w-0">
-                    <h2 class="text-2xl font-bold text-primary tracking-tight">Dashboard</h2>
-                    <p class="text-secondary text-sm mt-0.5">Welcome back! Manage your bio links.</p>
-                </div>
-                <!-- Vertical divider -->
-                <div class="w-px h-10 bg-subtle flex-shrink-0"></div>
-                <!-- Tier badge + Avatar (swapped order) -->
-                <div class="flex items-center gap-3 flex-shrink-0">
-                    <span id="headerTierPillDesktop" class="px-3 py-1 border border-subtle rounded-full text-xs font-medium text-secondary whitespace-nowrap">Basic</span>
-                    <div id="headerAvatarWrapDesktop" class="w-10 h-10 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <img id="headerAvatarImgDesktop" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                        <span id="headerAvatarInitialDesktop" class="text-sm font-semibold text-blue-500">?</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Right: Action buttons -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <button onclick="toggleTheme()" class="p-2.5 hover-surface rounded-xl transition" title="Switch to dark mode">
-                    <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-                    <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-                </button>
-                <div class="relative">
-                    <button onclick="toggleNotifications(this)" class="p-2.5 hover-surface rounded-xl transition relative">
-                        <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
-                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
-                    <div id="notificationPanel" class="notification-panel">
-                        <div class="p-4 border-b border-subtle flex items-center justify-between">
-                            <h4 class="font-semibold text-sm text-primary">Notifications</h4>
-                            <button onclick="markAllRead()" class="text-xs text-blue-500 hover:text-blue-600">Mark all read</button>
-                        </div>
-                        <div class="max-h-80 overflow-y-auto">
-                            <div class="p-4 hover-surface cursor-pointer transition">
-                                <p class="text-sm text-primary">Welcome to Netlink.bio!</p>
-                                <p class="text-xs text-secondary mt-1">Finish setting up your page below.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <a id="viewProfileBtn" href="#" target="_blank" class="flex items-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
-                    <i data-lucide="external-link" class="w-4 h-4"></i> View Profile
-                </a>
-            </div>
+        <!-- Column 2: Resources -->
+        <div>
+          <h4 class="footer-col-title">Resources</h4>
+          <div class="footer-links">
+            <a href="#docs">Documentation</a>
+            <a href="#token">Netlink Token (NET)</a>
+          </div>
         </div>
 
-        <div class="lg:hidden mb-5">
-            <div class="card rounded-2xl px-4 py-3 flex items-center gap-3">
-                <div class="flex-1 min-w-0">
-                    <h2 class="text-lg font-bold text-primary tracking-tight">Dashboard</h2>
-                    <p class="text-secondary text-xs mt-0.5">Welcome back!</p>
-                </div>
-                <div class="w-px h-8 bg-subtle flex-shrink-0"></div>
-                <div class="flex items-center gap-2.5 flex-shrink-0">
-                    <span id="headerTierPillMobile" class="px-2.5 py-1 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
-                    <button onclick="scrollToProfileCard()" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0" title="Edit profile">
-                        <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                        <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
-                    </button>
-                </div>
-            </div>
+        <!-- Column 3: Follow Us -->
+        <div>
+          <h4 class="footer-col-title">Follow Us</h4>
+          <div class="footer-links">
+            <a href="https://twitter.com/netlinkbio" target="_blank" rel="noopener noreferrer">Twitter</a>
+            <a href="https://instagram.com/netlinkbio" target="_blank" rel="noopener noreferrer">Instagram</a>
+          </div>
         </div>
+      </div>
 
-        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-primary">Wallet</h3>
-                <span id="walletStatusLabel" class="text-xs font-medium text-secondary flex items-center gap-1.5 flex-shrink-0">
-                    <span id="walletStatusDot" class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                    <span id="walletStatusText">Status: Not Connected</span>
-                </span>
-            </div>
-            <div class="grid grid-cols-3 gap-3 mb-4">
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <img src="/assets/net-logo.png" alt="NET" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balanceNet" class="text-xs font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">NET</p>
-                </div>
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <img src="/assets/usdc-logo.png" alt="USDC" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balanceUsdc" class="text-xs font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">USDC</p>
-                </div>
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <img src="/assets/polygon-logo.png" alt="Polygon" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balancePol" class="text-xs font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">POL</p>
-                </div>
-            </div>
-
-            <label class="text-sm font-medium text-secondary block mb-1.5">Your wallet address</label>
-            <input id="walletAddressInput" type="hidden" value="">
-            <div class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm mb-2 flex items-center justify-between gap-2">
-                <span id="walletAddressText" class="font-mono text-muted truncate">Not connected</span>
-                <button onclick="copyWalletAddress()" class="flex-shrink-0 p-1.5 hover-surface rounded-md transition text-secondary" title="Copy address">
-                    <i data-lucide="copy" class="w-4 h-4"></i>
-                </button>
-            </div>
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-    <button id="walletConnectBtn" onclick="openNetlinkPay()" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
-        <i data-lucide="external-link" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="hidden sm:inline">Open Wallet</span>
-        <span class="sm:hidden">Wallet</span>
-    </button>
-    <button id="connectSmartWalletBtn" onclick="openConnectWalletModal()" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
-        <i data-lucide="wallet" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="hidden sm:inline">Connect / Create Smart Wallet</span>
-        <span class="sm:hidden">Connect / Create</span>
-    </button>
-    <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
-        <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="hidden sm:inline">Disconnect</span>
-        <span class="sm:hidden">Disconnect</span>
-    </button>
-</div>
-            <div class="flex items-center mt-2">
-                <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline flex items-center gap-1 flex-shrink-0">
-                    About wallet <i data-lucide="info" class="w-3 h-3"></i>
-                </button>
-            </div>
-
-    <!-- Connect Wallet Modal -->
-    <div id="connectWalletModal" class="modal">
-        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-primary">Connect Your Wallet</h3>
-                <button onclick="closeConnectWalletModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <p class="text-sm text-secondary mb-6">Choose a Google account to link with your wallet. You'll use the same account to access your wallet next time.</p>
-            <div id="googleSignInContainer" class="flex justify-center"></div>
-        </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Netlink Labs. All rights reserved.</p>
+      </div>
     </div>
+  </footer>
 
-        </div>
+  <!-- ============================================
+       JAVASCRIPT
+       ============================================ -->
+  <script>
+    (function() {
+      'use strict';
 
+      // ============================================
+      // HEADER SCROLL EFFECT (Glassmorphism on Dark)
+      // ============================================
+      const header = document.getElementById('header');
+      let lastScrollY = 0;
 
-        <div id="profileCard" class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
-            <h3 class="font-semibold text-primary mb-3">Your Netlink.bio Link</h3>
-            <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
-                <span class="pl-2 pr-1 text-muted text-sm whitespace-nowrap">netlink.bio/</span>
-                <input id="profileUsername" type="text" pattern="[a-z0-9_]{3,20}" placeholder="yourname" onblur="checkUsernameLive()" class="flex-1 min-w-0 py-2 px-1 text-sm font-medium text-primary bg-transparent outline-none">
-            </div>
-            <p id="usernameStatus" class="mt-1.5 text-xs font-medium hidden"></p>
-
-            <div class="mt-4 flex items-center gap-6 flex-wrap">
-                <label class="flex items-center gap-2 text-sm text-secondary">
-                    <input id="profileShowCv" type="checkbox" class="rounded"> Show CV
-                </label>
-                <label class="flex items-center gap-2 text-sm text-secondary">
-                    <input id="profileShowDonate" type="checkbox" class="rounded"> Show Wallet
-                </label>
-                <label class="flex items-center gap-2 text-sm text-secondary">
-                    <input id="profileShowNameOnReceipt" type="checkbox" class="rounded"> Show name on receipts
-                </label>
-            </div>
-
-            <button id="linkCardSaveBtn" onclick="saveLinkCardSettings()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
-
-            <div class="grid grid-cols-3 gap-2 mt-3">
-                <button onclick="shareProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
-                </button>
-                <button onclick="previewProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
-                </button>
-                <button onclick="copyProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
-                </button>
-            </div>
-
-            <!-- Choose Template -- placeholder only, not wired up yet. Standard
-                 is the only real template today; the Pro card is a preview of
-                 what's coming so users know a template marketplace is planned. -->
-            <div class="mt-4 p-3 bg-surface border border-subtle rounded-xl">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-secondary flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i> Choose Template</span>
-                    <span class="text-[10px] text-muted uppercase tracking-wide">Coming soon</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="border-2 border-blue-500 rounded-lg p-2 text-center">
-                        <div class="h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded mb-1.5"></div>
-                        <span class="text-xs font-medium text-primary">Standard</span>
-                    </div>
-                    <div class="border border-subtle rounded-lg p-2 text-center opacity-50 cursor-not-allowed">
-                        <div class="h-12 bg-white/50 rounded mb-1.5 flex items-center justify-center"><i data-lucide="lock" class="w-4 h-4 text-muted"></i></div>
-                        <span class="text-xs font-medium text-muted">Pro</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card rounded-2xl mb-3 overflow-hidden">
-            <button onclick="toggleAccordion('accEditProfile')" class="w-full flex items-center justify-between p-4 lg:p-5">
-                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Edit Profile</span>
-                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accEditProfileChevron"></i>
-            </button>
-            <div id="accEditProfile" class="accordion-body px-4 lg:px-5 pb-5">
-                <div class="flex justify-center mb-4">
-                    <div class="relative">
-                        <div id="avatarPreviewWrap" class="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center text-2xl font-bold text-blue-500 overflow-hidden">
-                            <span id="avatarInitial">?</span>
-                            <img id="avatarImg" class="w-full h-full object-cover hidden" alt="Avatar">
-                        </div>
-                        <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white transition" title="Change photo">
-                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
-                    </div>
-                </div>
-                <p id="avatarStatus" class="text-xs text-center text-muted hidden mb-3"></p>
-
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Display Name</label>
-                        <input id="profileDisplayName" type="text" placeholder="Your Name" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Email</label>
-                        <input id="profileEmail" type="email" placeholder="Contact email" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">WhatsApp</label>
-                        <input id="profileWhatsapp" type="text" placeholder="e.g. 6281234567890" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Telegram</label>
-                        <input id="profileTelegram" type="text" placeholder="Telegram username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                </div>
-                <button id="editProfileSaveBtn" onclick="saveEditProfile()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
-            </div>
-        </div>
-
-        <div class="card rounded-2xl mb-3 overflow-hidden">
-            <button onclick="toggleAccordion('accDescription')" class="w-full flex items-center justify-between p-4 lg:p-5">
-                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="align-left" class="w-4 h-4 text-blue-500"></i> Description</span>
-                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accDescriptionChevron"></i>
-            </button>
-            <div id="accDescription" class="accordion-body px-4 lg:px-5 pb-5">
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="text-sm font-medium text-secondary">Tell people about yourself</label>
-                    <span id="profileBioCount" class="text-xs text-muted">0/500</span>
-                </div>
-                <textarea id="profileBio" rows="5" maxlength="500" oninput="document.getElementById('profileBioCount').textContent = this.value.length + '/500'" placeholder="Write a short description for your bio page..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
-                <button id="descriptionSaveBtn" onclick="saveDescription()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
-            </div>
-        </div>
-
-        <div class="card rounded-2xl mb-4 lg:mb-6 overflow-hidden">
-            <button onclick="toggleAccordion('accYoutube')" class="w-full flex items-center justify-between p-4 lg:p-5">
-                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="youtube" class="w-4 h-4 text-red-500"></i> Video Link</span>
-                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accYoutubeChevron"></i>
-            </button>
-            <div id="accYoutube" class="accordion-body px-4 lg:px-5 pb-5">
-                <p class="text-xs text-muted mb-3">Free plan: 1 video link.</p>
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">Video Title</label>
-                        <input id="youtubeTitleInput" type="text" placeholder="e.g. Watch my latest video" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-secondary block mb-1.5">YouTube Link</label>
-                        <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                    </div>
-                    <label class="flex items-center gap-2 text-sm text-secondary">
-                        <input id="youtubeThumbToggle" type="checkbox" class="rounded"> Show video thumbnail (otherwise shown as a regular link card)
-                    </label>
-                </div>
-                <button id="youtubeSaveBtn" onclick="saveYoutube()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
-            </div>
-        </div>
-
-        <div class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-subtle">
-                <h4 class="font-semibold text-primary text-sm mb-1">Your Links</h4>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="text-xs text-muted">Icon shape:</span>
-                    <button type="button" onclick="setIconShape('circle')" id="shapeBtnCircle" class="px-3 py-1 rounded-full text-xs font-medium border transition">Circle</button>
-                    <button type="button" onclick="setIconShape('rounded')" id="shapeBtnRounded" class="px-3 py-1 rounded-lg text-xs font-medium border transition">Rounded</button>
-                </div>
-            </div>
-            <div class="p-4 lg:p-6">
-                <div id="linkList" class="space-y-3">
-                    <p id="linkListEmpty" class="text-sm text-secondary text-center py-6 hidden">No links yet. Add your first one below.</p>
-                </div>
-                <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                    <div class="flex items-center justify-between">
-                        <span id="linkCountLabel" class="text-sm text-secondary">0/20 links used</span>
-                        <button onclick="openLinkModal()" class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Add more
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
-                    <h3 class="font-semibold text-primary">Complete Your Profile</h3>
-                </div>
-                <span id="completionPct" class="text-sm text-blue-500 font-medium">0%</span>
-            </div>
-            <div class="progress-bar mb-3">
-                <div id="completionFill" class="progress-fill" style="width: 0%"></div>
-            </div>
-            <div class="flex flex-wrap gap-2 mb-4">
-                <span id="checkAvatar" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Upload Avatar
-                </span>
-                <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Create Link Bio
-                </span>
-                <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
-                </span>
-            </div>
-            <button id="claimNetBtn" disabled onclick="showToast('NET claiming coming soon — smart contract in progress')" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
-                Claim NET
-            </button>
-        </div>
-
-        <div id="cvCard" class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-subtle">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Curriculum Vitae
-                        </h3>
-                        <p id="cvUrlHint" class="text-sm text-secondary">netlink.bio/cv/username</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="previewCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
-                        <button onclick="copyCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Copy link"><i data-lucide="copy" class="w-4 h-4 text-secondary"></i></button>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 lg:p-6 space-y-5">
-
-                <!-- Choose Template -- placeholder only, not wired up yet. -->
-                <div class="p-3 bg-surface border border-subtle rounded-xl">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium text-secondary flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i> Choose Template</span>
-                        <span class="text-[10px] text-muted uppercase tracking-wide">Coming soon</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="border-2 border-blue-500 rounded-lg p-2 text-center">
-                            <div class="h-12 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded mb-1.5"></div>
-                            <span class="text-xs font-medium text-primary">Standard</span>
-                        </div>
-                        <div class="border border-subtle rounded-lg p-2 text-center opacity-50 cursor-not-allowed">
-                            <div class="h-12 bg-white/50 rounded mb-1.5 flex items-center justify-center"><i data-lucide="lock" class="w-4 h-4 text-muted"></i></div>
-                            <span class="text-xs font-medium text-muted">Pro</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Personal Details - now collapsed accordion -->
-                <div class="border border-subtle rounded-xl overflow-hidden">
-                    <button onclick="toggleAccordion('cvPersonalBody')" class="w-full flex items-center justify-between p-4 bg-surface hover-surface transition">
-                        <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Personal Details</span>
-                        <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvPersonalBodyChevron"></i>
-                    </button>
-                    <div id="cvPersonalBody" class="accordion-body px-4 pb-4 space-y-3">
-                        <div>
-                            <label class="text-sm font-medium text-secondary block mb-1.5">Professional Title</label>
-                            <input id="cvTitle" type="text" placeholder="e.g. Senior Product Designer" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-secondary block mb-1.5">Location</label>
-                            <input id="cvLocation" type="text" placeholder="e.g. Jakarta, Indonesia" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-secondary block mb-1.5">Professional Summary</label>
-                            <textarea id="cvSummary" rows="3" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-secondary block mb-1.5">Skills <span class="text-muted">(comma separated)</span></label>
-                            <input id="cvSkills" type="text" placeholder="Figma, React, Project Management, ..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-subtle">
-                    <div class="flex items-center justify-between mb-2">
-                        <button type="button" onclick="toggleAccordion('cvExperienceBody')" class="flex items-center gap-2">
-                            <span class="text-sm font-semibold text-primary">Work Experience</span>
-                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvExperienceBodyChevron"></i>
-                        </button>
-                        <button type="button" onclick="addCvItem('experience')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
-                    </div>
-                    <div id="cvExperienceBody" class="accordion-body">
-                        <div id="cvExperienceList" class="space-y-3"></div>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-subtle">
-                    <div class="flex items-center justify-between mb-2">
-                        <button type="button" onclick="toggleAccordion('cvEducationBody')" class="flex items-center gap-2">
-                            <span class="text-sm font-semibold text-primary">Education</span>
-                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvEducationBodyChevron"></i>
-                        </button>
-                        <button type="button" onclick="addCvItem('education')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
-                    </div>
-                    <div id="cvEducationBody" class="accordion-body">
-                        <div id="cvEducationList" class="space-y-3"></div>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-subtle">
-                    <div class="flex items-center justify-between mb-2">
-                        <button type="button" onclick="toggleAccordion('cvProjectsBody')" class="flex items-center gap-2">
-                            <span class="text-sm font-semibold text-primary">Featured Projects</span>
-                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvProjectsBodyChevron"></i>
-                        </button>
-                        <button type="button" onclick="addCvItem('projects')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
-                    </div>
-                    <div id="cvProjectsBody" class="accordion-body">
-                        <div id="cvProjectsList" class="space-y-3"></div>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-subtle">
-                    <div class="flex items-center justify-between mb-2">
-                        <button type="button" onclick="toggleAccordion('cvLanguagesBody')" class="flex items-center gap-2">
-                            <span class="text-sm font-semibold text-primary">Languages</span>
-                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvLanguagesBodyChevron"></i>
-                        </button>
-                        <button type="button" onclick="addCvItem('languages')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
-                    </div>
-                    <div id="cvLanguagesBody" class="accordion-body">
-                        <div id="cvLanguagesList" class="space-y-3"></div>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-subtle">
-                    <div class="flex items-center justify-between mb-2">
-                        <button type="button" onclick="toggleAccordion('cvCertificationsBody')" class="flex items-center gap-2">
-                            <span class="text-sm font-semibold text-primary">Certifications</span>
-                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvCertificationsBodyChevron"></i>
-                        </button>
-                    </div>
-                    <div id="cvCertificationsBody" class="accordion-body">
-                        <label class="text-sm font-medium text-secondary block mb-1.5"><span class="text-muted">(one per line)</span></label>
-                        <textarea id="cvCertifications" rows="3" placeholder="Google UX Design Professional Certificate&#10;AWS Cloud Practitioner" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
-                    </div>
-                </div>
-
-                <button id="cvSaveBtn" onclick="saveCv()" class="w-full mt-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save CV</button>
-            </div>
-        </div>
-
-        <div id="landingPageCard" class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="globe" class="w-5 h-5 text-purple-500"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-primary">Landing Page</h3>
-                        <p id="landingPageSubtitle" class="text-sm text-secondary">Available from Silver plan and up</p>
-                    </div>
-                </div>
-
-                <!-- Locked state: Basic tier -->
-                <div id="landingPageLocked" class="hidden">
-                    <div class="p-4 bg-surface border border-subtle rounded-xl text-center">
-                        <i data-lucide="lock" class="w-5 h-5 text-muted mx-auto mb-2"></i>
-                        <p class="text-sm text-secondary mb-3">Upgrade to Silver or higher to build a custom landing page.</p>
-                        <button onclick="showToast('Contact us to upgrade your plan')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Upgrade Plan</button>
-                    </div>
-                </div>
-
-                <!-- Empty state: eligible tier, no landing page yet -->
-                <div id="landingPageEmpty" class="hidden">
-                    <button onclick="createLandingPage()" class="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Create Landing Page
-                    </button>
-                </div>
-
-                <!-- Exists state: has a landing page already -->
-                <div id="landingPageExists" class="hidden">
-                    <div class="flex items-center justify-between p-3 bg-surface border border-subtle rounded-xl mb-3">
-                        <div class="min-w-0">
-                            <p id="landingPageTitle" class="text-sm font-medium text-primary truncate">Untitled Page</p>
-                            <p id="landingPageStatus" class="text-xs text-muted">Draft</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="editLandingPage()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
-                        </button>
-                        <button onclick="previewLandingPage()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
-                        </button>
-                        <button onclick="deleteLandingPage()" class="py-2 hover:bg-red-500/10 border border-subtle rounded-lg text-xs font-medium text-red-500 transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-            <!-- Footer -->
-        <footer class="text-center py-6 mt-2">
-            <p class="text-xs text-muted">Developed by Netlink Labs</p>
-        </footer>
-    </main>
-
-    <!-- Disconnect Wallet Confirmation Modal -->
-    <div id="disconnectWalletModal" class="modal">
-        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
-            <div class="flex flex-col items-center text-center mb-5">
-                <div class="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-3">
-                    <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-500"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-primary mb-1">Disconnect Wallet?</h3>
-                <p class="text-sm text-secondary leading-relaxed">Make sure you use the <strong class="text-primary">same Google account</strong> to access your wallet next time. This action cannot be undone.</p>
-            </div>
-            <label class="flex items-start gap-3 p-3 bg-surface border border-subtle rounded-xl mb-5 cursor-pointer">
-                <input id="disconnectConfirmCheckbox" type="checkbox" class="mt-0.5 rounded border-subtle text-blue-500 focus:ring-blue-500/30">
-                <span class="text-sm text-secondary">I understand I need the same Google account to reconnect my wallet.</span>
-            </label>
-            <div class="flex gap-3">
-                <button onclick="closeDisconnectModal()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
-                <button id="disconnectConfirmBtn" onclick="handleDisconnectConfirm()" disabled class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition opacity-50 cursor-not-allowed">Disconnect</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="linkModal" class="modal">
-        <div class="card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-4">
-                <h3 id="linkModalTitle" class="text-lg font-semibold text-primary">Add Link</h3>
-                <button onclick="closeLinkModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <form id="linkForm" class="space-y-4">
-                <input id="linkId" type="hidden">
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Title</label>
-                    <input id="linkTitle" type="text" required placeholder="e.g. Instagram" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">URL</label>
-                    <input id="linkUrl" type="url" required placeholder="https://instagram.com/username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-                <div>
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Description <span class="text-muted">(optional)</span></label>
-                    <input id="linkDescription" type="text" placeholder="e.g. Follow my daily photography" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                </div>
-                <div class="relative">
-                    <label class="text-sm font-medium text-secondary block mb-1.5">Icon</label>
-                    <button type="button" onclick="toggleIconPicker()" class="w-full flex items-center gap-2 px-3 py-2 border border-subtle bg-surface rounded-lg">
-                        <span id="iconPickerPreview" class="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-subtle overflow-hidden"></span>
-                        <span id="iconPickerLabel" class="text-sm text-primary">Instagram</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted ml-auto"></i>
-                    </button>
-                    <input type="hidden" id="linkIcon" value="instagram">
-                    <div id="iconPickerPanel" class="icon-picker-panel grid-cols-4 gap-2 bg-white card border border-subtle rounded-lg shadow-lg p-2"></div>
-                </div>
-                <div class="flex gap-2">
-                    <button id="linkSaveBtn" type="submit" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">Save Link</button>
-                    <button id="linkDeleteBtn" type="button" onclick="deleteCurrentLink()" class="hidden px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        function showAuthError(msg) {
-            document.getElementById('authSpinner').classList.add('hidden');
-            document.getElementById('authGateText').textContent = 'Something went wrong:';
-            const errEl = document.getElementById('authGateError');
-            errEl.textContent = msg;
-            errEl.classList.remove('hidden');
+      function updateHeader() {
+        const scrollY = window.scrollY || window.pageYOffset;
+        if (scrollY > 20) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
         }
-        window.addEventListener('error', (e) => showAuthError(e.message));
-        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+        lastScrollY = scrollY;
+      }
 
-        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let currentUser = null;
-        let currentProfile = null;
-        let currentLinks = [];
-        const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
-
-        // ==========================================
-        // AUTH GATE — FIX untuk race condition setelah redirect Google OAuth
-        // ------------------------------------------
-        // Sebelumnya kode memanggil getSession() langsung saat halaman load.
-        // Masalahnya: begitu Google redirect balik ke dashboard.html, token
-        // masih ada di URL (#access_token=...) dan Supabase client butuh
-        // waktu sepersekian detik untuk mem-parsingnya lalu menyimpan sesi.
-        // Kalau getSession() dipanggil SEBELUM proses itu selesai, ia bisa
-        // return null padahal user sebenarnya baru saja berhasil login —
-        // akibatnya user "sempat lihat dashboard" lalu dilempar balik ke
-        // login.html. Ini paling kentara untuk akun BARU karena ada beban
-        // tambahan (trigger INSERT ke profiles, generate net_id, dst) yang
-        // memperlebar celah race-nya.
-        //
-        // Fix: dengarkan event onAuthStateChange dan tunggu event
-        // INITIAL_SESSION (dikirim otomatis sekali oleh Supabase setelah ia
-        // selesai memeriksa URL/localStorage untuk sesi yang ada). Baru
-        // setelah event itu kita putuskan redirect ke login atau lanjut ke
-        // dashboard — bukan menebak lebih awal dengan getSession().
-        // ==========================================
-        let authResolved = false;
-
-        async function enterDashboard(session) {
-            authResolved = true;
-            currentUser = session.user;
-            document.getElementById('authGate').style.display = 'none';
-            try {
-                await loadDashboardData();
-                applyPendingUsernameClaim();
-            } catch (err) {
-                console.error(err);
-                showAuthError(err.message || String(err));
-            }
+      let ticking = false;
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          window.requestAnimationFrame(function() {
+            updateHeader();
+            ticking = false;
+          });
+          ticking = true;
         }
+      }, { passive: true });
 
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            if (authResolved) return; // sudah diputuskan sekali, jangan diulang
+      updateHeader();
 
-            if (event === 'INITIAL_SESSION') {
-                if (session) {
-                    await enterDashboard(session);
-                } else {
-                    window.location.href = 'login.html';
-                }
-            } else if (event === 'SIGNED_IN' && session) {
-                // Jaga-jaga kalau INITIAL_SESSION belum sempat fire duluan
-                await enterDashboard(session);
-            }
+      // ============================================
+      // MOBILE MENU TOGGLE
+      // ============================================
+      const menuToggle = document.getElementById('menuToggle');
+      const mobileNav = document.getElementById('mobileNav');
+      let menuOpen = false;
+
+      menuToggle.addEventListener('click', function() {
+        menuOpen = !menuOpen;
+        menuToggle.classList.toggle('active', menuOpen);
+        mobileNav.classList.toggle('active', menuOpen);
+        menuToggle.setAttribute('aria-expanded', menuOpen);
+        document.body.style.overflow = menuOpen ? 'hidden' : '';
+      });
+
+      mobileNav.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() {
+          menuOpen = false;
+          menuToggle.classList.remove('active');
+          mobileNav.classList.remove('active');
+          menuToggle.setAttribute('aria-expanded', 'false');
+          document.body.style.overflow = '';
         });
+      });
 
-        function applyPendingUsernameClaim() {
-            const pending = sessionStorage.getItem('pendingUsername');
-            if (!pending) return;
-            sessionStorage.removeItem('pendingUsername');
-            if (currentProfile && currentProfile.username) return;
-            const input = document.getElementById('profileUsername');
-            if (input) {
-                input.value = pending;
-                showToast(`Hit "Save" to lock in netlink.bio/${pending}`);
-            }
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && menuOpen) {
+          menuOpen = false;
+          menuToggle.classList.remove('active');
+          mobileNav.classList.remove('active');
+          menuToggle.setAttribute('aria-expanded', 'false');
+          document.body.style.overflow = '';
         }
-
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = 'login.html';
-        }
-
-        function scrollToProfileCard() {
-            document.getElementById('profileCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (window.innerWidth < 1024) toggleSidebar();
-        }
-
-        function getCurrentUsername() {
-            return currentProfile?.username || document.getElementById('profileUsername').value.trim();
-        }
-
-        function copyProfileLink() {
-            const username = getCurrentUsername();
-            if (!username) { showToast('Pick a username first'); return; }
-            navigator.clipboard.writeText(`${window.location.origin}/${username}`).then(() => showToast('Link copied!'));
-        }
-
-        function previewProfileLink() {
-            const username = getCurrentUsername();
-            if (!username) { showToast('Pick a username first'); return; }
-            window.open(`/${username}`, '_blank');
-        }
-
-        function shareProfileLink() {
-            const username = getCurrentUsername();
-            if (!username) { showToast('Pick a username first'); return; }
-            const url = `${window.location.origin}/${username}`;
-            if (navigator.share) {
-                navigator.share({ title: 'My Netlink.bio', url }).catch(() => {});
-            } else {
-                navigator.clipboard.writeText(url).then(() => showToast('Link copied to share!'));
-            }
-        }
-
-        function copyWalletAddress() {
-            const val = document.getElementById('walletAddressInput').value.trim();
-            if (!val) { showToast('No wallet address yet'); return; }
-            navigator.clipboard.writeText(val).then(() => showToast('Wallet address copied!'));
-        }
-
-        function toggleAccordion(id) {
-            document.getElementById(id).classList.toggle('open');
-            document.getElementById(id + 'Chevron').classList.toggle('open');
-        }
-
-        async function loadDashboardData() {
-            await loadProfile();
-            await loadLinks();
-            await loadLandingPageCard();
-            updateProfileCompletion();
-        }
-
-        const TIER_PILL_STYLE = {
-            basic: 'border-subtle text-secondary',
-            silver: 'border-slate-400 text-slate-500',
-            gold: 'border-amber-400 text-amber-600',
-            platinum: 'border-purple-400 text-purple-600',
-        };
-
-        function renderTierPill(tier) {
-            const t = tier || 'basic';
-            const label = t.charAt(0).toUpperCase() + t.slice(1);
-            const style = TIER_PILL_STYLE[t] || TIER_PILL_STYLE.basic;
-            ['headerTierPillMobile', 'headerTierPillDesktop'].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.textContent = label;
-                el.className = `px-2.5 py-0.5 border rounded-full text-[11px] font-medium whitespace-nowrap ${style}`;
-            });
-        }
-function openNetlinkPay() {
-    window.location.href = 'https://netlink-bio.vercel.app/pay.html';
-}
-window.openNetlinkPay = openNetlinkPay;
-        // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
-        // trigger handle_new_user() di sisi database, hampir bersamaan
-        // dengan sesi auth tapi tidak 100% instan. Kalau dashboard sempat
-        // query sepersekian detik lebih cepat dari trigger selesai, .single()
-        // akan gagal (0 rows). Retry singkat ini menutup celah itu tanpa
-        // mengganggu akun lama (yang profilnya sudah pasti ada, jadi retry
-        // ini langsung berhasil di percobaan pertama).
-        async function fetchProfileWithRetry(maxAttempts = 4, delayMs = 600) {
-            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                const { data, error } = await supabaseClient
-                    .from('profiles').select('*').eq('id', currentUser.id).single();
-                if (!error && data) return { data, error: null };
-                if (attempt < maxAttempts) await new Promise(r => setTimeout(r, delayMs));
-                else return { data, error };
-            }
-        }
-
-        async function loadProfile() {
-            const { data, error } = await fetchProfileWithRetry();
-
-            if (error) {
-                console.error('Failed to load profile:', error);
-                document.getElementById('sidebarUserEmail').textContent = currentUser.email;
-                return;
-            }
-
-            currentProfile = data;
-            const label = data.display_name || data.username || currentUser.email;
-            document.getElementById('sidebarUserEmail').textContent = label;
-            document.getElementById('sidebarTierLabel').textContent =
-                (data.tier || 'basic').charAt(0).toUpperCase() + (data.tier || 'basic').slice(1) + ' Plan';
-            renderTierPill(data.tier);
-
-            const viewBtn = document.getElementById('viewProfileBtn');
-            if (data.username) {
-                viewBtn.href = `/${data.username}`;
-                viewBtn.onclick = null;
-                document.getElementById('cvUrlHint').textContent = `netlink.bio/cv/${data.username}`;
-            } else {
-                viewBtn.href = '#';
-                viewBtn.onclick = (e) => { e.preventDefault(); showToast('Pick a username below first'); };
-            }
-
-            document.getElementById('profileUsername').value = data.username || '';
-            document.getElementById('profileShowCv').checked = data.show_cv !== false;
-            document.getElementById('profileShowDonate').checked = data.show_donate === true;
-            document.getElementById('profileShowNameOnReceipt').checked = data.show_name_on_receipt === true;
-
-            document.getElementById('profileDisplayName').value = data.display_name || '';
-            document.getElementById('profileEmail').value = data.contact_email || '';
-            document.getElementById('profileWhatsapp').value = data.contact_whatsapp || '';
-            document.getElementById('profileTelegram').value = data.contact_telegram || '';
-
-            document.getElementById('profileBio').value = data.bio || '';
-            document.getElementById('profileBioCount').textContent = (data.bio || '').length + '/500';
-
-            document.getElementById('youtubeTitleInput').value = data.youtube_title || '';
-            document.getElementById('profileYoutube').value = data.youtube_url || '';
-            document.getElementById('youtubeThumbToggle').checked = data.show_youtube_thumbnail !== false;
-
-            document.getElementById('walletAddressInput').value = data.wallet_address || '';
-            if (window.renderWalletAddressUI) window.renderWalletAddressUI(data.wallet_address || '', false);
-            fetchWalletBalances(data.wallet_address);
-
-            setIconShapeButtons(data.link_icon_shape || 'circle');
-            populateCvForm(data.cv_data);
-
-            const initialEl = document.getElementById('avatarInitial');
-            const imgEl = document.getElementById('avatarImg');
-            const initialChar = (data.display_name || data.username || currentUser.email || '?').charAt(0).toUpperCase();
-
-            const headerTargets = [
-                { img: document.getElementById('headerAvatarImg'), initial: document.getElementById('headerAvatarInitial') },
-                { img: document.getElementById('headerAvatarImgDesktop'), initial: document.getElementById('headerAvatarInitialDesktop') },
-            ];
-
-            if (data.avatar_url) {
-                imgEl.src = data.avatar_url;
-                imgEl.classList.remove('hidden');
-                initialEl.classList.add('hidden');
-            } else {
-                imgEl.classList.add('hidden');
-                initialEl.classList.remove('hidden');
-                initialEl.textContent = initialChar;
-            }
-
-            headerTargets.forEach(({ img, initial }) => {
-                if (!img || !initial) return;
-                if (data.avatar_url) {
-                    img.src = data.avatar_url;
-                    img.classList.remove('hidden');
-                    initial.classList.add('hidden');
-                } else {
-                    img.classList.add('hidden');
-                    initial.classList.remove('hidden');
-                    initial.textContent = initialChar;
-                }
-            });
-        }
-
-        // Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
-        function requiredTierForLength(len) {
-            if (len >= 5) return 'basic';
-            if (len === 4) return 'silver';
-            if (len === 3) return 'gold';
-            if (len === 2) return 'platinum';
-            return 'reserved';
-        }
-        const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
-
-        // Token guard: setiap pemanggilan checkUsernameLive() atau proses
-        // save akan menaikkan angka ini. Kalau hasil RPC pengecekan
-        // "pulang" belakangan (setelah proses save/pengecekan yang lebih
-        // baru dimulai), token-nya sudah tidak cocok lagi -> hasil lama
-        // diabaikan, tidak menimpa status yang sudah benar di layar.
-        let usernameCheckToken = 0;
-
-        async function checkUsernameLive() {
-            const myToken = ++usernameCheckToken;
-            const input = document.getElementById('profileUsername');
-            const status = document.getElementById('usernameStatus');
-            const username = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-            input.value = username;
-
-            if (!username) { status.classList.add('hidden'); return; }
-            if (username === currentProfile?.username) {
-                status.textContent = 'This is your current link.';
-                status.className = 'mt-1.5 text-xs font-medium text-muted';
-                status.classList.remove('hidden');
-                return;
-            }
-            if (username.length > 25) {
-                status.textContent = 'Maximum 25 characters.';
-                status.className = 'mt-1.5 text-xs font-medium text-red-500';
-                status.classList.remove('hidden');
-
-                    return;
-            }
-
-            const myTier = currentProfile?.tier || 'basic';
-            const requiredTier = requiredTierForLength(username.length);
-
-            const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
-                check_slug: username,
-                check_tier: myTier,
-            });
-
-            // Ada pengecekan/proses save lain yang mulai setelah kita —
-            // hasil kita sudah basi, jangan render apa pun.
-            if (myToken !== usernameCheckToken) return;
-
-            if (error) {
-                status.textContent = 'Failed to check availability.';
-                status.className = 'mt-1.5 text-xs font-medium text-red-500';
-                status.classList.remove('hidden');
-                return;
-            }
-
-            if (!isAvailable) {
-                if (requiredTier === 'reserved') {
-                    status.textContent = '1-character usernames are reserved — contact us to request one.';
-                } else if (requiredTier !== myTier && requiredTier !== 'basic') {
-                    status.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
-                } else {
-                    status.textContent = `netlink.bio/${username} is taken.`;
-                }
-                status.className = 'mt-1.5 text-xs font-medium text-red-500';
-            } else {
-                status.textContent = `netlink.bio/${username} is available!`;
-                status.className = 'mt-1.5 text-xs font-medium text-green-600';
-            }
-            status.classList.remove('hidden');
-        }
-
-        async function withSaving(btnId, fn) {
-            const btn = document.getElementById(btnId);
-            const original = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                await fn();
-            } finally {
-                btn.disabled = false;
-                btn.textContent = original;
-            }
-        }
-
-        async function saveWallet() {
-            const wallet_address = document.getElementById('walletAddressInput').value.trim();
-            if (wallet_address && !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
-                showToast('That doesn\'t look like a valid wallet address');
-                return;
-            }
-            const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
-            if (error) { showToast('Failed to save wallet address'); return; }
-            showToast('Wallet address saved');
-
-            // The DB write above is what actually matters for "success".
-            // Everything below is cosmetic UI refresh — if any of it throws,
-            // don't let that bubble up and make the caller think the save
-            // itself failed.
-            try {
-                await loadProfile();
-                updateProfileCompletion();
-                fetchWalletBalances(wallet_address);
-            } catch (refreshErr) {
-                console.error('Wallet saved, but UI refresh failed:', refreshErr);
-            }
-        }
-        function formatTokenAmount(value) {
-            const num = parseFloat(value);
-            if (isNaN(num)) return '0.00';
-            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        async function fetchWalletBalances(address) {
-            if (!address) {
-                document.getElementById('balanceNet').textContent = '0.00';
-                document.getElementById('balanceUsdc').textContent = '0.00';
-                document.getElementById('balancePol').textContent = '0.00';
-                return;
-            }
-
-            try {
-                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
-                if (!res.ok) throw new Error('Failed to fetch balances');
-                const data = await res.json();
-
-                document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
-                document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
-                document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
-            } catch (err) {
-                console.error(err);
-                showToast('Could not fetch wallet balances');
-            }
-        }
-
-        async function saveLinkCardSettings() {
-            await withSaving('linkCardSaveBtn', async () => {
-                usernameCheckToken++; // batalkan pengecekan username yang mungkin masih menggantung
-                const usernameStatus = document.getElementById('usernameStatus');
-                usernameStatus.classList.add('hidden'); // sembunyikan status lama selagi proses save jalan
-                const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-                document.getElementById('profileUsername').value = username;
-
-                if (username.length > 25) {
-                    usernameStatus.textContent = 'Maximum 25 characters.';
-                    usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
-                    usernameStatus.classList.remove('hidden');
-                    return;
-                }
-
-                const { error } = await supabaseClient.from('profiles').update({
-                    username,
-                    show_cv: document.getElementById('profileShowCv').checked,
-                    show_donate: document.getElementById('profileShowDonate').checked,
-                    show_name_on_receipt: document.getElementById('profileShowNameOnReceipt').checked,
-                }).eq('id', currentUser.id);
-
-                if (error) {
-                    if (error.code === '23505') {
-                        usernameStatus.textContent = `netlink.bio/${username} is already taken.`;
-                        usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
-                        usernameStatus.classList.remove('hidden');
-                    } else if (error.message && error.message.includes('does not meet the length requirement')) {
-                        const requiredTier = requiredTierForLength(username.length);
-                        usernameStatus.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
-                        usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
-                        usernameStatus.classList.remove('hidden');
-                    } else {
-                        showToast('Failed to save');
-                    }
-                    return;
-                }
-                showToast('Saved!');
-                usernameStatus.classList.add('hidden');
-                await loadProfile();
-                updateProfileCompletion();
-            });
-        }
-
-        async function saveEditProfile() {
-            await withSaving('editProfileSaveBtn', async () => {
-                const { error } = await supabaseClient.from('profiles').update({
-                    display_name: document.getElementById('profileDisplayName').value.trim() || null,
-                    contact_email: document.getElementById('profileEmail').value.trim() || null,
-                    contact_whatsapp: document.getElementById('profileWhatsapp').value.trim() || null,
-                    contact_telegram: document.getElementById('profileTelegram').value.trim() || null,
-                }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to save profile'); return; }
-                showToast('Profile saved');
-                await loadProfile();
-            });
-        }
-
-        async function saveDescription() {
-            await withSaving('descriptionSaveBtn', async () => {
-                const bio = document.getElementById('profileBio').value.trim().slice(0, 500);
-                const { error } = await supabaseClient.from('profiles').update({ bio: bio || null }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to save description'); return; }
-                showToast('Description saved');
-                await loadProfile();
-            });
-        }
-
-        async function saveYoutube() {
-            await withSaving('youtubeSaveBtn', async () => {
-                const { error } = await supabaseClient.from('profiles').update({
-                    youtube_title: document.getElementById('youtubeTitleInput').value.trim() || null,
-                    youtube_url: document.getElementById('profileYoutube').value.trim() || null,
-                    show_youtube_thumbnail: document.getElementById('youtubeThumbToggle').checked,
-                }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to save video link'); return; }
-                showToast('Video link saved');
-                await loadProfile();
-            });
-        }
-
-        const CV_DEFAULT = { title: '', location: '', summary: '', skills: [], education: [], languages: [], experience: [], projects: [], certifications: [] };
-        let currentCvData = { ...CV_DEFAULT };
-
-        function scrollToCvCard() {
-            document.getElementById('cvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (window.innerWidth < 1024) toggleSidebar();
-        }
-
-        function scrollToLandingPageCard() {
-            document.getElementById('landingPageCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (window.innerWidth < 1024) toggleSidebar();
-        }
-
-        let currentLandingPage = null;
-
-        async function loadLandingPageCard() {
-            const tier = currentProfile?.tier || 'basic';
-            const lockedEl = document.getElementById('landingPageLocked');
-            const emptyEl = document.getElementById('landingPageEmpty');
-            const existsEl = document.getElementById('landingPageExists');
-            const subtitleEl = document.getElementById('landingPageSubtitle');
-            lockedEl.classList.add('hidden');
-            emptyEl.classList.add('hidden');
-            existsEl.classList.add('hidden');
-
-            // Basic tier can't create a landing page at all.
-            if (tier === 'basic') {
-                subtitleEl.textContent = 'Available from Silver plan and up';
-                lockedEl.classList.remove('hidden');
-                return;
-            }
-
-            subtitleEl.textContent = 'One custom landing page for your business';
-
-            const { data, error } = await supabaseClient
-                .from('landing_pages').select('*').eq('user_id', currentUser.id).maybeSingle();
-
-            if (error) {
-                console.error('Failed to load landing page:', error);
-                emptyEl.classList.remove('hidden');
-                return;
-            }
-
-            currentLandingPage = data;
-
-            if (!data) {
-                emptyEl.classList.remove('hidden');
-            } else {
-                document.getElementById('landingPageTitle').textContent = data.title || 'Untitled Page';
-                document.getElementById('landingPageStatus').textContent = data.is_published ? 'Published' : 'Draft';
-                existsEl.classList.remove('hidden');
-            }
-        }
-
-        async function createLandingPage() {
-            const { data, error } = await supabaseClient
-                .from('landing_pages')
-                .insert({ user_id: currentUser.id, title: 'Untitled Page', content: {}, is_published: false })
-                .select().single();
-
-            if (error) {
-                if (error.message && error.message.includes('available from the Silver plan')) {
-                    showToast('Landing Page requires the Silver plan or higher');
-                } else {
-                    showToast('Failed to create landing page');
-                    console.error(error);
-                }
-                return;
-            }
-
-            currentLandingPage = data;
-            showToast('Landing page created — opening editor...');
-            window.open(`page-builder.html?id=${data.id}`, '_blank');
-            await loadLandingPageCard();
-        }
-
-        function editLandingPage() {
-            if (!currentLandingPage) { showToast('No landing page found'); return; }
-            window.open(`page-builder.html?id=${currentLandingPage.id}`, '_blank');
-        }
-
-        function previewLandingPage() {
-            // There's no public-facing rendering endpoint for landing pages yet
-            // (the equivalent of api/bio.js or api/cv.js for this feature isn't
-            // built). Being upfront about that here instead of opening a dead link.
-            showToast('Public preview link is not wired up yet — open the editor to preview inside the builder for now');
-        }
-
-        async function deleteLandingPage() {
-            if (!currentLandingPage) return;
-            if (!confirm('Delete your landing page? This cannot be undone.')) return;
-
-            const { error } = await supabaseClient
-                .from('landing_pages').delete().eq('user_id', currentUser.id);
-
-            if (error) { showToast('Failed to delete landing page'); console.error(error); return; }
-
-            currentLandingPage = null;
-            showToast('Landing page deleted');
-            await loadLandingPageCard();
-        }
-
-        function getCvUsername() {
-            return currentProfile?.username || '';
-        }
-
-        function copyCvLink() {
-            const username = getCvUsername();
-            if (!username) { showToast('Pick a username first'); return; }
-            navigator.clipboard.writeText(`${window.location.origin}/cv/${username}`).then(() => showToast('CV link copied!'));
-        }
-
-        function previewCvLink() {
-            const username = getCvUsername();
-            if (!username) { showToast('Pick a username first'); return; }
-            window.open(`/cv/${username}`, '_blank');
-        }
-
-        function populateCvForm(cv) {
-            currentCvData = {
-                ...CV_DEFAULT,
-                ...cv,
-                skills: cv?.skills || [],
-                education: cv?.education || [],
-                languages: cv?.languages || [],
-                experience: cv?.experience || [],
-                projects: cv?.projects || [],
-                certifications: cv?.certifications || [],
-            };
-            document.getElementById('cvTitle').value = currentCvData.title || '';
-            document.getElementById('cvLocation').value = currentCvData.location || '';
-            document.getElementById('cvSummary').value = currentCvData.summary || '';
-            document.getElementById('cvSkills').value = (currentCvData.skills || []).join(', ');
-            document.getElementById('cvCertifications').value = (currentCvData.certifications || []).join('\n');
-            renderCvLists();
-        }
-
-        function renderCvLists() {
-            renderCvSection('experience', 'cvExperienceList', (item, idx) => `
-                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('experience', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
-                    <input class="cv-exp-title w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Job Title" value="${escapeHtml(item.title)}">
-                    <input class="cv-exp-company w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Company" value="${escapeHtml(item.company)}">
-                    <input class="cv-exp-date w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2021 — Present" value="${escapeHtml(item.date)}">
-                    <textarea class="cv-exp-bullets w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="3" placeholder="One achievement per line">${escapeHtml((item.bullets || []).join('\n'))}</textarea>
-                </div>
-            `);
-            renderCvSection('education', 'cvEducationList', (item, idx) => `
-                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('education', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
-                    <input class="cv-edu-degree w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Degree" value="${escapeHtml(item.degree)}">
-                    <input class="cv-edu-school w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="School" value="${escapeHtml(item.school)}">
-                    <input class="cv-edu-year w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2016 — 2018" value="${escapeHtml(item.year)}">
-                    <input class="cv-edu-detail w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Detail (optional)" value="${escapeHtml(item.detail)}">
-                </div>
-            `);
-            renderCvSection('projects', 'cvProjectsList', (item, idx) => `
-                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('projects', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
-                    <input class="cv-proj-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Project Name" value="${escapeHtml(item.name)}">
-                    <textarea class="cv-proj-desc w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="2" placeholder="Short description">${escapeHtml(item.description)}</textarea>
-                    <input class="cv-proj-tags w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Tags, comma separated" value="${escapeHtml((item.tags || []).join(', '))}">
-                </div>
-            `);
-            renderCvSection('languages', 'cvLanguagesList', (item, idx) => `
-                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
-                    <input class="cv-lang-name flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Language" value="${escapeHtml(item.name)}">
-                    <input class="cv-lang-level flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Level" value="${escapeHtml(item.level)}">
-                    <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 flex-shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                </div>
-            `);
-            lucide.createIcons();
-            // CV sections stay collapsed by default now (even if they already
-            // have saved data) — user has to tap to expand, keeps the card short.
-        }
-
-        function openAccordion(id) {
-            const body = document.getElementById(id);
-            const chevron = document.getElementById(id + 'Chevron');
-            if (body && !body.classList.contains('open')) body.classList.add('open');
-            if (chevron && !chevron.classList.contains('open')) chevron.classList.add('open');
-        }
-
-        function autoOpenCvAccordions() {
-            const map = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
-            Object.entries(map).forEach(([key, bodyId]) => {
-                if ((currentCvData[key] || []).length > 0) openAccordion(bodyId);
-            });
-        }
-
-        function renderCvSection(key, listId, rowTemplate) {
-            const list = document.getElementById(listId);
-            const items = currentCvData[key] || [];
-            list.innerHTML = items.length
-                ? items.map((item, idx) => rowTemplate(item, idx)).join('')
-                : `<p class="text-xs text-muted text-center py-3">None added yet.</p>`;
-        }
-
-        function addCvItem(section) {
-            const blanks = {
-                experience: { title: '', company: '', date: '', bullets: [] },
-                education: { degree: '', school: '', year: '', detail: '' },
-                projects: { name: '', description: '', tags: [] },
-                languages: { name: '', level: '' },
-            };
-            const bodyMap = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
-            syncCvSectionFromDom(section);
-            currentCvData[section] = [...(currentCvData[section] || []), blanks[section]];
-            renderCvLists();
-            openAccordion(bodyMap[section]);
-        }
-
-        function removeCvItem(section, idx) {
-            syncCvSectionFromDom(section);
-            currentCvData[section].splice(idx, 1);
-            renderCvLists();
-        }
-
-        function syncCvSectionFromDom(section) {
-            const container = document.getElementById(
-                { experience: 'cvExperienceList', education: 'cvEducationList', projects: 'cvProjectsList', languages: 'cvLanguagesList' }[section]
-            );
-            const rows = [...container.querySelectorAll('.cv-item')];
-            if (section === 'experience') {
-                currentCvData.experience = rows.map(row => ({
-                    title: row.querySelector('.cv-exp-title').value.trim(),
-                    company: row.querySelector('.cv-exp-company').value.trim(),
-                    date: row.querySelector('.cv-exp-date').value.trim(),
-                    bullets: row.querySelector('.cv-exp-bullets').value.split('\n').map(s => s.trim()).filter(Boolean),
-                }));
-            } else if (section === 'education') {
-                currentCvData.education = rows.map(row => ({
-                    degree: row.querySelector('.cv-edu-degree').value.trim(),
-                    school: row.querySelector('.cv-edu-school').value.trim(),
-                    year: row.querySelector('.cv-edu-year').value.trim(),
-                    detail: row.querySelector('.cv-edu-detail').value.trim(),
-                }));
-            } else if (section === 'projects') {
-                currentCvData.projects = rows.map(row => ({
-                    name: row.querySelector('.cv-proj-name').value.trim(),
-                    description: row.querySelector('.cv-proj-desc').value.trim(),
-                    tags: row.querySelector('.cv-proj-tags').value.split(',').map(s => s.trim()).filter(Boolean),
-                }));
-            } else if (section === 'languages') {
-                currentCvData.languages = rows.map(row => ({
-                    name: row.querySelector('.cv-lang-name').value.trim(),
-                    level: row.querySelector('.cv-lang-level').value.trim(),
-                }));
-            }
-        }
-
-        async function saveCv() {
-            await withSaving('cvSaveBtn', async () => {
-                ['experience', 'education', 'projects', 'languages'].forEach(syncCvSectionFromDom);
-
-                const payload = {
-                    title: document.getElementById('cvTitle').value.trim(),
-                    location: document.getElementById('cvLocation').value.trim(),
-                    summary: document.getElementById('cvSummary').value.trim(),
-                    skills: document.getElementById('cvSkills').value.split(',').map(s => s.trim()).filter(Boolean),
-                    certifications: document.getElementById('cvCertifications').value.split('\n').map(s => s.trim()).filter(Boolean),
-                    experience: currentCvData.experience,
-                    education: currentCvData.education,
-                    projects: currentCvData.projects,
-                    languages: currentCvData.languages,
-                };
-
-                const { error } = await supabaseClient.from('profiles').update({ cv_data: payload }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to save CV'); return; }
-                showToast('CV saved!');
-                currentCvData = payload;
-            });
-        }
-
-        function updateProfileCompletion() {
-            const hasAvatar = !!currentProfile?.avatar_url;
-            const hasLink = currentLinks.length > 0;
-            const hasWallet = !!currentProfile?.wallet_address;
-            const items = [
-                ['checkAvatar', hasAvatar], ['checkLinkBio', hasLink], ['checkWallet', hasWallet],
-            ];
-            let count = 0;
-            items.forEach(([id, done]) => {
-                const el = document.getElementById(id);
-                const icon = el.querySelector('i');
-                if (done) {
-                    count++;
-                    el.className = 'text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1';
-                    icon.setAttribute('data-lucide', 'check');
-                } else {
-                    el.className = 'text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1';
-                    icon.setAttribute('data-lucide', 'circle');
-                }
-            });
-            lucide.createIcons();
-
-            const pct = Math.round((count / items.length) * 100);
-            document.getElementById('completionPct').textContent = pct + '%';
-            document.getElementById('completionFill').style.width = pct + '%';
-
-            const claimBtn = document.getElementById('claimNetBtn');
-            if (pct === 100) {
-                claimBtn.disabled = false;
-                claimBtn.className = 'w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm';
-            } else {
-                claimBtn.disabled = true;
-                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
-            }
-        }
-
-        function compressImage(file, maxDimension = 512, quality = 0.75) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                const reader = new FileReader();
-                reader.onload = (e) => { img.src = e.target.result; };
-                reader.onerror = reject;
-                img.onload = () => {
-                    let { width, height } = img;
-                    if (width > height && width > maxDimension) { height = Math.round(height * (maxDimension / width)); width = maxDimension; }
-                    else if (height > maxDimension) { width = Math.round(width * (maxDimension / height)); height = maxDimension; }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width; canvas.height = height;
-                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', quality);
-                };
-                img.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function handleAvatarUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const status = document.getElementById('avatarStatus');
-            status.textContent = 'Compressing & uploading...';
-            status.classList.remove('hidden');
-
-            try {
-                const compressed = await compressImage(file);
-                const path = `${currentUser.id}/avatar.jpg`;
-                const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
-                if (uploadError) throw uploadError;
-
-                const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
-                const avatarUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
-
-                const { error: updateError } = await supabaseClient.from('profiles').update({ avatar_url: avatarUrl }).eq('id', currentUser.id);
-                if (updateError) throw updateError;
-
-                status.textContent = 'Photo updated!';
-                setTimeout(() => status.classList.add('hidden'), 2000);
-                await loadProfile();
-                updateProfileCompletion();
-            } catch (err) {
-                console.error(err);
-                status.textContent = 'Upload failed. Please try a different image.';
-            }
-        }
-
-        async function loadLinks() {
-            const { data, error } = await supabaseClient.from('links').select('*').eq('user_id', currentUser.id).order('position', { ascending: true });
-            if (error) { console.error('Failed to load links:', error); return; }
-            currentLinks = data || [];
-            renderLinks();
-        }
-
-        const ICON_OPTIONS = [
-            { key: 'instagram', label: 'Instagram' },
-            { key: 'x', label: 'Twitter / X' },
-            { key: 'facebook', label: 'Facebook' },
-            { key: 'linkedin', label: 'LinkedIn' },
-            { key: 'youtube', label: 'YouTube' },
-            { key: 'tiktok', label: 'TikTok' },
-            { key: 'whatsapp', label: 'WhatsApp' },
-            { key: 'telegram', label: 'Telegram' },
-            { key: 'threads', label: 'Threads' },
-            { key: 'pinterest', label: 'Pinterest' },
-            { key: 'snapchat', label: 'Snapchat' },
-            { key: 'twitch', label: 'Twitch' },
-            { key: 'discord', label: 'Discord' },
-            { key: 'spotify', label: 'Spotify' },
-            { key: 'soundcloud', label: 'SoundCloud' },
-            { key: 'applemusic', label: 'Apple Music' },
-            { key: 'github', label: 'GitHub' },
-            { key: 'behance', label: 'Behance' },
-            { key: 'dribbble', label: 'Dribbble' },
-            { key: 'medium', label: 'Medium' },
-            { key: 'reddit', label: 'Reddit' },
-            { key: 'paypal', label: 'PayPal' },
-            { key: 'patreon', label: 'Patreon' },
-            { key: 'vimeo', label: 'Vimeo' },
-            { key: 'netflix', label: 'Netflix' },
-            { key: 'briefcase', label: 'Professional' },
-            { key: 'building', label: 'Building' },
-            { key: 'building-2', label: 'Office' },
-            { key: 'graduation-cap', label: 'Student' },
-            { key: 'user', label: 'Person' },
-            { key: 'users', label: 'People' },
-            { key: 'award', label: 'Award' },
-            { key: 'briefcase-business', label: 'Business' },
-            { key: 'home', label: 'House' },
-            { key: 'map-pin', label: 'Location' },
-            { key: 'plane', label: 'Travel' },
-            { key: 'car', label: 'Car' },
-            { key: 'book', label: 'Book' },
-            { key: 'book-open', label: 'Reading' },
-            { key: 'file-text', label: 'Document' },
-            { key: 'dumbbell', label: 'Fitness' },
-            { key: 'trophy', label: 'Sports' },
-            { key: 'heart', label: 'Health' },
-            { key: 'coins', label: 'Coin' },
-            { key: 'wallet', label: 'Wallet' },
-            { key: 'banknote', label: 'Currency' },
-            { key: 'trending-up', label: 'Chart' },
-            { key: 'bar-chart-3', label: 'Statistics' },
-            { key: 'credit-card', label: 'Payment' },
-            { key: 'camera', label: 'Photography' },
-            { key: 'music', label: 'Music' },
-            { key: 'video', label: 'Video' },
-            { key: 'palette', label: 'Design' },
-            { key: 'code', label: 'Code' },
-            { key: 'gamepad-2', label: 'Gaming' },
-            { key: 'coffee', label: 'Coffee' },
-            { key: 'gift', label: 'Gift' },
-            { key: 'shopping-cart', label: 'Shop' },
-            { key: 'star', label: 'Star' },
-            { key: 'calendar', label: 'Calendar' },
-            { key: 'phone', label: 'Phone' },
-            { key: 'globe', label: 'Website' },
-            { key: 'mail', label: 'Email' },
-            { key: 'link', label: 'Other' },
-        ];
-
-        const BRAND_SLUGS = {
-            instagram: 'instagram', x: 'x', facebook: 'facebook', linkedin: 'linkedin',
-            youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsapp', telegram: 'telegram',
-            threads: 'threads', pinterest: 'pinterest', snapchat: 'snapchat', twitch: 'twitch',
-            discord: 'discord', spotify: 'spotify', soundcloud: 'soundcloud', applemusic: 'applemusic',
-            github: 'github', behance: 'behance', dribbble: 'dribbble', medium: 'medium',
-            reddit: 'reddit', paypal: 'paypal', patreon: 'patreon', vimeo: 'vimeo', netflix: 'netflix',
-        };
-
-        function iconWrapperClass(shape) {
-            const base = 'w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center flex-shrink-0';
-            return shape === 'rounded' ? `${base} rounded-xl` : `${base} rounded-full`;
-        }
-
-        function getIconInnerHtml(iconKey) {
-            const slug = BRAND_SLUGS[iconKey];
-            if (slug) {
-                return {
-                    wrapperExtra: 'bg-white border border-subtle p-2',
-                    inner: `<img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg" class="w-full h-full" alt="${iconKey}" onerror="this.style.display='none'">`,
-                };
-            }
-            return { wrapperExtra: 'bg-gradient-to-br from-blue-500 to-purple-600', inner: `<i data-lucide="${iconKey}" class="w-5 h-5 lg:w-6 lg:h-6 text-white"></i>` };
-        }
-
-        function setIconShapeButtons(shape) {
-            document.getElementById('shapeBtnCircle').classList.toggle('bg-blue-500', shape === 'circle');
-            document.getElementById('shapeBtnCircle').classList.toggle('text-white', shape === 'circle');
-            document.getElementById('shapeBtnCircle').classList.toggle('border-blue-500', shape === 'circle');
-            document.getElementById('shapeBtnRounded').classList.toggle('bg-blue-500', shape === 'rounded');
-            document.getElementById('shapeBtnRounded').classList.toggle('text-white', shape === 'rounded');
-            document.getElementById('shapeBtnRounded').classList.toggle('border-blue-500', shape === 'rounded');
-        }
-
-        async function setIconShape(shape) {
-            setIconShapeButtons(shape);
-            if (currentProfile) currentProfile.link_icon_shape = shape;
-            renderLinks();
-            const { error } = await supabaseClient.from('profiles').update({ link_icon_shape: shape }).eq('id', currentUser.id);
-            if (error) {
-                console.error(error);
-                showToast('Failed to save icon shape — please try again');
-                return;
-            }
-            showToast(`Icon shape set to ${shape === 'rounded' ? 'Rounded' : 'Circle'}`);
-        }
-
-        function renderLinks() {
-            const list = document.getElementById('linkList');
-            const empty = document.getElementById('linkListEmpty');
-            const tier = currentProfile?.tier || 'basic';
-            const limit = LINK_LIMITS[tier] ?? 20;
-            const shape = currentProfile?.link_icon_shape || 'circle';
-
-            document.getElementById('linkCountLabel').textContent = `${currentLinks.length}/${limit} links used`;
-            list.querySelectorAll('.link-item').forEach(el => el.remove());
-
-            if (currentLinks.length === 0) { empty.classList.remove('hidden'); return; }
-            empty.classList.add('hidden');
-
-            currentLinks.forEach((link, index) => {
-                const { wrapperExtra, inner } = getIconInnerHtml(link.icon);
-                const div = document.createElement('div');
-                div.className = 'link-item rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4';
-                div.innerHTML = `
-                    <div class="${iconWrapperClass(shape)} ${wrapperExtra}">${inner}</div>
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-medium text-primary text-sm lg:text-base">${escapeHtml(link.title)}</h4>
-                        <p class="text-xs lg:text-sm text-secondary truncate">${escapeHtml(link.description || link.url)}</p>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <button onclick="moveLink(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i></button>
-                        <button onclick="moveLink(${index}, 1)" ${index === currentLinks.length - 1 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i></button>
-                        <button onclick="openLinkModal('${link.id}')" class="p-1.5 hover-surface rounded-lg transition"><i data-lucide="pencil" class="w-4 h-4 text-secondary"></i></button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-            lucide.createIcons();
-        }
-
-        async function moveLink(index, direction) {
-            const otherIndex = index + direction;
-            if (otherIndex < 0 || otherIndex >= currentLinks.length) return;
-            const a = currentLinks[index];
-            const b = currentLinks[otherIndex];
-            [currentLinks[index], currentLinks[otherIndex]] = [b, a];
-            renderLinks();
-            await Promise.all([
-                supabaseClient.from('links').update({ position: b.position }).eq('id', a.id),
-                supabaseClient.from('links').update({ position: a.position }).eq('id', b.id),
-            ]);
-            const tmp = a.position; a.position = b.position; b.position = tmp;
-        }
-
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str || '';
-            return div.innerHTML;
-        }
-
-        function renderIconPickerPanel() {
-            const panel = document.getElementById('iconPickerPanel');
-            panel.innerHTML = ICON_OPTIONS.map(opt => {
-                const { wrapperExtra, inner } = getIconInnerHtml(opt.key);
-                return `
-                    <button type="button" onclick="selectLinkIcon('${opt.key}', '${opt.label}')" class="flex flex-col items-center gap-1 p-2 hover-surface rounded-lg transition">
-                        <span class="w-8 h-8 rounded-full flex items-center justify-center ${wrapperExtra}">${inner.replace(/w-5 h-5 lg:w-6 lg:h-6/, 'w-4 h-4').replace(/w-5 h-5 lg:w-6 lg:h-6 text-white/, 'w-4 h-4 text-white')}</span>
-                        <span class="text-[10px] text-secondary">${opt.label}</span>
-                    </button>
-                `;
-            }).join('');
-            lucide.createIcons();
-        }
-
-        function toggleIconPicker() {
-            const panel = document.getElementById('iconPickerPanel');
-            if (!panel.classList.contains('open')) renderIconPickerPanel();
-            panel.classList.toggle('open');
-        }
-
-        function selectLinkIcon(key, label) {
-            document.getElementById('linkIcon').value = key;
-            document.getElementById('iconPickerLabel').textContent = label;
-            const { wrapperExtra, inner } = getIconInnerHtml(key);
-            const preview = document.getElementById('iconPickerPreview');
-            preview.className = `w-6 h-6 flex items-center justify-center rounded-full overflow-hidden ${wrapperExtra}`;
-            preview.innerHTML = inner.replace(/w-5 h-5 lg:w-6 lg:h-6/, 'w-4 h-4').replace(/w-5 h-5 lg:w-6 lg:h-6 text-white/, 'w-4 h-4 text-white');
-            lucide.createIcons();
-            document.getElementById('iconPickerPanel').classList.remove('open');
-        }
-
-        function openLinkModal(linkId = null) {
-            const tier = currentProfile?.tier || 'basic';
-            const limit = LINK_LIMITS[tier] ?? 20;
-            if (!linkId && currentLinks.length >= limit) { showToast('Limit reached — upgrade your plan for more links'); return; }
-
-            const link = linkId ? currentLinks.find(l => l.id === linkId) : null;
-            document.getElementById('linkModalTitle').textContent = link ? 'Edit Link' : 'Add Link';
-            document.getElementById('linkId').value = link ? link.id : '';
-            document.getElementById('linkTitle').value = link ? link.title : '';
-            document.getElementById('linkUrl').value = link ? link.url : '';
-            document.getElementById('linkDescription').value = link ? (link.description || '') : '';
-
-            const iconKey = link ? (link.icon || 'link') : 'instagram';
-            const opt = ICON_OPTIONS.find(o => o.key === iconKey) || ICON_OPTIONS[0];
-            selectLinkIcon(opt.key, opt.label);
-
-            document.getElementById('linkDeleteBtn').classList.toggle('hidden', !link);
-            document.getElementById('linkModal').classList.add('active');
-        }
-
-        function closeLinkModal() {
-            document.getElementById('linkModal').classList.remove('active');
-            document.getElementById('iconPickerPanel').classList.remove('open');
-        }
-
-        document.getElementById('linkForm').addEventListener('submit', async (e) => {
+      });
+
+      // ============================================
+      // INTERSECTION OBSERVER (Scroll Animations)
+      // ============================================
+      const revealElements = document.querySelectorAll('.reveal');
+
+      const revealObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.1
+      });
+
+      revealElements.forEach(function(el) {
+        revealObserver.observe(el);
+      });
+
+      // ============================================
+      // SMOOTH SCROLL FOR ANCHOR LINKS
+      // ============================================
+      document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+        anchor.addEventListener('click', function(e) {
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
             e.preventDefault();
-            const btn = document.getElementById('linkSaveBtn');
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
+            const headerHeight = header.offsetHeight;
+            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20;
 
-            const id = document.getElementById('linkId').value;
-            const payload = {
-                title: document.getElementById('linkTitle').value.trim(),
-                url: document.getElementById('linkUrl').value.trim(),
-                description: document.getElementById('linkDescription').value.trim() || null,
-                icon: document.getElementById('linkIcon').value,
-            };
-
-            let error;
-            if (id) {
-                ({ error } = await supabaseClient.from('links').update(payload).eq('id', id));
-            } else {
-                payload.user_id = currentUser.id;
-                payload.position = currentLinks.length;
-                ({ error } = await supabaseClient.from('links').insert(payload));
-            }
-
-            btn.disabled = false;
-            btn.textContent = 'Save Link';
-
-            if (error) { console.error(error); showToast('Failed to save link'); return; }
-
-            showToast(id ? 'Link updated' : 'Link added');
-            closeLinkModal();
-            await loadLinks();
-            updateProfileCompletion();
-        });
-
-        async function deleteCurrentLink() {
-            const id = document.getElementById('linkId').value;
-            if (!id) return;
-            const { error } = await supabaseClient.from('links').delete().eq('id', id);
-            if (error) { showToast('Failed to delete link'); return; }
-            showToast('Link deleted');
-            closeLinkModal();
-            await loadLinks();
-            updateProfileCompletion();
-        }
-
-        document.getElementById('linkModal').addEventListener('click', function(e) {
-            if (e.target === this) closeLinkModal();
-        });
-
-    document.getElementById('disconnectWalletModal').addEventListener('click', function(e) {
-        if (e.target === this) closeDisconnectModal();
-    });
-
-    document.getElementById('connectWalletModal').addEventListener('click', function(e) {
-        if (e.target === this) closeConnectWalletModal();
-    });
-
-        // Tidak perlu panggil manual di sini — onAuthStateChange di atas
-        // otomatis fire event INITIAL_SESSION begitu listener didaftarkan,
-        // itulah yang memicu alur masuk dashboard / redirect ke login.
-    </script>
-
-    <script>
-        lucide.createIcons();
-
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            if (!savedTheme) { applyTheme('light', false); return; }
-            applyTheme(savedTheme, true);
-        }
-
-        function applyTheme(theme, save = true) {
-            const html = document.documentElement;
-            const lightIcons = document.querySelectorAll('.theme-icon-light');
-            const darkIcons = document.querySelectorAll('.theme-icon-dark');
-            if (theme === 'dark') {
-                html.classList.add('dark'); html.classList.remove('light');
-                lightIcons.forEach(icon => icon.classList.add('hidden'));
-                darkIcons.forEach(icon => icon.classList.remove('hidden'));
-            } else {
-                html.classList.remove('dark'); html.classList.add('light');
-                lightIcons.forEach(icon => icon.classList.remove('hidden'));
-                darkIcons.forEach(icon => icon.classList.add('hidden'));
-            }
-            if (save) localStorage.setItem('theme', theme);
-        }
-
-        function toggleTheme() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
-            applyTheme(newTheme, true);
-            showToast(newTheme === 'dark' ? 'Dark mode activated' : 'Light mode activated');
-        }
-        initTheme();
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('open');
-            document.querySelector('.sidebar-overlay').classList.toggle('active');
-        }
-
-        function toggleNotifications(btn) {
-            const panel = btn.closest('.relative').querySelector('.notification-panel');
-            document.querySelectorAll('.notification-panel').forEach(p => { if (p !== panel) p.classList.remove('active'); });
-            panel.classList.toggle('active');
-        }
-        function markAllRead() {
-            showToast('All notifications marked as read');
-            document.querySelectorAll('.notification-panel').forEach(p => p.classList.remove('active'));
-        }
-        document.addEventListener('click', function(e) {
-            const bell = e.target.closest('button[onclick^="toggleNotifications"]');
-            if (!bell && !e.target.closest('.notification-panel')) {
-                document.querySelectorAll('.notification-panel').forEach(p => p.classList.remove('active'));
-            }
-
-            const iconPanel = document.getElementById('iconPickerPanel');
-            const iconBtn = e.target.closest('button[onclick="toggleIconPicker()"]');
-            if (!iconBtn && !e.target.closest('#iconPickerPanel')) iconPanel.classList.remove('open');
-        });
-    </script>
-
-    <script type="module">
-        const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
-        const POLYGON_CHAIN_ID = 137;
-        let wcProvider = null;
-        let EthereumProviderClass = null;
-
-        function truncateAddress(addr) {
-            if (!addr) return '';
-            return addr.slice(0, 6) + '...' + addr.slice(-4);
-        }
-
-        function renderWalletAddressUI(address, isLive) {
-            const textEl = document.getElementById('walletAddressText');
-            const statusDot = document.getElementById('walletStatusDot');
-            const statusText = document.getElementById('walletStatusText');
-            const connectBtn = document.getElementById('connectSmartWalletBtn');
-            const disconnectBtn = document.getElementById('disconnectWalletBtn');
-            const hasAddress = !!address;
-
-            if (hasAddress) {
-                textEl.textContent = truncateAddress(address);
-                textEl.classList.remove('text-muted');
-                textEl.classList.add('text-primary');
-
-                if(statusText) statusText.textContent = 'Status: Connected';
-                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
-
-                // Show Disconnect, hide Connect
-                if (connectBtn) connectBtn.classList.add('hidden');
-                if (disconnectBtn) disconnectBtn.classList.remove('hidden');
-            } else {
-                textEl.textContent = 'Not connected';
-                textEl.classList.add('text-muted');
-                textEl.classList.remove('text-primary');
-
-                if(statusText) statusText.textContent = 'Status: Not Connected';
-                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
-
-                // Show Connect, hide Disconnect
-                if (connectBtn) connectBtn.classList.remove('hidden');
-                if (disconnectBtn) disconnectBtn.classList.add('hidden');
-            }
-            setWalletConnectBtnState(isLive);
-        }
-        window.renderWalletAddressUI = renderWalletAddressUI;
-
-        function setWalletConnectBtnState(isLive) {
-    const btn = document.getElementById('walletConnectBtn');
-    if (!btn) return;
-    btn.innerHTML = '<i data-lucide="external-link" class="w-4 h-4"></i> Open Wallet';
-    btn.onclick = openNetlinkPay;
-    if (window.lucide) lucide.createIcons();
-}
-
-        async function loadEthereumProvider() {
-            if (EthereumProviderClass) return EthereumProviderClass;
-            
-            const mod = await import("https://esm.sh/@walletconnect/ethereum-provider@2?bundle");
-            
-            EthereumProviderClass = mod.EthereumProvider;
-            return EthereumProviderClass;
-        }
-
-        async function getWcProvider() {
-            if (wcProvider) return wcProvider;
-            const EthereumProvider = await loadEthereumProvider();
-            wcProvider = await EthereumProvider.init({
-                projectId: WC_PROJECT_ID,
-                metadata: {
-                    name: 'Netlink.bio',
-                    description: 'One link for everything — bio, CV, and crypto wallet in one page.',
-                    url: 'https://netlink-bio.vercel.app',
-                    icons: ['https://netlink-bio.vercel.app/assets/netlinkbio-icon.png'],
-                },
-                showQrModal: true,
-                optionalChains: [POLYGON_CHAIN_ID],
-                rpcMap: { [POLYGON_CHAIN_ID]: 'https://polygon-rpc.com' },
+            window.scrollTo({
+              top: targetPosition,
+              behavior: 'smooth'
             });
-
-            wcProvider.on('accountsChanged', (accounts) => {
-                if (accounts && accounts.length) applyConnectedWallet(accounts[0]);
-            });
-            wcProvider.on('disconnect', () => {
-                renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
-                showToast('Wallet disconnected');
-            });
-
-            return wcProvider;
-        }
-
-        async function applyConnectedWallet(address) {
-            document.getElementById('walletAddressInput').value = address;
-            renderWalletAddressUI(address, true);
-            await saveWallet(); 
-            renderWalletAddressUI(address, true); 
-        }
-
-        async function connectWallet() {
-            const btn = document.getElementById('walletConnectBtn');
-            btn.disabled = true;
-            const original = btn.innerHTML;
-            btn.textContent = 'Loading...';
-            try {
-                const provider = await getWcProvider();
-                btn.textContent = 'Connecting...';
-                await provider.connect();
-                if (provider.accounts && provider.accounts.length) {
-                    await applyConnectedWallet(provider.accounts[0]);
-                }
-            } catch (err) {
-                console.error(err);
-                showToast('Could not load/connect wallet — check your internet connection and try again');
-                btn.innerHTML = original;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function disconnectWallet() {
-            try {
-                if (wcProvider) await wcProvider.disconnect();
-            } catch (err) {
-                console.error(err);
-            }
-            renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
-            showToast('Wallet disconnected');
-        }
-
-    async function removeWalletAddress() {
-            const current = document.getElementById('walletAddressInput').value;
-            if (!current) return;
-
-            try {
-                if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
-                const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
-                if (error) {
-                    console.error('Supabase error removing wallet:', error);
-                    // Continue anyway - update UI to reflect disconnected state
-                }
-                document.getElementById('walletAddressInput').value = '';
-                renderWalletAddressUI('', false);
-                fetchWalletBalances('');
-                updateProfileCompletion();
-                showToast('Wallet disconnected');
-            } catch (err) {
-                console.error('Disconnect error:', err);
-                // Even if there's an error, try to update UI
-                document.getElementById('walletAddressInput').value = '';
-                renderWalletAddressUI('', false);
-                fetchWalletBalances('');
-                updateProfileCompletion();
-                showToast('Wallet disconnected');
-            }
-        }
-
-        window.connectWallet = connectWallet;
-        window.disconnectWallet = disconnectWallet;
-        window.removeWalletAddress = removeWalletAddress;
-    </script>
-    <script type="module">
-    import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
-
-    const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
-    const sequenceWaas = new SequenceWaaS({
-        network: 'polygon',
-        projectAccessKey: 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA',
-        waasConfigKey: 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=',
-    });
-    window.sequenceWaas = sequenceWaas;
-
-    let googleWalletReady = false;
-    let googleWalletInitAttempts = 0;
-    const MAX_INIT_ATTEMPTS = 30;
-
-    async function handleGoogleWalletCredential(response) {
-        closeConnectWalletModal();
-        const idToken = response.credential;
-        const btn = document.getElementById('connectSmartWalletBtn');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block mr-2"></span>Connecting...';
-        }
-        try {
-            const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
-
-            // Guard: check if result is valid
-            if (!waasResult) {
-                throw new Error('No response from wallet service');
-            }
-
-            // Sequence WaaS can return wallet address directly or as property
-            const walletAddress = waasResult.wallet || waasResult;
-
-            if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
-                console.error('Invalid wallet response:', waasResult);
-                throw new Error('Invalid wallet address received');
-            }
-
-            document.getElementById('walletAddressInput').value = walletAddress;
-            await window.saveWallet(true);
-            window.renderWalletAddressUI(walletAddress, true);
-            showToast('Wallet connected!');
-        } catch (err) {
-            console.error('Wallet connection error:', err);
-
-            // Guard: sometimes sequenceWaas.signIn() rejects (e.g. a
-            // confirmation timeout) even though the wallet WAS created and
-            // already saved successfully a few lines above. Re-check the
-            // actual saved state before showing a "failed" toast — showing
-            // an error after a real success is more confusing than showing
-            // nothing.
-            const savedAddress = document.getElementById('walletAddressInput').value.trim();
-            if (savedAddress && /^0x[a-fA-F0-9]{40}$/.test(savedAddress)) {
-                console.warn('Wallet connection reported an error, but a valid address is already saved — suppressing failure toast.');
-                window.renderWalletAddressUI(savedAddress, true);
-                showToast('Wallet connected!');
-                return;
-            }
-
-            const msg = err?.message || '';
-            if (msg.includes('already exists') || msg.includes('conflict')) {
-                showToast('This Google account is already linked to a wallet.');
-            } else if (msg.includes('network') || msg.includes('fetch')) {
-                showToast('Network error. Please check your connection and try again.');
-            } else {
-                showToast('Could not connect wallet. Please try again.');
-            }
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Smart Wallet';
-                if (window.lucide) lucide.createIcons();
-            }
-        }
-    }
-
-    function initGoogleWallet() {
-        if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-            googleWalletInitAttempts++;
-            if (googleWalletInitAttempts < MAX_INIT_ATTEMPTS) {
-                setTimeout(initGoogleWallet, 200);
-            } else {
-                console.error('Google Identity Services failed to load after ' + MAX_INIT_ATTEMPTS + ' attempts');
-            }
-            return;
-        }
-        google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleGoogleWalletCredential,
-            auto_select: false,
-            cancel_on_tap_outside: false,
-            itp_support: true,
+          }
         });
-        googleWalletReady = true;
-    }
+      });
 
-    window.openConnectWalletModal = function () {
-        if (!googleWalletReady) {
-            showToast('Google Sign-In is still loading, please wait a moment...');
-            return;
+      // ============================================
+      // USERNAME CHECKER (UI Placeholder)
+      // ============================================
+      const checkerForm = document.querySelector('.checker-form');
+      const checkerInput = document.querySelector('.checker-input');
+      const checkerBtn = document.querySelector('.checker-btn');
+
+      checkerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = checkerInput.value.trim();
+
+        if (!username) {
+          checkerInput.style.borderColor = '#ef4444';
+          checkerInput.focus();
+          setTimeout(function() {
+            checkerInput.style.borderColor = '';
+          }, 2000);
+          return;
         }
-        const modal = document.getElementById('connectWalletModal');
-        const container = document.getElementById('googleSignInContainer');
-        if (!modal || !container) return;
 
-        // Clear previous button and render fresh
-        container.innerHTML = '';
-        google.accounts.id.renderButton(container, {
-            type: 'standard',
-            size: 'large',
-            theme: 'outline',
-            text: 'signin_with',
-            width: '100%',
-        });
+        const originalText = checkerBtn.textContent;
+        checkerBtn.textContent = 'Checking...';
+        checkerBtn.disabled = true;
+        checkerBtn.style.opacity = '0.7';
 
-        modal.classList.add('active');
-    };
+        setTimeout(function() {
+          checkerBtn.textContent = originalText;
+          checkerBtn.disabled = false;
+          checkerBtn.style.opacity = '';
+        }, 1500);
+      });
 
-    window.closeConnectWalletModal = function () {
-        const modal = document.getElementById('connectWalletModal');
-        if (modal) modal.classList.remove('active');
-    };
-
-    window.confirmDisconnectWallet = function () {
-        document.getElementById('disconnectWalletModal').classList.add('active');
-    };
-
-    window.closeDisconnectModal = function () {
-        document.getElementById('disconnectWalletModal').classList.remove('active');
-        document.getElementById('disconnectConfirmCheckbox').checked = false;
-        document.getElementById('disconnectConfirmBtn').disabled = true;
-    };
-
-    window.handleDisconnectConfirm = function () {
-        const checkbox = document.getElementById('disconnectConfirmCheckbox');
-        if (!checkbox.checked) return;
-        closeDisconnectModal();
-        removeWalletAddress();
-    };
-
-    // Enable/disable confirm button based on checkbox
-    document.addEventListener('DOMContentLoaded', function () {
-        const checkbox = document.getElementById('disconnectConfirmCheckbox');
-        const btn = document.getElementById('disconnectConfirmBtn');
-        if (checkbox && btn) {
-            checkbox.addEventListener('change', function () {
-                btn.disabled = !this.checked;
-                btn.classList.toggle('opacity-50', !this.checked);
-                btn.classList.toggle('cursor-not-allowed', !this.checked);
-            });
-        }
-    });
-
-    // Start initialization with retry
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initGoogleWallet);
-    } else {
-        initGoogleWallet();
-    }
-</script>
+    })();
+  </script>
 </body>
-</html>
+    </html>
