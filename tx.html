@@ -119,27 +119,39 @@
         .receipt-close-btn { position: absolute; top: -12px; right: -12px; width: 32px; height: 32px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; z-index: 10; border: none; transition: transform 0.15s ease; }
         .receipt-close-btn:hover { transform: scale(1.1); }
         .receipt-sheet { background: #ffffff; padding: 28px; color: #0f172a; }
-        .receipt-sheet .receipt-brand-logo { height: 32px; width: auto; display: block; margin: 0 auto 20px; }
-        .receipt-sheet .receipt-title { font-size: 20px; font-weight: 800; letter-spacing: 0.1em; text-align: center; margin-bottom: 2px; color: #0f172a; }
-        .receipt-sheet .receipt-subtitle { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 20px; font-weight: 500; letter-spacing: 0.02em; }
-        .receipt-sheet .receipt-divider { height: 1px; background: #f1f5f9; margin: 14px 0; }
-        .receipt-sheet .receipt-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; font-size: 12px; line-height: 1.4; }
-        .receipt-sheet .receipt-row .label { color: #94a3b8; font-weight: 500; flex-shrink: 0; padding-right: 12px; }
-        .receipt-sheet .receipt-row .value { color: #0f172a; font-weight: 600; text-align: right; word-break: break-word; }
+        .receipt-sheet .receipt-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+        .receipt-sheet .receipt-title { font-size: 24px; font-weight: 800; color: #14b8a6; line-height: 1.1; }
+        .receipt-sheet .receipt-subtitle { font-size: 12px; color: #475569; font-weight: 500; margin-top: 2px; }
+        .receipt-sheet .receipt-brand-logo { height: 34px; width: auto; display: block; }
+        .receipt-sheet .info-box { background: #f8fafc; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+        .receipt-sheet .info-row { display: flex; font-size: 12px; margin-bottom: 4px; }
+        .receipt-sheet .info-row:last-child { margin-bottom: 0; }
+        .receipt-sheet .info-row .info-label { width: 92px; flex-shrink: 0; color: #475569; }
+        .receipt-sheet .info-row .info-value { font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 4px; }
+        .receipt-sheet .party-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 4px; }
+        .receipt-sheet .party-col:first-child { border-right: 1px solid #e2e8f0; padding-right: 14px; }
+        .receipt-sheet .party-col:last-child { padding-left: 14px; }
+        .receipt-sheet .party-col .party-label { font-size: 11px; color: #475569; margin-bottom: 6px; }
+        .receipt-sheet .party-col .party-name { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 10px; line-height: 1.3; }
+        .receipt-sheet .party-col .party-addr-label { font-size: 10px; color: #94a3b8; margin-bottom: 2px; }
+        .receipt-sheet .party-col .party-addr { font-size: 10px; font-family: 'SF Mono', 'Courier New', monospace; color: #64748b; line-height: 1.4; word-break: break-all; }
+        .receipt-sheet .receipt-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; line-height: 1.4; }
+        .receipt-sheet .receipt-row:last-of-type { border-bottom: none; }
+        .receipt-sheet .receipt-row .label { color: #64748b; font-weight: 500; flex-shrink: 0; padding-right: 12px; }
+        .receipt-sheet .receipt-row .value { color: #0f172a; font-weight: 700; text-align: right; word-break: break-word; }
+        .receipt-sheet .receipt-row .value-sub { display: block; font-size: 10.5px; font-weight: 500; color: #94a3b8; margin-top: 2px; }
         .receipt-sheet .receipt-row .value-mono { font-family: 'SF Mono', 'Courier New', monospace; font-size: 11px; color: #475569; text-align: right; word-break: break-all; }
-        .receipt-sheet .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-        .status-success { background: #ecfdf5; color: #059669; }
-        .status-failed { background: #fff1f2; color: #e11d48; }
-        .status-pending { background: #fffbeb; color: #d97706; }
+        .status-success-text { color: #059669; }
+        .status-failed-text { color: #e11d48; }
+        .status-pending-text { color: #d97706; }
         .receipt-sheet .party-box { background: #f8fafc; border-radius: 12px; padding: 12px 14px; }
-        .receipt-sheet .party-box .party-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 3px; }
-        .receipt-sheet .party-box .party-name { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 2px; line-height: 1.3; }
-        .receipt-sheet .party-box .party-addr { font-size: 10px; font-family: 'SF Mono', 'Courier New', monospace; color: #64748b; line-height: 1.4; word-break: break-all; }
-        .receipt-sheet .token-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; }
-        .receipt-sheet .hash-text { font-size: 10px; font-family: 'SF Mono', 'Courier New', monospace; color: #475569; line-height: 1.5; word-break: break-all; }
-        .receipt-sheet .qr-wrap { text-align: center; margin: 14px 0; }
-        .receipt-sheet .qr-wrap img { width: 110px; height: 110px; border-radius: 10px; }
-        .receipt-sheet .footer-text { font-size: 8.5px; color: #94a3b8; text-align: center; line-height: 1.5; margin-top: 12px; }
+        .receipt-sheet .token-icon { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; vertical-align: middle; }
+        .receipt-sheet .hash-block { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 4px; }
+        .receipt-sheet .hash-text { font-size: 10px; font-family: 'SF Mono', 'Courier New', monospace; color: #475569; line-height: 1.5; word-break: break-all; flex: 1; }
+        .receipt-sheet .explorer-caption { font-size: 10px; color: #64748b; text-align: right; white-space: nowrap; margin-bottom: 6px; }
+        .receipt-sheet .qr-wrap { flex-shrink: 0; text-align: center; }
+        .receipt-sheet .qr-wrap img { width: 82px; height: 82px; border-radius: 8px; }
+        .receipt-sheet .footer-text { font-size: 8.5px; color: #94a3b8; text-align: left; line-height: 1.5; margin-top: 16px; }
         .receipt-actions { display: flex; gap: 8px; padding: 14px 20px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; }
         .receipt-actions button { flex: 1; padding: 10px 0; border-radius: 12px; font-size: 12px; font-weight: 600; transition: all 0.15s ease; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .receipt-actions .btn-secondary { background: #f1f5f9; color: #334155; }
@@ -408,52 +420,69 @@
 
             content.innerHTML = `
                 <div class="receipt-sheet" id="receiptSheet">
-                    <div class="text-center mb-5">
-                        <img src="${BRAND_LOGO_URL}" alt="Netlink Pay" class="receipt-brand-logo" crossorigin="anonymous" onerror="this.style.display='none'">
-                        <div class="receipt-title">RECEIPT</div>
-                        <div class="receipt-subtitle">Digital Asset Transfer</div>
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="receipt-header">
                         <div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Status</div>
-                            <div id="modalStatusBadge"><div class="status-shimmer skeleton"></div></div>
+                            <div class="receipt-title">Receipt</div>
+                            <div class="receipt-subtitle">Digital Asset Transfer</div>
                         </div>
-                        <div class="text-right">
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Date &amp; Time</div>
-                            <div class="text-[11px] font-semibold text-slate-700">${dateStr}</div>
+                        <img src="${BRAND_LOGO_URL}" alt="Netlink Pay" class="receipt-brand-logo" crossorigin="anonymous" onerror="this.style.display='none'">
+                    </div>
+                    <div class="info-box">
+                        <div class="info-row">
+                            <span class="info-label">Status</span>
+                            <span class="info-value">: <span id="modalStatusText">Checking...</span></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Date &amp; Time</span>
+                            <span class="info-value">: ${dateStr}</span>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2.5 mb-4">
-                        <div class="party-box">
-                            <div class="party-label">From</div>
+                    <div class="party-grid">
+                        <div class="party-col">
+                            <div class="party-label">Sender :</div>
                             <div class="party-name">${senderLabel}</div>
+                            <div class="party-addr-label">Wallet Address:</div>
                             <div class="party-addr">${senderAddr || '—'}</div>
                         </div>
-                        <div class="party-box">
-                            <div class="party-label">To</div>
+                        <div class="party-col">
+                            <div class="party-label">Recipient :</div>
                             <div class="party-name">${recipientLabel}</div>
+                            <div class="party-addr-label">Wallet Address:</div>
                             <div class="party-addr">${recipientAddr || '—'}</div>
                         </div>
                     </div>
-                    <div class="receipt-divider"></div>
                     <div class="receipt-row">
                         <span class="label">Asset</span>
                         <div class="token-row"><img src="${tokenLogo}" class="token-icon" alt="${tx.token}" crossorigin="anonymous" onerror="this.style.display='none'"><span class="value">${tx.token}</span></div>
                     </div>
                     <div class="receipt-row">
                         <span class="label">Amount</span>
-                        <span class="value">${formatFintech(tx.amount, 6)} ${tx.token}</span>
+                        <span class="value">${formatFintech(tx.amount, 6)}</span>
                     </div>
                     ${noteText ? `<div class="receipt-row"><span class="label">Note</span><span class="value">${noteText}</span></div>` : ''}
-                    <div class="receipt-row"><span class="label">Network</span><span class="value">Polygon (PoS)</span></div>
-                    <div class="receipt-row"><span class="label">Gas Fee</span><span class="value-mono" id="modalGasFee">—</span></div>
-                    <div class="receipt-divider"></div>
-                    <div class="mb-2">
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Transaction Hash</div>
-                        <div class="hash-text">${tx.hash}</div>
+                    <div class="receipt-row">
+                        <span class="label">Network</span>
+                        <span class="value">Polygon (PoS)</span>
                     </div>
-                    <div class="qr-wrap"><img src="${qrUrl}" alt="QR Code" crossorigin="anonymous" onerror="this.style.display='none'"></div>
-                    <div class="text-center mb-1"><a href="https://polygonscan.com/tx/${tx.hash}" target="_blank" rel="noopener" class="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition">View on PolygonScan</a></div>
+                    <div class="receipt-row">
+                        <span class="label">Gas Fee</span>
+                        <span class="value-mono" id="modalGasFee">—</span>
+                    </div>
+                    <div class="hash-block" style="margin-top: 16px;">
+                        <div style="flex: 1;">
+                            <div class="explorer-caption" style="text-align: left; margin-bottom: 8px;">Transaction Hash</div>
+                            <div class="hash-text">${tx.hash}</div>
+                        </div>
+                    </div>
+                    <div class="hash-block">
+                        <div style="flex: 1; align-self: flex-end;">
+                            <a href="https://polygonscan.com/tx/${tx.hash}" target="_blank" rel="noopener" class="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition">View on PolygonScan &rarr;</a>
+                        </div>
+                        <div class="qr-wrap">
+                            <div class="explorer-caption">Block Explorer: polygonscan.com</div>
+                            <img src="${qrUrl}" alt="QR Code" crossorigin="anonymous" onerror="this.style.display='none'">
+                        </div>
+                    </div>
                     <div class="footer-text">This document summarizes an on-chain transaction recorded on the Polygon Network.</div>
                 </div>`;
             backdrop.classList.add('open');
@@ -462,13 +491,12 @@
 
             const [status, gasFee] = await Promise.all([fetchTxStatus(tx.hash), fetchGasFee(tx.hash)]);
             currentTxStatus = status;
-            const statusBadge = document.getElementById('modalStatusBadge');
+            const statusEl = document.getElementById('modalStatusText');
             const gasEl = document.getElementById('modalGasFee');
-            if (statusBadge) {
-                const statusClass = status === 'Success' ? 'status-success' : status === 'Failed' ? 'status-failed' : 'status-pending';
-                const statusIcon = status === 'Success' ? 'check-circle' : status === 'Failed' ? 'x-circle' : 'clock';
-                statusBadge.innerHTML = `<div class="status-badge ${statusClass}"><i data-lucide="${statusIcon}" class="w-3 h-3"></i> ${status}</div>`;
-                if (window.lucide) lucide.createIcons();
+            if (statusEl) {
+                const statusClass = status === 'Success' ? 'status-success-text' : status === 'Failed' ? 'status-failed-text' : 'status-pending-text';
+                const statusIcon = status === 'Success' ? '&#10003;' : status === 'Failed' ? '&#10007;' : '&#8987;';
+                statusEl.innerHTML = `<span class="${statusClass}">${status} ${statusIcon}</span>`;
             }
             if (gasEl) gasEl.textContent = gasFee ? formatFintech(gasFee, 6) + ' POL' : '—';
         }
@@ -536,45 +564,47 @@
 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ unit: 'pt', format: [420, 640] });
+                const teal = [20, 184, 166];
                 const dark = [15, 23, 42];
                 const gray = [100, 116, 139];
                 const lightBg = [248, 250, 252];
-                let y = 36;
+                let y = 40;
 
-                if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', 160, y, 100, 28); } catch (e) {} }
-                y += 38;
-                doc.setFontSize(20); doc.setFont(undefined, 'bold'); doc.setTextColor(...dark);
-                doc.text('RECEIPT', 210, y, { align: 'center' });
-                y += 16;
+                doc.setFontSize(22); doc.setFont(undefined, 'bold'); doc.setTextColor(...teal);
+                doc.text('Receipt', 40, y);
                 doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(...gray);
-                doc.text('Digital Asset Transfer', 210, y, { align: 'center' });
-                y += 28;
-
-                doc.setFontSize(9); doc.setTextColor(...gray); doc.setFont(undefined, 'bold');
-                doc.text('Status', 40, y); doc.text('Date & Time', 220, y);
-                y += 14;
-                doc.setFont(undefined, 'normal'); doc.setTextColor(...dark);
-                doc.text(String(currentTxStatus), 40, y);
-                const dateStr = new Date(tx.occurred_at).toUTCString().replace('GMT', '+UTC');
-                doc.text(dateStr, 220, y);
-                y += 24;
+                doc.text('Digital Asset Transfer', 40, y + 16);
+                if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', 280, y - 22, 100, 34); } catch (e) {} }
+                y += 45;
 
                 doc.setFillColor(...lightBg);
-                doc.roundedRect(40, y, 165, 56, 6, 6, 'F');
-                doc.roundedRect(215, y, 165, 56, 6, 6, 'F');
-                doc.setFontSize(8); doc.setTextColor(...gray); doc.setFont(undefined, 'bold');
-                doc.text('FROM', 48, y + 12); doc.text('TO', 223, y + 12);
-                doc.setFontSize(10); doc.setTextColor(...dark);
-                doc.text(String(senderLabel), 48, y + 26);
-                doc.text(String(recipientLabel), 223, y + 26);
-                doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(...gray);
-                const sAddr = doc.splitTextToSize(String(senderAddr || '—'), 148);
-                const rAddr = doc.splitTextToSize(String(recipientAddr || '—'), 148);
-                doc.text(sAddr, 48, y + 40);
-                doc.text(rAddr, 223, y + 40);
-                y += 68;
+                doc.roundedRect(40, y, 340, 44, 6, 6, 'F');
+                doc.setFontSize(10); doc.setTextColor(...gray);
+                doc.text('Status', 52, y + 17);
+                doc.text('Date & Time', 52, y + 33);
+                doc.setFont(undefined, 'bold'); doc.setTextColor(...dark);
+                doc.text(`: ${String(currentTxStatus)}`, 130, y + 17);
+                const dateStr = new Date(tx.occurred_at).toUTCString().replace('GMT', '+UTC');
+                doc.text(`: ${dateStr}`, 130, y + 33);
+                doc.setFont(undefined, 'normal');
+                y += 60;
 
-                doc.setDrawColor(230, 230, 230); doc.line(40, y, 380, y); y += 14;
+                doc.setFillColor(...lightBg);
+                doc.roundedRect(40, y, 340, 66, 6, 6, 'F');
+                doc.setFontSize(9); doc.setTextColor(...gray);
+                doc.text('Sender :', 52, y + 16);
+                doc.text('Recipient :', 210, y + 16);
+                doc.setFont(undefined, 'bold'); doc.setFontSize(11); doc.setTextColor(...dark);
+                doc.text(String(senderLabel), 52, y + 30);
+                doc.text(String(recipientLabel), 210, y + 30);
+                doc.setFont(undefined, 'normal'); doc.setFontSize(8); doc.setTextColor(...gray);
+                doc.text('Wallet Address:', 52, y + 44);
+                doc.text('Wallet Address:', 210, y + 44);
+                const sAddr = doc.splitTextToSize(String(senderAddr || '—'), 140);
+                const rAddr = doc.splitTextToSize(String(recipientAddr || '—'), 140);
+                doc.text(sAddr, 52, y + 55);
+                doc.text(rAddr, 210, y + 55);
+                y += 82;
 
                 function rRow(label, value, isMono) {
                     doc.setFontSize(10); doc.setTextColor(...gray); doc.setFont(undefined, 'normal');
@@ -584,30 +614,33 @@
                     const v = String(value);
                     const lines = doc.splitTextToSize(v, 220);
                     doc.text(lines, 380, y, { align: 'right' });
-                    y += (lines.length * 12) + 4;
+                    y += (lines.length * 12) + 8;
                     doc.setDrawColor(230, 230, 230); doc.line(40, y - 6, 380, y - 6);
                 }
 
+                y += 4;
                 rRow('Asset', tx.token, false);
-                rRow('Amount', formatFintech(tx.amount, 6) + ' ' + tx.token, false);
+                rRow('Amount', formatFintech(tx.amount, 6), false);
                 if (noteText) rRow('Note', noteText, false);
                 rRow('Network', 'Polygon (PoS)', false);
                 rRow('Gas Fee', gasFee ? formatFintech(gasFee, 6) + ' POL' : '—', true);
-                y += 6;
+                y += 10;
 
-                doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.setTextColor(...gray);
-                doc.text('Transaction Hash', 40, y); y += 14;
-                doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(71, 85, 105);
-                const hashLines = doc.splitTextToSize(String(tx.hash), 340);
-                doc.text(hashLines, 40, y); y += hashLines.length * 11 + 10;
+                doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(...dark);
+                doc.text('Transaction Hash', 40, y);
+                doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(100, 116, 139);
+                doc.text('Block Explorer: polygonscan.com', 380, y, { align: 'right' });
+                y += 14;
+                doc.setFontSize(8); doc.setTextColor(71, 85, 105);
+                const hashLines = doc.splitTextToSize(String(tx.hash), 220);
+                doc.text(hashLines, 40, y);
 
-                if (qrDataUrl) { try { doc.addImage(qrDataUrl, 'PNG', 150, y, 120, 120); } catch (e) {} y += 130; }
+                if (qrDataUrl) { try { doc.addImage(qrDataUrl, 'PNG', 300, y - 30, 80, 80); } catch (e) {} }
+                y += hashLines.length * 10 + 20;
 
-                doc.setFontSize(8); doc.setTextColor(59, 130, 246);
-                doc.text('Block Explorer: polygonscan.com', 210, y, { align: 'center' }); y += 16;
                 doc.setFontSize(7.5); doc.setTextColor(...gray);
                 const footerLines = doc.splitTextToSize('This document summarizes an on-chain transaction recorded on the Polygon Network.', 340);
-                doc.text(footerLines, 210, y, { align: 'center' });
+                doc.text(footerLines, 40, y);
 
                 const filenameHash = tx.hash ? tx.hash.slice(0, 10) : tx.id.slice(0, 10);
                 doc.save(`netlinkpay-receipt-${filenameHash}.pdf`);
