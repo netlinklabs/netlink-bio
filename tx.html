@@ -111,44 +111,47 @@
         html.dark ::-webkit-scrollbar-thumb { background: #334155; }
 
         /* Receipt Modal */
-        .receipt-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(4px); }
+        .receipt-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; backdrop-filter: blur(6px); }
         .receipt-backdrop.open { opacity: 1; pointer-events: auto; }
-        .receipt-modal { background: #ffffff; border-radius: 24px; max-width: 440px; width: 100%; max-height: 92vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px) scale(0.96); transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .receipt-modal-wrap { position: relative; max-width: 420px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; }
+        .receipt-modal { background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); transform: translateY(16px) scale(0.97); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .receipt-backdrop.open .receipt-modal { transform: translateY(0) scale(1); }
-        .receipt-sheet { background: #ffffff; padding: 32px; color: #0f172a; }
-        .receipt-sheet .receipt-logo { height: 28px; width: auto; margin-bottom: 24px; }
-        .receipt-sheet .receipt-title { font-size: 22px; font-weight: 800; letter-spacing: 0.08em; text-align: center; margin-bottom: 4px; }
-        .receipt-sheet .receipt-subtitle { font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 24px; font-weight: 500; }
-        .receipt-sheet .receipt-divider { height: 1px; background: #f1f5f9; margin: 16px 0; }
-        .receipt-sheet .receipt-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
-        .receipt-sheet .receipt-row .label { color: #94a3b8; font-weight: 500; }
-        .receipt-sheet .receipt-row .value { color: #0f172a; font-weight: 600; text-align: right; }
-        .receipt-sheet .receipt-row .value-mono { font-family: 'SF Mono', 'Courier New', monospace; font-size: 12px; color: #475569; }
+        .receipt-close-btn { position: absolute; top: -12px; right: -12px; width: 32px; height: 32px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; z-index: 10; border: none; transition: transform 0.15s ease; }
+        .receipt-close-btn:hover { transform: scale(1.1); }
+        .receipt-sheet { background: #ffffff; padding: 28px; color: #0f172a; }
+        .receipt-sheet .receipt-brand-logo { height: 32px; width: auto; display: block; margin: 0 auto 20px; }
+        .receipt-sheet .receipt-title { font-size: 20px; font-weight: 800; letter-spacing: 0.1em; text-align: center; margin-bottom: 2px; color: #0f172a; }
+        .receipt-sheet .receipt-subtitle { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 20px; font-weight: 500; letter-spacing: 0.02em; }
+        .receipt-sheet .receipt-divider { height: 1px; background: #f1f5f9; margin: 14px 0; }
+        .receipt-sheet .receipt-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; font-size: 12px; line-height: 1.4; }
+        .receipt-sheet .receipt-row .label { color: #94a3b8; font-weight: 500; flex-shrink: 0; padding-right: 12px; }
+        .receipt-sheet .receipt-row .value { color: #0f172a; font-weight: 600; text-align: right; word-break: break-word; }
+        .receipt-sheet .receipt-row .value-mono { font-family: 'SF Mono', 'Courier New', monospace; font-size: 11px; color: #475569; text-align: right; word-break: break-all; }
         .receipt-sheet .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         .status-success { background: #ecfdf5; color: #059669; }
         .status-failed { background: #fff1f2; color: #e11d48; }
         .status-pending { background: #fffbeb; color: #d97706; }
-        .receipt-sheet .party-box { background: #f8fafc; border-radius: 12px; padding: 14px 16px; }
-        .receipt-sheet .party-box .party-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 4px; }
-        .receipt-sheet .party-box .party-name { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
-        .receipt-sheet .party-box .party-addr { font-size: 11px; font-family: 'SF Mono', 'Courier New', monospace; color: #64748b; }
-        .receipt-sheet .token-icon { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
-        .receipt-sheet .token-row { display: flex; align-items: center; gap: 10px; }
-        .receipt-sheet .hash-box { background: #f8fafc; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .receipt-sheet .hash-box .hash-text { font-size: 11px; font-family: 'SF Mono', 'Courier New', monospace; color: #475569; word-break: break-all; }
-        .receipt-sheet .qr-wrap { text-align: center; margin: 16px 0; }
-        .receipt-sheet .qr-wrap img { width: 120px; height: 120px; border-radius: 12px; }
-        .receipt-sheet .footer-text { font-size: 9px; color: #94a3b8; text-align: center; line-height: 1.5; margin-top: 16px; }
-        .receipt-actions { display: flex; gap: 8px; padding: 16px 24px 24px; background: #ffffff; border-top: 1px solid #f1f5f9; }
-        .receipt-actions button { flex: 1; padding: 10px 0; border-radius: 12px; font-size: 13px; font-weight: 600; transition: all 0.15s ease; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .receipt-sheet .party-box { background: #f8fafc; border-radius: 12px; padding: 12px 14px; }
+        .receipt-sheet .party-box .party-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 3px; }
+        .receipt-sheet .party-box .party-name { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 2px; line-height: 1.3; }
+        .receipt-sheet .party-box .party-addr { font-size: 10px; font-family: 'SF Mono', 'Courier New', monospace; color: #64748b; line-height: 1.4; word-break: break-all; }
+        .receipt-sheet .token-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; }
+        .receipt-sheet .hash-text { font-size: 10px; font-family: 'SF Mono', 'Courier New', monospace; color: #475569; line-height: 1.5; word-break: break-all; }
+        .receipt-sheet .qr-wrap { text-align: center; margin: 14px 0; }
+        .receipt-sheet .qr-wrap img { width: 110px; height: 110px; border-radius: 10px; }
+        .receipt-sheet .footer-text { font-size: 8.5px; color: #94a3b8; text-align: center; line-height: 1.5; margin-top: 12px; }
+        .receipt-actions { display: flex; gap: 8px; padding: 14px 20px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; }
+        .receipt-actions button { flex: 1; padding: 10px 0; border-radius: 12px; font-size: 12px; font-weight: 600; transition: all 0.15s ease; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .receipt-actions .btn-secondary { background: #f1f5f9; color: #334155; }
         .receipt-actions .btn-secondary:hover { background: #e2e8f0; }
         .receipt-actions .btn-primary { background: #0f172a; color: #ffffff; }
         .receipt-actions .btn-primary:hover { background: #1e293b; }
         .receipt-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status-shimmer { width: 80px; height: 22px; border-radius: 100px; }
         @media (max-width: 480px) {
-            .receipt-modal { max-height: 100vh; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; transform: translateY(100%); }
-            .receipt-backdrop.open .receipt-modal { transform: translateY(0); }
+            .receipt-modal-wrap { max-width: 100%; }
+            .receipt-modal { border-radius: 16px; }
+            .receipt-sheet { padding: 22px; }
         }
     </style>
 </head>
@@ -257,23 +260,25 @@
     </main>
 
     <div id="receiptBackdrop" class="receipt-backdrop" onclick="closeReceiptModal(event)">
-        <div class="receipt-modal" onclick="event.stopPropagation()">
-            <div id="receiptContent"></div>
-            <div class="receipt-actions">
-                <button class="btn-secondary" onclick="downloadReceiptImage()" id="btnImg"><i data-lucide="image" class="w-4 h-4"></i> Download Image</button>
-                <button class="btn-secondary" onclick="downloadReceiptPDF()" id="btnPdf"><i data-lucide="file-text" class="w-4 h-4"></i> Download PDF</button>
-                <button class="btn-primary" onclick="shareReceipt()" id="btnShare"><i data-lucide="share-2" class="w-4 h-4"></i> Share</button>
+        <div class="receipt-modal-wrap" onclick="event.stopPropagation()">
+            <button class="receipt-close-btn" onclick="closeReceiptModal()" title="Close"><i data-lucide="x" class="w-4 h-4 text-slate-600"></i></button>
+            <div class="receipt-modal">
+                <div id="receiptContent"></div>
+                <div class="receipt-actions">
+                    <button class="btn-secondary" onclick="downloadReceiptImage()" id="btnImg"><i data-lucide="image" class="w-4 h-4"></i> Download Image</button>
+                    <button class="btn-secondary" onclick="downloadReceiptPDF()" id="btnPdf"><i data-lucide="file-text" class="w-4 h-4"></i> Download PDF</button>
+                    <button class="btn-primary" onclick="shareReceipt()" id="btnShare"><i data-lucide="share-2" class="w-4 h-4"></i> Share</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const NETLINK_LOGO_URL = 'https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/net-logo.png';
+        const BRAND_LOGO_URL = 'https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-lightbg.png';
         const TOKEN_LOGOS = {
             'USDC': 'https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/usdc-logo.png',
             'POL': 'https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/polygon-logo.png',
@@ -288,36 +293,17 @@
         function showAuthError(msg) { document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg; }
         window.addEventListener('error', (e) => showAuthError(e.message));
         window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-        function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('open');
-            document.querySelector('.sidebar-overlay').classList.toggle('active');
-        }
+        function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }
+        function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
         async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = 'login.html'; }
         function truncateAddress(addr) { return addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : ''; }
-        function formatFintech(num, decimals = 2) {
-            const n = parseFloat(num);
-            return isNaN(n) ? String(num) : n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-        }
-        function getTokenLogo(token) { return TOKEN_LOGOS[(token || '').toUpperCase()] || NETLINK_LOGO_URL; }
+        function formatFintech(num, decimals) { const n = parseFloat(num); return isNaN(n) ? String(num) : n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }); }
+        function getTokenLogo(token) { return TOKEN_LOGOS[(token || '').toUpperCase()] || TOKEN_LOGOS['NET']; }
 
         async function checkAuth() {
-            try {
-                const { data: { session }, error } = await supabaseClient.auth.getSession();
-                if (error) throw error;
-                if (!session) { window.location.href = 'login.html'; return; }
-                currentUser = session.user;
-                document.getElementById('authGate').style.display = 'none';
-                await loadUserProfile();
-            } catch (err) { console.error(err); showAuthError(err.message || String(err)); }
+            try { const { data: { session }, error } = await supabaseClient.auth.getSession(); if (error) throw error; if (!session) { window.location.href = 'login.html'; return; } currentUser = session.user; document.getElementById('authGate').style.display = 'none'; await loadUserProfile(); }
+            catch (err) { console.error(err); showAuthError(err.message || String(err)); }
         }
-
         async function loadUserProfile() {
             const { data, error } = await supabaseClient.from('profiles').select('username, display_name, avatar_url, tier, wallet_address, show_name_on_receipt').eq('id', currentUser.id).single();
             if (error) { console.error('Failed to load profile:', error); return; }
@@ -327,151 +313,31 @@
             document.getElementById('sidebarTierLabel').textContent = (data.tier || 'basic').charAt(0).toUpperCase() + (data.tier || 'basic').slice(1) + ' Plan';
             document.getElementById('headerDisplayName').textContent = label;
             const initialChar = label.charAt(0).toUpperCase();
-            const targets = [
-                { img: document.getElementById('headerAvatarImg'), initial: document.getElementById('headerAvatarInitial') },
-                { img: document.getElementById('sidebarAvatarImg'), initial: document.getElementById('sidebarAvatarInitial') },
-            ];
-            targets.forEach(({ img, initial }) => {
-                if (data.avatar_url) { img.src = data.avatar_url; img.classList.remove('hidden'); initial.classList.add('hidden'); }
-                else { img.classList.add('hidden'); initial.classList.remove('hidden'); initial.textContent = initialChar; }
-            });
-            if (!data.wallet_address) {
-                document.getElementById('noWalletState').classList.remove('hidden');
-                document.getElementById('txContent').classList.add('hidden');
-                if (window.lucide) lucide.createIcons();
-                return;
-            }
-            document.getElementById('txContent').classList.remove('hidden');
-            if (window.lucide) lucide.createIcons();
-            await syncIncomingTransactions(data.wallet_address);
-            await loadTransactions();
+            const targets = [{ img: document.getElementById('headerAvatarImg'), initial: document.getElementById('headerAvatarInitial') }, { img: document.getElementById('sidebarAvatarImg'), initial: document.getElementById('sidebarAvatarInitial') }];
+            targets.forEach(({ img, initial }) => { if (data.avatar_url) { img.src = data.avatar_url; img.classList.remove('hidden'); initial.classList.add('hidden'); } else { img.classList.add('hidden'); initial.classList.remove('hidden'); initial.textContent = initialChar; } });
+            if (!data.wallet_address) { document.getElementById('noWalletState').classList.remove('hidden'); document.getElementById('txContent').classList.add('hidden'); if (window.lucide) lucide.createIcons(); return; }
+            document.getElementById('txContent').classList.remove('hidden'); if (window.lucide) lucide.createIcons();
+            await syncIncomingTransactions(data.wallet_address); await loadTransactions();
         }
-
         async function syncIncomingTransactions(address) {
-            try {
-                const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`);
-                if (!res.ok) return;
-                const data = await res.json();
-                const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash);
-                if (!incoming.length) return;
-                const { data: existing } = await supabaseClient.from('wallet_transactions').select('hash').eq('owner_id', currentUser.id);
-                const existingHashes = new Set((existing || []).map((r) => r.hash));
-                const newRows = incoming.filter((t) => !existingHashes.has(t.hash)).map((t) => ({
-                    owner_id: currentUser.id, hash: t.hash, type: 'receive', token: t.token, amount: t.amount,
-                    counterparty_address: t.counterparty || null,
-                    occurred_at: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString(),
-                }));
-                if (newRows.length) {
-                    const { error } = await supabaseClient.from('wallet_transactions').insert(newRows);
-                    if (error) console.error('Failed to sync incoming transactions:', error);
-                }
-            } catch (err) { console.error('Incoming sync failed:', err); }
+            try { const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`); if (!res.ok) return; const data = await res.json(); const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash); if (!incoming.length) return; const { data: existing } = await supabaseClient.from('wallet_transactions').select('hash').eq('owner_id', currentUser.id); const existingHashes = new Set((existing || []).map((r) => r.hash)); const newRows = incoming.filter((t) => !existingHashes.has(t.hash)).map((t) => ({ owner_id: currentUser.id, hash: t.hash, type: 'receive', token: t.token, amount: t.amount, counterparty_address: t.counterparty || null, occurred_at: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString() })); if (newRows.length) { const { error } = await supabaseClient.from('wallet_transactions').insert(newRows); if (error) console.error('Failed to sync incoming transactions:', error); } }
+            catch (err) { console.error('Incoming sync failed:', err); }
         }
-
         async function loadTransactions() {
             const { data, error } = await supabaseClient.from('wallet_transactions').select('*').eq('owner_id', currentUser.id).order('occurred_at', { ascending: false }).limit(200);
-            if (error) {
-                console.error('Failed to load transactions:', error);
-                document.getElementById('skeletonLoader').classList.add('hidden');
-                document.getElementById('txList').innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load transaction history.</div>';
-                document.getElementById('txList').classList.remove('hidden');
-                return;
-            }
-            allTx = data || [];
-            currentPage = 1;
-            document.getElementById('skeletonLoader').classList.add('hidden');
-            renderTransactions();
+            if (error) { console.error('Failed to load transactions:', error); document.getElementById('skeletonLoader').classList.add('hidden'); document.getElementById('txList').innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load transaction history.</div>'; document.getElementById('txList').classList.remove('hidden'); return; }
+            allTx = data || []; currentPage = 1; document.getElementById('skeletonLoader').classList.add('hidden'); renderTransactions();
         }
-
-        function setFilter(filter) {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === filter));
-            currentPage = 1;
-            renderTransactions();
-        }
+        function setFilter(filter) { currentFilter = filter; document.querySelectorAll('.filter-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === filter)); currentPage = 1; renderTransactions(); }
         function goToPage(page) { currentPage = page; renderTransactions(); document.getElementById('txContent').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         window.goToPage = goToPage;
-
-        function formatTimeAgo(isoOrDate) {
-            const ts = typeof isoOrDate === 'string' ? new Date(isoOrDate).getTime() : isoOrDate;
-            const diffMs = Date.now() - ts;
-            const mins = Math.floor(diffMs / 60000);
-            if (mins < 1) return 'Just now';
-            if (mins < 60) return `${mins}m ago`;
-            const hours = Math.floor(mins / 60);
-            if (hours < 24) return `${hours}h ago`;
-            const days = Math.floor(hours / 24);
-            if (days < 7) return `${days}d ago`;
-            return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
-        function formatDateHeader(isoOrDate) {
-            const d = new Date(isoOrDate), now = new Date();
-            if (d.toDateString() === now.toDateString()) return 'Today';
-            const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-            if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-            return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
-        }
-        function formatPolygonScanDate(isoOrDate) {
-            const d = new Date(isoOrDate);
-            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            const month = months[d.getUTCMonth()];
-            const day = String(d.getUTCDate()).padStart(2, '0');
-            const year = d.getUTCFullYear();
-            let hours = d.getUTCHours();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12;
-            return `${month}-${day}-${year} ${String(hours).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}:${String(d.getUTCSeconds()).padStart(2, '0')} ${ampm} +UTC`;
-        }
-
-        function renderTransactions() {
-            const list = document.getElementById('txList'), pagination = document.getElementById('paginationBar'), emptyState = document.getElementById('emptyState');
-            const filtered = currentFilter === 'all' ? allTx : allTx.filter((t) => t.type === currentFilter);
-            list.classList.remove('hidden');
-            if (filtered.length === 0) { list.classList.add('hidden'); emptyState.classList.remove('hidden'); pagination.classList.add('hidden'); if (window.lucide) lucide.createIcons(); return; }
-            emptyState.classList.add('hidden');
-            const totalPages = Math.max(1, Math.ceil(filtered.length / 10));
-            if (currentPage > totalPages) currentPage = totalPages;
-            const start = (currentPage - 1) * 10;
-            const slice = filtered.slice(start, start + 10);
-            let currentHeader = null, html = '';
-            slice.forEach((tx) => {
-                const header = formatDateHeader(tx.occurred_at);
-                if (header !== currentHeader) { currentHeader = header; html += `<div class="date-header"><span>${header}</span></div>`; }
-                html += rowHtml(tx);
-            });
-            list.innerHTML = html;
-            renderPaginationBar(totalPages);
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function renderPaginationBar(totalPages) {
-            const bar = document.getElementById('paginationBar');
-            if (totalPages <= 1) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
-            bar.classList.remove('hidden');
-            let html = `<button onclick="goToPage(${Math.max(1, currentPage - 1)})" class="page-btn" ${currentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-4 h-4"></i></button>`;
-            for (let p = 1; p <= totalPages; p++) html += `<button onclick="goToPage(${p})" class="page-btn ${p === currentPage ? 'active' : ''}">${p}</button>`;
-            html += `<button onclick="goToPage(${Math.min(totalPages, currentPage + 1)})" class="page-btn" ${currentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-4 h-4"></i></button>`;
-            bar.innerHTML = html;
-        }
-
+        function formatTimeAgo(isoOrDate) { const ts = typeof isoOrDate === 'string' ? new Date(isoOrDate).getTime() : isoOrDate; const diffMs = Date.now() - ts; const mins = Math.floor(diffMs / 60000); if (mins < 1) return 'Just now'; if (mins < 60) return `${mins}m ago`; const hours = Math.floor(mins / 60); if (hours < 24) return `${hours}h ago`; const days = Math.floor(hours / 24); if (days < 7) return `${days}d ago`; return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+        function formatDateHeader(isoOrDate) { const d = new Date(isoOrDate), now = new Date(); if (d.toDateString() === now.toDateString()) return 'Today'; const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1); if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'; return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined }); }
+        function formatPolygonScanDate(isoOrDate) { const d = new Date(isoOrDate); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const month = months[d.getUTCMonth()]; const day = String(d.getUTCDate()).padStart(2, '0'); const year = d.getUTCFullYear(); let hours = d.getUTCHours(); const ampm = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${month}-${day}-${year} ${String(hours).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}:${String(d.getUTCSeconds()).padStart(2, '0')} ${ampm} +UTC`; }
+        function renderTransactions() { const list = document.getElementById('txList'), pagination = document.getElementById('paginationBar'), emptyState = document.getElementById('emptyState'); const filtered = currentFilter === 'all' ? allTx : allTx.filter((t) => t.type === currentFilter); list.classList.remove('hidden'); if (filtered.length === 0) { list.classList.add('hidden'); emptyState.classList.remove('hidden'); pagination.classList.add('hidden'); if (window.lucide) lucide.createIcons(); return; } emptyState.classList.add('hidden'); const totalPages = Math.max(1, Math.ceil(filtered.length / 10)); if (currentPage > totalPages) currentPage = totalPages; const start = (currentPage - 1) * 10; const slice = filtered.slice(start, start + 10); let currentHeader = null, html = ''; slice.forEach((tx) => { const header = formatDateHeader(tx.occurred_at); if (header !== currentHeader) { currentHeader = header; html += `<div class="date-header"><span>${header}</span></div>`; } html += rowHtml(tx); }); list.innerHTML = html; renderPaginationBar(totalPages); if (window.lucide) lucide.createIcons(); }
+        function renderPaginationBar(totalPages) { const bar = document.getElementById('paginationBar'); if (totalPages <= 1) { bar.classList.add('hidden'); bar.innerHTML = ''; return; } bar.classList.remove('hidden'); let html = `<button onclick="goToPage(${Math.max(1, currentPage - 1)})" class="page-btn" ${currentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-4 h-4"></i></button>`; for (let p = 1; p <= totalPages; p++) html += `<button onclick="goToPage(${p})" class="page-btn ${p === currentPage ? 'active' : ''}">${p}</button>`; html += `<button onclick="goToPage(${Math.min(totalPages, currentPage + 1)})" class="page-btn" ${currentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-4 h-4"></i></button>`; bar.innerHTML = html; }
         function toggleDetail(txId) { document.getElementById(`detail-${txId}`).classList.toggle('open'); }
-
-        function rowHtml(tx) {
-            const timeAgo = formatTimeAgo(tx.occurred_at);
-            const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
-            if (tx.type === 'swap') {
-                return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 icon-swap rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="arrow-left-right" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">Swap ${tx.token}</p><p class="text-xs text-muted mt-0.5">${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[15px] font-bold text-primary">${tx.amount} → ${tx.to_amount}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3"><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition mt-1"><i data-lucide="external-link" class="w-3 h-3"></i> View on PolygonScan</a></div></div></div>`;
-            }
-            const isIn = tx.type === 'receive';
-            const icon = isIn ? 'arrow-down-left' : 'arrow-up-right';
-            const iconClass = isIn ? 'icon-receive' : 'icon-send';
-            const amountClass = isIn ? 'amount-in' : 'amount-out';
-            const sign = isIn ? '+' : '-';
-            const actionLabel = isIn ? 'Received' : 'Sent';
-            const addressLabel = tx.counterparty_address ? truncateAddress(tx.counterparty_address) : 'External';
-            return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 ${iconClass} rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="${icon}" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">${actionLabel} ${tx.token}</p><p class="text-xs text-muted mt-0.5">${addressLabel} · ${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[17px] font-bold ${amountClass}">${sign}${tx.amount} ${tx.token}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3 space-y-2"><div class="flex items-center justify-between text-xs"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><div class="flex items-center gap-3 pt-1"><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition"><i data-lucide="external-link" class="w-3 h-3"></i> View</a><button onclick="event.stopPropagation(); openReceiptModal('${tx.id}')" class="inline-flex items-center gap-1.5 text-xs font-medium text-secondary hover:text-primary transition"><i data-lucide="receipt" class="w-3 h-3"></i> View Receipt</button></div></div></div></div>`;
-        }
-
+        function rowHtml(tx) { const timeAgo = formatTimeAgo(tx.occurred_at); const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`; if (tx.type === 'swap') return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 icon-swap rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="arrow-left-right" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">Swap ${tx.token}</p><p class="text-xs text-muted mt-0.5">${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[15px] font-bold text-primary">${tx.amount} → ${tx.to_amount}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3"><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition mt-1"><i data-lucide="external-link" class="w-3 h-3"></i> View on PolygonScan</a></div></div></div>`; const isIn = tx.type === 'receive'; const icon = isIn ? 'arrow-down-left' : 'arrow-up-right'; const iconClass = isIn ? 'icon-receive' : 'icon-send'; const amountClass = isIn ? 'amount-in' : 'amount-out'; const sign = isIn ? '+' : '-'; const actionLabel = isIn ? 'Received' : 'Sent'; const addressLabel = tx.counterparty_address ? truncateAddress(tx.counterparty_address) : 'External'; return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 ${iconClass} rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="${icon}" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">${actionLabel} ${tx.token}</p><p class="text-xs text-muted mt-0.5">${addressLabel} · ${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[17px] font-bold ${amountClass}">${sign}${tx.amount} ${tx.token}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3 space-y-2"><div class="flex items-center justify-between text-xs"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><div class="flex items-center gap-3 pt-1"><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition"><i data-lucide="external-link" class="w-3 h-3"></i> View</a><button onclick="event.stopPropagation(); openReceiptModal('${tx.id}')" class="inline-flex items-center gap-1.5 text-xs font-medium text-secondary hover:text-primary transition"><i data-lucide="receipt" class="w-3 h-3"></i> View Receipt</button></div></div></div></div>`; }
         async function fetchTxStatus(hash) {
             if (!hash) return 'Unknown';
             try {
@@ -509,19 +375,14 @@
         }
 
         async function fetchPolPriceUsd() {
-            try {
-                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd');
-                return (await res.json())['polygon-ecosystem-token']?.usd || null;
-            } catch (err) { console.error('Failed to fetch POL price:', err); return null; }
+            try { const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd'); return (await res.json())['polygon-ecosystem-token']?.usd || null; }
+            catch (err) { console.error('Failed to fetch POL price:', err); return null; }
         }
 
         async function resolveCounterpartyName(address) {
             if (!address) return null;
-            try {
-                const { data, error } = await supabaseClient.rpc('resolve_wallet_owner_name', { check_address: address });
-                if (error) { console.error(error); return null; }
-                return data || null;
-            } catch (err) { console.error('Failed to resolve counterparty name:', err); return null; }
+            try { const { data, error } = await supabaseClient.rpc('resolve_wallet_owner_name', { check_address: address }); if (error) { console.error(error); return null; } return data || null; }
+            catch (err) { console.error('Failed to resolve counterparty name:', err); return null; }
         }
 
         async function openReceiptModal(txId) {
@@ -531,32 +392,15 @@
             currentModalTx = tx;
             const backdrop = document.getElementById('receiptBackdrop');
             const content = document.getElementById('receiptContent');
-            content.innerHTML = '<div class="receipt-sheet"><div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></div></div></div>';
-            backdrop.classList.add('open');
-            document.body.style.overflow = 'hidden';
-
             const isSend = tx.type === 'send';
             const selfName = currentProfile.display_name || currentProfile.username || 'You';
             const selfAddress = currentProfile.wallet_address || '';
             const counterpartyAddress = tx.counterparty_address || '';
-
-            const [status, counterpartyName, gasFee] = await Promise.all([
-                fetchTxStatus(tx.hash),
-                resolveCounterpartyName(counterpartyAddress),
-                fetchGasFee(tx.hash),
-            ]);
-            currentTxStatus = status;
-
-            let fiatLine = '';
-            if (tx.token === 'USDC') fiatLine = `≈ $${formatFintech(tx.amount, 2)}`;
-            else if (tx.token === 'POL') { const price = await fetchPolPriceUsd(); if (price) fiatLine = `≈ $${formatFintech(parseFloat(tx.amount) * price, 2)}`; }
-
+            const counterpartyName = await resolveCounterpartyName(counterpartyAddress);
             const senderLabel = isSend ? selfName : (counterpartyName || truncateAddress(counterpartyAddress));
             const senderAddr = isSend ? selfAddress : counterpartyAddress;
             const recipientLabel = isSend ? (counterpartyName || truncateAddress(counterpartyAddress)) : selfName;
             const recipientAddr = isSend ? counterpartyAddress : selfAddress;
-            const statusClass = status === 'Success' ? 'status-success' : status === 'Failed' ? 'status-failed' : 'status-pending';
-            const statusIcon = status === 'Success' ? 'check-circle' : status === 'Failed' ? 'x-circle' : 'clock';
             const tokenLogo = getTokenLogo(tx.token);
             const noteText = tx.note || '';
             const dateStr = formatPolygonScanDate(tx.occurred_at);
@@ -564,22 +408,22 @@
 
             content.innerHTML = `
                 <div class="receipt-sheet" id="receiptSheet">
-                    <div class="text-center mb-6">
-                        <img src="${NETLINK_LOGO_URL}" alt="Netlink Pay" class="receipt-logo mx-auto" crossorigin="anonymous" onerror="this.style.display='none'">
+                    <div class="text-center mb-5">
+                        <img src="${BRAND_LOGO_URL}" alt="Netlink Pay" class="receipt-brand-logo" crossorigin="anonymous" onerror="this.style.display='none'">
                         <div class="receipt-title">RECEIPT</div>
                         <div class="receipt-subtitle">Digital Asset Transfer</div>
                     </div>
-                    <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center justify-between mb-4">
                         <div>
                             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Status</div>
-                            <div class="status-badge ${statusClass}"><i data-lucide="${statusIcon}" class="w-3 h-3"></i> ${status}</div>
+                            <div id="modalStatusBadge"><div class="status-shimmer skeleton"></div></div>
                         </div>
                         <div class="text-right">
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Date & Time</div>
-                            <div class="text-[12px] font-semibold text-slate-700">${dateStr}</div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Date &amp; Time</div>
+                            <div class="text-[11px] font-semibold text-slate-700">${dateStr}</div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="grid grid-cols-2 gap-2.5 mb-4">
                         <div class="party-box">
                             <div class="party-label">From</div>
                             <div class="party-name">${senderLabel}</div>
@@ -594,46 +438,46 @@
                     <div class="receipt-divider"></div>
                     <div class="receipt-row">
                         <span class="label">Asset</span>
-                        <div class="token-row">
-                            <img src="${tokenLogo}" class="token-icon" alt="${tx.token}" crossorigin="anonymous" onerror="this.style.display='none'">
-                            <span class="value">${tx.token}</span>
-                        </div>
+                        <div class="token-row"><img src="${tokenLogo}" class="token-icon" alt="${tx.token}" crossorigin="anonymous" onerror="this.style.display='none'"><span class="value">${tx.token}</span></div>
                     </div>
                     <div class="receipt-row">
                         <span class="label">Amount</span>
-                        <div class="text-right">
-                            <div class="value">${formatFintech(tx.amount, 6)} ${tx.token}</div>
-                            ${fiatLine ? `<div class="text-[11px] text-slate-400 font-medium mt-0.5">${fiatLine}</div>` : ''}
-                        </div>
+                        <span class="value">${formatFintech(tx.amount, 6)} ${tx.token}</span>
                     </div>
-                    ${noteText ? `<div class="receipt-row"><span class="label">Note</span><span class="value" style="max-width:60%;text-align:right;">${noteText}</span></div>` : ''}
+                    ${noteText ? `<div class="receipt-row"><span class="label">Note</span><span class="value">${noteText}</span></div>` : ''}
                     <div class="receipt-row"><span class="label">Network</span><span class="value">Polygon (PoS)</span></div>
-                    <div class="receipt-row"><span class="label">Gas Fee</span><span class="value-mono">${gasFee ? formatFintech(gasFee, 6) + ' POL' : '—'}</span></div>
+                    <div class="receipt-row"><span class="label">Gas Fee</span><span class="value-mono" id="modalGasFee">—</span></div>
                     <div class="receipt-divider"></div>
-                    <div class="mb-3">
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Transaction Hash</div>
-                        <div class="hash-box">
-                            <span class="hash-text">${tx.hash}</span>
-                            <button onclick="copyReceiptHash()" class="p-1.5 hover:bg-slate-100 rounded-lg transition flex-shrink-0" title="Copy"><i data-lucide="copy" class="w-3.5 h-3.5 text-slate-400"></i></button>
-                        </div>
+                    <div class="mb-2">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Transaction Hash</div>
+                        <div class="hash-text">${tx.hash}</div>
                     </div>
                     <div class="qr-wrap"><img src="${qrUrl}" alt="QR Code" crossorigin="anonymous" onerror="this.style.display='none'"></div>
-                    <div class="text-center mb-2"><a href="https://polygonscan.com/tx/${tx.hash}" target="_blank" rel="noopener" class="text-[11px] font-medium text-blue-500 hover:text-blue-600 transition">View on PolygonScan</a></div>
+                    <div class="text-center mb-1"><a href="https://polygonscan.com/tx/${tx.hash}" target="_blank" rel="noopener" class="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition">View on PolygonScan</a></div>
                     <div class="footer-text">This document summarizes an on-chain transaction recorded on the Polygon Network.</div>
                 </div>`;
+            backdrop.classList.add('open');
+            document.body.style.overflow = 'hidden';
             if (window.lucide) lucide.createIcons();
+
+            const [status, gasFee] = await Promise.all([fetchTxStatus(tx.hash), fetchGasFee(tx.hash)]);
+            currentTxStatus = status;
+            const statusBadge = document.getElementById('modalStatusBadge');
+            const gasEl = document.getElementById('modalGasFee');
+            if (statusBadge) {
+                const statusClass = status === 'Success' ? 'status-success' : status === 'Failed' ? 'status-failed' : 'status-pending';
+                const statusIcon = status === 'Success' ? 'check-circle' : status === 'Failed' ? 'x-circle' : 'clock';
+                statusBadge.innerHTML = `<div class="status-badge ${statusClass}"><i data-lucide="${statusIcon}" class="w-3 h-3"></i> ${status}</div>`;
+                if (window.lucide) lucide.createIcons();
+            }
+            if (gasEl) gasEl.textContent = gasFee ? formatFintech(gasFee, 6) + ' POL' : '—';
         }
 
         function closeReceiptModal(e) {
-            if (e && e.target !== document.getElementById('receiptBackdrop')) return;
+            if (e && e.target !== document.getElementById('receiptBackdrop') && e.target.closest('.receipt-close-btn') === null) return;
             document.getElementById('receiptBackdrop').classList.remove('open');
             document.body.style.overflow = '';
             currentModalTx = null;
-        }
-
-        function copyReceiptHash() {
-            if (!currentModalTx) return;
-            navigator.clipboard.writeText(currentModalTx.hash).then(() => showToast('Hash copied to clipboard'));
         }
 
         async function downloadReceiptImage() {
@@ -652,43 +496,126 @@
                 link.href = canvas.toDataURL('image/png');
                 link.click();
                 showToast('Receipt image saved');
-            } catch (err) {
-                console.error('Image export failed:', err);
-                showToast('Could not save image — please try again');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = original;
-                if (window.lucide) lucide.createIcons();
-            }
+                closeReceiptModal();
+            } catch (err) { console.error('Image export failed:', err); showToast('Could not save image — please try again'); }
+            finally { btn.disabled = false; btn.innerHTML = original; if (window.lucide) lucide.createIcons(); }
+        }
+
+        async function imageUrlToDataUrl(url) {
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                return await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); });
+            } catch (err) { console.error('Failed to load image:', err); return null; }
         }
 
         async function downloadReceiptPDF() {
-            const sheet = document.getElementById('receiptSheet');
-            if (!sheet) return;
+            if (!currentModalTx) return;
             const btn = document.getElementById('btnPdf');
             const original = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>';
             if (window.lucide) lucide.createIcons();
             try {
-                await document.fonts.ready;
-                const canvas = await html2canvas(sheet, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false });
-                const imgData = canvas.toDataURL('image/png');
+                const tx = currentModalTx;
+                const isSend = tx.type === 'send';
+                const selfName = currentProfile.display_name || currentProfile.username || 'You';
+                const selfAddress = currentProfile.wallet_address || '';
+                const counterpartyAddress = tx.counterparty_address || '';
+                const counterpartyName = await resolveCounterpartyName(counterpartyAddress);
+                const [gasFee, logoDataUrl, qrDataUrl] = await Promise.all([
+                    fetchGasFee(tx.hash),
+                    imageUrlToDataUrl(BRAND_LOGO_URL),
+                    imageUrlToDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://polygonscan.com/tx/' + tx.hash)}`),
+                ]);
+                const senderLabel = isSend ? selfName : (counterpartyName || truncateAddress(counterpartyAddress));
+                const senderAddr = isSend ? selfAddress : counterpartyAddress;
+                const recipientLabel = isSend ? (counterpartyName || truncateAddress(counterpartyAddress)) : selfName;
+                const recipientAddr = isSend ? counterpartyAddress : selfAddress;
+                const noteText = tx.note || '';
+
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                const margin = 40;
-                const maxWidth = pageWidth - margin * 2;
-                const imgProps = pdf.getImageProperties(imgData);
-                const imgHeight = (imgProps.height * maxWidth) / imgProps.width;
-                const yPos = (pageHeight - imgHeight) / 2;
-                pdf.addImage(imgData, 'PNG', margin, yPos > margin ? yPos : margin, maxWidth, imgHeight);
-                pdf.save(`netlinkpay-receipt-${(currentModalTx.hash || currentModalTx.id).slice(0, 10)}.pdf`);
+                const doc = new jsPDF({ unit: 'pt', format: [420, 640] });
+                const dark = [15, 23, 42];
+                const gray = [100, 116, 139];
+                const lightBg = [248, 250, 252];
+                let y = 36;
+
+                if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', 160, y, 100, 28); } catch (e) {} }
+                y += 38;
+                doc.setFontSize(20); doc.setFont(undefined, 'bold'); doc.setTextColor(...dark);
+                doc.text('RECEIPT', 210, y, { align: 'center' });
+                y += 16;
+                doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(...gray);
+                doc.text('Digital Asset Transfer', 210, y, { align: 'center' });
+                y += 28;
+
+                doc.setFontSize(9); doc.setTextColor(...gray); doc.setFont(undefined, 'bold');
+                doc.text('Status', 40, y); doc.text('Date & Time', 220, y);
+                y += 14;
+                doc.setFont(undefined, 'normal'); doc.setTextColor(...dark);
+                doc.text(String(currentTxStatus), 40, y);
+                const dateStr = new Date(tx.occurred_at).toUTCString().replace('GMT', '+UTC');
+                doc.text(dateStr, 220, y);
+                y += 24;
+
+                doc.setFillColor(...lightBg);
+                doc.roundedRect(40, y, 165, 56, 6, 6, 'F');
+                doc.roundedRect(215, y, 165, 56, 6, 6, 'F');
+                doc.setFontSize(8); doc.setTextColor(...gray); doc.setFont(undefined, 'bold');
+                doc.text('FROM', 48, y + 12); doc.text('TO', 223, y + 12);
+                doc.setFontSize(10); doc.setTextColor(...dark);
+                doc.text(String(senderLabel), 48, y + 26);
+                doc.text(String(recipientLabel), 223, y + 26);
+                doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(...gray);
+                const sAddr = doc.splitTextToSize(String(senderAddr || '—'), 148);
+                const rAddr = doc.splitTextToSize(String(recipientAddr || '—'), 148);
+                doc.text(sAddr, 48, y + 40);
+                doc.text(rAddr, 223, y + 40);
+                y += 68;
+
+                doc.setDrawColor(230, 230, 230); doc.line(40, y, 380, y); y += 14;
+
+                function rRow(label, value, isMono) {
+                    doc.setFontSize(10); doc.setTextColor(...gray); doc.setFont(undefined, 'normal');
+                    doc.text(String(label), 40, y);
+                    doc.setTextColor(...dark); doc.setFont(undefined, isMono ? 'normal' : 'bold');
+                    if (isMono) { doc.setFontSize(9); doc.setTextColor(71, 85, 105); }
+                    const v = String(value);
+                    const lines = doc.splitTextToSize(v, 220);
+                    doc.text(lines, 380, y, { align: 'right' });
+                    y += (lines.length * 12) + 4;
+                    doc.setDrawColor(230, 230, 230); doc.line(40, y - 6, 380, y - 6);
+                }
+
+                rRow('Asset', tx.token, false);
+                rRow('Amount', formatFintech(tx.amount, 6) + ' ' + tx.token, false);
+                if (noteText) rRow('Note', noteText, false);
+                rRow('Network', 'Polygon (PoS)', false);
+                rRow('Gas Fee', gasFee ? formatFintech(gasFee, 6) + ' POL' : '—', true);
+                y += 6;
+
+                doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.setTextColor(...gray);
+                doc.text('Transaction Hash', 40, y); y += 14;
+                doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(71, 85, 105);
+                const hashLines = doc.splitTextToSize(String(tx.hash), 340);
+                doc.text(hashLines, 40, y); y += hashLines.length * 11 + 10;
+
+                if (qrDataUrl) { try { doc.addImage(qrDataUrl, 'PNG', 150, y, 120, 120); } catch (e) {} y += 130; }
+
+                doc.setFontSize(8); doc.setTextColor(59, 130, 246);
+                doc.text('Block Explorer: polygonscan.com', 210, y, { align: 'center' }); y += 16;
+                doc.setFontSize(7.5); doc.setTextColor(...gray);
+                const footerLines = doc.splitTextToSize('This document summarizes an on-chain transaction recorded on the Polygon Network.', 340);
+                doc.text(footerLines, 210, y, { align: 'center' });
+
+                const filenameHash = tx.hash ? tx.hash.slice(0, 10) : tx.id.slice(0, 10);
+                doc.save(`netlinkpay-receipt-${filenameHash}.pdf`);
                 showToast('Receipt PDF saved');
+                closeReceiptModal();
             } catch (err) {
-                console.error('PDF export failed:', err);
-                showToast('Could not save PDF — please try again');
+                console.error('Failed to generate receipt PDF:', err);
+                showToast('Could not generate receipt — please try again');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
@@ -698,13 +625,15 @@
 
         async function shareReceipt() {
             if (!currentModalTx) return;
-            const text = `Netlink Pay Receipt\n${currentModalTx.type === 'send' ? 'Sent' : 'Received'} ${formatFintech(currentModalTx.amount, 6)} ${currentModalTx.token}\nStatus: ${currentTxStatus}\nHash: ${currentModalTx.hash}\nhttps://polygonscan.com/tx/${currentModalTx.hash}`;
+            const text = `Netlink Pay Receipt
+${currentModalTx.type === 'send' ? 'Sent' : 'Received'} ${formatFintech(currentModalTx.amount, 6)} ${currentModalTx.token}
+Status: ${currentTxStatus}
+Hash: ${currentModalTx.hash}
+https://polygonscan.com/tx/${currentModalTx.hash}`;
             if (navigator.share) {
-                try { await navigator.share({ title: 'Netlink Pay Receipt', text }); }
-                catch (err) { if (err.name !== 'AbortError') navigator.clipboard.writeText(text).then(() => showToast('Receipt details copied')); }
-            } else {
-                navigator.clipboard.writeText(text).then(() => showToast('Receipt details copied'));
-            }
+                try { await navigator.share({ title: 'Netlink Pay Receipt', text }); closeReceiptModal(); }
+                catch (err) { if (err.name !== 'AbortError') { navigator.clipboard.writeText(text).then(() => showToast('Receipt details copied')); closeReceiptModal(); } }
+            } else { navigator.clipboard.writeText(text).then(() => showToast('Receipt details copied')); closeReceiptModal(); }
         }
 
         function updateBrandLogo() {
@@ -714,27 +643,17 @@
             if (desktopLogo) desktopLogo.src = logoUrl;
         }
         function initTheme() { const savedTheme = localStorage.getItem('theme'); applyTheme(savedTheme || 'light', false); }
-        function applyTheme(theme, save = true) {
+        function applyTheme(theme, save) {
             const html = document.documentElement;
             const lightIcons = document.querySelectorAll('.theme-icon-light');
             const darkIcons = document.querySelectorAll('.theme-icon-dark');
-            if (theme === 'dark') {
-                html.classList.add('dark'); html.classList.remove('light');
-                lightIcons.forEach(icon => icon.classList.add('hidden'));
-                darkIcons.forEach(icon => icon.classList.remove('hidden'));
-            } else {
-                html.classList.remove('dark'); html.classList.add('light');
-                lightIcons.forEach(icon => icon.classList.remove('hidden'));
-                darkIcons.forEach(icon => icon.classList.add('hidden'));
-            }
+            if (theme === 'dark') { html.classList.add('dark'); html.classList.remove('light'); lightIcons.forEach(i => i.classList.add('hidden')); darkIcons.forEach(i => i.classList.remove('hidden')); }
+            else { html.classList.remove('dark'); html.classList.add('light'); lightIcons.forEach(i => i.classList.remove('hidden')); darkIcons.forEach(i => i.classList.add('hidden')); }
             if (save) localStorage.setItem('theme', theme);
             updateBrandLogo();
         }
         function toggleTheme() { applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark', true); }
-
-        lucide.createIcons();
-        initTheme();
-        checkAuth();
+        lucide.createIcons(); initTheme(); checkAuth();
     </script>
 </body>
 </html>
