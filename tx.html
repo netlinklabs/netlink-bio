@@ -489,31 +489,17 @@
         // so it's instant on every future view.
         async function fetchAndPersistGasFee(tx) {
             try {
-                const rpcCall = async (method, params) => {
-                    const res = await fetchWithTimeout('https://polygon-rpc.com', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-                    });
-                    return (await res.json()).result;
-                };
-                const receipt = await rpcCall('eth_getTransactionReceipt', [tx.hash]);
-                if (!receipt || !receipt.gasUsed) return null;
-                const gasPrice = receipt.effectiveGasPrice || receipt.gasPrice;
-                if (!gasPrice) return null;
-                const feeWei = BigInt(receipt.gasUsed) * BigInt(gasPrice);
-                const divisor = 10n ** 18n;
-                const whole = feeWei / divisor;
-                const frac = feeWei % divisor;
-                const fee = `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`;
+                const res = await fetchWithTimeout(`/api/tx-gas-fee?hash=${encodeURIComponent(tx.hash)}`);
+                const data = await res.json();
+                if (!res.ok || !data.gasFee) return null;
 
-                tx.gas_fee = fee;
+                tx.gas_fee = data.gasFee;
                 const { error } = await supabaseClient
-                    .from('wallet_transactions').update({ gas_fee: fee })
+                    .from('wallet_transactions').update({ gas_fee: data.gasFee })
                     .eq('owner_id', currentUser.id).eq('hash', tx.hash);
                 if (error) console.error('Failed to persist gas fee:', error);
 
-                return fee;
+                return data.gasFee;
             } catch (err) {
                 console.error('Failed to fetch gas fee:', err);
                 return null;
