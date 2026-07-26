@@ -812,24 +812,16 @@
         // node commonly lags a couple seconds behind a transaction that was
         // JUST confirmed through Sequence's own relayer.
         async function recordTransactionWithGasRetry(row, sequenceReceipt, hash) {
+            // Only the free, instant check here (reads gasUsed/effectiveGasPrice
+            // already present on the Sequence receipt, if any — no network
+            // call). We deliberately do NOT schedule a delayed background
+            // fetch here: it depends on this tab staying open for several
+            // seconds, which isn't reliable (people switch tabs right after
+            // sending). If this comes back null, tx.html fills it in lazily
+            // the moment the person actually opens that receipt instead —
+            // guaranteed to run while a tab is actually open and active.
             const immediateFee = computeGasFeeFromReceipt(sequenceReceipt);
             await recordTransaction({ ...row, gas_fee: immediateFee });
-
-            if (immediateFee) return;
-
-            setTimeout(async () => {
-                const fee = await fetchGasFeeFallback(hash);
-                if (!fee) {
-                    console.warn('Gas fee still unavailable after retry for', hash);
-                    return;
-                }
-                const { error } = await supabaseClient
-                    .from('wallet_transactions')
-                    .update({ gas_fee: fee })
-                    .eq('owner_id', currentUser.id)
-                    .eq('hash', hash);
-                if (error) console.error('Failed to backfill gas fee:', error);
-            }, 5000);
         }
         window.recordTransactionWithGasRetry = recordTransactionWithGasRetry;
 
