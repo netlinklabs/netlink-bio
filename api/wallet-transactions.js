@@ -30,11 +30,43 @@ function fromWei(rawValue, decimals) {
   return `${whole}.${fractionStr}`;
 }
 
-async function polygonscanGet(params) {
+// PolygonScan's txlist/tokentx responses already include gasUsed + gasPrice
+// per transaction — no extra request needed. txlistinternal entries often
+// lack a meaningful gasPrice of their own (internal calls share the parent
+// tx's gas), so this returns null there rather than guessing.
+function computeGasFeeFromRaw(tx) {
+  try {
+    if (!tx.gasUsed || !tx.gasPrice) return null;
+    const feeWei = BigInt(tx.gasUsed) * BigInt(tx.gasPrice);
+    const divisor = 10n ** 18n;
+    const whole = feeWei / divisor;
+    const frac = feeWei % divisor;
+    return `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function polygonscanGet(params, retries = 3) {
   const url = `${ETHERSCAN_V2_BASE}?${new URLSearchParams({ ...params, chainid: POLYGON_CHAIN_ID, apikey: POLYGONSCAN_API_KEY })}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Etherscan V2 request failed: ${res.status}`);
-  return res.json();
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Etherscan V2 request failed: ${res.status}`);
+    const data = await res.json();
+
+    // Etherscan/PolygonScan returns HTTP 200 even for rate-limit or transient
+    // errors — the real signal is status/message in the body. A genuinely
+    // empty result set has status "0" with message "No transactions found";
+    // anything else with status "0" (e.g. "NOTOK", rate limiting) is a
+    // transient failure worth retrying rather than treating as "no data".
+    const isGenuinelyEmpty = data.status === '0' && /no transactions found/i.test(data.message || '');
+    const isError = data.status === '0' && !isGenuinelyEmpty;
+
+    if (!isError || attempt === retries) return data;
+
+    await new Promise((r) => setTimeout(r, 400 * attempt));
+  }
 }
 
 export default async function handler(req, res) {
@@ -67,6 +99,7 @@ export default async function handler(req, res) {
         type: tx.to?.toLowerCase() === lowerAddr ? 'in' : 'out',
         counterparty: tx.to?.toLowerCase() === lowerAddr ? tx.from : tx.to,
         timestamp: parseInt(tx.timeStamp, 10) * 1000,
+        gasFee: computeGasFeeFromRaw(tx),
       }));
 
     // Smart-contract wallets (Sequence WaaS) move native POL through internal
@@ -82,6 +115,7 @@ export default async function handler(req, res) {
         type: tx.to?.toLowerCase() === lowerAddr ? 'in' : 'out',
         counterparty: tx.to?.toLowerCase() === lowerAddr ? tx.from : tx.to,
         timestamp: parseInt(tx.timeStamp, 10) * 1000,
+        gasFee: computeGasFeeFromRaw(tx),
       }));
 
     const tokenTxs = (Array.isArray(tokenRes.result) ? tokenRes.result : [])
@@ -95,6 +129,7 @@ export default async function handler(req, res) {
           type: tx.to?.toLowerCase() === lowerAddr ? 'in' : 'out',
           counterparty: tx.to?.toLowerCase() === lowerAddr ? tx.from : tx.to,
           timestamp: parseInt(tx.timeStamp, 10) * 1000,
+          gasFee: computeGasFeeFromRaw(tx),
         };
       })
       .filter(Boolean);
