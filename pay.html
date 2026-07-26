@@ -805,6 +805,34 @@
         }
         window.recordTransaction = recordTransaction;
 
+        // Insert right away so the UI never waits on gas-fee lookup. If the
+        // fee isn't available yet (Sequence's receipt didn't include it, and
+        // the fallback RPC hasn't caught up to this very-fresh tx yet), fill
+        // it in a few seconds later via a background UPDATE — a public RPC
+        // node commonly lags a couple seconds behind a transaction that was
+        // JUST confirmed through Sequence's own relayer.
+        async function recordTransactionWithGasRetry(row, sequenceReceipt, hash) {
+            const immediateFee = computeGasFeeFromReceipt(sequenceReceipt);
+            await recordTransaction({ ...row, gas_fee: immediateFee });
+
+            if (immediateFee) return;
+
+            setTimeout(async () => {
+                const fee = await fetchGasFeeFallback(hash);
+                if (!fee) {
+                    console.warn('Gas fee still unavailable after retry for', hash);
+                    return;
+                }
+                const { error } = await supabaseClient
+                    .from('wallet_transactions')
+                    .update({ gas_fee: fee })
+                    .eq('owner_id', currentUser.id)
+                    .eq('hash', hash);
+                if (error) console.error('Failed to backfill gas fee:', error);
+            }, 5000);
+        }
+        window.recordTransactionWithGasRetry = recordTransactionWithGasRetry;
+
         // Prefer gas data already present in the Sequence WaaS receipt (no
         // extra network call). Falls back to a single direct RPC read only
         // if the SDK didn't include gasUsed/effectiveGasPrice — either way
@@ -1300,16 +1328,13 @@
                 if (window.recordTransaction) {
                     const txHash = tx.txHash || tx.hash || tx.data?.txHash || tx.receipt?.transactionHash;
                     if (txHash) {
-                        const gasFee = await resolveGasFee(tx.receipt, txHash);
-                        window.recordTransaction({
+                        window.recordTransactionWithGasRetry({
                             hash: txHash,
                             type: 'send',
                             token,
                             amount,
                             counterparty_address: to,
-                            status: 'success',
-                            gas_fee: gasFee,
-                        });
+                        }, tx.receipt, txHash);
                     } else {
                         console.warn('Could not determine tx hash — transaction not recorded:', tx);
                     }
@@ -1709,17 +1734,14 @@
                 if (window.recordTransaction) {
                     const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
                     if (txHash) {
-                        const gasFee = await resolveGasFee(swapTx?.receipt, txHash);
-                        window.recordTransaction({
+                        window.recordTransactionWithGasRetry({
                             hash: txHash,
                             type: 'swap',
                             token: swapFrom,
                             amount,
                             to_token: swapTo,
                             to_amount: toAmountDisplayed,
-                            status: 'success',
-                            gas_fee: gasFee,
-                        });
+                        }, swapTx?.receipt, txHash);
                     } else {
                         console.warn('Could not determine swap tx hash — transaction not recorded:', swapTx);
                     }
