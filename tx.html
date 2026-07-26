@@ -128,13 +128,13 @@
         .receipt-sheet .info-row { display: flex; font-size: 12px; margin-bottom: 4px; }
         .receipt-sheet .info-row:last-child { margin-bottom: 0; }
         .receipt-sheet .info-row .info-label { width: 92px; flex-shrink: 0; color: #475569; }
-        .receipt-sheet .info-row .info-value { font-size: 12px; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 4px; }
+        .receipt-sheet .info-row .info-value { font-size: 12px; font-weight: 400; color: #0f172a; display: flex; align-items: center; gap: 4px; }
         .receipt-sheet .token-row { display: flex; align-items: center; gap: 6px; }
         .receipt-sheet .party-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 4px; }
         .receipt-sheet .party-col:first-child { border-right: 1px solid #e2e8f0; padding-right: 14px; }
         .receipt-sheet .party-col:last-child { padding-left: 14px; }
         .receipt-sheet .party-col .party-label { font-size: 11px; color: #475569; margin-bottom: 6px; }
-        .receipt-sheet .party-col .party-name { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 10px; line-height: 1.3; }
+        .receipt-sheet .party-col .party-name { font-size: 12px; font-weight: 500; color: #0f172a; margin-bottom: 10px; line-height: 1.3; }
         .receipt-sheet .party-col .party-addr-label { font-size: 10px; color: #94a3b8; margin-bottom: 2px; }
         .receipt-sheet .party-col .party-addr { font-size: 10px; font-family: 'SF Mono', 'Courier New', monospace; color: #64748b; line-height: 1.4; word-break: break-all; }
         .receipt-sheet .receipt-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; line-height: 1.4; }
@@ -457,7 +457,6 @@
                         <div style="flex: 0 0 62%; max-width: 62%;">
                             <div class="explorer-caption" style="text-align: left; margin-bottom: 8px;">Transaction Hash</div>
                             <div class="hash-text">${tx.hash}</div>
-                            <a href="https://polygonscan.com/tx/${tx.hash}" target="_blank" rel="noopener" class="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition" style="display:inline-block; margin-top:8px;">View on PolygonScan &rarr;</a>
                         </div>
                         <div class="qr-wrap" style="flex: 0 0 34%; max-width: 34%;">
                             <img src="${qrUrl}" alt="QR Code" crossorigin="anonymous" onerror="this.style.display='none'">
@@ -577,7 +576,7 @@
                 doc.setFontSize(9); doc.setTextColor(...gray);
                 doc.text('Sender :', 52, y + 16);
                 doc.text('Recipient :', 210, y + 16);
-                doc.setFont(undefined, 'bold'); doc.setFontSize(11); doc.setTextColor(...dark);
+                doc.setFont(undefined, 'normal'); doc.setFontSize(10); doc.setTextColor(...dark);
                 doc.text(String(senderLabel), 52, y + 30);
                 doc.text(String(recipientLabel), 210, y + 30);
                 doc.setFont(undefined, 'normal'); doc.setFontSize(8); doc.setTextColor(...gray);
