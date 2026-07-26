@@ -589,15 +589,54 @@
 
         async function shareReceipt() {
             if (!currentModalTx) return;
-            const text = `Netlink Pay Receipt
-${currentModalTx.type === 'send' ? 'Sent' : 'Received'} ${formatFintech(currentModalTx.amount, 2)} ${currentModalTx.token}
-Status: ${currentTxStatus}
-Hash: ${currentModalTx.hash}
-https://polygonscan.com/tx/${currentModalTx.hash}`;
-            if (navigator.share) {
-                try { await navigator.share({ title: 'Netlink Pay Receipt', text }); closeReceiptModal(); }
-                catch (err) { if (err.name !== 'AbortError') { navigator.clipboard.writeText(text).then(() => showToast('Receipt details copied')); closeReceiptModal(); } }
-            } else { navigator.clipboard.writeText(text).then(() => showToast('Receipt details copied')); closeReceiptModal(); }
+            const btn = document.getElementById('btnShare');
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>';
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const tx = currentModalTx;
+                const sheet = document.getElementById('receiptSheet');
+                if (!sheet) throw new Error('Receipt content not found');
+                if (!tx.gas_fee) await fetchAndPersistGasFee(tx);
+
+                await document.fonts.ready;
+                const canvas = await html2canvas(sheet, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false });
+
+                const { jsPDF } = window.jspdf;
+                const pxToPt = 0.75;
+                const pdfWidth = canvas.width * pxToPt / 3;
+                const pdfHeight = canvas.height * pxToPt / 3;
+                const doc = new jsPDF({ unit: 'pt', format: [pdfWidth, pdfHeight] });
+                doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+                const filenameHash = tx.hash ? tx.hash.slice(0, 10) : tx.id.slice(0, 10);
+                const filename = `netlinkpay-receipt-${filenameHash}.pdf`;
+                const pdfBlob = doc.output('blob');
+                const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                    await navigator.share({ title: 'Netlink Pay Receipt', files: [pdfFile] });
+                    closeReceiptModal();
+                } else {
+                    // Device/browser can't share a file directly — fall back
+                    // to just downloading the PDF so the person can still
+                    // share it manually from their file system.
+                    doc.save(filename);
+                    showToast('Sharing files isn\'t supported here — PDF downloaded instead');
+                    closeReceiptModal();
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Failed to share receipt:', err);
+                    showToast('Could not share receipt — please try again');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                if (window.lucide) lucide.createIcons();
+            }
         }
 
         function updateBrandLogo() {
