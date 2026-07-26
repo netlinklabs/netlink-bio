@@ -114,20 +114,22 @@
         .receipt-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; backdrop-filter: blur(6px); }
         .receipt-backdrop.open { opacity: 1; pointer-events: auto; }
         .receipt-modal-wrap { position: relative; max-width: 420px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; }
-        .receipt-modal { background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); transform: translateY(16px) scale(0.97); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .receipt-modal { background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); transform: translateY(16px) scale(0.97); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; flex-direction: column; max-height: 90vh; }
         .receipt-backdrop.open .receipt-modal { transform: translateY(0) scale(1); }
+        #receiptContent { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
         .receipt-close-btn { position: absolute; top: -12px; right: -12px; width: 32px; height: 32px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; z-index: 10; border: none; transition: transform 0.15s ease; }
         .receipt-close-btn:hover { transform: scale(1.1); }
         .receipt-sheet { background: #ffffff; padding: 28px; color: #0f172a; }
         .receipt-sheet .receipt-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
-        .receipt-sheet .receipt-title { font-size: 24px; font-weight: 800; color: #14b8a6; line-height: 1.1; }
-        .receipt-sheet .receipt-subtitle { font-size: 12px; color: #475569; font-weight: 500; margin-top: 2px; }
-        .receipt-sheet .receipt-brand-logo { height: 34px; width: auto; display: block; }
+        .receipt-sheet .receipt-title { font-size: 15px; font-weight: 800; color: #14b8a6; line-height: 1.1; }
+        .receipt-sheet .receipt-subtitle { font-size: 10px; color: #475569; font-weight: 500; margin-top: 2px; }
+        .receipt-sheet .receipt-brand-logo { height: 68px; width: auto; display: block; }
         .receipt-sheet .info-box { background: #f8fafc; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
         .receipt-sheet .info-row { display: flex; font-size: 12px; margin-bottom: 4px; }
         .receipt-sheet .info-row:last-child { margin-bottom: 0; }
         .receipt-sheet .info-row .info-label { width: 92px; flex-shrink: 0; color: #475569; }
-        .receipt-sheet .info-row .info-value { font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 4px; }
+        .receipt-sheet .info-row .info-value { font-size: 12px; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 4px; }
+        .receipt-sheet .token-row { display: flex; align-items: center; gap: 6px; }
         .receipt-sheet .party-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 4px; }
         .receipt-sheet .party-col:first-child { border-right: 1px solid #e2e8f0; padding-right: 14px; }
         .receipt-sheet .party-col:last-child { padding-left: 14px; }
@@ -152,7 +154,7 @@
         .receipt-sheet .qr-wrap { flex-shrink: 0; text-align: center; }
         .receipt-sheet .qr-wrap img { width: 82px; height: 82px; border-radius: 8px; }
         .receipt-sheet .footer-text { font-size: 8.5px; color: #94a3b8; text-align: left; line-height: 1.5; margin-top: 16px; }
-        .receipt-actions { display: flex; gap: 8px; padding: 14px 20px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; }
+        .receipt-actions { display: flex; gap: 8px; padding: 14px 20px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; flex-shrink: 0; }
         .receipt-actions button { flex: 1; padding: 10px 0; border-radius: 12px; font-size: 12px; font-weight: 600; transition: all 0.15s ease; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .receipt-actions .btn-secondary { background: #f1f5f9; color: #334155; }
         .receipt-actions .btn-secondary:hover { background: #e2e8f0; }
@@ -457,7 +459,7 @@
                     </div>
                     <div class="receipt-row">
                         <span class="label">Amount</span>
-                        <span class="value">${formatFintech(tx.amount, 6)}</span>
+                        <span class="value">${formatFintech(tx.amount, 2)}</span>
                     </div>
                     ${noteText ? `<div class="receipt-row"><span class="label">Note</span><span class="value">${noteText}</span></div>` : ''}
                     <div class="receipt-row">
@@ -469,16 +471,12 @@
                         <span class="value-mono" id="modalGasFee">—</span>
                     </div>
                     <div class="hash-block" style="margin-top: 16px;">
-                        <div style="flex: 1;">
+                        <div style="flex: 0 0 62%; max-width: 62%;">
                             <div class="explorer-caption" style="text-align: left; margin-bottom: 8px;">Transaction Hash</div>
                             <div class="hash-text">${tx.hash}</div>
+                            <a href="https://polygonscan.com/tx/${tx.hash}" target="_blank" rel="noopener" class="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition" style="display:inline-block; margin-top:8px;">View on PolygonScan &rarr;</a>
                         </div>
-                    </div>
-                    <div class="hash-block">
-                        <div style="flex: 1; align-self: flex-end;">
-                            <a href="https://polygonscan.com/tx/${tx.hash}" target="_blank" rel="noopener" class="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition">View on PolygonScan &rarr;</a>
-                        </div>
-                        <div class="qr-wrap">
+                        <div class="qr-wrap" style="flex: 0 0 34%; max-width: 34%;">
                             <div class="explorer-caption">Block Explorer: polygonscan.com</div>
                             <img src="${qrUrl}" alt="QR Code" crossorigin="anonymous" onerror="this.style.display='none'">
                         </div>
@@ -498,7 +496,7 @@
                 const statusIcon = status === 'Success' ? '&#10003;' : status === 'Failed' ? '&#10007;' : '&#8987;';
                 statusEl.innerHTML = `<span class="${statusClass}">${status} ${statusIcon}</span>`;
             }
-            if (gasEl) gasEl.textContent = gasFee ? formatFintech(gasFee, 6) + ' POL' : '—';
+            if (gasEl) gasEl.textContent = gasFee ? formatFintech(gasFee, 4) + ' POL' : '—';
         }
 
         function closeReceiptModal(e) {
@@ -620,10 +618,10 @@
 
                 y += 4;
                 rRow('Asset', tx.token, false);
-                rRow('Amount', formatFintech(tx.amount, 6), false);
+                rRow('Amount', formatFintech(tx.amount, 2), false);
                 if (noteText) rRow('Note', noteText, false);
                 rRow('Network', 'Polygon (PoS)', false);
-                rRow('Gas Fee', gasFee ? formatFintech(gasFee, 6) + ' POL' : '—', true);
+                rRow('Gas Fee', gasFee ? formatFintech(gasFee, 4) + ' POL' : '—', true);
                 y += 10;
 
                 doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(...dark);
@@ -659,7 +657,7 @@
         async function shareReceipt() {
             if (!currentModalTx) return;
             const text = `Netlink Pay Receipt
-${currentModalTx.type === 'send' ? 'Sent' : 'Received'} ${formatFintech(currentModalTx.amount, 6)} ${currentModalTx.token}
+${currentModalTx.type === 'send' ? 'Sent' : 'Received'} ${formatFintech(currentModalTx.amount, 2)} ${currentModalTx.token}
 Status: ${currentTxStatus}
 Hash: ${currentModalTx.hash}
 https://polygonscan.com/tx/${currentModalTx.hash}`;
