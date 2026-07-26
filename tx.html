@@ -333,8 +333,7 @@
             document.getElementById('txContent').classList.remove('hidden'); if (window.lucide) lucide.createIcons();
             await syncIncomingTransactions(data.wallet_address); await loadTransactions();
         }
-        async function syncIncomingTransactions(address) {
-            try { const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`); if (!res.ok) return; const data = await res.json(); const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash); if (!incoming.length) return; const { data: existing } = await supabaseClient.from('wallet_transactions').select('hash').eq('owner_id', currentUser.id); const existingHashes = new Set((existing || []).map((r) => r.hash)); const newRows = incoming.filter((t) => !existingHashes.has(t.hash)).map((t) => ({ owner_id: currentUser.id, hash: t.hash, type: 'receive', token: t.token, amount: t.amount, counterparty_address: t.counterparty || null, occurred_at: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString() })); if (newRows.length) { const { error } = await supabaseClient.from('wallet_transactions').insert(newRows); if (error) console.error('Failed to sync incoming transactions:', error); } }
+        async function syncIncomingTransactions(address) { try { const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`); if (!res.ok) return; const data = await res.json(); const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash); if (!incoming.length) return; const { data: existing } = await supabaseClient.from('wallet_transactions').select('hash').eq('owner_id', currentUser.id); const existingHashes = new Set((existing || []).map((r) => r.hash)); const newRows = incoming.filter((t) => !existingHashes.has(t.hash)).map((t) => ({ owner_id: currentUser.id, hash: t.hash, type: 'receive', token: t.token, amount: t.amount, counterparty_address: t.counterparty || null, occurred_at: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString(), status: 'success', gas_fee: t.gasFee || null })); if (newRows.length) { const { error } = await supabaseClient.from('wallet_transactions').insert(newRows); if (error) console.error('Failed to sync incoming transactions:', error); } }
             catch (err) { console.error('Incoming sync failed:', err); }
         }
         async function loadTransactions() {
@@ -352,25 +351,6 @@
         function renderPaginationBar(totalPages) { const bar = document.getElementById('paginationBar'); if (totalPages <= 1) { bar.classList.add('hidden'); bar.innerHTML = ''; return; } bar.classList.remove('hidden'); let html = `<button onclick="goToPage(${Math.max(1, currentPage - 1)})" class="page-btn" ${currentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-4 h-4"></i></button>`; for (let p = 1; p <= totalPages; p++) html += `<button onclick="goToPage(${p})" class="page-btn ${p === currentPage ? 'active' : ''}">${p}</button>`; html += `<button onclick="goToPage(${Math.min(totalPages, currentPage + 1)})" class="page-btn" ${currentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-4 h-4"></i></button>`; bar.innerHTML = html; }
         function toggleDetail(txId) { document.getElementById(`detail-${txId}`).classList.toggle('open'); }
         function rowHtml(tx) { const timeAgo = formatTimeAgo(tx.occurred_at); const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`; if (tx.type === 'swap') return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 icon-swap rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="arrow-left-right" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">Swap ${tx.token}</p><p class="text-xs text-muted mt-0.5">${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[15px] font-bold text-primary">${tx.amount} → ${tx.to_amount}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3"><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition mt-1"><i data-lucide="external-link" class="w-3 h-3"></i> View on PolygonScan</a></div></div></div>`; const isIn = tx.type === 'receive'; const icon = isIn ? 'arrow-down-left' : 'arrow-up-right'; const iconClass = isIn ? 'icon-receive' : 'icon-send'; const amountClass = isIn ? 'amount-in' : 'amount-out'; const sign = isIn ? '+' : '-'; const actionLabel = isIn ? 'Received' : 'Sent'; const addressLabel = tx.counterparty_address ? truncateAddress(tx.counterparty_address) : 'External'; return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 ${iconClass} rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="${icon}" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">${actionLabel} ${tx.token}</p><p class="text-xs text-muted mt-0.5">${addressLabel} · ${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[17px] font-bold ${amountClass}">${sign}${tx.amount} ${tx.token}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3 space-y-2"><div class="flex items-center justify-between text-xs"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><div class="flex items-center gap-3 pt-1"><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition"><i data-lucide="external-link" class="w-3 h-3"></i> View</a><button onclick="event.stopPropagation(); openReceiptModal('${tx.id}')" class="inline-flex items-center gap-1.5 text-xs font-medium text-secondary hover:text-primary transition"><i data-lucide="receipt" class="w-3 h-3"></i> View Receipt</button></div></div></div></div>`; }
-        async function fetchGasFee(hash) {
-            try {
-                const rpcCall = async (method, params) => {
-                    const res = await fetch('https://polygon-rpc.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
-                    return (await res.json()).result;
-                };
-                const receipt = await rpcCall('eth_getTransactionReceipt', [hash]);
-                if (!receipt) return null;
-                const gasUsed = BigInt(receipt.gasUsed || '0x0');
-                let gasPrice = receipt.effectiveGasPrice;
-                if (!gasPrice) { const txDetail = await rpcCall('eth_getTransactionByHash', [hash]); gasPrice = txDetail?.gasPrice || '0x0'; }
-                const feeWei = gasUsed * BigInt(gasPrice);
-                const divisor = 10n ** 18n;
-                const whole = feeWei / divisor;
-                const frac = feeWei % divisor;
-                return `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`;
-            } catch (err) { console.error('Failed to fetch gas fee:', err); return null; }
-        }
-
         async function fetchPolPriceUsd() {
             try { const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd'); return (await res.json())['polygon-ecosystem-token']?.usd || null; }
             catch (err) { console.error('Failed to fetch POL price:', err); return null; }
@@ -468,20 +448,19 @@
             document.body.style.overflow = 'hidden';
             if (window.lucide) lucide.createIcons();
 
-            // Every row in wallet_transactions is already a confirmed
-            // on-chain transaction by construction: sends/swaps are only
-            // inserted after Sequence WaaS reports SUCCEEDED, and incoming
-            // transfers are only synced from PolygonScan's indexed (not
-            // pending/mempool) history. Re-checking via a public RPC here
-            // was redundant and could flakily show "Pending" if that node
-            // simply hadn't caught up yet — so we just show Success directly.
-            currentTxStatus = 'Success';
+            // status/gas_fee are recorded once at insert time (send/swap
+            // from the Sequence receipt, receive from PolygonScan's own
+            // gasUsed/gasPrice) — no live fetch needed, ever.
+            currentTxStatus = tx.status === 'success' ? 'Success' : (tx.status === 'failed' ? 'Failed' : 'Pending');
             const statusEl = document.getElementById('modalStatusText');
-            if (statusEl) statusEl.innerHTML = '<span class="status-success-text">Success &#10003;</span>';
+            if (statusEl) {
+                const cls = tx.status === 'success' ? 'status-success-text' : tx.status === 'failed' ? 'status-failed-text' : 'status-pending-text';
+                const icon = tx.status === 'success' ? '&#10003;' : tx.status === 'failed' ? '&#10007;' : '&#8987;';
+                statusEl.innerHTML = `<span class="${cls}">${currentTxStatus} ${icon}</span>`;
+            }
 
-            const gasFee = await fetchGasFee(tx.hash);
             const gasEl = document.getElementById('modalGasFee');
-            if (gasEl) gasEl.textContent = gasFee ? formatFintech(gasFee, 4) + ' POL' : '—';
+            if (gasEl) gasEl.textContent = tx.gas_fee ? formatFintech(tx.gas_fee, 4) + ' POL' : '—';
         }
 
         function closeReceiptModal(e) {
@@ -534,8 +513,8 @@
                 const selfAddress = currentProfile.wallet_address || '';
                 const counterpartyAddress = tx.counterparty_address || '';
                 const counterpartyName = await resolveCounterpartyName(counterpartyAddress);
-                const [gasFee, logoDataUrl, qrDataUrl] = await Promise.all([
-                    fetchGasFee(tx.hash),
+                const gasFee = tx.gas_fee || null;
+                const [logoDataUrl, qrDataUrl] = await Promise.all([
                     imageUrlToDataUrl(BRAND_LOGO_URL),
                     imageUrlToDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://polygonscan.com/tx/' + tx.hash)}`),
                 ]);
