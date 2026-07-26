@@ -795,6 +795,7 @@
                 const { error } = await supabaseClient.from('wallet_transactions').insert({
                     owner_id: currentUser.id,
                     occurred_at: new Date().toISOString(),
+                    status: 'success',
                     ...row,
                 });
                 if (error) console.error('Failed to record transaction:', error);
@@ -803,6 +804,53 @@
             }
         }
         window.recordTransaction = recordTransaction;
+
+        // Prefer gas data already present in the Sequence WaaS receipt (no
+        // extra network call). Falls back to a single direct RPC read only
+        // if the SDK didn't include gasUsed/effectiveGasPrice — either way
+        // this runs ONCE at insert time, never again when a receipt is
+        // viewed/downloaded later.
+        function computeGasFeeFromReceipt(receipt) {
+            try {
+                if (!receipt || !receipt.gasUsed) return null;
+                const gasPrice = receipt.effectiveGasPrice || receipt.gasPrice;
+                if (!gasPrice) return null;
+                const gasUsed = BigInt(receipt.gasUsed);
+                const feeWei = gasUsed * BigInt(gasPrice);
+                const divisor = 10n ** 18n;
+                const whole = feeWei / divisor;
+                const frac = feeWei % divisor;
+                return `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`;
+            } catch (err) {
+                console.error('Failed to compute gas fee from receipt:', err);
+                return null;
+            }
+        }
+
+        async function fetchGasFeeFallback(hash) {
+            try {
+                const rpcCall = async (method, params) => {
+                    const res = await fetch('https://polygon-rpc.com', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+                    });
+                    return (await res.json()).result;
+                };
+                const receipt = await rpcCall('eth_getTransactionReceipt', [hash]);
+                return receipt ? computeGasFeeFromReceipt(receipt) : null;
+            } catch (err) {
+                console.error('Gas fee fallback fetch failed:', err);
+                return null;
+            }
+        }
+
+        async function resolveGasFee(sequenceReceipt, hash) {
+            const fromReceipt = computeGasFeeFromReceipt(sequenceReceipt);
+            if (fromReceipt) return fromReceipt;
+            return await fetchGasFeeFallback(hash);
+        }
+        window.resolveGasFee = resolveGasFee;
 
         const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
         const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
@@ -1252,12 +1300,15 @@
                 if (window.recordTransaction) {
                     const txHash = tx.txHash || tx.hash || tx.data?.txHash || tx.receipt?.transactionHash;
                     if (txHash) {
+                        const gasFee = await resolveGasFee(tx.receipt, txHash);
                         window.recordTransaction({
                             hash: txHash,
                             type: 'send',
                             token,
                             amount,
                             counterparty_address: to,
+                            status: 'success',
+                            gas_fee: gasFee,
                         });
                     } else {
                         console.warn('Could not determine tx hash — transaction not recorded:', tx);
@@ -1658,6 +1709,7 @@
                 if (window.recordTransaction) {
                     const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
                     if (txHash) {
+                        const gasFee = await resolveGasFee(swapTx?.receipt, txHash);
                         window.recordTransaction({
                             hash: txHash,
                             type: 'swap',
@@ -1665,6 +1717,8 @@
                             amount,
                             to_token: swapTo,
                             to_amount: toAmountDisplayed,
+                            status: 'success',
+                            gas_fee: gasFee,
                         });
                     } else {
                         console.warn('Could not determine swap tx hash — transaction not recorded:', swapTx);
