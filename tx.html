@@ -356,6 +356,18 @@
             catch (err) { console.error('Failed to fetch POL price:', err); return null; }
         }
 
+        // Prevents any external call in the receipt flow from hanging
+        // forever on a slow/stuck connection.
+        async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
         async function resolveCounterpartyName(address) {
             if (!address) return null;
             try { const { data, error } = await supabaseClient.rpc('resolve_wallet_owner_name', { check_address: address }); if (error) { console.error(error); return null; } return data || null; }
@@ -460,7 +472,52 @@
             }
 
             const gasEl = document.getElementById('modalGasFee');
-            if (gasEl) gasEl.textContent = tx.gas_fee ? formatFintech(tx.gas_fee, 4) + ' POL' : '—';
+            if (tx.gas_fee) {
+                gasEl.textContent = formatFintech(tx.gas_fee, 4) + ' POL';
+            } else {
+                gasEl.textContent = 'Loading...';
+                const fee = await fetchAndPersistGasFee(tx);
+                gasEl.textContent = fee ? formatFintech(fee, 4) + ' POL' : '—';
+            }
+        }
+
+        // Only runs when gas_fee wasn't already recorded at insert time
+        // (older rows, or the Sequence receipt didn't include it and the
+        // one-shot background attempt in pay.html also missed). Runs here
+        // instead, at the moment the person is actually looking at the
+        // receipt — guaranteed the tab is open — and persists the result
+        // so it's instant on every future view.
+        async function fetchAndPersistGasFee(tx) {
+            try {
+                const rpcCall = async (method, params) => {
+                    const res = await fetchWithTimeout('https://polygon-rpc.com', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+                    });
+                    return (await res.json()).result;
+                };
+                const receipt = await rpcCall('eth_getTransactionReceipt', [tx.hash]);
+                if (!receipt || !receipt.gasUsed) return null;
+                const gasPrice = receipt.effectiveGasPrice || receipt.gasPrice;
+                if (!gasPrice) return null;
+                const feeWei = BigInt(receipt.gasUsed) * BigInt(gasPrice);
+                const divisor = 10n ** 18n;
+                const whole = feeWei / divisor;
+                const frac = feeWei % divisor;
+                const fee = `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`;
+
+                tx.gas_fee = fee;
+                const { error } = await supabaseClient
+                    .from('wallet_transactions').update({ gas_fee: fee })
+                    .eq('owner_id', currentUser.id).eq('hash', tx.hash);
+                if (error) console.error('Failed to persist gas fee:', error);
+
+                return fee;
+            } catch (err) {
+                console.error('Failed to fetch gas fee:', err);
+                return null;
+            }
         }
 
         function closeReceiptModal(e) {
@@ -513,7 +570,7 @@
                 const selfAddress = currentProfile.wallet_address || '';
                 const counterpartyAddress = tx.counterparty_address || '';
                 const counterpartyName = await resolveCounterpartyName(counterpartyAddress);
-                const gasFee = tx.gas_fee || null;
+                const gasFee = tx.gas_fee || await fetchAndPersistGasFee(tx);
                 const [logoDataUrl, qrDataUrl] = await Promise.all([
                     imageUrlToDataUrl(BRAND_LOGO_URL),
                     imageUrlToDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://polygonscan.com/tx/' + tx.hash)}`),
