@@ -121,15 +121,20 @@ async function insertVerification(row) {
 
   const text = await res.text();
 
-  // Foreign-key violation (vendor_data didn't match a real profile --
-  // e.g. Didit's "Try Webhook" test data, or a session created without
-  // a valid vendor_data) is expected and NOT a delivery failure. Postgrest
-  // typically reports this as 409, sometimes 400 with code 23503.
-  const isForeignKeyViolation = text.includes('23503') || text.includes('foreign key');
-  const isDuplicate = res.status === 409 && !isForeignKeyViolation;
+  // vendor_data that isn't usable as a real profile reference -- either a
+  // foreign-key violation (valid UUID, no matching profile) or an invalid
+  // UUID format entirely (Didit's "Try Webhook" sends a plain test string
+  // like "test-vendor-data-123", code 22P02). Both are expected for test
+  // deliveries and NOT a real failure -- skip gracefully instead of retrying.
+  const isUnusableVendorData =
+    text.includes('23503') ||        // foreign_key_violation
+    text.includes('22P02') ||        // invalid_text_representation (bad uuid)
+    text.includes('foreign key') ||
+    text.includes('invalid input syntax for type uuid');
+  const isDuplicate = res.status === 409 && !isUnusableVendorData;
 
   if (isDuplicate) return { ok: true, note: 'duplicate event_id, ignored' };
-  if (isForeignKeyViolation) return { ok: true, note: 'unknown vendor_data, skipped' };
+  if (isUnusableVendorData) return { ok: true, note: 'unusable vendor_data, skipped' };
 
   throw new Error(`Supabase insert failed: ${res.status} ${text}`);
 }
