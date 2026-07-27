@@ -1,15 +1,20 @@
 // api/webhooks/didit.js
 // Receives real-time KYC/KYB events from Didit and records them in
-// public.verifications. Uses the raw-bytes X-Signature (not the V2
-// canonical-JSON variant) because we capture the body ourselves before
-// any parsing/re-encoding happens -- this satisfies the exact condition
-// Didit's docs give for X-Signature being safe to use ("works only if
-// your stack does not re-encode the body").
+// public.verifications.
+//
+// Signature: uses X-Signature-V2, which is NOT a hash of raw bytes --
+// it's HMAC-SHA256 over the parsed body re-serialized as canonical JSON
+// (keys sorted recursively, compact separators, Unicode preserved,
+// whole-valued floats shortened to ints). This matches Didit's official
+// Node.js example exactly (docs.didit.me/integration/webhooks).
+// X-Signature-Simple is kept as a fallback -- it only authenticates the
+// envelope (timestamp/session_id/status/webhook_type), not `decision`,
+// which is fine for us since we never read `decision` at all.
 
 import crypto from 'crypto';
 
 export const config = {
-  api: { bodyParser: false }, // we need the raw bytes for signature verification
+  api: { bodyParser: false }, // we parse manually so we control exactly what gets hashed
 };
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
@@ -27,17 +32,57 @@ function getRawBody(req) {
   });
 }
 
-function verifySignature(rawBody, signatureHeader) {
-  if (!signatureHeader || !DIDIT_WEBHOOK_SECRET) return false;
-  const expected = crypto
-    .createHmac('sha256', DIDIT_WEBHOOK_SECRET)
-    .update(rawBody, 'utf8')
-    .digest('hex');
+// Match Didit's float normalization: whole-valued floats serialize as ints.
+// (Largely a no-op in JS since JSON.parse doesn't retain a float/int
+// distinction, but kept for exact parity with Didit's own reference code.)
+function shortenFloats(data) {
+  if (Array.isArray(data)) return data.map(shortenFloats);
+  if (data !== null && typeof data === 'object') {
+    return Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [key, shortenFloats(value)])
+    );
+  }
+  if (typeof data === 'number' && !Number.isInteger(data) && data % 1 === 0) {
+    return Math.trunc(data);
+  }
+  return data;
+}
 
-  const expectedBuf = Buffer.from(expected, 'utf8');
-  const givenBuf = Buffer.from(signatureHeader, 'utf8');
-  if (expectedBuf.length !== givenBuf.length) return false;
-  return crypto.timingSafeEqual(expectedBuf, givenBuf);
+function sortKeys(obj) {
+  if (Array.isArray(obj)) return obj.map(sortKeys);
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).sort().reduce((acc, key) => {
+      acc[key] = sortKeys(obj[key]);
+      return acc;
+    }, {});
+  }
+  return obj;
+}
+
+function timingSafeEqualStrings(a, b) {
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function verifySignatureV2(parsedBody, signatureHeader, secret) {
+  if (!signatureHeader) return false;
+  const canonical = JSON.stringify(sortKeys(shortenFloats(parsedBody)));
+  const expected = crypto.createHmac('sha256', secret).update(canonical, 'utf8').digest('hex');
+  return timingSafeEqualStrings(expected, signatureHeader);
+}
+
+function verifySignatureSimple(parsedBody, signatureHeader, secret) {
+  if (!signatureHeader) return false;
+  const canonical = [
+    parsedBody.timestamp ?? '',
+    parsedBody.session_id ?? '',
+    parsedBody.status ?? '',
+    parsedBody.webhook_type ?? '',
+  ].join(':');
+  const expected = crypto.createHmac('sha256', secret).update(canonical, 'utf8').digest('hex');
+  return timingSafeEqualStrings(expected, signatureHeader);
 }
 
 // Normalize Didit's exact status strings into our own provider-agnostic
@@ -71,10 +116,22 @@ async function insertVerification(row) {
     },
     body: JSON.stringify(row),
   });
-  if (!res.ok && res.status !== 409) {
-    const text = await res.text();
-    throw new Error(`Supabase insert failed: ${res.status} ${text}`);
-  }
+
+  if (res.ok) return { ok: true };
+
+  const text = await res.text();
+
+  // Foreign-key violation (vendor_data didn't match a real profile --
+  // e.g. Didit's "Try Webhook" test data, or a session created without
+  // a valid vendor_data) is expected and NOT a delivery failure. Postgrest
+  // typically reports this as 409, sometimes 400 with code 23503.
+  const isForeignKeyViolation = text.includes('23503') || text.includes('foreign key');
+  const isDuplicate = res.status === 409 && !isForeignKeyViolation;
+
+  if (isDuplicate) return { ok: true, note: 'duplicate event_id, ignored' };
+  if (isForeignKeyViolation) return { ok: true, note: 'unknown vendor_data, skipped' };
+
+  throw new Error(`Supabase insert failed: ${res.status} ${text}`);
 }
 
 export default async function handler(req, res) {
@@ -85,26 +142,6 @@ export default async function handler(req, res) {
 
   const rawBody = await getRawBody(req);
 
-  const signature = req.headers['x-signature'];
-  const timestampHeader = req.headers['x-timestamp'];
-
-  if (!verifySignature(rawBody, signature)) {
-    console.error('Didit webhook: invalid signature');
-    res.status(401).json({ error: 'Invalid signature' });
-    return;
-  }
-
-  const timestamp = parseInt(timestampHeader, 10);
-  const now = Math.floor(Date.now() / 1000);
-  if (!timestamp || Math.abs(now - timestamp) > MAX_TIMESTAMP_SKEW_SECONDS) {
-    console.error('Didit webhook: stale or missing timestamp');
-    res.status(401).json({ error: 'Stale timestamp' });
-    return;
-  }
-
-  // Respond fast -- process after we know signature+timestamp are good.
-  // (Parsing/DB write here is cheap enough to stay inline for now; if it
-  // ever gets heavier, move this to a queue and return 200 immediately.)
   let payload;
   try {
     payload = JSON.parse(rawBody);
@@ -114,9 +151,31 @@ export default async function handler(req, res) {
     return;
   }
 
+  const timestampHeader = req.headers['x-timestamp'];
+  const timestamp = parseInt(timestampHeader, 10);
+  const now = Math.floor(Date.now() / 1000);
+  if (!timestamp || Math.abs(now - timestamp) > MAX_TIMESTAMP_SKEW_SECONDS) {
+    console.error('Didit webhook: stale or missing timestamp');
+    res.status(401).json({ error: 'Stale timestamp' });
+    return;
+  }
+
+  const sigV2 = req.headers['x-signature-v2'];
+  const sigSimple = req.headers['x-signature-simple'];
+
+  const verified =
+    verifySignatureV2(payload, sigV2, DIDIT_WEBHOOK_SECRET) ||
+    verifySignatureSimple(payload, sigSimple, DIDIT_WEBHOOK_SECRET);
+
+  if (!verified) {
+    console.error('Didit webhook: invalid signature');
+    res.status(401).json({ error: 'Invalid signature' });
+    return;
+  }
+
   // Only "status.updated" carries the session decision info we track.
-  // Other event families (transaction.*, travel_rule.*, activity.created)
-  // aren't used by Netlink yet -- acknowledge and skip.
+  // Other event families (transaction.*, travel_rule.*, activity.created,
+  // entity events) aren't used by Netlink yet -- acknowledge and skip.
   if (payload.webhook_type !== 'status.updated') {
     res.status(200).json({ received: true, skipped: payload.webhook_type });
     return;
@@ -124,8 +183,7 @@ export default async function handler(req, res) {
 
   const profileId = payload.vendor_data; // set to profiles.id when the session was created
   if (!profileId) {
-    console.error('Didit webhook: missing vendor_data (profile id)');
-    res.status(200).json({ received: true, error: 'missing vendor_data' }); // 2xx: not retryable
+    res.status(200).json({ received: true, note: 'missing vendor_data' }); // 2xx: not retryable
     return;
   }
 
@@ -133,7 +191,7 @@ export default async function handler(req, res) {
   const sessionId = payload.business_session_id || payload.session_id || null;
 
   try {
-    await insertVerification({
+    const result = await insertVerification({
       event_id: payload.event_id,
       profile_id: profileId,
       kind,
@@ -142,11 +200,9 @@ export default async function handler(req, res) {
       status: normalizeStatus(payload.status),
       raw_status: payload.status,
     });
+    res.status(200).json({ received: true, ...result });
   } catch (err) {
     console.error('Didit webhook: failed to record verification', err);
     res.status(500).json({ error: 'Internal error' }); // 5xx -> Didit will retry
-    return;
   }
-
-  res.status(200).json({ received: true });
 }
