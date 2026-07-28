@@ -2142,6 +2142,25 @@ window.openNetlinkPay = openNetlinkPay;
     let googleWalletInitAttempts = 0;
     const MAX_INIT_ATTEMPTS = 30;
 
+    // Decodes the `email` claim from a Google ID token's JWT payload.
+    // No signature verification needed here -- sequenceWaas.signIn() above
+    // already validates the token is genuine; we're only reading a field
+    // for display purposes, not making an authorization decision with it.
+    function decodeGoogleIdTokenEmail(idToken) {
+        try {
+            const payloadBase64 = idToken.split('.')[1];
+            const normalized = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+            const payloadJson = decodeURIComponent(
+                atob(normalized).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+            );
+            const payload = JSON.parse(payloadJson);
+            return payload.email || null;
+        } catch (err) {
+            console.error('Failed to decode Google ID token email:', err);
+            return null;
+        }
+    }
+
     async function handleGoogleWalletCredential(response) {
         closeConnectWalletModal();
         const idToken = response.credential;
@@ -2168,6 +2187,18 @@ window.openNetlinkPay = openNetlinkPay;
 
             document.getElementById('walletAddressInput').value = walletAddress;
             await window.saveWallet(true);
+
+            // Google's idToken already carries the account email as a JWT
+            // claim -- decode it here (no extra API call needed) and record
+            // it so identity.html can show "Wallet Email" and flag if it
+            // differs from the account login email.
+            const googleEmail = decodeGoogleIdTokenEmail(idToken);
+            if (googleEmail) {
+                const { error: emailSaveError } = await supabaseClient
+                    .from('profiles').update({ wallet_google_email: googleEmail }).eq('id', currentUser.id);
+                if (emailSaveError) console.error('Failed to save wallet_google_email:', emailSaveError);
+            }
+
             window.renderWalletAddressUI(walletAddress, true);
             showToast('Wallet connected!');
         } catch (err) {
