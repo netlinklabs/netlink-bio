@@ -187,14 +187,12 @@ export default async function handler(req, res) {
 
   // ---- Contact icons row (WhatsApp / Telegram / Email) ----
   const contactIcons = [];
-  // Gated by Privacy Settings (identity.html) -- default ON, same as the
-  // always-shown behavior these replaced. Telegram is not gated: it's a
-  // handle, not a phone/email, so it falls outside the "Show Phone
-  // Number" / "Show Public Email" toggles by design.
+  // Gated by Privacy Settings (identity.html) -- all default ON, same as
+  // the always-shown behavior these replaced.
   if (profile.contact_whatsapp && profile.show_phone_bio !== false) {
     contactIcons.push(`<a class="contact-icon" title="WhatsApp" href="https://wa.me/${escapeHtml(profile.contact_whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener">${iconHtml('whatsapp')}</a>`);
   }
-  if (profile.contact_telegram) {
+  if (profile.contact_telegram && profile.show_telegram_bio !== false) {
     contactIcons.push(`<a class="contact-icon" title="Telegram" href="https://t.me/${escapeHtml(profile.contact_telegram.replace(/^@/, ''))}" target="_blank" rel="noopener">${iconHtml('telegram')}</a>`);
   }
   if (profile.contact_email && profile.show_email_bio !== false) {
