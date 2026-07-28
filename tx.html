@@ -369,10 +369,37 @@
             }
         }
 
-        async function resolveCounterpartyName(address) {
-            if (!address) return null;
-            try { const { data, error } = await supabaseClient.rpc('resolve_wallet_owner_name', { check_address: address }); if (error) { console.error(error); return null; } return data || null; }
-            catch (err) { console.error('Failed to resolve counterparty name:', err); return null; }
+        // Formats an address per its OWNER's own preference -- 'full',
+        // 'short' (truncated), or 'hidden'. Applies equally whether the
+        // address belongs to the viewer or the counterparty: the setting
+        // always governs how that person's own info appears, everywhere.
+        function formatAddressByMode(address, mode) {
+            if (!address) return '—';
+            if (mode === 'hidden') return 'Hidden by owner';
+            if (mode === 'full') return address;
+            return truncateAddress(address);
+        }
+
+        // Falls back sensibly when the name is hidden: still respects the
+        // wallet mode instead of leaking a truncated address when the
+        // person specifically chose 'hidden'.
+        function receiptIdentityLabel(name, address, mode) {
+            if (name) return name;
+            if (mode === 'hidden') return 'Private User';
+            return truncateAddress(address);
+        }
+
+        async function resolveReceiptParty(address) {
+            if (!address) return { display_name: null, wallet_mode: 'short' };
+            try {
+                const { data, error } = await supabaseClient.rpc('resolve_receipt_party', { check_address: address });
+                if (error) { console.error(error); return { display_name: null, wallet_mode: 'short' }; }
+                const row = Array.isArray(data) ? data[0] : data;
+                return row || { display_name: null, wallet_mode: 'short' };
+            } catch (err) {
+                console.error('Failed to resolve receipt party:', err);
+                return { display_name: null, wallet_mode: 'short' };
+            }
         }
 
         async function openReceiptModal(txId) {
@@ -383,14 +410,27 @@
             const backdrop = document.getElementById('receiptBackdrop');
             const content = document.getElementById('receiptContent');
             const isSend = tx.type === 'send';
-            const selfName = currentProfile.display_name || currentProfile.username || 'You';
-            const selfAddress = currentProfile.wallet_address || '';
+
+            // Self: governed by MY OWN Privacy Settings (identity.html) --
+            // applies consistently whether I'm viewing my own receipt or
+            // someone else is (though only I can open this modal here).
+            const selfShowName = currentProfile.receipt_show_display_name !== false;
+            const selfWalletMode = currentProfile.receipt_wallet_display || 'short';
+            const selfRawName = currentProfile.display_name || currentProfile.username || 'You';
+            const selfName = receiptIdentityLabel(selfShowName ? selfRawName : null, currentProfile.wallet_address, selfWalletMode);
+            const selfAddress = formatAddressByMode(currentProfile.wallet_address, selfWalletMode);
+
+            // Counterparty: governed by THEIR OWN Privacy Settings, resolved
+            // fresh via RPC -- never assume, never reuse my own preference.
             const counterpartyAddress = tx.counterparty_address || '';
-            const counterpartyName = await resolveCounterpartyName(counterpartyAddress);
-            const senderLabel = isSend ? selfName : (counterpartyName || truncateAddress(counterpartyAddress));
-            const senderAddr = isSend ? selfAddress : counterpartyAddress;
-            const recipientLabel = isSend ? (counterpartyName || truncateAddress(counterpartyAddress)) : selfName;
-            const recipientAddr = isSend ? counterpartyAddress : selfAddress;
+            const party = await resolveReceiptParty(counterpartyAddress);
+            const counterpartyName = receiptIdentityLabel(party.display_name, counterpartyAddress, party.wallet_mode);
+            const counterpartyAddr = formatAddressByMode(counterpartyAddress, party.wallet_mode);
+
+            const senderLabel = isSend ? selfName : counterpartyName;
+            const senderAddr = isSend ? selfAddress : counterpartyAddr;
+            const recipientLabel = isSend ? counterpartyName : selfName;
+            const recipientAddr = isSend ? counterpartyAddr : selfAddress;
             const tokenLogo = getTokenLogo(tx.token);
             const noteText = tx.note || '';
             const dateStr = formatPolygonScanDate(tx.occurred_at);
