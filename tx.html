@@ -320,7 +320,7 @@
             catch (err) { console.error(err); showAuthError(err.message || String(err)); }
         }
         async function loadUserProfile() {
-            const { data, error } = await supabaseClient.from('profiles').select('username, display_name, avatar_url, tier, wallet_address, show_name_on_receipt').eq('id', currentUser.id).single();
+            const { data, error } = await supabaseClient.from('profiles').select('username, display_name, avatar_url, tier, wallet_address, receipt_show_display_name, receipt_wallet_display').eq('id', currentUser.id).single();
             if (error) { console.error('Failed to load profile:', error); return; }
             currentProfile = data;
             const label = data.display_name || data.username || currentUser.email;
