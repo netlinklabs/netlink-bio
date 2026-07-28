@@ -114,7 +114,7 @@ export default async function handler(req, res) {
 
   let profile;
   try {
-    const profiles = await supabaseGet(`profiles?username=eq.${encodeURIComponent(username)}&select=*`);
+    const profiles = await supabaseGet(`profiles_cv_public?username=eq.${encodeURIComponent(username)}&select=*`);
     if (!profiles.length) {
       res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage(username));
       return;
