@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>USDC Global Adoption &amp; Accessibility Index — Netlink Labs Research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══ RESET & BASE ═══ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #0B1629;
+  --navy-light: #132038;
+  --blue: #2563EB;
+  --blue-light: #3B82F6;
+  --blue-50: #EFF6FF;
+  --green: #059669;
+  --green-light: #10B981;
+  --green-50: #ECFDF5;
+  --gold: #D4A843;
+  --red: #EF4444;
+  --slate-50: #F8FAFC;
+  --slate-100: #F1F5F9;
+  --slate-200: #E2E8F0;
+  --slate-400: #94A3B8;
+  --slate-500: #64748B;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1E293B;
+  --slate-900: #0F172A;
+  --font-display: 'Poppins', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-body); color: var(--slate-800); background: var(--slate-50); line-height: 1.6; }
+img { max-width: 100%; height: auto; }
+a { text-decoration: none; color: inherit; }
+
+/* ═══ HEADER ═══ */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--slate-200);
+  padding: 0 24px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-logo { height: 36px; width: auto; }
+.header-brand { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: #000; }
+.header-sub { font-size: 10px; color: var(--slate-500); letter-spacing: 0.05em; }
+.header-nav { display: flex; gap: 28px; }
+.header-nav a { font-size: 13px; color: var(--slate-600); font-weight: 500; transition: color 0.2s; }
+.header-nav a:hover { color: #000; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.live-badge { display: flex; align-items: center; gap: 6px; font-size: 10px; font-family: var(--font-mono); color: var(--green); background: var(--green-50); border: 1px solid var(--green)/20; border-radius: 20px; padding: 4px 10px; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ═══ HERO ═══ */
+.hero {
+  position: relative; overflow: hidden;
+  background: #000;
+  padding: 100px 0 120px;
+}
+.hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #000 0%, #0B1629 40%, #0F2342 70%, #14B8A610 100%); }
+.hero-globe {
+  position: absolute; bottom: -40px; right: -60px; width: 500px; height: 500px;
+  opacity: 0.08; pointer-events: none;
+  animation: float 8s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+}
+.hero-dots { position: absolute; inset: 0; opacity: 0.04; }
+.hero-container { position: relative; z-index: 2; max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+.hero-label { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.hero-label span { font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-family: var(--font-display); }
+.hero h1 {
+  font-family: var(--font-display); font-weight: 800; font-size: clamp(36px, 6vw, 64px);
+  color: #fff; line-height: 1.1; max-width: 600px;
+}
+.hero h1 em { font-style: normal; color: var(--blue-light); }
+.hero p { color: rgba(255,255,255,0.7); font-size: 17px; margin-top: 20px; max-width: 480px; line-height: 1.7; }
+.hero-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green); color: #fff; font-weight: 600; font-size: 14px;
+  padding: 14px 28px; border-radius: 10px; border: none; cursor: pointer;
+  transition: all 0.2s ease; font-family: var(--font-body);
+}
+.btn-primary:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(5,150,105,0.3); }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.1); color: #fff; font-weight: 500; font-size: 14px;
+  padding: 14px 28px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+  transition: all 0.2s ease; font-family: var(--font-body);
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+/* ═══ SECTION ═══ */
+.section { max-width: 1280px; margin: 0 auto; padding: 60px 32px; }
+.section-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.section-label span { font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--green); font-family: var(--font-display); }
+.section-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(24px, 3vw, 32px); color: var(--slate-900); margin-bottom: 32px; }
+
+/* ═══ STAT CARDS ═══ */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: -40px; position: relative; z-index: 10; padding: 0 32px; max-width: 1280px; margin-left: auto; margin-right: auto; }
+.stat-card {
+  background: #fff; border-radius: 16px; padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.stat-icon.green { background: linear-gradient(135deg, #05966920, #10B98120); }
+.stat-icon.blue { background: linear-gradient(135deg, #2563EB20, #3B82F620); }
+.stat-icon.gold { background: linear-gradient(135deg, #D4A84320, #E5C15820); }
+.stat-content { flex: 1; }
+.stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--slate-500); }
+.stat-value { font-family: var(--font-display); font-weight: 800; font-size: 24px; color: var(--slate-900); margin-top: 2px; }
+.stat-sub { font-size: 11px; color: var(--slate-500); margin-top: 4px; }
+
+/* ═══ CHART CARDS ═══ */
+.charts-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
+.chart-card {
+  background: #fff; border-radius: 16px; padding: 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+}
+.chart-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--slate-900); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.chart-subtitle { font-size: 12px; color: var(--slate-500); margin-bottom: 20px; }
+.chart-container { position: relative; width: 100%; }
+
+/* ═══ SCATTER ═══ */
+.scatter-card { grid-column: 1 / -1; margin-top: 0; }
+
+/* ═══ SPOTLIGHT ═══ */
+.spotlight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; }
+.spotlight-card {
+  background: #fff; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+}
+.spotlight-header { height: 4px; }
+.spotlight-header.green { background: linear-gradient(90deg, var(--green), var(--green-light)); }
+.spotlight-header.red { background: linear-gradient(90deg, #F59E0B, var(--red)); }
+.spotlight-body { padding: 20px; }
+.spotlight-title { font-family: var(--font-display); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.spotlight-title.green { color: var(--green); }
+.spotlight-title.red { color: #D97706; }
+.spotlight-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--slate-100); }
+.spotlight-row:last-child { border-bottom: none; }
+.spotlight-rank { font-size: 11px; font-family: var(--font-mono); color: var(--slate-400); width: 18px; }
+.spotlight-flag { font-size: 20px; }
+.spotlight-info { flex: 1; }
+.spotlight-name { font-family: var(--font-display); font-weight: 600; font-size: 13px; }
+.spotlight-detail { font-size: 10px; color: var(--slate-500); margin-top: 1px; }
+.spotlight-score { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+.spotlight-score.green { color: var(--green); }
+.spotlight-score.red { color: var(--red); }
+
+/* ═══ COUNTRY EXPLORER ═══ */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--slate-200); background: #fff; color: var(--slate-600);
+  cursor: pointer; transition: all 0.2s; font-family: var(--font-body);
+}
+.filter-btn:hover { border-color: var(--green); color: var(--green); }
+.filter-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+.search-input {
+  width: 100%; max-width: 300px; padding: 10px 14px 10px 36px;
+  border: 1px solid var(--slate-200); border-radius: 10px; font-size: 13px;
+  font-family: var(--font-body); background: #fff;
+  transition: border-color 0.2s;
+}
+.search-input:focus { outline: none; border-color: var(--green); }
+.search-wrapper { position: relative; max-width: 300px; margin-bottom: 16px; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--slate-400); }
+.sort-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.sort-bar span { font-size: 11px; color: var(--slate-500); margin-right: 4px; }
+.sort-btn {
+  padding: 4px 10px; border-radius: 6px; font-size: 11px;
+  background: none; border: none; cursor: pointer; color: var(--slate-500);
+  transition: all 0.2s; font-family: var(--font-body);
+}
+.sort-btn:hover { background: var(--slate-100); }
+.sort-btn.active { background: rgba(5,150,105,0.1); color: var(--green); font-weight: 600; }
+
+/* ═══ COUNTRY CARDS ═══ */
+.country-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.country-card {
+  background: #fff; border-radius: 12px; overflow: hidden; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;
+}
+.country-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); }
+.country-card-bar { height: 3px; }
+.country-card-body { padding: 16px; }
+.country-card-top { display: flex; align-items: center; gap: 10px; }
+.country-card-flag { font-size: 22px; }
+.country-card-name { font-family: var(--font-display); font-weight: 600; font-size: 13px; color: var(--slate-900); }
+.country-card-cont { font-size: 10px; color: var(--slate-500); }
+.country-card-right { margin-left: auto; flex-shrink: 0; }
+.country-score-ring {
+  width: 42px; height: 42px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.country-score-ring svg { transform: rotate(-90deg); }
+.country-score-ring span {
+  position: absolute; font-size: 9px; font-weight: 700; font-family: var(--font-mono);
+}
+.country-card-badges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.badge {
+  font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 4px;
+  border: 1px solid;
+}
+.badge-green { color: var(--green); border-color: rgba(5,150,105,0.2); background: rgba(5,150,105,0.05); }
+.badge-blue { color: var(--blue); border-color: rgba(37,99,235,0.2); background: rgba(37,99,235,0.05); }
+.badge-red { color: var(--red); border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.05); }
+.badge-neutral { color: var(--slate-500); border-color: var(--slate-200); background: var(--slate-50); }
+.country-card-meta { font-size: 10px; color: var(--slate-500); font-family: var(--font-mono); }
+
+/* ═══ REGIONAL ═══ */
+.regional-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.regional-card {
+  background: #fff; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+}
+.regional-bar { height: 4px; background: linear-gradient(90deg, var(--green), var(--blue), var(--gold)); }
+.regional-body { padding: 20px; }
+.regional-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.regional-name { font-family: var(--font-display); font-weight: 700; font-size: 13px; }
+.regional-growth { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--green); background: var(--green-50); padding: 3px 10px; border-radius: 6px; }
+.regional-meta { font-size: 11px; color: var(--slate-500); margin-bottom: 12px; }
+.regional-meta span { font-family: var(--font-mono); }
+.regional-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.regional-tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(5,150,105,0.08); color: var(--green); border: 1px solid rgba(5,150,105,0.15); }
+
+/* ═══ METHODOLOGY ═══ */
+.methodo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+.methodo-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--slate-900); margin-bottom: 12px; }
+.methodo-text { font-size: 13px; color: var(--slate-600); line-height: 1.7; margin-bottom: 16px; }
+.factor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.factor-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.factor-label { flex: 1; font-size: 13px; }
+.factor-weight { font-size: 11px; font-weight: 700; font-family: var(--font-mono); }
+.source-list { list-style: none; }
+.source-list li { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; font-size: 13px; color: var(--slate-600); }
+.source-list li::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); margin-top: 7px; flex-shrink: 0; }
+.source-list a { color: var(--blue); text-decoration: underline; }
+.source-list a:hover { color: var(--blue-light); }
+.score-ranges { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 24px; }
+.score-range { display: flex; align-items: center; gap: 8px; background: var(--slate-100); border-radius: 10px; padding: 12px; }
+.score-range-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.score-range-val { font-size: 11px; font-weight: 700; font-family: var(--font-mono); }
+.score-range-label { font-size: 10px; color: var(--slate-500); }
+
+/* ═══ DETAIL PANEL ═══ */
+.detail-panel {
+  background: #fff; border-radius: 16px; border: 1px solid var(--slate-200);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); padding: 28px; max-width: 800px;
+  margin-bottom: 24px; animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.detail-country { display: flex; align-items: center; gap: 12px; }
+.detail-flag { font-size: 36px; }
+.detail-name { font-family: var(--font-display); font-weight: 700; font-size: 22px; }
+.detail-meta { font-size: 13px; color: var(--slate-500); }
+.detail-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--slate-400); padding: 4px 8px; border-radius: 8px; }
+.detail-close:hover { background: var(--slate-100); }
+.detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.detail-stat { background: var(--slate-50); border-radius: 10px; padding: 14px; }
+.detail-stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-500); }
+.detail-stat-val { font-size: 18px; font-weight: 700; font-family: var(--font-mono); margin-top: 4px; }
+.detail-stat-sub { font-size: 10px; color: var(--slate-500); margin-top: 2px; }
+.detail-rows { display: flex; flex-direction: column; gap: 10px; }
+.detail-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+.detail-row-icon { color: var(--green); margin-top: 2px; }
+.detail-row strong { color: var(--slate-800); }
+.detail-row span { color: var(--slate-500); }
+
+/* ═══ DISCLAIMER ═══ */
+.disclaimer {
+  background: var(--slate-100); border-radius: 12px; padding: 20px 24px;
+  margin-top: 40px; border-left: 3px solid var(--slate-400);
+}
+.disclaimer p { font-size: 12px; color: var(--slate-600); line-height: 1.7; }
+.disclaimer strong { color: var(--slate-800); }
+
+/* ═══ FOOTER ═══ */
+.footer { border-top: 1px solid var(--slate-200); padding: 32px; margin-top: 60px; }
+.footer-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: flex-start; gap: 20px; text-align: left; }
+.footer-brand { display: flex; align-items: center; gap: 10px; }
+.footer-logo { height: 24px; }
+.footer-name { font-family: var(--font-display); font-weight: 700; font-size: 14px; color: #000; }
+.footer-tag { font-size: 10px; color: var(--slate-500); }
+.footer-text { font-size: 11px; color: var(--slate-500); max-width: 500px; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 1024px) {
+  .charts-grid { grid-template-columns: 1fr; }
+  .methodo-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+@media (max-width: 768px) {
+  .header-nav { display: none; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 16px; }
+  .stat-card { padding: 16px; }
+  .stat-value { font-size: 20px; }
+  .section { padding: 40px 16px; }
+  .hero { padding: 60px 0 80px; }
+  .hero-container { padding: 0 16px; }
+  .hero h1 { font-size: 32px; }
+  .hero p { font-size: 15px; }
+  .hero-globe { width: 300px; height: 300px; bottom: -20px; right: -40px; }
+  .country-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .spotlight-grid { grid-template-columns: 1fr; }
+  .score-ranges { grid-template-columns: repeat(3, 1fr); }
+  .detail-grid { grid-template-columns: repeat(2, 1fr); }
+  .regional-grid { grid-template-columns: 1fr; }
+  .footer-inner { flex-direction: column; text-align: left; }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .country-grid { grid-template-columns: 1fr; }
+  .score-ranges { grid-template-columns: repeat(2, 1fr); }
+  .detail-grid { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; }
+}
+
+/* ═══ WAVE ═══ */
+.wave-sep { width: 100%; display: block; margin-top: -1px; }
+
+/* ═══ PDF HINT ═══ */
+.pdf-badge {
+  position: fixed; bottom: 20px; right: 20px; z-index: 999;
+  background: var(--green); color: #fff; padding: 10px 18px; border-radius: 10px;
+  font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  box-shadow: 0 4px 16px rgba(5,150,105,0.3); transition: all 0.2s; font-family: var(--font-body);
+  border: none;
+}
+.pdf-badge:hover { background: #047857; transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <div class="header-left">
+    <img src="https://raw.githubusercontent.com/netlinklabs/assets/refs/heads/main/netlinklabs-logo.png" alt="Netlink Labs" class="header-logo" />
+    <div>
+      <div class="header-brand">Netlink Labs</div>
+      <div class="header-sub">Research Division</div>
+    </div>
+  </div>
+  <nav class="header-nav">
+    <a href="#overview">Overview</a>
+    <a href="#markets">Markets</a>
+    <a href="#regulation">Regulation</a>
+    <a href="#methodology">Methodology</a>
+  </nav>
+  <div class="header-right">
+    <div class="live-badge"><span class="live-dot"></span> Live Data · Jul 2026</div>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="overview">
+  <div class="hero-bg"></div>
+  <!-- Globe SVG -->
+  <svg class="hero-globe" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="250" cy="250" r="240" fill="none" stroke="#14B8A6" stroke-width="0.5" />
+    <ellipse cx="250" cy="250" rx="240" ry="80" fill="none" stroke="#14B8A6" stroke-width="0.5" />
+    <ellipse cx="250" cy="250" rx="240" ry="80" fill="none" stroke="#14B8A6" stroke-width="0.5" transform="rotate(30 250 250)" />
+    <ellipse cx="250" cy="250" rx="240" ry="80" fill="none" stroke="#14B8A6" stroke-width="0.5" transform="rotate(-30 250 250)" />
+    <ellipse cx="250" cy="250" rx="240" ry="80" fill="none" stroke="#14B8A6" stroke-width="0.5" transform="rotate(60 250 250)" />
+    <ellipse cx="250" cy="250" rx="240" ry="80" fill="none" stroke="#14B8A6" stroke-width="0.5" transform="rotate(-60 250 250)" />
+    <ellipse cx="250" cy="250" rx="240" ry="80" fill="none" stroke="#14B8A6" stroke-width="0.5" transform="rotate(90 250 250)" />
+  </svg>
+  <!-- Dot pattern -->
+  <svg class="hero-dots" width="100%" height="100%"><defs><pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="#fff" /></pattern></defs><rect width="100%" height="100%" fill="url(#dots)" /></svg>
+  <div class="hero-container">
+    <div class="hero-label"><span>Global Stablecoin Research</span></div>
+    <h1>USDC Adoption<br /><em>&amp; Accessibility</em><br />Index</h1>
+    <p>185+ countries. 9.9% global adoption. One regulated stablecoin powering the future of payments across every continent.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('markets').scrollIntoView({behavior:'smooth'})">Explore the Data ↗</button>
+      <button class="btn-secondary" onclick="window.print()">📄 Download Report as PDF</button>
+    </div>
+  </div>
+</section>
+
+<!-- Wave separator -->
+<svg class="wave-sep" viewBox="0 0 1440 80" preserveAspectRatio="none">
+  <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z" fill="#F8FAFC" />
+</svg>
+
+<!-- ═══ STATS ═══ -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon green">🌍</div>
+    <div class="stat-content">
+      <div class="stat-label">Countries Covered</div>
+      <div class="stat-value">50</div>
+      <div class="stat-sub">185+ with USDC access</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue">👥</div>
+    <div class="stat-content">
+      <div class="stat-label">Crypto Owners</div>
+      <div class="stat-value">640.1M</div>
+      <div class="stat-sub">Across tracked countries</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon gold">💲</div>
+    <div class="stat-content">
+      <div class="stat-label">USDC Market Cap</div>
+      <div class="stat-value">$73.7B</div>
+      <div class="stat-sub">2nd largest stablecoin</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">📈</div>
+    <div class="stat-content">
+      <div class="stat-label">Avg Accessibility</div>
+      <div class="stat-value">7.3/10</div>
+      <div class="stat-sub">42 countries legal</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CHARTS ═══ -->
+<section class="section" id="regulation">
+  <div class="section-label"><span>By Region</span></div>
+  <h2 class="section-title">Regional Crypto Adoption Growth (YoY)</h2>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">📊 Regional Crypto Adoption Growth (YoY)</div>
+      <div class="chart-subtitle">APAC leads with 69% growth — the engine of global stablecoin expansion</div>
+      <div class="chart-container" style="height:280px"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🛡️ Regulation Status</div>
+      <div class="chart-subtitle">Legal framework distribution across tracked markets</div>
+      <div class="chart-container" style="height:200px"><canvas id="pieChart"></canvas></div>
+      <div id="pieLegend" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;font-size:11px;color:var(--slate-500)"></div>
+    </div>
+    <div class="chart-card scatter-card">
+      <div class="chart-title">📡 Ownership vs. Accessibility Matrix</div>
+      <div class="chart-subtitle">Top 30 countries — bubble size represents retail trading volume (USD billions)</div>
+      <div class="chart-container" style="height:320px"><canvas id="scatterChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Spotlight -->
+  <div class="spotlight-grid">
+    <div class="spotlight-card">
+      <div class="spotlight-header green"></div>
+      <div class="spotlight-body">
+        <div class="spotlight-title green">▲ Top 5 Markets</div>
+        <div id="top5List"></div>
+      </div>
+    </div>
+    <div class="spotlight-card">
+      <div class="spotlight-header red"></div>
+      <div class="spotlight-body">
+        <div class="spotlight-title red">▼ Restricted Markets</div>
+        <div id="bottom5List"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ COUNTRY EXPLORER ═══ -->
+<section class="section" id="markets">
+  <div class="section-label"><span>Deep Dive</span></div>
+  <h2 class="section-title">Country Explorer</h2>
+  <p style="font-size:13px;color:var(--slate-500);margin-top:-20px;margin-bottom:24px;max-width:480px">Click any country for detailed regulatory, accessibility, and market insights.</p>
+
+  <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="countrySearch" placeholder="Search countries..." />
+    </div>
+    <div class="filter-bar" id="continentFilters"></div>
+  </div>
+  <div class="sort-bar">
+    <span>Sort:</span>
+    <button class="sort-btn active" data-sort="score">Accessibility</button>
+    <button class="sort-btn" data-sort="adoption">Adoption</button>
+    <button class="sort-btn" data-sort="population">Population</button>
+    <button class="sort-btn" data-sort="volume">Volume</button>
+    <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--slate-500)" id="countDisplay"></span>
+  </div>
+
+  <div id="detailPanel"></div>
+  <div class="country-grid" id="countryGrid"></div>
+</section>
+
+<!-- ═══ REGIONAL ═══ -->
+<section class="section">
+  <div class="section-label"><span>By Region</span></div>
+  <h2 class="section-title">Regional Performance</h2>
+  <div class="regional-grid" id="regionalGrid"></div>
+</section>
+
+<!-- ═══ METHODOLOGY ═══ -->
+<section class="section" id="methodology">
+  <div class="section-label"><span>How We Score</span></div>
+  <h2 class="section-title">Methodology</h2>
+  <div class="chart-card">
+    <div class="methodo-grid">
+      <div>
+        <div class="methodo-title">USDC Accessibility Score (1–10)</div>
+        <p class="methodo-text">Composite score based on five weighted factors that determine how easily a user can access and use USDC in each country.</p>
+        <div class="factor-row"><span class="factor-dot" style="background:#059669"></span><span class="factor-label">Regulatory Clarity</span><span class="factor-weight" style="color:#059669">25%</span></div>
+        <div class="factor-row"><span class="factor-dot" style="background:#2563EB"></span><span class="factor-label">USDC Availability</span><span class="factor-weight" style="color:#2563EB">25%</span></div>
+        <div class="factor-row"><span class="factor-dot" style="background:#D4A843"></span><span class="factor-label">On/Off-Ramp Infrastructure</span><span class="factor-weight" style="color:#D4A843">25%</span></div>
+        <div class="factor-row"><span class="factor-dot" style="background:#F59E0B"></span><span class="factor-label">Crypto Adoption Rate</span><span class="factor-weight" style="color:#F59E0B">15%</span></div>
+        <div class="factor-row"><span class="factor-dot" style="background:#64748B"></span><span class="factor-label">Financial Infrastructure</span><span class="factor-weight" style="color:#64748B">10%</span></div>
+      </div>
+      <div>
+        <div class="methodo-title">Data Sources</div>
+        <ul class="source-list">
+          <li><a href="https://www.chainalysis.com/blog/2025-global-crypto-adoption-index/" target="_blank" rel="noopener">Chainalysis Global Crypto Adoption Index 2025</a></li>
+          <li><a href="https://www.trmlabs.com/report" target="_blank" rel="noopener">TRM Labs Q1 2026 Global Crypto Adoption Index</a></li>
+          <li><a href="https://datareportal.com/reports" target="_blank" rel="noopener">Datareportal / Triple-A Crypto Ownership 2025</a></li>
+          <li><a href="https://www.atlanticcouncil.org/cbdctracker/" target="_blank" rel="noopener">Atlantic Council Crypto Regulation Tracker</a></li>
+          <li><a href="https://www.bvnk.com/blog/global-stablecoin-regulation" target="_blank" rel="noopener">BVNK Global Stablecoin Regulations 2026</a></li>
+          <li><a href="https://www.circle.com/en/usdc" target="_blank" rel="noopener">Circle USDC Documentation</a></li>
+          <li><a href="https://www.worldometers.info/world-population/" target="_blank" rel="noopener">Worldometers Population 2026</a></li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--slate-200)">
+      <div class="methodo-title">Score Ranges</div>
+      <div class="score-ranges">
+        <div class="score-range"><span class="score-range-dot" style="background:#059669"></span><div><div class="score-range-val" style="color:#059669">9–10</div><div class="score-range-label">Excellent</div></div></div>
+        <div class="score-range"><span class="score-range-dot" style="background:#2563EB"></span><div><div class="score-range-val" style="color:#2563EB">7–8.9</div><div class="score-range-label">Good</div></div></div>
+        <div class="score-range"><span class="score-range-dot" style="background:#D4A843"></span><div><div class="score-range-val" style="color:#D4A843">5–6.9</div><div class="score-range-label">Moderate</div></div></div>
+        <div class="score-range"><span class="score-range-dot" style="background:#F59E0B"></span><div><div class="score-range-val" style="color:#F59E0B">3–4.9</div><div class="score-range-label">Limited</div></div></div>
+        <div class="score-range"><span class="score-range-dot" style="background:#EF4444"></span><div><div class="score-range-val" style="color:#EF4444">1–2.9</div><div class="score-range-label">Blocked</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    <p><strong>Disclaimer:</strong> This research was conducted with the assistance of AI and published for the Netlink Labs internal team to support the development of the <strong>Netlink Pay</strong> platform. The accessibility scores (1–10) are estimates based on available data and do not constitute official assessments or investment recommendations. Data as of July 2026.</p>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="https://raw.githubusercontent.com/netlinklabs/assets/refs/heads/main/netlinklabs-logo.png" alt="Netlink Labs" class="footer-logo" />
+      <div>
+        <div class="footer-name">Netlink Labs</div>
+        <div class="footer-tag">USDC Global Adoption Research</div>
+      </div>
+    </div>
+    <p class="footer-text">Data as of July 2026. Research compiled from multiple authoritative sources. Scores are estimates based on available data.</p>
+  </div>
+</footer>
+
+<script>
+// ═══ DATA ═══
+const countries = [
+  { id:1, name:"United States", continent:"North America", population:349035494, adoptionIndex:2, ownershipPct:12.5, ownersEst:43629437, volume:212, regStatus:"Legal", regFramework:"GENIUS Act (2025)", usdcAccess:"Full", ramp:"Excellent", score:9.5, notes:"GENIUS Act signed July 2025. USDC fully compliant. Largest crypto market globally.", flag:"🇺🇸" },
+  { id:2, name:"India", continent:"Asia Pacific", population:1476625576, adoptionIndex:1, ownershipPct:10.7, ownersEst:158000000, volume:46, regStatus:"Legal", regFramework:"30% tax, 1% TDS; no comprehensive framework", usdcAccess:"Full", ramp:"Good", score:8.5, notes:"Highest crypto adoption globally. Large population drives volume. UPI integration emerging.", flag:"🇮🇳" },
+  { id:3, name:"Brazil", continent:"Latin America", population:213562666, adoptionIndex:5, ownershipPct:20.6, ownersEst:43994000, volume:28, regStatus:"Legal", regFramework:"Comprehensive crypto law (2023); stablecoin regulation developing", usdcAccess:"Full", ramp:"Excellent", score:9.0, notes:"PIX integration for on/off-ramp. High stablecoin usage for remittances.", flag:"🇧🇷" },
+  { id:4, name:"Singapore", continent:"Asia Pacific", population:5640000, adoptionIndex:17, ownershipPct:13.9, ownersEst:784000, volume:15, regStatus:"Legal", regFramework:"MAS Stablecoin Framework (2023)", usdcAccess:"Full", ramp:"Excellent", score:9.5, notes:"World-class regulatory framework. USDC fully accessible. Major crypto hub in Asia.", flag:"🇸🇬" },
+  { id:5, name:"United Arab Emirates", continent:"MENA", population:9516000, adoptionIndex:25, ownershipPct:16.9, ownersEst:1608000, volume:18, regStatus:"Legal", regFramework:"CBUAE Payment Token Services Regulation (2024)", usdcAccess:"Full", ramp:"Excellent", score:9.5, notes:"Highest crypto ownership rate globally (31%). VARA in Dubai. Leading crypto hub.", flag:"🇦🇪" },
+  { id:6, name:"Turkey", continent:"MENA", population:87926082, adoptionIndex:14, ownershipPct:25.6, ownersEst:22509000, volume:40, regStatus:"Legal", regFramework:"Crypto regulation framework (2023); stablecoin rules pending", usdcAccess:"Full", ramp:"Good", score:8.5, notes:"Only major market growing 7% YoY amid global contraction. High inflation drives stablecoin demand.", flag:"🇹🇷" },
+  { id:7, name:"United Kingdom", continent:"Europe", population:69931528, adoptionIndex:11, ownershipPct:9.8, ownersEst:6853000, volume:32, regStatus:"Legal", regFramework:"FCA stablecoin authorization (2026)", usdcAccess:"Full", ramp:"Excellent", score:9.0, notes:"FSMA 2023 recognized stablecoins. FCA framework incoming 2026. Major financial hub.", flag:"🇬🇧" },
+  { id:8, name:"Nigeria", continent:"Sub-Saharan Africa", population:242431832, adoptionIndex:6, ownershipPct:19.1, ownersEst:46304000, volume:22, regStatus:"Legal", regFramework:"CSEC guidelines (2021); eNaira CBDC launched", usdcAccess:"Full", ramp:"Moderate", score:7.5, notes:"P2P dominant. Stablecoins key for remittances and forex. Large unbanked population.", flag:"🇳🇬" },
+  { id:9, name:"Pakistan", continent:"Asia Pacific", population:259299791, adoptionIndex:3, ownershipPct:8.5, ownersEst:22040000, volume:25, regStatus:"Partial Ban", regFramework:"SBP discourages; no comprehensive framework", usdcAccess:"Full", ramp:"Limited", score:6.5, notes:"3rd highest adoption globally. P2P dominant. Regulatory uncertainty but high grassroots demand.", flag:"🇵🇰" },
+  { id:10, name:"Vietnam", continent:"Asia Pacific", population:102177431, adoptionIndex:4, ownershipPct:13.4, ownersEst:13692000, volume:20, regStatus:"Legal", regFramework:"No comprehensive framework; sandbox under development", usdcAccess:"Full", ramp:"Moderate", score:8.0, notes:"4th highest global adoption. Strong gaming/metaverse use cases. Young tech-savvy population.", flag:"🇻🇳" },
+  { id:11, name:"Argentina", continent:"Latin America", population:46003734, adoptionIndex:20, ownershipPct:18.8, ownersEst:8649000, volume:18, regStatus:"Legal", regFramework:"VASP registry mandatory (2025); CNV Resolution 994", usdcAccess:"Full", ramp:"Good", score:8.5, notes:"High inflation drives stablecoin adoption. USDC widely used for savings. Strong P2P market.", flag:"🇦🇷" },
+  { id:12, name:"Indonesia", continent:"Asia Pacific", population:287886782, adoptionIndex:7, ownershipPct:13.9, ownersEst:40016000, volume:22, regStatus:"Legal", regFramework:"Bappebti regulation; crypto as commodity", usdcAccess:"Full", ramp:"Good", score:8.0, notes:"7th highest global adoption. Large population. Bappebti oversight.", flag:"🇮🇩" },
+  { id:13, name:"South Korea", continent:"Asia Pacific", population:51600388, adoptionIndex:15, ownershipPct:13.5, ownersEst:6966000, volume:69, regStatus:"Legal", regFramework:"VASP registration required; new stablecoin bill under review", usdcAccess:"Full", ramp:"Excellent", score:8.5, notes:"2nd highest retail volume ($69B). Strong speculative market. Upbit, Bithumb domestic exchanges.", flag:"🇰🇷" },
+  { id:14, name:"Philippines", continent:"Asia Pacific", population:117724471, adoptionIndex:9, ownershipPct:12.6, ownersEst:14833000, volume:12, regStatus:"Legal", regFramework:"Bangko Sentral VASP licensing", usdcAccess:"Full", ramp:"Good", score:8.0, notes:"9th highest adoption. Remittance-driven crypto use. GCash integration growing.", flag:"🇵🇭" },
+  { id:15, name:"Japan", continent:"Asia Pacific", population:122427731, adoptionIndex:19, ownershipPct:5.0, ownersEst:6121000, volume:25, regStatus:"Legal", regFramework:"Payment Services Act (2023) stablecoin rules", usdcAccess:"Full", ramp:"Good", score:7.5, notes:"First country with dedicated stablecoin law. USDC issued by regulated entities.", flag:"🇯🇵" },
+  { id:16, name:"Germany", continent:"Europe", population:83644258, adoptionIndex:22, ownershipPct:8.9, ownersEst:7444000, volume:18, regStatus:"Legal", regFramework:"MiCA (EU, 2024)", usdcAccess:"Full", ramp:"Excellent", score:8.5, notes:"MiCA framework fully applicable. Strong institutional presence. BaFin oversight.", flag:"🇩🇪" },
+  { id:17, name:"France", continent:"Europe", population:66746401, adoptionIndex:28, ownershipPct:7.2, ownersEst:4806000, volume:14, regStatus:"Legal", regFramework:"MiCA (EU, 2024)", usdcAccess:"Full", ramp:"Excellent", score:8.5, notes:"MiCA framework. AMF/DGA oversight. PSAN registration required.", flag:"🇫🇷" },
+  { id:18, name:"Canada", continent:"North America", population:40467728, adoptionIndex:26, ownershipPct:10.8, ownersEst:4371000, volume:15, regStatus:"Legal", regFramework:"CSA/OSC regulation; MSB registration", usdcAccess:"Full", ramp:"Excellent", score:9.0, notes:"Strong regulatory framework. Wealthsimple Crypto. Growing institutional adoption.", flag:"🇨🇦" },
+  { id:19, name:"Australia", continent:"Asia Pacific", population:27227096, adoptionIndex:30, ownershipPct:14.2, ownersEst:3866000, volume:10, regStatus:"Legal", regFramework:"AUSTRAC registration; new licensing framework 2025", usdcAccess:"Full", ramp:"Excellent", score:8.5, notes:"New crypto asset service provider regime. AUSTRAC oversight.", flag:"🇦🇺" },
+  { id:20, name:"Thailand", continent:"Asia Pacific", population:71559614, adoptionIndex:17, ownershipPct:14.7, ownersEst:10519000, volume:14, regStatus:"Legal", regFramework:"SEC Thailand; comprehensive crypto regulation", usdcAccess:"Full", ramp:"Good", score:8.0, notes:"SEC-regulated. Growing retail interest. Tourism-driven cross-border use.", flag:"🇹🇭" },
+  { id:21, name:"Malaysia", continent:"Asia Pacific", population:36385115, adoptionIndex:32, ownershipPct:14.3, ownersEst:5203000, volume:8, regStatus:"Legal", regFramework:"Securities Commission Malaysia; DVA framework", usdcAccess:"Full", ramp:"Good", score:8.0, notes:"Licensed exchanges (Luno, SINEGY). Shariah-compliant crypto explored.", flag:"🇲🇾" },
+  { id:22, name:"South Africa", continent:"Sub-Saharan Africa", population:65453084, adoptionIndex:35, ownershipPct:19.6, ownersEst:12829000, volume:8, regStatus:"Legal", regFramework:"FSCA FAIS licensing; SARB framework", usdcAccess:"Full", ramp:"Moderate", score:7.5, notes:"Highest adoption in Africa. FSCA licensed. Mining hub.", flag:"🇿🇦" },
+  { id:23, name:"Mexico", continent:"Latin America", population:132997658, adoptionIndex:38, ownershipPct:9.2, ownersEst:12236000, volume:10, regStatus:"Legal", regFramework:"Fintech Law (2018); CNBV oversight", usdcAccess:"Full", ramp:"Good", score:7.5, notes:"SPEI integration for on/off-ramp. Large unbanked population. Remittance-driven use.", flag:"🇲🇽" },
+  { id:24, name:"Colombia", continent:"Latin America", population:53936226, adoptionIndex:40, ownershipPct:9.2, ownersEst:4962000, volume:6, regStatus:"Legal", regFramework:"Superfinanciera guidelines; sandbox", usdcAccess:"Full", ramp:"Moderate", score:7.0, notes:"Growing adoption. P2P dominant. Remittance corridor with US.", flag:"🇨🇴" },
+  { id:25, name:"Chile", continent:"Latin America", population:19945850, adoptionIndex:42, ownershipPct:13.4, ownersEst:2673000, volume:5, regStatus:"Legal", regFramework:"CMF regulation; virtual asset service provider rules", usdcAccess:"Full", ramp:"Good", score:7.5, notes:"CMF-regulated exchanges. Regional fintech hub.", flag:"🇨🇱" },
+  { id:26, name:"Venezuela", continent:"Latin America", population:28633711, adoptionIndex:18, ownershipPct:12.0, ownersEst:3436000, volume:17.9, regStatus:"Legal", regFramework:"No clear framework; Petro CBDC", usdcAccess:"Full", ramp:"Limited", score:7.0, notes:"Stablecoins dominate (90% Binance P2P). Hyperinflation driver. Shadow dollar system.", flag:"🇻🇪" },
+  { id:27, name:"Russia", continent:"Europe", population:143394458, adoptionIndex:10, ownershipPct:5.0, ownersEst:7170000, volume:48, regStatus:"Legal", regFramework:"Digital Financial Assets Law; sanctions impact", usdcAccess:"Limited", ramp:"Limited", score:6.0, notes:"3rd highest volume ($48B). Sanctions drive crypto use. Limited USD stablecoin access.", flag:"🇷🇺" },
+  { id:28, name:"Ukraine", continent:"Europe", population:39535849, adoptionIndex:8, ownershipPct:11.5, ownersEst:4547000, volume:12, regStatus:"Legal", regFramework:"Virtual Assets Law (2022); war-time framework", usdcAccess:"Full", ramp:"Good", score:7.5, notes:"8th highest adoption. War-driven crypto use. Government embraced crypto for donations.", flag:"🇺🇦" },
+  { id:29, name:"Netherlands", continent:"Europe", population:18448775, adoptionIndex:33, ownershipPct:17.8, ownersEst:3284000, volume:8, regStatus:"Legal", regFramework:"MiCA (EU, 2024); DNB oversight", usdcAccess:"Full", ramp:"Excellent", score:8.5, notes:"Highest ownership in EU. MiCA framework. Strong fintech ecosystem.", flag:"🇳🇱" },
+  { id:30, name:"Switzerland", continent:"Europe", population:8796000, adoptionIndex:48, ownershipPct:15.1, ownersEst:1328000, volume:6, regStatus:"Legal", regFramework:"FINMA; DLT Act (2021)", usdcAccess:"Full", ramp:"Excellent", score:9.0, notes:"Crypto Valley in Zug. FINMA-regulated. Most crypto-friendly in Europe.", flag:"🇨🇭" },
+  { id:31, name:"Portugal", continent:"Europe", population:10200000, adoptionIndex:44, ownershipPct:16.3, ownersEst:1663000, volume:5, regStatus:"Legal", regFramework:"MiCA (EU, 2024)", usdcAccess:"Full", ramp:"Good", score:8.0, notes:"Tax-free crypto gains (until 2023). Growing crypto hub.", flag:"🇵🇹" },
+  { id:32, name:"Hong Kong", continent:"Asia Pacific", population:7490000, adoptionIndex:12, ownershipPct:8.0, ownersEst:599200, volume:15, regStatus:"Legal", regFramework:"SFC VASP licensing; stablecoin sandbox", usdcAccess:"Full", ramp:"Good", score:8.0, notes:"SFC-regulated. Growing stablecoin hub. Cross-border payment corridor.", flag:"🇭🇰" },
+  { id:33, name:"Saudi Arabia", continent:"MENA", population:35165787, adoptionIndex:42, ownershipPct:7.0, ownersEst:2462000, volume:6, regStatus:"Legal", regFramework:"SAMA framework; developing stablecoin rules", usdcAccess:"Full", ramp:"Good", score:7.0, notes:"Vision 2030 digital economy. SAMA oversight.", flag:"🇸🇦" },
+  { id:34, name:"Egypt", continent:"MENA", population:120101175, adoptionIndex:50, ownershipPct:5.1, ownersEst:6125000, volume:5, regStatus:"Legal", regFramework:"CBE guidelines; evolving framework", usdcAccess:"Full", ramp:"Limited", score:6.5, notes:"Large population. Currency devaluation drives crypto interest.", flag:"🇪🇬" },
+  { id:35, name:"Kenya", continent:"Sub-Saharan Africa", population:58636412, adoptionIndex:36, ownershipPct:9.7, ownersEst:5688000, volume:4, regStatus:"Legal", regFramework:"CBK draft framework; no formal regulation", usdcAccess:"Full", ramp:"Moderate", score:7.0, notes:"Mobile money pioneer (M-Pesa). M-Pesa integration explored.", flag:"🇰🇪" },
+  { id:36, name:"Ghana", continent:"Sub-Saharan Africa", population:35697557, adoptionIndex:43, ownershipPct:8.9, ownersEst:3177000, volume:3, regStatus:"Legal", regFramework:"SEC Ghana; sandbox launched", usdcAccess:"Full", ramp:"Limited", score:6.5, notes:"Growing crypto hub in West Africa. Mobile-first adoption.", flag:"🇬🇭" },
+  { id:37, name:"Poland", continent:"Europe", population:37843188, adoptionIndex:27, ownershipPct:13.1, ownersEst:4957000, volume:7, regStatus:"Legal", regFramework:"MiCA (EU, 2024)", usdcAccess:"Full", ramp:"Excellent", score:8.0, notes:"MiCA framework. Strong gaming blockchain sector.", flag:"🇵🇱" },
+  { id:38, name:"Spain", continent:"Europe", population:47850793, adoptionIndex:34, ownershipPct:8.0, ownersEst:3828000, volume:6, regStatus:"Legal", regFramework:"MiCA (EU, 2024); CNMV oversight", usdcAccess:"Full", ramp:"Excellent", score:8.0, notes:"MiCA framework. Growing crypto adoption.", flag:"🇪🇸" },
+  { id:39, name:"Italy", continent:"Europe", population:58926166, adoptionIndex:37, ownershipPct:5.4, ownersEst:3182000, volume:8, regStatus:"Legal", regFramework:"MiCA (EU, 2024)", usdcAccess:"Full", ramp:"Excellent", score:8.0, notes:"MiCA framework. CONSOB oversight.", flag:"🇮🇹" },
+  { id:40, name:"Sweden", continent:"Europe", population:10500000, adoptionIndex:38, ownershipPct:9.4, ownersEst:987000, volume:4, regStatus:"Legal", regFramework:"MiCA (EU, 2024); Finansinspektionen", usdcAccess:"Full", ramp:"Excellent", score:8.0, notes:"MiCA framework. e-krona CBDC explored alongside stablecoins.", flag:"🇸🇪" },
+  { id:41, name:"Norway", continent:"Europe", population:5500000, adoptionIndex:40, ownershipPct:15.7, ownersEst:864000, volume:3, regStatus:"Legal", regFramework:"MiCA (EU, 2024)", usdcAccess:"Full", ramp:"Excellent", score:8.5, notes:"High ownership rate. MiCA framework. Wealthy population.", flag:"🇳🇴" },
+  { id:42, name:"Israel", continent:"MENA", population:9500000, adoptionIndex:35, ownershipPct:6.8, ownersEst:646000, volume:5, regStatus:"Legal", regFramework:"ISA/VAT framework; developing stablecoin rules", usdcAccess:"Full", ramp:"Good", score:7.5, notes:"Strong tech ecosystem. Crypto startups hub.", flag:"🇮🇱" },
+  { id:43, name:"Iran", continent:"MENA", population:93168497, adoptionIndex:60, ownershipPct:4.5, ownersEst:4193000, volume:3, regStatus:"Banned", regFramework:"Central bank ban; sanctions restrict access", usdcAccess:"Restricted", ramp:"Restricted", score:3.0, notes:"OFAC sanctioned. Crypto volumes declined 59%. USDC officially restricted.", flag:"🇮🇷" },
+  { id:44, name:"China", continent:"Asia Pacific", population:1412914089, adoptionIndex:65, ownershipPct:3.7, ownersEst:52278000, volume:8, regStatus:"Banned", regFramework:"Complete ban on crypto trading and mining (2021)", usdcAccess:"Banned", ramp:"Blocked", score:2.0, notes:"Largest population but banned crypto. e-CNY CBDC alternative.", flag:"🇨🇳" },
+  { id:45, name:"Bangladesh", continent:"Asia Pacific", population:177818044, adoptionIndex:13, ownershipPct:7.0, ownersEst:12447000, volume:8, regStatus:"Banned", regFramework:"Bangladesh Bank ban; punishable by imprisonment", usdcAccess:"Restricted", ramp:"Blocked", score:4.0, notes:"High adoption despite ban. P2P dominant. Enforcement challenges.", flag:"🇧🇩" },
+  { id:46, name:"Ethiopia", continent:"Sub-Saharan Africa", population:138902185, adoptionIndex:12, ownershipPct:6.5, ownersEst:9029000, volume:5, regStatus:"Undecided", regFramework:"No formal framework; central bank cautious", usdcAccess:"Full", ramp:"Limited", score:5.5, notes:"12th highest adoption. Large unbanked population. Regulatory uncertainty.", flag:"🇪🇹" },
+  { id:47, name:"Yemen", continent:"MENA", population:42961653, adoptionIndex:16, ownershipPct:5.5, ownersEst:2363000, volume:3, regStatus:"Undecided", regFramework:"No formal framework; war-torn economy", usdcAccess:"Full", ramp:"Limited", score:5.0, notes:"16th highest adoption. War-driven crypto use. Currency collapse.", flag:"🇾🇪" },
+  { id:48, name:"El Salvador", continent:"Latin America", population:6400000, adoptionIndex:30, ownershipPct:8.5, ownersEst:544000, volume:3, regStatus:"Legal", regFramework:"Bitcoin Law (2021); Chivo Wallet", usdcAccess:"Full", ramp:"Good", score:7.0, notes:"First country with Bitcoin legal tender. Growing USDC use.", flag:"🇸🇻" },
+  { id:49, name:"North Korea", continent:"Asia Pacific", population:26633691, adoptionIndex:80, ownershipPct:0.5, ownersEst:133000, volume:0.5, regStatus:"Banned", regFramework:"Complete ban; OFAC sanctioned", usdcAccess:"Banned", ramp:"Blocked", score:1.0, notes:"OFAC sanctioned. State-sponsored hacking. Crypto banned for citizens.", flag:"🇰🇵" },
+  { id:50, name:"Cuba", continent:"Latin America", population:11000000, adoptionIndex:65, ownershipPct:1.5, ownersEst:165000, volume:0.5, regStatus:"Banned", regFramework:"OFAC sanctioned; limited legal use", usdcAccess:"Banned", ramp:"Blocked", score:1.5, notes:"OFAC sanctioned. USDC officially blocked. Economic crisis drives informal crypto use.", flag:"🇨🇺" },
+];
+
+const regions = [
+  { name:"Asia Pacific (APAC)", growth:"+69%", volume:"$2.36T", rank:1, countries:["India","Pakistan","Vietnam","Indonesia","Philippines"] },
+  { name:"Latin America", growth:"+63%", volume:"Growing", rank:2, countries:["Brazil","Argentina","Mexico","Venezuela","Colombia"] },
+  { name:"Sub-Saharan Africa", growth:"+52%", volume:"Growing", rank:3, countries:["Nigeria","South Africa","Kenya","Ghana","Ethiopia"] },
+  { name:"North America", growth:"+49%", volume:"$2.2T+", rank:4, countries:["United States","Canada","Mexico"] },
+  { name:"Europe", growth:"+42%", volume:"$2.6T+", rank:5, countries:["UK","Germany","Netherlands","Switzerland","France"] },
+  { name:"MENA", growth:"+33%", volume:"$500B+", rank:6, countries:["Turkey","UAE","Saudi Arabia","Egypt","Israel"] },
+];
+
+const continents = ["All","Asia Pacific","Latin America","Europe","MENA","Sub-Saharan Africa","North America"];
+
+// ═══ HELPERS ═══
+function fmt(n) { if(n>=1e9) return (n/1e9).toFixed(1)+'B'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); }
+function scoreColor(s) { if(s>=9) return '#059669'; if(s>=7) return '#2563EB'; if(s>=5) return '#D4A843'; if(s>=3) return '#F59E0B'; return '#EF4444'; }
+function badgeClass(s) { if(s>=7) return 'badge-green'; if(s>=5) return 'badge-blue'; if(s>=3) return 'badge-neutral'; return 'badge-red'; }
+
+// ═══ STATE ═══
+let selectedContinent = "All";
+let searchQuery = "";
+let sortField = "score";
+let selectedCountry = null;
+
+// ═══ RENDER FUNCTIONS ═══
+function renderSpotlights() {
+  const top5 = [...countries].sort((a,b) => b.score - a.score).slice(0,5);
+  const bottom5 = [...countries].sort((a,b) => a.score - b.score).slice(0,5);
+  document.getElementById('top5List').innerHTML = top5.map((c,i) => `
+    <div class="spotlight-row">
+      <span class="spotlight-rank">${i+1}</span>
+      <span class="spotlight-flag">${c.flag}</span>
+      <div class="spotlight-info">
+        <div class="spotlight-name">${c.name}</div>
+        <div class="spotlight-detail">${fmt(c.ownersEst)} owners · $${c.volume}B vol.</div>
+      </div>
+      <span class="spotlight-score green">${c.score.toFixed(1)}</span>
+    </div>`).join('');
+  document.getElementById('bottom5List').innerHTML = bottom5.map((c,i) => `
+    <div class="spotlight-row">
+      <span class="spotlight-rank">${i+1}</span>
+      <span class="spotlight-flag">${c.flag}</span>
+      <div class="spotlight-info">
+        <div class="spotlight-name">${c.name}</div>
+        <div class="spotlight-detail">${c.regStatus} · ${c.usdcAccess} access</div>
+      </div>
+      <span class="spotlight-score red">${c.score.toFixed(1)}</span>
+    </div>`).join('');
+}
+
+function renderCountryCards() {
+  let list = countries;
+  if (selectedContinent !== "All") list = list.filter(c => c.continent === selectedContinent);
+  if (searchQuery) list = list.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  switch(sortField) {
+    case 'score': list = [...list].sort((a,b) => b.score - a.score); break;
+    case 'adoption': list = [...list].sort((a,b) => a.adoptionIndex - b.adoptionIndex); break;
+    case 'population': list = [...list].sort((a,b) => b.population - a.population); break;
+    case 'volume': list = [...list].sort((a,b) => b.volume - a.volume); break;
+  }
+  document.getElementById('countDisplay').textContent = list.length + ' countries';
+  const color = '#059669';
+  const blue = '#2563EB';
+  document.getElementById('countryGrid').innerHTML = list.map(c => {
+    const c2 = c.usdcAccess === 'Banned' ? '#EF4444' : scoreColor(c.score);
+    const bc = c2 === '#EF4444' ? '#EF4444' : c2;
+    return `<div class="country-card" onclick="showDetail(${c.id})">
+      <div class="country-card-bar" style="background:${bc}"></div>
+      <div class="country-card-body">
+        <div class="country-card-top">
+          <span class="country-card-flag">${c.flag}</span>
+          <div><div class="country-card-name">${c.name}</div><div class="country-card-cont">${c.continent}</div></div>
+          <div class="country-card-right">
+            <div class="country-score-ring">
+              <svg width="42" height="42" viewBox="0 0 42 42">
+                <circle cx="21" cy="21" r="17" fill="none" stroke="#E2E8F0" stroke-width="3.5"/>
+                <circle cx="21" cy="21" r="17" fill="none" stroke="${bc}" stroke-width="3.5"
+                  stroke-dasharray="${2*Math.PI*17}" stroke-dashoffset="${2*Math.PI*17*(1-c.score/10)}" stroke-linecap="round"/>
+              </svg>
+              <span style="color:${bc}">${c.score.toFixed(1)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="country-card-badges">
+          <span class="badge ${c.regStatus==='Banned'?'badge-red':c.regStatus==='Partial Ban'?'badge-neutral':'badge-blue'}">${c.regStatus}</span>
+          <span class="country-card-meta">${fmt(c.population)} pop.</span>
+          <span class="country-card-meta">$${c.volume}B vol.</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showDetail(id) {
+  const c = countries.find(x => x.id === id);
+  if (!c) return;
+  selectedCountry = c;
+  const sc = scoreColor(c.score);
+  document.getElementById('detailPanel').innerHTML = `
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-country">
+          <span class="detail-flag">${c.flag}</span>
+          <div>
+            <div class="detail-name">${c.name}</div>
+            <div class="detail-meta">${c.continent} · Population: <strong style="font-family:var(--font-mono)">${fmt(c.population)}</strong></div>
+          </div>
+        </div>
+        <button class="detail-close" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-stat"><div class="detail-stat-label">Accessibility</div><div class="detail-stat-val" style="color:${sc}">${c.score}/10</div><div class="detail-stat-sub">${scoreColor(c.score)==='#059669'?'Excellent':scoreColor(c.score)==='#2563EB'?'Good':'Moderate'}</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Crypto Owners</div><div class="detail-stat-val">${fmt(c.ownersEst)}</div><div class="detail-stat-sub">${c.ownershipPct}% of population</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Retail Volume</div><div class="detail-stat-val">$${c.volume}B</div><div class="detail-stat-sub">Q1 2026</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Adoption Rank</div><div class="detail-stat-val">#${c.adoptionIndex}</div><div class="detail-stat-sub">Chainalysis Global</div></div>
+      </div>
+      <div class="detail-rows">
+        <div class="detail-row"><span class="detail-row-icon">🛡️</span><div><strong>Regulation:</strong> <span>${c.regFramework}</span></div></div>
+        <div class="detail-row"><span class="detail-row-icon">💳</span><div><strong>USDC Access:</strong> <span>${c.usdcAccess} · On/Off-ramp: ${c.ramp}</span></div></div>
+        <div class="detail-row"><span class="detail-row-icon">🌍</span><div><span>${c.notes}</span></div></div>
+      </div>
+    </div>`;
+  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function closeDetail() {
+  selectedCountry = null;
+  document.getElementById('detailPanel').innerHTML = '';
+}
+
+function renderRegional() {
+  document.getElementById('regionalGrid').innerHTML = regions.map(r => `
+    <div class="regional-card">
+      <div class="regional-bar"></div>
+      <div class="regional-body">
+        <div class="regional-top">
+          <div class="regional-name">${r.name}</div>
+          <div class="regional-growth">${r.growth}</div>
+        </div>
+        <div class="regional-meta">Rank <span>#${r.rank}</span> · Volume: ${r.volume}</div>
+        <div class="regional-tags">${r.countries.map(c => `<span class="regional-tag">${c}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderFilters() {
+  document.getElementById('continentFilters').innerHTML = continents.map(c =>
+    `<button class="filter-btn${selectedContinent===c?' active':''}" onclick="setContinent('${c}')">${c}</button>`
+  ).join('');
+}
+
+function setContinent(c) { selectedContinent = c; renderFilters(); renderCountryCards(); }
+
+function setSort(s) {
+  sortField = s;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === s));
+  renderCountryCards();
+}
+
+// ═══ INIT ═══
+renderSpotlights();
+renderCountryCards();
+renderRegional();
+renderFilters();
+
+document.getElementById('countrySearch').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderCountryCards();
+});
+document.querySelectorAll('.sort-btn').forEach(b => {
+  b.addEventListener('click', () => setSort(b.dataset.sort));
+});
+
+// ═══ CHARTS ═══
+const chartFont = { family: "'Inter', sans-serif", size: 11 };
+const chartTitleFont = { family: "'Poppins', sans-serif", size: 13, weight: '700' };
+
+// Bar chart
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: regions.map(r => r.name),
+    datasets: [{ data: regions.map(r => parseInt(r.growth)), backgroundColor: regions.map((_,i) => i===0 ? '#2563EB' : '#059669'), borderRadius: 6, barThickness: 28 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x + '% Growth YoY' } } },
+    scales: {
+      x: { grid: { color: '#F1F5F9' }, ticks: { font: chartFont, callback: v => v+'%' } },
+      y: { grid: { display: false }, ticks: { font: { ...chartFont, weight: '600', family: "'Poppins', sans-serif" } } }
+    }
+  }
+});
+
+// Pie chart
+const pieData = {};
+countries.forEach(c => { pieData[c.regStatus] = (pieData[c.regStatus]||0)+1; });
+const pieLabels = Object.keys(pieData);
+const pieValues = Object.values(pieData);
+const pieColors = ['#059669','#2563EB','#F59E0B','#EF4444'];
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: { labels: pieLabels, datasets: [{ data: pieValues, backgroundColor: pieColors, borderWidth: 0 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: { legend: { display: false } }
+  }
+});
+document.getElementById('pieLegend').innerHTML = pieLabels.map((l,i) =>
+  `<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${pieColors[i]}"></span>${l} (${pieValues[i]})</span>`
+).join('');
+
+// Scatter/Bubble chart
+const scatterData = countries.slice(0,30).map(c => ({ x: c.ownershipPct, y: c.score, r: Math.min(35, Math.max(5, Math.sqrt(c.volume) * 1.8)), name: c.name }));
+new Chart(document.getElementById('scatterChart'), {
+  type: 'bubble',
+  data: {
+    datasets: [{ data: scatterData, backgroundColor: scatterData.map(d => d.y >= 7 ? 'rgba(5,150,105,0.5)' : d.y >= 5 ? 'rgba(37,99,235,0.5)' : 'rgba(239,68,68,0.4)'),
+      borderColor: scatterData.map(d => d.y >= 7 ? '#059669' : d.y >= 5 ? '#2563EB' : '#EF4444'), borderWidth: 1.5 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const d = scatterData[ctx.dataIndex];
+            return `${d.name}: ${d.x}% ownership, ${d.y}/10 score, $${countries.find(c=>c.name===d.name).volume}B vol.`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { title: { display: true, text: 'Crypto Ownership %', font: chartFont }, grid: { color: '#F1F5F9' }, ticks: { font: chartFont }, min: 0, max: 30 },
+      y: { title: { display: true, text: 'USDC Accessibility Score', font: chartFont }, grid: { color: '#F1F5F9' }, ticks: { font: chartFont }, min: 0, max: 10 }
+    }
+  }
+});
+</script>
+</body>
+</html>
