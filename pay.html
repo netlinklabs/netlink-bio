@@ -758,7 +758,15 @@
                 </div>
 
                 <label class="text-xs font-medium text-secondary block mb-1.5">Recipient address</label>
-                <input id="sendToAddress" type="text" placeholder="0x..." class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-3 font-mono">
+                <div class="flex items-center gap-2 mb-3">
+                    <input id="sendToAddress" type="text" placeholder="0x... or paste address" class="flex-1 min-w-0 px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary font-mono">
+                    <button type="button" onclick="openContactPicker()" title="Choose from contacts" class="w-11 h-11 flex-shrink-0 flex items-center justify-center bg-surface border border-subtle rounded-lg hover-surface transition">
+                        <i data-lucide="book-user" class="w-5 h-5 text-secondary"></i>
+                    </button>
+                    <button type="button" onclick="openQrScanner()" title="Scan QR code" class="w-11 h-11 flex-shrink-0 flex items-center justify-center bg-surface border border-subtle rounded-lg hover-surface transition ml-1">
+                        <i data-lucide="qr-code" class="w-5 h-5 text-secondary"></i>
+                    </button>
+                </div>
 
                 <label class="text-xs font-medium text-secondary block mb-1.5">Amount</label>
                 <input id="sendAmount" type="number" step="any" min="0" placeholder="0.00" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-4">
@@ -783,6 +791,34 @@
             </div>
         </div>
     </div>
+
+    <!-- Contact Picker Modal -->
+    <div id="contactPickerModal" class="modal-overlay" onclick="if(event.target===this) closeContactPicker()">
+        <div class="modal-box text-left">
+            <button class="modal-close" onclick="closeContactPicker()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Choose from Contacts</h3>
+            <div id="contactPickerList" class="space-y-2 max-h-80 overflow-y-auto"></div>
+            <p id="contactPickerEmpty" class="hidden text-sm text-muted text-center py-8">No saved contacts yet. Add some from <a href="contacts.html" class="text-blue-500 hover:underline">Manage Contact</a>.</p>
+        </div>
+    </div>
+
+    <!-- QR Scanner Modal -->
+    <div id="qrScannerModal" class="modal-overlay" onclick="if(event.target===this) closeQrScanner()">
+        <div class="modal-box text-center">
+            <button class="modal-close" onclick="closeQrScanner()">&times;</button>
+            <h3 class="font-semibold text-primary text-lg mb-4">Scan Wallet Address</h3>
+            <div id="qrReaderRegion" style="width:100%; border-radius: 12px; overflow: hidden;"></div>
+            <p id="qrScanStatus" class="text-xs text-muted mt-3">Point your camera at a QR code, or upload one from your gallery.</p>
+            <label class="block mt-3">
+                <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface border border-subtle rounded-xl text-sm font-medium text-secondary hover-surface cursor-pointer transition">
+                    <i data-lucide="image" class="w-4 h-4"></i> Upload from Gallery
+                </span>
+                <input id="qrFileInput" type="file" accept="image/*" class="hidden" onchange="handleQrFileUpload(event)">
+            </label>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
@@ -1197,6 +1233,154 @@
         };
         window.closeSendModal = function () {
             document.getElementById('sendModal').classList.remove('active');
+        };
+
+        // ---- Contact Picker ----
+        // Contacts are stored lean (references only) -- resolve live from
+        // profiles_bio_public so a saved contact's wallet is never stale.
+        window.openContactPicker = async function () {
+            const list = document.getElementById('contactPickerList');
+            const empty = document.getElementById('contactPickerEmpty');
+            list.innerHTML = '<p class="text-sm text-muted text-center py-8">Loading...</p>';
+            empty.classList.add('hidden');
+            document.getElementById('contactPickerModal').classList.add('active');
+
+            try {
+                const { data: contactRows, error } = await supabaseClient
+                    .from('contacts').select('*').eq('owner_id', currentUser.id).order('position', { ascending: true });
+                if (error) throw error;
+
+                const netIdIds = (contactRows || []).filter(c => c.contact_user_id).map(c => c.contact_user_id);
+                let resolvedMap = {};
+                if (netIdIds.length > 0) {
+                    const { data: profilesData } = await supabaseClient
+                        .from('profiles_bio_public')
+                        .select('id, display_name, username, avatar_url, wallet_address')
+                        .in('id', netIdIds);
+                    (profilesData || []).forEach(p => { resolvedMap[p.id] = p; });
+                }
+
+                if (!contactRows || contactRows.length === 0) {
+                    list.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                list.innerHTML = contactRows.map(c => {
+                    const isManual = !!c.manual_address;
+                    const resolved = c.contact_user_id ? resolvedMap[c.contact_user_id] : null;
+                    const displayName = c.nickname || resolved?.display_name || resolved?.username || 'Unknown';
+                    const address = isManual ? c.manual_address : (resolved?.wallet_address || '');
+                    if (!address) return ''; // skip contacts with no resolvable wallet
+                    const avatar = resolved?.avatar_url;
+                    const avatarHtml = avatar
+                        ? `<img src="${escapeAttr(avatar)}" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="">`
+                        : `<div class="w-9 h-9 rounded-full bg-blue-500/15 flex items-center justify-center text-blue-500 font-semibold text-sm flex-shrink-0">${escapeAttr(displayName.charAt(0).toUpperCase())}</div>`;
+                    return `
+                    <button type="button" onclick="selectContactForSend('${escapeAttr(address)}')" class="w-full flex items-center gap-3 p-2.5 hover-surface rounded-xl transition text-left">
+                        ${avatarHtml}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-primary truncate">${escapeAttr(displayName)}</p>
+                            <p class="text-xs text-muted font-mono truncate">${truncateAddress(address)}</p>
+                        </div>
+                    </button>`;
+                }).join('');
+
+                if (!list.innerHTML.trim()) { empty.classList.remove('hidden'); }
+            } catch (err) {
+                console.error('Failed to load contacts:', err);
+                list.innerHTML = '<p class="text-sm text-muted text-center py-8">Could not load contacts.</p>';
+            }
+        };
+
+        window.closeContactPicker = function () {
+            document.getElementById('contactPickerModal').classList.remove('active');
+        };
+
+        window.selectContactForSend = function (address) {
+            document.getElementById('sendToAddress').value = address;
+            closeContactPicker();
+            showToast('Address filled from contact');
+        };
+
+        function escapeAttr(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        // ---- QR Scanner ----
+        // No image is ever uploaded/stored -- html5-qrcode decodes entirely
+        // client-side (camera frames or a locally-picked file), and we only
+        // keep the decoded text long enough to fill the address field.
+        let qrScannerInstance = null;
+
+        function extractAddressFromQrText(text) {
+            // Handles plain "0x..." addresses and EIP-681-style URIs like
+            // "ethereum:0xABC...@137" -- pull out just the address part.
+            const match = text.match(/0x[a-fA-F0-9]{40}/);
+            return match ? match[0] : null;
+        }
+
+        window.openQrScanner = async function () {
+            document.getElementById('qrScanStatus').textContent = 'Point your camera at a QR code, or upload one from your gallery.';
+            document.getElementById('qrScannerModal').classList.add('active');
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                qrScannerInstance = new Html5Qrcode('qrReaderRegion');
+                await qrScannerInstance.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: 220 },
+                    onQrScanSuccess,
+                    () => {} // ignore per-frame "not found" noise
+                );
+            } catch (err) {
+                console.error('Camera scan unavailable:', err);
+                document.getElementById('qrScanStatus').textContent = 'Camera unavailable — you can still upload a QR image below.';
+            }
+        };
+
+        async function stopQrScanner() {
+            if (qrScannerInstance) {
+                try { await qrScannerInstance.stop(); qrScannerInstance.clear(); } catch (err) { /* already stopped */ }
+                qrScannerInstance = null;
+            }
+        }
+
+        window.closeQrScanner = async function () {
+            await stopQrScanner();
+            document.getElementById('qrScannerModal').classList.remove('active');
+            document.getElementById('qrFileInput').value = '';
+        };
+
+        async function onQrScanSuccess(decodedText) {
+            const address = extractAddressFromQrText(decodedText);
+            await stopQrScanner();
+            if (!address) {
+                showToast('QR code did not contain a valid wallet address');
+                return;
+            }
+            document.getElementById('sendToAddress').value = address;
+            document.getElementById('qrScannerModal').classList.remove('active');
+            document.getElementById('qrFileInput').value = '';
+            showToast('Address scanned!');
+        }
+
+        window.handleQrFileUpload = async function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('qrScanStatus').textContent = 'Reading QR code...';
+            try {
+                if (!qrScannerInstance) qrScannerInstance = new Html5Qrcode('qrReaderRegion');
+                await stopQrScanner().catch(() => {}); // ensure camera loop isn't fighting the file scan
+                qrScannerInstance = new Html5Qrcode('qrReaderRegion');
+                const decodedText = await qrScannerInstance.scanFile(file, false);
+                await onQrScanSuccess(decodedText);
+            } catch (err) {
+                console.error('Failed to read QR from image:', err);
+                document.getElementById('qrScanStatus').textContent = 'Could not read a QR code from that image — try another.';
+            }
         };
 
         window.onSendTokenChange = function () {
