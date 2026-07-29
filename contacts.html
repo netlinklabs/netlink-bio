@@ -261,7 +261,9 @@
         }
 
         function sanitizeNetId(raw) {
-            return raw.trim().toUpperCase().replace(/^NET-?/, '').replace(/-/g, '');
+            let v = raw.trim().toUpperCase().replace(/[\s-]/g, '');
+            if (v && !v.startsWith('NET')) v = 'NET' + v;
+            return v;
         }
 
         function badgeHtml(row) {
@@ -418,7 +420,7 @@
             netIdResolved = null;
             preview.classList.add('hidden');
 
-            if (raw.length !== 10) {
+            if (!/^NET\d{10}$/.test(raw)) {
                 status.classList.add('hidden');
                 return;
             }
