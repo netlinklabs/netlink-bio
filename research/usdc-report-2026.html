@@ -273,7 +273,7 @@ a { text-decoration: none; color: inherit; }
 .detail-close:hover { background: var(--slate-100); }
 .detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .detail-stat { background: var(--slate-50); border-radius: 10px; padding: 14px; }
-.detail-stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-500); }
+.detail-stat-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-500); line-height: 1.3; }
 .detail-stat-val { font-size: 18px; font-weight: 700; font-family: var(--font-mono); margin-top: 4px; }
 .detail-stat-sub { font-size: 10px; color: var(--slate-500); margin-top: 2px; }
 .detail-rows { display: flex; flex-direction: column; gap: 10px; }
@@ -382,12 +382,12 @@ a { text-decoration: none; color: inherit; }
   <!-- Dot pattern -->
   <svg class="hero-dots" width="100%" height="100%"><defs><pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="#fff" /></pattern></defs><rect width="100%" height="100%" fill="url(#dots)" /></svg>
   <div class="hero-container">
-    <div class="hero-label"><span>Global Stablecoin Research</span></div>
-    <h1>USDC Adoption<br /><em>&amp; Accessibility</em><br />Index</h1>
-    <p>185+ countries. 9.9% global adoption. One regulated stablecoin powering the future of payments across every continent.</p>
+    <div class="hero-label"><span>USDC Market Research</span></div>
+    <h1>USDC Adoption<br /><em>&amp; Market Potential</em><br />Index</h1>
+    <p>Mapping USDC accessibility, regulatory readiness, and estimated stablecoin users across 50 key markets — quantifying the global opportunity for a USDC-first digital wallet.</p>
     <div class="hero-actions">
-      <button class="btn-primary" onclick="document.getElementById('markets').scrollIntoView({behavior:'smooth'})">Explore the Data ↗</button>
-      <button class="btn-secondary" onclick="window.print()">📄 Download Report as PDF</button>
+      <button class="btn-primary" onclick="document.getElementById('markets').scrollIntoView({behavior:'smooth'})">Explore Markets ↗</button>
+      <button class="btn-secondary" onclick="window.print()">📄 Download PDF Report</button>
     </div>
   </div>
 </section>
@@ -402,17 +402,17 @@ a { text-decoration: none; color: inherit; }
   <div class="stat-card">
     <div class="stat-icon green">🌍</div>
     <div class="stat-content">
-      <div class="stat-label">Countries Covered</div>
+      <div class="stat-label">Markets Analyzed</div>
       <div class="stat-value">50</div>
-      <div class="stat-sub">185+ with USDC access</div>
+      <div class="stat-sub">185+ with USDC access globally</div>
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-icon blue">👥</div>
     <div class="stat-content">
-      <div class="stat-label">Crypto Owners</div>
-      <div class="stat-value">640.1M</div>
-      <div class="stat-sub">Across tracked countries</div>
+      <div class="stat-label">Estimated USDC-Ready Users</div>
+      <div class="stat-value">256.0M</div>
+      <div class="stat-sub">Across 50 tracked markets</div>
     </div>
   </div>
   <div class="stat-card">
@@ -420,15 +420,15 @@ a { text-decoration: none; color: inherit; }
     <div class="stat-content">
       <div class="stat-label">USDC Market Cap</div>
       <div class="stat-value">$73.7B</div>
-      <div class="stat-sub">2nd largest stablecoin</div>
+      <div class="stat-sub">2nd largest stablecoin globally</div>
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-icon green">📈</div>
     <div class="stat-content">
-      <div class="stat-label">Avg Accessibility</div>
+      <div class="stat-label">Avg USDC Accessibility</div>
       <div class="stat-value">7.3/10</div>
-      <div class="stat-sub">42 countries legal</div>
+      <div class="stat-sub">42 countries with legal framework</div>
     </div>
   </div>
 </div>
@@ -436,22 +436,22 @@ a { text-decoration: none; color: inherit; }
 <!-- ═══ CHARTS ═══ -->
 <section class="section" id="regulation">
   <div class="section-label"><span>By Region</span></div>
-  <h2 class="section-title">Regional Crypto Adoption Growth (YoY)</h2>
+  <h2 class="section-title">Regional USDC Growth Potential</h2>
   <div class="charts-grid">
     <div class="chart-card">
-      <div class="chart-title">📊 Regional Crypto Adoption Growth (YoY)</div>
-      <div class="chart-subtitle">APAC leads with 69% growth — the engine of global stablecoin expansion</div>
+      <div class="chart-title">📊 Regional Crypto Growth (YoY) — USDC Proxy</div>
+      <div class="chart-subtitle">APAC leads with 69% growth — the primary engine of USDC adoption globally</div>
       <div class="chart-container" style="height:280px"><canvas id="barChart"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">🛡️ Regulation Status</div>
-      <div class="chart-subtitle">Legal framework distribution across tracked markets</div>
+      <div class="chart-title">🛡️ USDC Regulation Status</div>
+      <div class="chart-subtitle">Legal framework distribution for stablecoin access</div>
       <div class="chart-container" style="height:200px"><canvas id="pieChart"></canvas></div>
       <div id="pieLegend" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;font-size:11px;color:var(--slate-500)"></div>
     </div>
     <div class="chart-card scatter-card">
-      <div class="chart-title">📡 Ownership vs. Accessibility Matrix</div>
-      <div class="chart-subtitle">Top 30 countries — bubble size represents retail trading volume (USD billions)</div>
+      <div class="chart-title">📡 USDC-Ready Users vs. Accessibility</div>
+      <div class="chart-subtitle">Top 30 markets — bubble size represents retail trading volume (USD billions)</div>
       <div class="chart-container" style="height:320px"><canvas id="scatterChart"></canvas></div>
     </div>
   </div>
@@ -461,7 +461,7 @@ a { text-decoration: none; color: inherit; }
     <div class="spotlight-card">
       <div class="spotlight-header green"></div>
       <div class="spotlight-body">
-        <div class="spotlight-title green">▲ Top 5 Markets</div>
+        <div class="spotlight-title green">▲ Top 5 USDC-Friendly Markets</div>
         <div id="top5List"></div>
       </div>
     </div>
@@ -478,8 +478,8 @@ a { text-decoration: none; color: inherit; }
 <!-- ═══ COUNTRY EXPLORER ═══ -->
 <section class="section" id="markets">
   <div class="section-label"><span>Deep Dive</span></div>
-  <h2 class="section-title">Country Explorer</h2>
-  <p style="font-size:13px;color:var(--slate-500);margin-top:-20px;margin-bottom:24px;max-width:480px">Click any country for detailed regulatory, accessibility, and market insights.</p>
+  <h2 class="section-title">USDC Market Explorer</h2>
+  <p style="font-size:13px;color:var(--slate-500);margin-top:-20px;margin-bottom:24px;max-width:480px">Click any market for detailed USDC regulatory, accessibility, and user potential insights.</p>
 
   <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px">
     <div class="search-wrapper">
@@ -490,7 +490,7 @@ a { text-decoration: none; color: inherit; }
   </div>
   <div class="sort-bar">
     <span>Sort:</span>
-    <button class="sort-btn active" data-sort="score">Accessibility</button>
+    <button class="sort-btn active" data-sort="score">USDC Access</button>
     <button class="sort-btn" data-sort="adoption">Adoption</button>
     <button class="sort-btn" data-sort="population">Population</button>
     <button class="sort-btn" data-sort="volume">Volume</button>
@@ -504,7 +504,7 @@ a { text-decoration: none; color: inherit; }
 <!-- ═══ REGIONAL ═══ -->
 <section class="section">
   <div class="section-label"><span>By Region</span></div>
-  <h2 class="section-title">Regional Performance</h2>
+  <h2 class="section-title">Regional USDC Opportunity</h2>
   <div class="regional-grid" id="regionalGrid"></div>
 </section>
 
@@ -516,11 +516,11 @@ a { text-decoration: none; color: inherit; }
     <div class="methodo-grid">
       <div>
         <div class="methodo-title">USDC Accessibility Score (1–10)</div>
-        <p class="methodo-text">Composite score based on five weighted factors that determine how easily a user can access and use USDC in each country.</p>
+        <p class="methodo-text">Composite score based on five weighted factors that determine how easily a user can access, hold, and transact in USDC within each market.</p>
         <div class="factor-row"><span class="factor-dot" style="background:#059669"></span><span class="factor-label">Regulatory Clarity</span><span class="factor-weight" style="color:#059669">25%</span></div>
         <div class="factor-row"><span class="factor-dot" style="background:#2563EB"></span><span class="factor-label">USDC Availability</span><span class="factor-weight" style="color:#2563EB">25%</span></div>
         <div class="factor-row"><span class="factor-dot" style="background:#D4A843"></span><span class="factor-label">On/Off-Ramp Infrastructure</span><span class="factor-weight" style="color:#D4A843">25%</span></div>
-        <div class="factor-row"><span class="factor-dot" style="background:#F59E0B"></span><span class="factor-label">Crypto Adoption Rate</span><span class="factor-weight" style="color:#F59E0B">15%</span></div>
+        <div class="factor-row"><span class="factor-dot" style="background:#F59E0B"></span><span class="factor-label">Stablecoin Adoption Rate</span><span class="factor-weight" style="color:#F59E0B">15%</span></div>
         <div class="factor-row"><span class="factor-dot" style="background:#64748B"></span><span class="factor-label">Financial Infrastructure</span><span class="factor-weight" style="color:#64748B">10%</span></div>
       </div>
       <div>
@@ -531,9 +531,10 @@ a { text-decoration: none; color: inherit; }
           <li><a href="https://datareportal.com/reports" target="_blank" rel="noopener">Datareportal / Triple-A Crypto Ownership 2025</a></li>
           <li><a href="https://www.atlanticcouncil.org/cbdctracker/" target="_blank" rel="noopener">Atlantic Council Crypto Regulation Tracker</a></li>
           <li><a href="https://www.bvnk.com/blog/global-stablecoin-regulation" target="_blank" rel="noopener">BVNK Global Stablecoin Regulations 2026</a></li>
-          <li><a href="https://www.circle.com/en/usdc" target="_blank" rel="noopener">Circle USDC Documentation</a></li>
+          <li><a href="https://www.circle.com/en/usdc" target="_blank" rel="noopener">Circle USDC Documentation &amp; Market Data</a></li>
           <li><a href="https://www.worldometers.info/world-population/" target="_blank" rel="noopener">Worldometers Population 2026</a></li>
         </ul>
+        <p class="methodo-text" style="margin-top:16px;font-size:11px;color:var(--slate-500)"><strong>Stablecoin Penetration Note:</strong> Estimated USDC-ready users are derived from total crypto owners (Triple-A) multiplied by an average stablecoin penetration rate of 40%, reflecting the proportion of crypto holders who actively use stablecoins for payments, remittances, and savings. Actual USDC-specific users may vary by market.</p>
       </div>
     </div>
     <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--slate-200)">
@@ -550,7 +551,7 @@ a { text-decoration: none; color: inherit; }
 
   <!-- Disclaimer -->
   <div class="disclaimer">
-    <p><strong>Disclaimer:</strong> This research was conducted with the assistance of AI and published for the Netlink Labs internal team to support the development of the <strong>Netlink Pay</strong> platform. The accessibility scores (1–10) are estimates based on available data and do not constitute official assessments or investment recommendations. Data as of July 2026.</p>
+    <p><strong>Disclaimer:</strong> This research was conducted with the assistance of AI and published for the Netlink Labs internal team to support the development of the <strong>Netlink Pay</strong> platform. The USDC accessibility scores (1–10) and estimated user figures are based on available market data and do not constitute official assessments or investment recommendations. Estimated USDC-ready users assume ~40% stablecoin penetration among total crypto owners. Data as of July 2026.</p>
   </div>
 </section>
 
@@ -624,18 +625,20 @@ const countries = [
 ];
 
 const regions = [
-  { name:"Asia Pacific (APAC)", growth:"+69%", volume:"$2.36T", rank:1, countries:["India","Pakistan","Vietnam","Indonesia","Philippines"] },
-  { name:"Latin America", growth:"+63%", volume:"Growing", rank:2, countries:["Brazil","Argentina","Mexico","Venezuela","Colombia"] },
-  { name:"Sub-Saharan Africa", growth:"+52%", volume:"Growing", rank:3, countries:["Nigeria","South Africa","Kenya","Ghana","Ethiopia"] },
-  { name:"North America", growth:"+49%", volume:"$2.2T+", rank:4, countries:["United States","Canada","Mexico"] },
-  { name:"Europe", growth:"+42%", volume:"$2.6T+", rank:5, countries:["UK","Germany","Netherlands","Switzerland","France"] },
-  { name:"MENA", growth:"+33%", volume:"$500B+", rank:6, countries:["Turkey","UAE","Saudi Arabia","Egypt","Israel"] },
+  { name:"Asia Pacific (APAC)", growth:"+69%", usdcVol:"$950B+", rank:1, countries:["India","Pakistan","Vietnam","Indonesia","Philippines"], usdcContext:"Largest stablecoin adoption hub; P2P & remittance driven" },
+  { name:"Latin America", growth:"+63%", usdcVol:"$480B+", rank:2, countries:["Brazil","Argentina","Mexico","Venezuela","Colombia"], usdcContext:"High inflation drives USDC savings & remittances" },
+  { name:"Sub-Saharan Africa", growth:"+52%", usdcVol:"$220B+", rank:3, countries:["Nigeria","South Africa","Kenya","Ghana","Ethiopia"], usdcContext:"Mobile-first adoption; forex & remittance corridors" },
+  { name:"North America", growth:"+49%", usdcVol:"$2.2T+", rank:4, countries:["United States","Canada","Mexico"], usdcContext:"GENIUS Act 2025; most regulated USDC market" },
+  { name:"Europe", growth:"+42%", usdcVol:"$2.6T+", rank:5, countries:["UK","Germany","Netherlands","Switzerland","France"], usdcContext:"MiCA framework enables cross-border USDC payments" },
+  { name:"MENA", growth:"+33%", usdcVol:"$500B+", rank:6, countries:["Turkey","UAE","Saudi Arabia","Egypt","Israel"], usdcContext:"VARA & CBUAE frameworks; high retail demand" },
 ];
 
 const continents = ["All","Asia Pacific","Latin America","Europe","MENA","Sub-Saharan Africa","North America"];
 
 // ═══ HELPERS ═══
+const STABLECOIN_PENETRATION = 0.40; // 40% average stablecoin penetration among crypto owners
 function fmt(n) { if(n>=1e9) return (n/1e9).toFixed(1)+'B'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); }
+function usdcUsers(c) { return Math.round(c.ownersEst * STABLECOIN_PENETRATION); }
 function scoreColor(s) { if(s>=9) return '#059669'; if(s>=7) return '#2563EB'; if(s>=5) return '#D4A843'; if(s>=3) return '#F59E0B'; return '#EF4444'; }
 function badgeClass(s) { if(s>=7) return 'badge-green'; if(s>=5) return 'badge-blue'; if(s>=3) return 'badge-neutral'; return 'badge-red'; }
 
@@ -655,7 +658,7 @@ function renderSpotlights() {
       <span class="spotlight-flag">${c.flag}</span>
       <div class="spotlight-info">
         <div class="spotlight-name">${c.name}</div>
-        <div class="spotlight-detail">${fmt(c.ownersEst)} owners · $${c.volume}B vol.</div>
+        <div class="spotlight-detail">~${fmt(usdcUsers(c))} USDC-ready · $${c.volume}B vol.</div>
       </div>
       <span class="spotlight-score green">${c.score.toFixed(1)}</span>
     </div>`).join('');
@@ -706,7 +709,7 @@ function renderCountryCards() {
         </div>
         <div class="country-card-badges">
           <span class="badge ${c.regStatus==='Banned'?'badge-red':c.regStatus==='Partial Ban'?'badge-neutral':'badge-blue'}">${c.regStatus}</span>
-          <span class="country-card-meta">${fmt(c.population)} pop.</span>
+          <span class="country-card-meta">~${fmt(usdcUsers(c))} USDC-ready</span>
           <span class="country-card-meta">$${c.volume}B vol.</span>
         </div>
       </div>
@@ -732,10 +735,10 @@ function showDetail(id) {
         <button class="detail-close" onclick="closeDetail()">✕</button>
       </div>
       <div class="detail-grid">
-        <div class="detail-stat"><div class="detail-stat-label">Accessibility</div><div class="detail-stat-val" style="color:${sc}">${c.score}/10</div><div class="detail-stat-sub">${scoreColor(c.score)==='#059669'?'Excellent':scoreColor(c.score)==='#2563EB'?'Good':'Moderate'}</div></div>
-        <div class="detail-stat"><div class="detail-stat-label">Crypto Owners</div><div class="detail-stat-val">${fmt(c.ownersEst)}</div><div class="detail-stat-sub">${c.ownershipPct}% of population</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">USDC Accessibility</div><div class="detail-stat-val" style="color:${sc}">${c.score}/10</div><div class="detail-stat-sub">${scoreColor(c.score)==='#059669'?'Excellent':scoreColor(c.score)==='#2563EB'?'Good':'Moderate'}</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Est. USDC-Ready Users</div><div class="detail-stat-val">${fmt(usdcUsers(c))}</div><div class="detail-stat-sub">~${(c.ownershipPct*STABLECOIN_PENETRATION).toFixed(1)}% of pop.</div></div>
         <div class="detail-stat"><div class="detail-stat-label">Retail Volume</div><div class="detail-stat-val">$${c.volume}B</div><div class="detail-stat-sub">Q1 2026</div></div>
-        <div class="detail-stat"><div class="detail-stat-label">Adoption Rank</div><div class="detail-stat-val">#${c.adoptionIndex}</div><div class="detail-stat-sub">Chainalysis Global</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Crypto Adoption</div><div class="detail-stat-val">#${c.adoptionIndex}</div><div class="detail-stat-sub">Chainalysis Global</div></div>
       </div>
       <div class="detail-rows">
         <div class="detail-row"><span class="detail-row-icon">🛡️</span><div><strong>Regulation:</strong> <span>${c.regFramework}</span></div></div>
@@ -760,7 +763,7 @@ function renderRegional() {
           <div class="regional-name">${r.name}</div>
           <div class="regional-growth">${r.growth}</div>
         </div>
-        <div class="regional-meta">Rank <span>#${r.rank}</span> · Volume: ${r.volume}</div>
+        <div class="regional-meta">Rank <span>#${r.rank}</span> · Est. USDC Vol: ${r.usdcVol} · ${r.usdcContext}</div>
         <div class="regional-tags">${r.countries.map(c => `<span class="regional-tag">${c}</span>`).join('')}</div>
       </div>
     </div>`).join('');
@@ -835,7 +838,7 @@ document.getElementById('pieLegend').innerHTML = pieLabels.map((l,i) =>
 ).join('');
 
 // Scatter/Bubble chart
-const scatterData = countries.slice(0,30).map(c => ({ x: c.ownershipPct, y: c.score, r: Math.min(35, Math.max(5, Math.sqrt(c.volume) * 1.8)), name: c.name }));
+const scatterData = countries.slice(0,30).map(c => ({ x: c.ownershipPct * STABLECOIN_PENETRATION, y: c.score, r: Math.min(35, Math.max(5, Math.sqrt(c.volume) * 1.8)), name: c.name }));
 new Chart(document.getElementById('scatterChart'), {
   type: 'bubble',
   data: {
@@ -850,15 +853,15 @@ new Chart(document.getElementById('scatterChart'), {
         callbacks: {
           label: ctx => {
             const d = scatterData[ctx.dataIndex];
-            return `${d.name}: ${d.x}% ownership, ${d.y}/10 score, $${countries.find(c=>c.name===d.name).volume}B vol.`;
+            return `${d.name}: ~${d.x.toFixed(1)}% USDC-ready, ${d.y}/10 score, $${countries.find(c=>c.name===d.name).volume}B vol.`;
           }
         }
       }
     },
     scales: {
-      x: { title: { display: true, text: 'Crypto Ownership %', font: chartFont }, grid: { color: '#F1F5F9' }, ticks: { font: chartFont }, min: 0, max: 30 },
+      x: { title: { display: true, text: 'Est. USDC-Ready Users % (of population)', font: chartFont }, grid: { color: '#F1F5F9' }, ticks: { font: chartFont, callback: v => v+'%' }, min: 0, max: 12 },
       y: { title: { display: true, text: 'USDC Accessibility Score', font: chartFont }, grid: { color: '#F1F5F9' }, ticks: { font: chartFont }, min: 0, max: 10 }
-    }
+      }
   }
 });
 </script>
