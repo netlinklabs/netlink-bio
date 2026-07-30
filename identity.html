@@ -215,7 +215,7 @@
             <p class="text-xs text-muted mb-2">Control what's visible on your public pages and receipts.</p>
 
             <p class="privacy-group-title">Bio</p>
-            <div class="toggle-row"><span class="toggle-label">Show Wallet Card</span><input id="toggleShowDonate" type="checkbox" class="toggle-switch-input"></div>
+            <div class="toggle-row"><span class="toggle-label">Show Wallet Card</span><input id="toggleShowDonate" type="checkbox" class="toggle-switch-input" onchange="showDonateDirty = true"></div>
             <div class="toggle-row"><span class="toggle-label">Show Public Email</span><input id="toggleEmailBio" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Phone Number</span><input id="togglePhoneBio" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Telegram</span><input id="toggleTelegramBio" type="checkbox" class="toggle-switch-input"></div>
@@ -255,6 +255,12 @@
 
         let currentUser = null;
         let currentProfile = null;
+        // Show Wallet Card (show_donate) is also editable from dashboard.html.
+        // Only send it in the update payload if the user actually touched
+        // this toggle during this session -- otherwise a stale toggle state
+        // (loaded before dashboard.html changed it elsewhere) would silently
+        // overwrite the other page's change on unrelated saves.
+        let showDonateDirty = false;
 
         const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
 
@@ -380,6 +386,7 @@
                 : 'No expiry';
 
             document.getElementById('toggleShowDonate').checked = data.show_donate === true;
+            showDonateDirty = false;
             document.getElementById('toggleEmailBio').checked = data.show_email_bio !== false;
             document.getElementById('togglePhoneBio').checked = data.show_phone_bio !== false;
             document.getElementById('toggleTelegramBio').checked = data.show_telegram_bio !== false;
@@ -399,7 +406,6 @@
             btn.textContent = 'Saving...';
 
             const payload = {
-                show_donate: document.getElementById('toggleShowDonate').checked,
                 show_email_bio: document.getElementById('toggleEmailBio').checked,
                 show_phone_bio: document.getElementById('togglePhoneBio').checked,
                 show_telegram_bio: document.getElementById('toggleTelegramBio').checked,
@@ -409,6 +415,13 @@
                 receipt_wallet_display: document.getElementById('selectReceiptWallet').value,
                 net_id_discoverable: document.getElementById('toggleNetIdDiscoverable').checked,
             };
+            // Only include show_donate if the user actually touched this
+            // toggle this session -- it's also editable from dashboard.html,
+            // so an untouched (possibly stale) value here must not silently
+            // overwrite a change made there.
+            if (showDonateDirty) {
+                payload.show_donate = document.getElementById('toggleShowDonate').checked;
+            }
 
             const { error } = await supabaseClient.from('profiles').update(payload).eq('id', currentUser.id);
 
@@ -416,6 +429,7 @@
             btn.textContent = original;
 
             if (error) { console.error(error); showToast('Failed to save privacy settings'); return; }
+            showDonateDirty = false;
             showToast('Privacy settings saved!');
         }
 
