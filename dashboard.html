@@ -358,7 +358,7 @@
                     <input id="profileShowCv" type="checkbox" class="rounded"> Show CV
                 </label>
                 <label class="flex items-center gap-2 text-sm text-secondary">
-                    <input id="profileShowDonate" type="checkbox" class="rounded"> Show Wallet
+                    <input id="profileShowDonate" type="checkbox" class="rounded" onchange="showDonateDirty = true"> Show Wallet
                 </label>
             </div>
 
@@ -793,6 +793,12 @@
         let currentUser = null;
         let currentProfile = null;
         let currentLinks = [];
+        // Show Wallet (show_donate) is also editable from identity.html.
+        // Only send it in the update payload if the user actually touched
+        // this checkbox during this session -- otherwise a stale checkbox
+        // state (loaded before identity.html changed it elsewhere) would
+        // silently overwrite the other page's change on unrelated saves.
+        let showDonateDirty = false;
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
 
         // ==========================================
@@ -980,6 +986,7 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('profileUsername').value = data.username || '';
             document.getElementById('profileShowCv').checked = data.show_cv !== false;
             document.getElementById('profileShowDonate').checked = data.show_donate === true;
+            showDonateDirty = false;
 
             document.getElementById('profileDisplayName').value = data.display_name || '';
             document.getElementById('profileEmail').value = data.contact_email || '';
@@ -1185,11 +1192,19 @@ window.openNetlinkPay = openNetlinkPay;
                     return;
                 }
 
-                const { error } = await supabaseClient.from('profiles').update({
+                const updatePayload = {
                     username,
                     show_cv: document.getElementById('profileShowCv').checked,
-                    show_donate: document.getElementById('profileShowDonate').checked,
-                }).eq('id', currentUser.id);
+                };
+                // Only include show_donate if the user actually touched this
+                // checkbox this session -- it's also editable from
+                // identity.html, so an untouched (possibly stale) value here
+                // must not silently overwrite a change made there.
+                if (showDonateDirty) {
+                    updatePayload.show_donate = document.getElementById('profileShowDonate').checked;
+                }
+
+                const { error } = await supabaseClient.from('profiles').update(updatePayload).eq('id', currentUser.id);
 
                 if (error) {
                     if (error.code === '23505') {
