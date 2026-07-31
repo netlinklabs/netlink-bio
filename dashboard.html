@@ -3,6 +3,7 @@
 <head>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netlink.bio - Dashboard</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
@@ -25,9 +26,6 @@
         .bg-surface { background: #f1f5f9; }
         .border-subtle { border-color: rgba(0,0,0,0.06); }
         .hover-surface:hover { background: rgba(0,0,0,0.03); }
-        .sidebar { background: #ffffff; }
-        .mobile-header { background: #ffffff; }
-        .notification-panel { background: #ffffff; }
         .progress-bar { background: #e2e8f0; }
         .locked-card::before { background: rgba(241, 245, 249, 0.92); }
 
@@ -40,16 +38,9 @@
         html.dark .border-subtle, html.dark .border-white\/5 { border-color: rgba(255,255,255,0.05) !important; }
         html.dark .border-white\/10 { border-color: rgba(255,255,255,0.08) !important; }
         html.dark .hover-surface:hover, html.dark .hover\:bg-white\/5:hover { background: rgba(255,255,255,0.05) !important; }
-        html.dark .sidebar { background: #1e293b; border-left: 1px solid rgba(255,255,255,0.05); }
-        html.dark .mobile-header { background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        html.dark .notification-panel { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         html.dark .progress-bar { background: #0f172a; }
         html.dark .locked-card::before { background: rgba(15, 23, 42, 0.85); }
         html.dark .toast { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        html.dark .sidebar nav a.text-secondary { color: #94a3b8 !important; }
-        html.dark .sidebar nav a.text-secondary:hover { background: rgba(255,255,255,0.05) !important; }
-        html.dark .sidebar .border-t { border-color: rgba(255,255,255,0.05) !important; }
-        html.dark .sidebar .text-muted { color: #64748b !important; }
         html.dark .upgrade-option { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
         html.dark .upgrade-option:hover { border-color: #3b82f6 !important; }
         html.dark .link-item { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
@@ -58,31 +49,14 @@
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
-        .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
+        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); }
-        .notification-panel { display: none; position: absolute; top: 50px; right: 0; width: 320px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; z-index: 50; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .notification-panel.active { display: block; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
         .progress-bar { border-radius: 999px; height: 8px; overflow: hidden; }
         .progress-fill { background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; border-radius: 999px; transition: width 0.5s ease; }
         .locked-card { position: relative; overflow: hidden; }
         .locked-card::before { content: ''; position: absolute; inset: 0; z-index: 10; }
         .locked-content { position: relative; z-index: 20; }
-        .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; height: 100dvh; z-index: 50; transition: right 0.3s ease; overflow: hidden; border-left: 1px solid rgba(0,0,0,0.08); }
-        .sidebar nav { overflow-y: auto; min-height: 0; }
-        .sidebar.open { right: 0; }
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
-        .sidebar-overlay.active { display: block; }
-        @media (min-width: 1024px) {
-            .sidebar { right: 0; width: 280px; transition: none; }
-            .sidebar-overlay { display: none !important; }
-            .main-content { margin-right: 280px; margin-left: 0; }
-            .mobile-header { display: none; }
-        }
-        @media (max-width: 1023px) {
-            .main-content { margin-right: 0; }
-            .mobile-header { display: flex; }
-        }
         #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
         html.dark #authGate { background: #0f172a; }
 
@@ -95,12 +69,6 @@
         /* Icon picker popup */
         .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; max-height: 280px; overflow-y: auto; }
         .icon-picker-panel.open { display: grid; }
-    
-        /* Theme-aware logo images */
-        .theme-logo-light { display: block; }
-        .theme-logo-dark { display: none; }
-        html.dark .theme-logo-light { display: none; }
-        html.dark .theme-logo-dark { display: block; }
 </style>
 </head>
 <body class="min-h-screen">
@@ -114,165 +82,7 @@
 
     <div id="toast" class="toast">Saved successfully!</div>
 
-    <header class="mobile-header fixed top-0 left-0 right-0 h-16 border-b border-subtle z-30 flex items-center justify-between px-4">
-        <div class="flex items-center gap-2">
-            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-lightBG.png" alt="Netlink.bio" class="h-8 w-auto theme-logo-light">
-            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" class="h-8 w-auto theme-logo-dark hidden">
-        </div>
-        <div class="flex items-center gap-2">
-            <button onclick="toggleTheme()" class="p-2 hover-surface rounded-lg transition" title="Switch to dark mode">
-                <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-                <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-            </button>
-            <div class="relative">
-                <button onclick="toggleNotifications(this)" class="p-2 hover-surface rounded-lg transition relative">
-                    <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
-                <div id="notificationPanelMobile" class="notification-panel">
-                    <div class="p-4 border-b border-subtle flex items-center justify-between">
-                        <h4 class="font-semibold text-sm text-primary">Notifications</h4>
-                        <button onclick="markAllRead()" class="text-xs text-blue-500 hover:text-blue-600">Mark all read</button>
-                    </div>
-                    <div class="max-h-80 overflow-y-auto">
-                        <div class="p-4 hover-surface cursor-pointer transition">
-                            <p class="text-sm text-primary">Welcome to Netlink.bio!</p>
-                            <p class="text-xs text-secondary mt-1">Finish setting up your page below.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <button onclick="toggleSidebar()" class="p-2 hover-surface rounded-lg transition">
-                <i data-lucide="menu" class="w-5 h-5 text-secondary"></i>
-            </button>
-        </div>
-    </header>
-
-    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-    <aside class="sidebar text-white flex flex-col">
-        <div class="hidden lg:block p-4 border-b border-subtle">
-            <a href="index.html" class="flex items-center gap-3">
-                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-lightBG.png" alt="Netlink.bio" class="h-10 w-auto theme-logo-light">
-                <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" class="h-10 w-auto theme-logo-dark hidden">
-            </a>
-        </div>
-
-        <nav class="flex-1 py-2">
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm bg-blue-500/10 text-blue-500 border-l-2 border-blue-500">
-                <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="link" class="w-4 h-4"></i><span>Links</span>
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="palette" class="w-4 h-4"></i><span>Appearance</span>
-            </a>
-            <a href="#" onclick="event.preventDefault(); scrollToCvCard();" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="file-text" class="w-4 h-4"></i><span>CV Builder</span>
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span>
-            </a>
-            <div class="my-2 px-4">
-                <div class="border-t border-subtle"></div>
-                <p class="text-xs text-muted mt-2 mb-1">Pro Features</p>
-            </div>
-            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Analytics</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
-            </div>
-            <a href="#" onclick="event.preventDefault(); scrollToLandingPageCard();" class="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover-surface transition">
-                <i data-lucide="globe" class="w-4 h-4"></i><span>Landing Page</span>
-            </a>
-            <div onclick="showToast('Coming soon!')" class="flex items-center gap-3 px-4 py-3 text-sm text-muted cursor-pointer select-none hover-surface transition">
-                <i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Store</span>
-                <i data-lucide="lock" class="w-3 h-3 ml-auto text-gray-400"></i>
-            </div>
-        </nav>
-
-        <div class="p-4 border-t border-subtle">
-            <div class="flex items-center gap-3">
-                <button onclick="scrollToProfileCard()" class="flex items-center gap-3 flex-1 min-w-0 text-left">
-                    <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-lg">👤</div>
-                    <div class="flex-1 min-w-0">
-                        <p id="sidebarUserEmail" class="text-sm font-medium truncate text-primary">username</p>
-                        <p id="sidebarTierLabel" class="text-xs text-muted">Basic Plan</p>
-                    </div>
-                </button>
-                <button onclick="handleLogout()" class="text-secondary hover:text-primary transition" title="Log out">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </div>
-    </aside>
-
-    <main class="main-content pt-16 lg:pt-0 p-4 lg:p-8">
-        <div class="hidden lg:flex items-center justify-between mb-6">
-            <!-- Left: Title area wrapped in card -->
-            <div class="card rounded-2xl px-6 py-4 flex items-center gap-5 flex-1 mr-4">
-                <div class="flex-1 min-w-0">
-                    <h2 class="text-2xl font-bold text-primary tracking-tight">Dashboard</h2>
-                    <p class="text-secondary text-sm mt-0.5">Welcome back! Manage your bio links.</p>
-                </div>
-                <!-- Vertical divider -->
-                <div class="w-px h-10 bg-subtle flex-shrink-0"></div>
-                <!-- Tier badge + Avatar (swapped order) -->
-                <div class="flex items-center gap-3 flex-shrink-0">
-                    <span id="headerTierPillDesktop" class="px-3 py-1 border border-subtle rounded-full text-xs font-medium text-secondary whitespace-nowrap">Basic</span>
-                    <div id="headerAvatarWrapDesktop" class="w-10 h-10 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <img id="headerAvatarImgDesktop" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                        <span id="headerAvatarInitialDesktop" class="text-sm font-semibold text-blue-500">?</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Right: Action buttons -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <button onclick="toggleTheme()" class="p-2.5 hover-surface rounded-xl transition" title="Switch to dark mode">
-                    <i data-lucide="moon" class="w-5 h-5 text-blue-500 theme-icon-dark hidden"></i>
-                    <i data-lucide="sun" class="w-5 h-5 text-yellow-500 theme-icon-light"></i>
-                </button>
-                <div class="relative">
-                    <button onclick="toggleNotifications(this)" class="p-2.5 hover-surface rounded-xl transition relative">
-                        <i data-lucide="bell" class="w-5 h-5 text-secondary"></i>
-                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
-                    <div id="notificationPanel" class="notification-panel">
-                        <div class="p-4 border-b border-subtle flex items-center justify-between">
-                            <h4 class="font-semibold text-sm text-primary">Notifications</h4>
-                            <button onclick="markAllRead()" class="text-xs text-blue-500 hover:text-blue-600">Mark all read</button>
-                        </div>
-                        <div class="max-h-80 overflow-y-auto">
-                            <div class="p-4 hover-surface cursor-pointer transition">
-                                <p class="text-sm text-primary">Welcome to Netlink.bio!</p>
-                                <p class="text-xs text-secondary mt-1">Finish setting up your page below.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <a id="viewProfileBtn" href="#" target="_blank" class="flex items-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
-                    <i data-lucide="external-link" class="w-4 h-4"></i> View Profile
-                </a>
-            </div>
-        </div>
-
-        <div class="lg:hidden mb-5">
-            <div class="card rounded-2xl px-4 py-3 flex items-center gap-3">
-                <div class="flex-1 min-w-0">
-                    <h2 class="text-lg font-bold text-primary tracking-tight">Dashboard</h2>
-                    <p class="text-secondary text-xs mt-0.5">Welcome back!</p>
-                </div>
-                <div class="w-px h-8 bg-subtle flex-shrink-0"></div>
-                <div class="flex items-center gap-2.5 flex-shrink-0">
-                    <span id="headerTierPillMobile" class="px-2.5 py-1 border border-subtle rounded-full text-[11px] font-medium text-secondary whitespace-nowrap">Basic</span>
-                    <button onclick="scrollToProfileCard()" class="w-9 h-9 rounded-full overflow-hidden border-2 border-subtle bg-blue-500/20 flex items-center justify-center flex-shrink-0" title="Edit profile">
-                        <img id="headerAvatarImg" src="" alt="Your avatar" class="w-full h-full object-cover hidden">
-                        <span id="headerAvatarInitial" class="text-xs font-semibold text-blue-500">?</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
+    <main class="p-4 lg:p-8 max-w-3xl mx-auto">
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-primary">Wallet</h3>
@@ -709,10 +519,6 @@
                 </div>
             </div>
         </div>
-            <!-- Footer -->
-        <footer class="text-center py-6 mt-2">
-            <p class="text-xs text-muted">Developed by Netlink Labs</p>
-        </footer>
     </main>
 
     <!-- Disconnect Wallet Confirmation Modal -->
@@ -793,34 +599,9 @@
         let currentUser = null;
         let currentProfile = null;
         let currentLinks = [];
-        // Show Wallet (show_donate) is also editable from identity.html.
-        // Only send it in the update payload if the user actually touched
-        // this checkbox during this session -- otherwise a stale checkbox
-        // state (loaded before identity.html changed it elsewhere) would
-        // silently overwrite the other page's change on unrelated saves.
         let showDonateDirty = false;
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
 
-        // ==========================================
-        // AUTH GATE — FIX untuk race condition setelah redirect Google OAuth
-        // ------------------------------------------
-        // Sebelumnya kode memanggil getSession() langsung saat halaman load.
-        // Masalahnya: begitu Google redirect balik ke dashboard.html, token
-        // masih ada di URL (#access_token=...) dan Supabase client butuh
-        // waktu sepersekian detik untuk mem-parsingnya lalu menyimpan sesi.
-        // Kalau getSession() dipanggil SEBELUM proses itu selesai, ia bisa
-        // return null padahal user sebenarnya baru saja berhasil login —
-        // akibatnya user "sempat lihat dashboard" lalu dilempar balik ke
-        // login.html. Ini paling kentara untuk akun BARU karena ada beban
-        // tambahan (trigger INSERT ke profiles, generate net_id, dst) yang
-        // memperlebar celah race-nya.
-        //
-        // Fix: dengarkan event onAuthStateChange dan tunggu event
-        // INITIAL_SESSION (dikirim otomatis sekali oleh Supabase setelah ia
-        // selesai memeriksa URL/localStorage untuk sesi yang ada). Baru
-        // setelah event itu kita putuskan redirect ke login atau lanjut ke
-        // dashboard — bukan menebak lebih awal dengan getSession().
-        // ==========================================
         let authResolved = false;
 
         async function enterDashboard(session) {
@@ -837,7 +618,7 @@
         }
 
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            if (authResolved) return; // sudah diputuskan sekali, jangan diulang
+            if (authResolved) return;
 
             if (event === 'INITIAL_SESSION') {
                 if (session) {
@@ -846,7 +627,6 @@
                     window.location.href = 'login.html';
                 }
             } else if (event === 'SIGNED_IN' && session) {
-                // Jaga-jaga kalau INITIAL_SESSION belum sempat fire duluan
                 await enterDashboard(session);
             }
         });
@@ -870,7 +650,6 @@
 
         function scrollToProfileCard() {
             document.getElementById('profileCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (window.innerWidth < 1024) toggleSidebar();
         }
 
         function getCurrentUsername() {
@@ -918,35 +697,10 @@
             updateProfileCompletion();
         }
 
-        const TIER_PILL_STYLE = {
-            basic: 'border-subtle text-secondary',
-            silver: 'border-slate-400 text-slate-500',
-            gold: 'border-amber-400 text-amber-600',
-            platinum: 'border-purple-400 text-purple-600',
-        };
-
-        function renderTierPill(tier) {
-            const t = tier || 'basic';
-            const label = t.charAt(0).toUpperCase() + t.slice(1);
-            const style = TIER_PILL_STYLE[t] || TIER_PILL_STYLE.basic;
-            ['headerTierPillMobile', 'headerTierPillDesktop'].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.textContent = label;
-                el.className = `px-2.5 py-0.5 border rounded-full text-[11px] font-medium whitespace-nowrap ${style}`;
-            });
-        }
 function openNetlinkPay() {
     window.location.href = 'https://netlink-bio.vercel.app/pay.html';
 }
 window.openNetlinkPay = openNetlinkPay;
-        // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
-        // trigger handle_new_user() di sisi database, hampir bersamaan
-        // dengan sesi auth tapi tidak 100% instan. Kalau dashboard sempat
-        // query sepersekian detik lebih cepat dari trigger selesai, .single()
-        // akan gagal (0 rows). Retry singkat ini menutup celah itu tanpa
-        // mengganggu akun lama (yang profilnya sudah pasti ada, jadi retry
-        // ini langsung berhasil di percobaan pertama).
         async function fetchProfileWithRetry(maxAttempts = 4, delayMs = 600) {
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
                 const { data, error } = await supabaseClient
@@ -962,25 +716,13 @@ window.openNetlinkPay = openNetlinkPay;
 
             if (error) {
                 console.error('Failed to load profile:', error);
-                document.getElementById('sidebarUserEmail').textContent = currentUser.email;
                 return;
             }
 
             currentProfile = data;
-            const label = data.display_name || data.username || currentUser.email;
-            document.getElementById('sidebarUserEmail').textContent = label;
-            document.getElementById('sidebarTierLabel').textContent =
-                (data.tier || 'basic').charAt(0).toUpperCase() + (data.tier || 'basic').slice(1) + ' Plan';
-            renderTierPill(data.tier);
 
-            const viewBtn = document.getElementById('viewProfileBtn');
             if (data.username) {
-                viewBtn.href = `/${data.username}`;
-                viewBtn.onclick = null;
                 document.getElementById('cvUrlHint').textContent = `netlink.bio/cv/${data.username}`;
-            } else {
-                viewBtn.href = '#';
-                viewBtn.onclick = (e) => { e.preventDefault(); showToast('Pick a username below first'); };
             }
 
             document.getElementById('profileUsername').value = data.username || '';
@@ -1011,11 +753,6 @@ window.openNetlinkPay = openNetlinkPay;
             const imgEl = document.getElementById('avatarImg');
             const initialChar = (data.display_name || data.username || currentUser.email || '?').charAt(0).toUpperCase();
 
-            const headerTargets = [
-                { img: document.getElementById('headerAvatarImg'), initial: document.getElementById('headerAvatarInitial') },
-                { img: document.getElementById('headerAvatarImgDesktop'), initial: document.getElementById('headerAvatarInitialDesktop') },
-            ];
-
             if (data.avatar_url) {
                 imgEl.src = data.avatar_url;
                 imgEl.classList.remove('hidden');
@@ -1026,21 +763,16 @@ window.openNetlinkPay = openNetlinkPay;
                 initialEl.textContent = initialChar;
             }
 
-            headerTargets.forEach(({ img, initial }) => {
-                if (!img || !initial) return;
-                if (data.avatar_url) {
-                    img.src = data.avatar_url;
-                    img.classList.remove('hidden');
-                    initial.classList.add('hidden');
-                } else {
-                    img.classList.add('hidden');
-                    initial.classList.remove('hidden');
-                    initial.textContent = initialChar;
-                }
-            });
+            if (window.NetlinkNav) {
+                NetlinkNav.init({
+                    activePage: 'dashboard',
+                    profile: currentProfile,
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                });
+            }
         }
 
-        // Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
         function requiredTierForLength(len) {
             if (len >= 5) return 'basic';
             if (len === 4) return 'silver';
@@ -1050,11 +782,6 @@ window.openNetlinkPay = openNetlinkPay;
         }
         const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
 
-        // Token guard: setiap pemanggilan checkUsernameLive() atau proses
-        // save akan menaikkan angka ini. Kalau hasil RPC pengecekan
-        // "pulang" belakangan (setelah proses save/pengecekan yang lebih
-        // baru dimulai), token-nya sudah tidak cocok lagi -> hasil lama
-        // diabaikan, tidak menimpa status yang sudah benar di layar.
         let usernameCheckToken = 0;
 
         async function checkUsernameLive() {
@@ -1075,8 +802,7 @@ window.openNetlinkPay = openNetlinkPay;
                 status.textContent = 'Maximum 25 characters.';
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
                 status.classList.remove('hidden');
-
-                    return;
+                return;
             }
 
             const myTier = currentProfile?.tier || 'basic';
@@ -1087,8 +813,6 @@ window.openNetlinkPay = openNetlinkPay;
                 check_tier: myTier,
             });
 
-            // Ada pengecekan/proses save lain yang mulai setelah kita —
-            // hasil kita sudah basi, jangan render apa pun.
             if (myToken !== usernameCheckToken) return;
 
             if (error) {
@@ -1137,10 +861,6 @@ window.openNetlinkPay = openNetlinkPay;
             if (error) { showToast('Failed to save wallet address'); return; }
             showToast('Wallet address saved');
 
-            // The DB write above is what actually matters for "success".
-            // Everything below is cosmetic UI refresh — if any of it throws,
-            // don't let that bubble up and make the caller think the save
-            // itself failed.
             try {
                 await loadProfile();
                 updateProfileCompletion();
@@ -1179,9 +899,9 @@ window.openNetlinkPay = openNetlinkPay;
 
         async function saveLinkCardSettings() {
             await withSaving('linkCardSaveBtn', async () => {
-                usernameCheckToken++; // batalkan pengecekan username yang mungkin masih menggantung
+                usernameCheckToken++;
                 const usernameStatus = document.getElementById('usernameStatus');
-                usernameStatus.classList.add('hidden'); // sembunyikan status lama selagi proses save jalan
+                usernameStatus.classList.add('hidden');
                 const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
                 document.getElementById('profileUsername').value = username;
 
@@ -1196,10 +916,6 @@ window.openNetlinkPay = openNetlinkPay;
                     username,
                     show_cv: document.getElementById('profileShowCv').checked,
                 };
-                // Only include show_donate if the user actually touched this
-                // checkbox this session -- it's also editable from
-                // identity.html, so an untouched (possibly stale) value here
-                // must not silently overwrite a change made there.
                 if (showDonateDirty) {
                     updatePayload.show_donate = document.getElementById('profileShowDonate').checked;
                 }
@@ -1270,12 +986,10 @@ window.openNetlinkPay = openNetlinkPay;
 
         function scrollToCvCard() {
             document.getElementById('cvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (window.innerWidth < 1024) toggleSidebar();
         }
 
         function scrollToLandingPageCard() {
             document.getElementById('landingPageCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (window.innerWidth < 1024) toggleSidebar();
         }
 
         let currentLandingPage = null;
@@ -1347,9 +1061,6 @@ window.openNetlinkPay = openNetlinkPay;
         }
 
         function previewLandingPage() {
-            // There's no public-facing rendering endpoint for landing pages yet
-            // (the equivalent of api/bio.js or api/cv.js for this feature isn't
-            // built). Being upfront about that here instead of opening a dead link.
             showToast('Public preview link is not wired up yet — open the editor to preview inside the builder for now');
         }
 
@@ -1437,8 +1148,6 @@ window.openNetlinkPay = openNetlinkPay;
                 </div>
             `);
             lucide.createIcons();
-            // CV sections stay collapsed by default now (even if they already
-            // have saved data) — user has to tap to expand, keeps the card short.
         }
 
         function openAccordion(id) {
@@ -1920,36 +1629,10 @@ window.openNetlinkPay = openNetlinkPay;
     <script>
         lucide.createIcons();
 
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            if (!savedTheme) { applyTheme('light', false); return; }
-            applyTheme(savedTheme, true);
-        }
-
-        function applyTheme(theme, save = true) {
-            const html = document.documentElement;
-            const lightIcons = document.querySelectorAll('.theme-icon-light');
-            const darkIcons = document.querySelectorAll('.theme-icon-dark');
-            if (theme === 'dark') {
-                html.classList.add('dark'); html.classList.remove('light');
-                lightIcons.forEach(icon => icon.classList.add('hidden'));
-                darkIcons.forEach(icon => icon.classList.remove('hidden'));
-            } else {
-                html.classList.remove('dark'); html.classList.add('light');
-                lightIcons.forEach(icon => icon.classList.remove('hidden'));
-                darkIcons.forEach(icon => icon.classList.add('hidden'));
-            }
-            if (save) localStorage.setItem('theme', theme);
-        }
-
-        function toggleTheme() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
-            applyTheme(newTheme, true);
-            showToast(newTheme === 'dark' ? 'Dark mode activated' : 'Light mode activated');
-        }
-        initTheme();
-
+        // Theme (dark/light) is now controlled from the Account sheet in
+        // shared/nav.js -- NetlinkNav.init() applies the saved theme on
+        // load. This page keeps its own showToast() since shared/nav.js
+        // calls window.showToast() when present.
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -1957,31 +1640,15 @@ window.openNetlinkPay = openNetlinkPay;
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('open');
-            document.querySelector('.sidebar-overlay').classList.toggle('active');
-        }
-
-        function toggleNotifications(btn) {
-            const panel = btn.closest('.relative').querySelector('.notification-panel');
-            document.querySelectorAll('.notification-panel').forEach(p => { if (p !== panel) p.classList.remove('active'); });
-            panel.classList.toggle('active');
-        }
-        function markAllRead() {
-            showToast('All notifications marked as read');
-            document.querySelectorAll('.notification-panel').forEach(p => p.classList.remove('active'));
-        }
         document.addEventListener('click', function(e) {
-            const bell = e.target.closest('button[onclick^="toggleNotifications"]');
-            if (!bell && !e.target.closest('.notification-panel')) {
-                document.querySelectorAll('.notification-panel').forEach(p => p.classList.remove('active'));
-            }
-
             const iconPanel = document.getElementById('iconPickerPanel');
             const iconBtn = e.target.closest('button[onclick="toggleIconPicker()"]');
             if (!iconBtn && !e.target.closest('#iconPickerPanel')) iconPanel.classList.remove('open');
         });
     </script>
+
+    <script src="/shared/account-menu.js"></script>
+    <script src="/shared/nav.js"></script>
 
     <script type="module">
         const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
@@ -2010,7 +1677,6 @@ window.openNetlinkPay = openNetlinkPay;
                 if(statusText) statusText.textContent = 'Status: Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
 
-                // Show Disconnect, hide Connect
                 if (connectBtn) connectBtn.classList.add('hidden');
                 if (disconnectBtn) disconnectBtn.classList.remove('hidden');
             } else {
@@ -2021,7 +1687,6 @@ window.openNetlinkPay = openNetlinkPay;
                 if(statusText) statusText.textContent = 'Status: Not Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
 
-                // Show Connect, hide Disconnect
                 if (connectBtn) connectBtn.classList.remove('hidden');
                 if (disconnectBtn) disconnectBtn.classList.add('hidden');
             }
@@ -2120,7 +1785,6 @@ window.openNetlinkPay = openNetlinkPay;
                 const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
                 if (error) {
                     console.error('Supabase error removing wallet:', error);
-                    // Continue anyway - update UI to reflect disconnected state
                 }
                 document.getElementById('walletAddressInput').value = '';
                 renderWalletAddressUI('', false);
@@ -2129,7 +1793,6 @@ window.openNetlinkPay = openNetlinkPay;
                 showToast('Wallet disconnected');
             } catch (err) {
                 console.error('Disconnect error:', err);
-                // Even if there's an error, try to update UI
                 document.getElementById('walletAddressInput').value = '';
                 renderWalletAddressUI('', false);
                 fetchWalletBalances('');
@@ -2157,10 +1820,6 @@ window.openNetlinkPay = openNetlinkPay;
     let googleWalletInitAttempts = 0;
     const MAX_INIT_ATTEMPTS = 30;
 
-    // Decodes the `email` claim from a Google ID token's JWT payload.
-    // No signature verification needed here -- sequenceWaas.signIn() above
-    // already validates the token is genuine; we're only reading a field
-    // for display purposes, not making an authorization decision with it.
     function decodeGoogleIdTokenEmail(idToken) {
         try {
             const payloadBase64 = idToken.split('.')[1];
@@ -2187,12 +1846,10 @@ window.openNetlinkPay = openNetlinkPay;
         try {
             const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
 
-            // Guard: check if result is valid
             if (!waasResult) {
                 throw new Error('No response from wallet service');
             }
 
-            // Sequence WaaS can return wallet address directly or as property
             const walletAddress = waasResult.wallet || waasResult;
 
             if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
@@ -2203,10 +1860,6 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('walletAddressInput').value = walletAddress;
             await window.saveWallet(true);
 
-            // Google's idToken already carries the account email as a JWT
-            // claim -- decode it here (no extra API call needed) and record
-            // it so identity.html can show "Wallet Email" and flag if it
-            // differs from the account login email.
             const googleEmail = decodeGoogleIdTokenEmail(idToken);
             if (googleEmail) {
                 const { error: emailSaveError } = await supabaseClient
@@ -2219,12 +1872,6 @@ window.openNetlinkPay = openNetlinkPay;
         } catch (err) {
             console.error('Wallet connection error:', err);
 
-            // Guard: sometimes sequenceWaas.signIn() rejects (e.g. a
-            // confirmation timeout) even though the wallet WAS created and
-            // already saved successfully a few lines above. Re-check the
-            // actual saved state before showing a "failed" toast — showing
-            // an error after a real success is more confusing than showing
-            // nothing.
             const savedAddress = document.getElementById('walletAddressInput').value.trim();
             if (savedAddress && /^0x[a-fA-F0-9]{40}$/.test(savedAddress)) {
                 console.warn('Wallet connection reported an error, but a valid address is already saved — suppressing failure toast.');
@@ -2279,7 +1926,6 @@ window.openNetlinkPay = openNetlinkPay;
         const container = document.getElementById('googleSignInContainer');
         if (!modal || !container) return;
 
-        // Clear previous button and render fresh
         container.innerHTML = '';
         google.accounts.id.renderButton(container, {
             type: 'standard',
@@ -2314,7 +1960,6 @@ window.openNetlinkPay = openNetlinkPay;
         removeWalletAddress();
     };
 
-    // Enable/disable confirm button based on checkbox
     document.addEventListener('DOMContentLoaded', function () {
         const checkbox = document.getElementById('disconnectConfirmCheckbox');
         const btn = document.getElementById('disconnectConfirmBtn');
@@ -2327,7 +1972,6 @@ window.openNetlinkPay = openNetlinkPay;
         }
     });
 
-    // Start initialization with retry
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initGoogleWallet);
     } else {
