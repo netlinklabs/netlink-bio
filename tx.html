@@ -65,6 +65,31 @@
         html.dark .filter-btn { color: #64748b; }
         html.dark .filter-btn:hover { color: #cbd5e1; }
         html.dark .filter-btn.active { background: #1e293b; color: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .tab-switch { border-bottom: 1px solid rgba(0,0,0,0.06); }
+        html.dark .tab-switch { border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .tab-btn { position: relative; padding: 10px 4px; margin-right: 24px; font-size: 14px; font-weight: 600; color: #94a3b8; background: transparent; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: color 0.15s ease; }
+        .tab-btn:hover { color: #475569; }
+        .tab-btn.active { color: #0f172a; }
+        .tab-btn.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #0f172a; border-radius: 2px; }
+        html.dark .tab-btn { color: #64748b; }
+        html.dark .tab-btn:hover { color: #cbd5e1; }
+        html.dark .tab-btn.active { color: #f8fafc; }
+        html.dark .tab-btn.active::after { background: #f8fafc; }
+        .unread-badge { background: #e11d48; color: #fff; font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 100px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+        .notif-card.unread { position: relative; }
+        .notif-card.unread::before { content: ''; position: absolute; top: 16px; left: 6px; width: 8px; height: 8px; border-radius: 50%; background: #2563eb; }
+        .icon-announcement { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #2563eb; }
+        .icon-reward { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); color: #d97706; }
+        .icon-referral { background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); color: #9333ea; }
+        .icon-tier { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); color: #4f46e5; }
+        .icon-kyc { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color: #059669; }
+        .icon-system { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); color: #64748b; }
+        html.dark .icon-announcement { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: #60a5fa; }
+        html.dark .icon-reward { background: linear-gradient(135deg, #78350f 0%, #92400e 100%); color: #fbbf24; }
+        html.dark .icon-referral { background: linear-gradient(135deg, #581c87 0%, #6b21a8 100%); color: #c084fc; }
+        html.dark .icon-tier { background: linear-gradient(135deg, #312e81 0%, #3730a3 100%); color: #a5b4fc; }
+        html.dark .icon-kyc { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: #34d399; }
+        html.dark .icon-system { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #94a3b8; }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         .skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
         html.dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
@@ -167,40 +192,73 @@
             <a href="dashboard.html" class="inline-block px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold transition">Go to Dashboard</a>
         </div>
         <div id="txContent" class="hidden">
-            <div class="flex items-center justify-between mb-5">
-                <div class="filter-control">
-                    <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
-                    <button class="filter-btn" data-filter="send" onclick="setFilter('send')">Sent</button>
-                    <button class="filter-btn" data-filter="receive" onclick="setFilter('receive')">Received</button>
-                    <button class="filter-btn" data-filter="swap" onclick="setFilter('swap')">Swaps</button>
+            <div class="tab-switch flex items-center mb-5">
+                <button class="tab-btn active" data-tab="tx" onclick="setTab('tx')">Transaction</button>
+                <button class="tab-btn" data-tab="notif" onclick="setTab('notif')">
+                    Notification
+                    <span id="unreadBadge" class="unread-badge hidden">0</span>
+                </button>
+            </div>
+
+            <div id="tabTx">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="filter-control">
+                        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+                        <button class="filter-btn" data-filter="send" onclick="setFilter('send')">Sent</button>
+                        <button class="filter-btn" data-filter="receive" onclick="setFilter('receive')">Received</button>
+                        <button class="filter-btn" data-filter="swap" onclick="setFilter('swap')">Swaps</button>
+                    </div>
+                </div>
+                <div id="skeletonLoader" class="space-y-3">
+                    <div class="date-header"><span class="skeleton w-20 h-4 inline-block rounded"></span></div>
+                    <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
+                        <div class="flex-1 space-y-2"><div class="skeleton w-32 h-4"></div><div class="skeleton w-20 h-3"></div></div>
+                        <div class="skeleton w-16 h-5"></div>
+                    </div>
+                    <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
+                        <div class="flex-1 space-y-2"><div class="skeleton w-28 h-4"></div><div class="skeleton w-24 h-3"></div></div>
+                        <div class="skeleton w-14 h-5"></div>
+                    </div>
+                    <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
+                        <div class="flex-1 space-y-2"><div class="skeleton w-36 h-4"></div><div class="skeleton w-16 h-3"></div></div>
+                        <div class="skeleton w-18 h-5"></div>
+                    </div>
+                </div>
+                <div id="txList" class="space-y-3 hidden"></div>
+                <div id="emptyState" class="hidden text-center py-16">
+                    <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><i data-lucide="receipt" class="w-8 h-8 text-slate-400"></i></div>
+                    <p class="text-sm font-semibold text-secondary mb-1">No transactions yet</p>
+                    <p class="text-xs text-muted">Your activity will appear here</p>
+                </div>
+                <div id="paginationBar" class="flex items-center justify-center gap-1.5 mt-6 hidden"></div>
+                <p class="text-xs text-muted text-center mt-6">Transaction history is kept permanently. Incoming transfers sync automatically.</p>
+            </div>
+
+            <div id="tabNotif" class="hidden">
+                <div class="flex items-center justify-between mb-5">
+                    <p class="text-xs text-muted">Announcements, rewards &amp; updates</p>
+                    <button onclick="markAllNotificationsRead()" class="text-xs font-semibold text-blue-500 hover:text-blue-600 transition">Mark all read</button>
+                </div>
+                <div id="notifSkeleton" class="space-y-3">
+                    <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
+                        <div class="flex-1 space-y-2"><div class="skeleton w-40 h-4"></div><div class="skeleton w-24 h-3"></div></div>
+                    </div>
+                    <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
+                        <div class="flex-1 space-y-2"><div class="skeleton w-32 h-4"></div><div class="skeleton w-20 h-3"></div></div>
+                    </div>
+                </div>
+                <div id="notifList" class="space-y-3 hidden"></div>
+                <div id="notifEmptyState" class="hidden text-center py-16">
+                    <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><i data-lucide="bell" class="w-8 h-8 text-slate-400"></i></div>
+                    <p class="text-sm font-semibold text-secondary mb-1">No notifications yet</p>
+                    <p class="text-xs text-muted">Announcements and rewards will appear here</p>
                 </div>
             </div>
-            <div id="skeletonLoader" class="space-y-3">
-                <div class="date-header"><span class="skeleton w-20 h-4 inline-block rounded"></span></div>
-                <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
-                    <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
-                    <div class="flex-1 space-y-2"><div class="skeleton w-32 h-4"></div><div class="skeleton w-20 h-3"></div></div>
-                    <div class="skeleton w-16 h-5"></div>
-                </div>
-                <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
-                    <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
-                    <div class="flex-1 space-y-2"><div class="skeleton w-28 h-4"></div><div class="skeleton w-24 h-3"></div></div>
-                    <div class="skeleton w-14 h-5"></div>
-                </div>
-                <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
-                    <div class="w-11 h-11 rounded-full skeleton flex-shrink-0"></div>
-                    <div class="flex-1 space-y-2"><div class="skeleton w-36 h-4"></div><div class="skeleton w-16 h-3"></div></div>
-                    <div class="skeleton w-18 h-5"></div>
-                </div>
-            </div>
-            <div id="txList" class="space-y-3 hidden"></div>
-            <div id="emptyState" class="hidden text-center py-16">
-                <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><i data-lucide="receipt" class="w-8 h-8 text-slate-400"></i></div>
-                <p class="text-sm font-semibold text-secondary mb-1">No transactions yet</p>
-                <p class="text-xs text-muted">Your activity will appear here</p>
-            </div>
-            <div id="paginationBar" class="flex items-center justify-center gap-1.5 mt-6 hidden"></div>
-            <p class="text-xs text-muted text-center mt-6">Transaction history is kept permanently. Incoming transfers sync automatically.</p>
         </div>
     </main>
 
@@ -234,6 +292,8 @@
 
         let currentUser = null, currentProfile = null, allTx = [], currentFilter = 'all', currentPage = 1;
         let currentModalTx = null, currentTxStatus = 'Success';
+        let currentTab = 'tx', allNotif = [], notifLoaded = false;
+        const NOTIF_ICONS = { announcement: 'megaphone', reward: 'gift', referral: 'users', tier: 'star', kyc: 'shield-check', system: 'info' };
 
         function showAuthError(msg) { document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg; }
         window.addEventListener('error', (e) => showAuthError(e.message));
@@ -255,6 +315,7 @@
             document.getElementById('txContent').classList.remove('hidden'); if (window.lucide) lucide.createIcons();
             if (window.NetlinkNav) NetlinkNav.init({ activePage: 'activity', profile: data, supabaseClient: supabaseClient, userId: currentUser.id });
             await syncIncomingTransactions(data.wallet_address); await loadTransactions();
+            refreshUnreadBadge();
         }
         async function syncIncomingTransactions(address) { try { const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`); if (!res.ok) return; const data = await res.json(); const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash); if (!incoming.length) return; const { data: existing } = await supabaseClient.from('wallet_transactions').select('hash').eq('owner_id', currentUser.id); const existingHashes = new Set((existing || []).map((r) => r.hash)); const newRows = incoming.filter((t) => !existingHashes.has(t.hash)).map((t) => ({ owner_id: currentUser.id, hash: t.hash, type: 'receive', token: t.token, amount: t.amount, counterparty_address: t.counterparty || null, occurred_at: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString(), status: 'success', gas_fee: t.gasFee || null })); if (newRows.length) { const { error } = await supabaseClient.from('wallet_transactions').insert(newRows); if (error) console.error('Failed to sync incoming transactions:', error); } }
             catch (err) { console.error('Incoming sync failed:', err); }
@@ -267,6 +328,92 @@
         function setFilter(filter) { currentFilter = filter; document.querySelectorAll('.filter-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === filter)); currentPage = 1; renderTransactions(); }
         function goToPage(page) { currentPage = page; renderTransactions(); document.getElementById('txContent').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         window.goToPage = goToPage;
+
+        function setTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+            document.getElementById('tabTx').classList.toggle('hidden', tab !== 'tx');
+            document.getElementById('tabNotif').classList.toggle('hidden', tab !== 'notif');
+            if (tab === 'notif' && !notifLoaded) loadNotifications();
+        }
+        window.setTab = setTab;
+
+        async function refreshUnreadBadge() {
+            try {
+                const { data, error } = await supabaseClient.rpc('get_unread_notification_count');
+                if (error) { console.error('Failed to fetch unread count:', error); return; }
+                const badge = document.getElementById('unreadBadge');
+                const count = data || 0;
+                if (count > 0) { badge.textContent = count > 99 ? '99+' : String(count); badge.classList.remove('hidden'); }
+                else { badge.classList.add('hidden'); }
+            } catch (err) { console.error('Failed to refresh unread badge:', err); }
+        }
+
+        async function loadNotifications() {
+            const { data, error } = await supabaseClient.rpc('get_my_notifications', { limit_count: 50 });
+            document.getElementById('notifSkeleton').classList.add('hidden');
+            if (error) { console.error('Failed to load notifications:', error); document.getElementById('notifList').innerHTML = '<div class="p-6 text-center text-sm text-muted">Could not load notifications.</div>'; document.getElementById('notifList').classList.remove('hidden'); return; }
+            allNotif = data || [];
+            notifLoaded = true;
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notifList'), emptyState = document.getElementById('notifEmptyState');
+            if (allNotif.length === 0) { list.classList.add('hidden'); emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+            list.classList.remove('hidden');
+            list.innerHTML = allNotif.map(notifCardHtml).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function notifCardHtml(n) {
+            const icon = NOTIF_ICONS[n.type] || 'bell';
+            const iconClass = 'icon-' + (NOTIF_ICONS[n.type] ? n.type : 'system');
+            const timeAgo = formatTimeAgo(n.created_at);
+            const unreadClass = n.is_read ? '' : ' unread';
+            return `<div class="tx-card notif-card${unreadClass} rounded-2xl p-4 cursor-pointer" onclick="handleNotifClick('${n.id}')">
+                <div class="flex items-center gap-4">
+                    <div class="w-11 h-11 ${iconClass} rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="${icon}" class="w-5 h-5"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[15px] font-semibold text-primary truncate">${n.title}</p>
+                        ${n.body ? `<p class="text-xs text-muted mt-0.5 truncate">${n.body}</p>` : ''}
+                        <p class="text-xs text-muted mt-0.5">${timeAgo}</p>
+                    </div>
+                </div>
+            </div>`;
+        }
+        window.handleNotifClick = handleNotifClick;
+
+        async function handleNotifClick(id) {
+            const n = allNotif.find((x) => x.id === id);
+            if (!n) return;
+            if (!n.is_read) await markNotificationRead(id);
+            if (n.link) window.location.href = n.link;
+        }
+
+        async function markNotificationRead(id) {
+            try {
+                const { error } = await supabaseClient.rpc('mark_notification_read', { p_notification_id: id });
+                if (error) { console.error('Failed to mark notification read:', error); return; }
+                const n = allNotif.find((x) => x.id === id);
+                if (n) n.is_read = true;
+                renderNotifications();
+                refreshUnreadBadge();
+            } catch (err) { console.error('Failed to mark notification read:', err); }
+        }
+
+        async function markAllNotificationsRead() {
+            try {
+                const { error } = await supabaseClient.rpc('mark_all_notifications_read');
+                if (error) { console.error('Failed to mark all read:', error); showToast('Could not update notifications'); return; }
+                allNotif = allNotif.map((n) => ({ ...n, is_read: true }));
+                renderNotifications();
+                refreshUnreadBadge();
+                showToast('All notifications marked as read');
+            } catch (err) { console.error('Failed to mark all read:', err); }
+        }
+        window.markAllNotificationsRead = markAllNotificationsRead;
         function formatTimeAgo(isoOrDate) { const ts = typeof isoOrDate === 'string' ? new Date(isoOrDate).getTime() : isoOrDate; const diffMs = Date.now() - ts; const mins = Math.floor(diffMs / 60000); if (mins < 1) return 'Just now'; if (mins < 60) return `${mins}m ago`; const hours = Math.floor(mins / 60); if (hours < 24) return `${hours}h ago`; const days = Math.floor(hours / 24); if (days < 7) return `${days}d ago`; return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
         function formatDateHeader(isoOrDate) { const d = new Date(isoOrDate), now = new Date(); if (d.toDateString() === now.toDateString()) return 'Today'; const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1); if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'; return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined }); }
         function formatPolygonScanDate(isoOrDate) { const d = new Date(isoOrDate); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const month = months[d.getUTCMonth()]; const day = String(d.getUTCDate()).padStart(2, '0'); const year = d.getUTCFullYear(); let hours = d.getUTCHours(); const ampm = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${month}-${day}-${year} ${String(hours).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}:${String(d.getUTCSeconds()).padStart(2, '0')} ${ampm} +UTC`; }
