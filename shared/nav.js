@@ -112,10 +112,13 @@
   // optional on the profile object passed to init() -- only pages that
   // select them will show this part of the subtitle. Pages that don't
   // fetch these columns simply fall back to showing the tier alone.
-  function verificationLabel(profile) {
+  // Colors match the public bio page's badge dots (bio.js): green for a
+  // verified personal profile, gold for a verified business. Business
+  // takes priority if both happen to be set.
+  function verificationBadge(profile) {
     if (!profile) return null;
-    if (profile.business_verified_at) return 'Verified Business';
-    if (profile.identity_verified_at) return 'Verified Profile';
+    if (profile.business_verified_at) return { label: 'Verified Business', color: '#f59e0b' };
+    if (profile.identity_verified_at) return { label: 'Verified Profile', color: '#10b981' };
     return null;
   }
 
@@ -137,15 +140,21 @@
     const label = p.display_name || p.username || 'Account';
     const tierKey = (p.tier || 'basic').toLowerCase();
     const tierLabel = tierKey.charAt(0).toUpperCase() + tierKey.slice(1);
-    const verification = verificationLabel(p);
-    const subtitle = `${tierLabel} Member` + (verification ? ` · ${verification} \u2705` : '');
+    const badge = verificationBadge(p);
+    const badgeHtml = badge
+      ? ` <span class="inline-flex items-center gap-1 align-middle">
+            <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-white flex-shrink-0" style="background:${badge.color}; font-size:9px; line-height:1;">&#10003;</span>
+            <span>${escapeHtml(badge.label)}</span>
+          </span>`
+      : '';
+    const subtitleHtml = `${escapeHtml(tierLabel)} \u2022${badgeHtml}`;
 
     el.innerHTML = `
       <button type="button" id="nlnav-avatar-btn" class="flex items-center gap-3 flex-1 min-w-0 text-left">
         ${avatarHtml(p, 'w-12 h-12')}
         <span class="min-w-0 flex-1">
           <span class="block text-[15px] font-semibold text-slate-900 dark:text-slate-50 truncate">${escapeHtml(label)}</span>
-          <span class="block text-xs font-medium truncate ${tierAccentClass(tierKey)}">${escapeHtml(subtitle)}</span>
+          <span class="flex items-center gap-1 text-xs font-medium truncate ${tierAccentClass(tierKey)}">${subtitleHtml}</span>
         </span>
       </button>
       <img src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-icon.png" alt="Netlink Pay" class="w-9 h-9 rounded-[7px] object-cover flex-shrink-0">
