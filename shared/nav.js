@@ -143,8 +143,8 @@
     const badge = verificationBadge(p);
     const badgeHtml = badge
       ? ` <span class="inline-flex items-center gap-1 align-middle">
-            <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-white flex-shrink-0" style="background:${badge.color}; font-size:9px; line-height:1;">&#10003;</span>
             <span>${escapeHtml(badge.label)}</span>
+            <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-white flex-shrink-0" style="background:${badge.color}; font-size:9px; line-height:1;">&#10003;</span>
           </span>`
       : '';
     const subtitleHtml = `${escapeHtml(tierLabel)} \u2022${badgeHtml}`;
