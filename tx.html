@@ -248,7 +248,7 @@
             catch (err) { console.error(err); showAuthError(err.message || String(err)); }
         }
         async function loadUserProfile() {
-            const { data, error } = await supabaseClient.from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, receipt_show_display_name, receipt_wallet_display').eq('id', currentUser.id).single();
+            const { data, error } = await supabaseClient.from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, receipt_show_display_name, receipt_wallet_display, business_verified_at, identity_verified_at').eq('id', currentUser.id).single();
             if (error) { console.error('Failed to load profile:', error); return; }
             currentProfile = data;
             if (!data.wallet_address) { document.getElementById('noWalletState').classList.remove('hidden'); document.getElementById('txContent').classList.add('hidden'); if (window.lucide) lucide.createIcons(); if (window.NetlinkNav) NetlinkNav.init({ activePage: 'activity', profile: data, supabaseClient: supabaseClient, userId: currentUser.id }); return; }
