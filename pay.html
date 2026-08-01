@@ -379,8 +379,7 @@
                         </div>
                         <div>
                             <p id="balanceUsdc" class="text-4xl font-bold tracking-tight">0.00</p>
-                            <p id="balanceUsdcFiat" class="text-white/60 text-sm">= $0.00 USD</p>
-                            <p id="balanceUsdcLocal" class="text-white/45 text-xs mt-0.5 hidden"></p>
+                            <p id="balanceUsdcLocal" class="text-white/80 text-base font-semibold mt-0.5 hidden"></p>
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
@@ -1024,7 +1023,6 @@
                 window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
                 document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
-                document.getElementById('balanceUsdcFiat').textContent = `= $${formatTokenAmount(data.usdc)} USD`;
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
                 updateLocalCurrencyDisplay(data.usdc);
                 if (window.renderSwapTokens) window.renderSwapTokens();
