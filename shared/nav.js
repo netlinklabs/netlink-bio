@@ -60,7 +60,7 @@
     const style = document.createElement('style');
     style.id = 'nlnav-styles';
     style.textContent = `
-      #nlnav-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 30;
+      #nlnav-header { position: fixed; top: 0; left: 0; right: 0; height: 72px; z-index: 30;
         background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.06);
         display: flex; align-items: center; padding: 0 16px; gap: 10px; }
       html.dark #nlnav-header { background: #0f172a; border-color: rgba(255,255,255,0.06); }
@@ -75,7 +75,7 @@
       #nlnav-bottom .nlnav-dot { position: absolute; top: 7px; right: 26%; width: 8px; height: 8px;
         border-radius: 50%; background: #ef4444; border: 2px solid #ffffff; }
       html.dark #nlnav-bottom .nlnav-dot { border-color: #0f172a; }
-      body { padding-top: 60px; padding-bottom: 82px; }
+      body { padding-top: 72px; padding-bottom: 82px; }
 
       #nlnav-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 70;
         opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
@@ -97,6 +97,28 @@
     return label.charAt(0).toUpperCase();
   }
 
+  const TIER_ACCENT = {
+    basic: 'text-slate-500 dark:text-slate-400',
+    silver: 'text-slate-500 dark:text-slate-300',
+    gold: 'text-amber-600 dark:text-amber-400',
+    platinum: 'text-purple-600 dark:text-purple-400',
+  };
+
+  function tierAccentClass(tier) {
+    return TIER_ACCENT[(tier || 'basic').toLowerCase()] || TIER_ACCENT.basic;
+  }
+
+  // Verification fields (business_verified_at / identity_verified_at) are
+  // optional on the profile object passed to init() -- only pages that
+  // select them will show this part of the subtitle. Pages that don't
+  // fetch these columns simply fall back to showing the tier alone.
+  function verificationLabel(profile) {
+    if (!profile) return null;
+    if (profile.business_verified_at) return 'Verified Business';
+    if (profile.identity_verified_at) return 'Verified Profile';
+    return null;
+  }
+
   function avatarHtml(profile, sizeClass) {
     if (profile?.avatar_url) {
       return `<img src="${escapeHtml(profile.avatar_url)}" class="${sizeClass} rounded-full object-cover" alt="">`;
@@ -111,12 +133,22 @@
       el.id = 'nlnav-header';
       document.body.prepend(el);
     }
-    const label = state.profile?.display_name || state.profile?.username || 'Account';
+    const p = state.profile || {};
+    const label = p.display_name || p.username || 'Account';
+    const tierKey = (p.tier || 'basic').toLowerCase();
+    const tierLabel = tierKey.charAt(0).toUpperCase() + tierKey.slice(1);
+    const verification = verificationLabel(p);
+    const subtitle = `${tierLabel} Member` + (verification ? ` | ${verification} \u2705` : '');
+
     el.innerHTML = `
-      <button type="button" id="nlnav-avatar-btn" class="flex items-center gap-2.5">
-        ${avatarHtml(state.profile, 'w-9 h-9')}
-        <span class="text-sm font-semibold text-slate-900 dark:text-slate-50 truncate max-w-[220px] text-left">${escapeHtml(label)}</span>
+      <button type="button" id="nlnav-avatar-btn" class="flex items-center gap-3 flex-1 min-w-0 text-left">
+        ${avatarHtml(p, 'w-12 h-12')}
+        <span class="min-w-0">
+          <span class="block text-[15px] font-semibold text-slate-900 dark:text-slate-50 truncate max-w-[190px]">${escapeHtml(label)}</span>
+          <span class="block text-xs font-medium truncate max-w-[190px] ${tierAccentClass(tierKey)}">${escapeHtml(subtitle)}</span>
+        </span>
       </button>
+      <img src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-icon.png" alt="Netlink Pay" class="w-9 h-9 rounded-[7px] object-cover flex-shrink-0">
     `;
     document.getElementById('nlnav-avatar-btn').addEventListener('click', openAccountSheet);
   }
