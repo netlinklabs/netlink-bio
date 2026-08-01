@@ -49,8 +49,8 @@
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
-        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(100px); transition: transform 0.3s; z-index: 60; max-width: 320px; }
-        .toast.show { transform: translateY(0); }
+        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
         .progress-bar { border-radius: 999px; height: 8px; overflow: hidden; }
         .progress-fill { background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; border-radius: 999px; transition: width 0.5s ease; }
@@ -69,6 +69,8 @@
         /* Icon picker popup */
         .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; max-height: 280px; overflow-y: auto; }
         .icon-picker-panel.open { display: grid; }
+    
+        /* Theme-aware logo images */
 </style>
 </head>
 <body class="min-h-screen">
@@ -81,6 +83,7 @@
     </div>
 
     <div id="toast" class="toast">Saved successfully!</div>
+
 
     <main class="p-4 lg:p-8 max-w-3xl mx-auto">
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
@@ -599,9 +602,34 @@
         let currentUser = null;
         let currentProfile = null;
         let currentLinks = [];
+        // Show Wallet (show_donate) is also editable from identity.html.
+        // Only send it in the update payload if the user actually touched
+        // this checkbox during this session -- otherwise a stale checkbox
+        // state (loaded before identity.html changed it elsewhere) would
+        // silently overwrite the other page's change on unrelated saves.
         let showDonateDirty = false;
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
 
+        // ==========================================
+        // AUTH GATE — FIX untuk race condition setelah redirect Google OAuth
+        // ------------------------------------------
+        // Sebelumnya kode memanggil getSession() langsung saat halaman load.
+        // Masalahnya: begitu Google redirect balik ke dashboard.html, token
+        // masih ada di URL (#access_token=...) dan Supabase client butuh
+        // waktu sepersekian detik untuk mem-parsingnya lalu menyimpan sesi.
+        // Kalau getSession() dipanggil SEBELUM proses itu selesai, ia bisa
+        // return null padahal user sebenarnya baru saja berhasil login —
+        // akibatnya user "sempat lihat dashboard" lalu dilempar balik ke
+        // login.html. Ini paling kentara untuk akun BARU karena ada beban
+        // tambahan (trigger INSERT ke profiles, generate net_id, dst) yang
+        // memperlebar celah race-nya.
+        //
+        // Fix: dengarkan event onAuthStateChange dan tunggu event
+        // INITIAL_SESSION (dikirim otomatis sekali oleh Supabase setelah ia
+        // selesai memeriksa URL/localStorage untuk sesi yang ada). Baru
+        // setelah event itu kita putuskan redirect ke login atau lanjut ke
+        // dashboard — bukan menebak lebih awal dengan getSession().
+        // ==========================================
         let authResolved = false;
 
         async function enterDashboard(session) {
@@ -618,7 +646,7 @@
         }
 
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            if (authResolved) return;
+            if (authResolved) return; // sudah diputuskan sekali, jangan diulang
 
             if (event === 'INITIAL_SESSION') {
                 if (session) {
@@ -627,6 +655,7 @@
                     window.location.href = 'login.html';
                 }
             } else if (event === 'SIGNED_IN' && session) {
+                // Jaga-jaga kalau INITIAL_SESSION belum sempat fire duluan
                 await enterDashboard(session);
             }
         });
@@ -701,6 +730,13 @@ function openNetlinkPay() {
     window.location.href = 'https://netlink-bio.vercel.app/pay.html';
 }
 window.openNetlinkPay = openNetlinkPay;
+        // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
+        // trigger handle_new_user() di sisi database, hampir bersamaan
+        // dengan sesi auth tapi tidak 100% instan. Kalau dashboard sempat
+        // query sepersekian detik lebih cepat dari trigger selesai, .single()
+        // akan gagal (0 rows). Retry singkat ini menutup celah itu tanpa
+        // mengganggu akun lama (yang profilnya sudah pasti ada, jadi retry
+        // ini langsung berhasil di percobaan pertama).
         async function fetchProfileWithRetry(maxAttempts = 4, delayMs = 600) {
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
                 const { data, error } = await supabaseClient
@@ -773,6 +809,7 @@ window.openNetlinkPay = openNetlinkPay;
             }
         }
 
+        // Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
         function requiredTierForLength(len) {
             if (len >= 5) return 'basic';
             if (len === 4) return 'silver';
@@ -782,6 +819,11 @@ window.openNetlinkPay = openNetlinkPay;
         }
         const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
 
+        // Token guard: setiap pemanggilan checkUsernameLive() atau proses
+        // save akan menaikkan angka ini. Kalau hasil RPC pengecekan
+        // "pulang" belakangan (setelah proses save/pengecekan yang lebih
+        // baru dimulai), token-nya sudah tidak cocok lagi -> hasil lama
+        // diabaikan, tidak menimpa status yang sudah benar di layar.
         let usernameCheckToken = 0;
 
         async function checkUsernameLive() {
@@ -802,7 +844,8 @@ window.openNetlinkPay = openNetlinkPay;
                 status.textContent = 'Maximum 25 characters.';
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
                 status.classList.remove('hidden');
-                return;
+
+                    return;
             }
 
             const myTier = currentProfile?.tier || 'basic';
@@ -813,6 +856,8 @@ window.openNetlinkPay = openNetlinkPay;
                 check_tier: myTier,
             });
 
+            // Ada pengecekan/proses save lain yang mulai setelah kita —
+            // hasil kita sudah basi, jangan render apa pun.
             if (myToken !== usernameCheckToken) return;
 
             if (error) {
@@ -861,6 +906,10 @@ window.openNetlinkPay = openNetlinkPay;
             if (error) { showToast('Failed to save wallet address'); return; }
             showToast('Wallet address saved');
 
+            // The DB write above is what actually matters for "success".
+            // Everything below is cosmetic UI refresh — if any of it throws,
+            // don't let that bubble up and make the caller think the save
+            // itself failed.
             try {
                 await loadProfile();
                 updateProfileCompletion();
@@ -899,9 +948,9 @@ window.openNetlinkPay = openNetlinkPay;
 
         async function saveLinkCardSettings() {
             await withSaving('linkCardSaveBtn', async () => {
-                usernameCheckToken++;
+                usernameCheckToken++; // batalkan pengecekan username yang mungkin masih menggantung
                 const usernameStatus = document.getElementById('usernameStatus');
-                usernameStatus.classList.add('hidden');
+                usernameStatus.classList.add('hidden'); // sembunyikan status lama selagi proses save jalan
                 const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
                 document.getElementById('profileUsername').value = username;
 
@@ -916,6 +965,10 @@ window.openNetlinkPay = openNetlinkPay;
                     username,
                     show_cv: document.getElementById('profileShowCv').checked,
                 };
+                // Only include show_donate if the user actually touched this
+                // checkbox this session -- it's also editable from
+                // identity.html, so an untouched (possibly stale) value here
+                // must not silently overwrite a change made there.
                 if (showDonateDirty) {
                     updatePayload.show_donate = document.getElementById('profileShowDonate').checked;
                 }
@@ -1061,6 +1114,9 @@ window.openNetlinkPay = openNetlinkPay;
         }
 
         function previewLandingPage() {
+            // There's no public-facing rendering endpoint for landing pages yet
+            // (the equivalent of api/bio.js or api/cv.js for this feature isn't
+            // built). Being upfront about that here instead of opening a dead link.
             showToast('Public preview link is not wired up yet — open the editor to preview inside the builder for now');
         }
 
@@ -1148,6 +1204,8 @@ window.openNetlinkPay = openNetlinkPay;
                 </div>
             `);
             lucide.createIcons();
+            // CV sections stay collapsed by default now (even if they already
+            // have saved data) — user has to tap to expand, keeps the card short.
         }
 
         function openAccordion(id) {
@@ -1677,6 +1735,7 @@ window.openNetlinkPay = openNetlinkPay;
                 if(statusText) statusText.textContent = 'Status: Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
 
+                // Show Disconnect, hide Connect
                 if (connectBtn) connectBtn.classList.add('hidden');
                 if (disconnectBtn) disconnectBtn.classList.remove('hidden');
             } else {
@@ -1687,6 +1746,7 @@ window.openNetlinkPay = openNetlinkPay;
                 if(statusText) statusText.textContent = 'Status: Not Connected';
                 if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
 
+                // Show Connect, hide Disconnect
                 if (connectBtn) connectBtn.classList.remove('hidden');
                 if (disconnectBtn) disconnectBtn.classList.add('hidden');
             }
@@ -1785,6 +1845,7 @@ window.openNetlinkPay = openNetlinkPay;
                 const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
                 if (error) {
                     console.error('Supabase error removing wallet:', error);
+                    // Continue anyway - update UI to reflect disconnected state
                 }
                 document.getElementById('walletAddressInput').value = '';
                 renderWalletAddressUI('', false);
@@ -1793,6 +1854,7 @@ window.openNetlinkPay = openNetlinkPay;
                 showToast('Wallet disconnected');
             } catch (err) {
                 console.error('Disconnect error:', err);
+                // Even if there's an error, try to update UI
                 document.getElementById('walletAddressInput').value = '';
                 renderWalletAddressUI('', false);
                 fetchWalletBalances('');
@@ -1820,6 +1882,10 @@ window.openNetlinkPay = openNetlinkPay;
     let googleWalletInitAttempts = 0;
     const MAX_INIT_ATTEMPTS = 30;
 
+    // Decodes the `email` claim from a Google ID token's JWT payload.
+    // No signature verification needed here -- sequenceWaas.signIn() above
+    // already validates the token is genuine; we're only reading a field
+    // for display purposes, not making an authorization decision with it.
     function decodeGoogleIdTokenEmail(idToken) {
         try {
             const payloadBase64 = idToken.split('.')[1];
@@ -1846,10 +1912,12 @@ window.openNetlinkPay = openNetlinkPay;
         try {
             const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
 
+            // Guard: check if result is valid
             if (!waasResult) {
                 throw new Error('No response from wallet service');
             }
 
+            // Sequence WaaS can return wallet address directly or as property
             const walletAddress = waasResult.wallet || waasResult;
 
             if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
@@ -1860,6 +1928,10 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('walletAddressInput').value = walletAddress;
             await window.saveWallet(true);
 
+            // Google's idToken already carries the account email as a JWT
+            // claim -- decode it here (no extra API call needed) and record
+            // it so identity.html can show "Wallet Email" and flag if it
+            // differs from the account login email.
             const googleEmail = decodeGoogleIdTokenEmail(idToken);
             if (googleEmail) {
                 const { error: emailSaveError } = await supabaseClient
@@ -1872,6 +1944,12 @@ window.openNetlinkPay = openNetlinkPay;
         } catch (err) {
             console.error('Wallet connection error:', err);
 
+            // Guard: sometimes sequenceWaas.signIn() rejects (e.g. a
+            // confirmation timeout) even though the wallet WAS created and
+            // already saved successfully a few lines above. Re-check the
+            // actual saved state before showing a "failed" toast — showing
+            // an error after a real success is more confusing than showing
+            // nothing.
             const savedAddress = document.getElementById('walletAddressInput').value.trim();
             if (savedAddress && /^0x[a-fA-F0-9]{40}$/.test(savedAddress)) {
                 console.warn('Wallet connection reported an error, but a valid address is already saved — suppressing failure toast.');
@@ -1926,6 +2004,7 @@ window.openNetlinkPay = openNetlinkPay;
         const container = document.getElementById('googleSignInContainer');
         if (!modal || !container) return;
 
+        // Clear previous button and render fresh
         container.innerHTML = '';
         google.accounts.id.renderButton(container, {
             type: 'standard',
@@ -1960,6 +2039,7 @@ window.openNetlinkPay = openNetlinkPay;
         removeWalletAddress();
     };
 
+    // Enable/disable confirm button based on checkbox
     document.addEventListener('DOMContentLoaded', function () {
         const checkbox = document.getElementById('disconnectConfirmCheckbox');
         const btn = document.getElementById('disconnectConfirmBtn');
@@ -1972,6 +2052,7 @@ window.openNetlinkPay = openNetlinkPay;
         }
     });
 
+    // Start initialization with retry
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initGoogleWallet);
     } else {
@@ -1980,3 +2061,5 @@ window.openNetlinkPay = openNetlinkPay;
 </script>
 </body>
 </html>
+
+        
