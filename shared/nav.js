@@ -251,6 +251,7 @@
           if (error) { console.error(error); toast('Failed to save currency'); return; }
         }
         toast(`Local currency set to ${value}`);
+        window.dispatchEvent(new CustomEvent('netlink:local-currency-changed', { detail: { currency: value } }));
       });
     }
 
