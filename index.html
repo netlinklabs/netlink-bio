@@ -175,6 +175,11 @@
     .checker-input::placeholder { color: var(--text-secondary); opacity: 0.7; }
     .checker-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(22, 198, 200, 0.15); outline: none; }
     .checker-btn { width: 100%; padding: 14px 28px; }
+    .checker-status { min-height: 18px; font-size: 0.8125rem; font-weight: 500; text-align: left; padding-left: 4px; margin-top: -4px; }
+    .checker-status.hidden { display: none; }
+    .checker-status.status-ok { color: #059669; }
+    .checker-status.status-bad { color: #ef4444; }
+    .checker-status.status-neutral { color: var(--text-secondary); }
 
     /* FEATURES */
     .features-section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
@@ -323,8 +328,8 @@
               </svg>
               Building Digital Identity
             </div>
-            <h1 class="hero-title">Your Digital Identity in One Link</h1>
-            <p class="hero-description">Create your Link in Bio, Professional CV, Business Page, and Crypto Wallet — all connected in one simple profile.</p>
+            <h1 class="hero-title">Create Link, Build Identity, Earn.</h1>
+            <p class="hero-description">One link for your Bio, CV, Business Page, and Wallet — built to help people find you, trust you, and pay you.</p>
             <div class="hero-buttons">
               <a href="https://netlink-bio.vercel.app/login.html" class="btn btn-hero">Get Started Free</a>
               <a href="#docs" class="btn btn-outline-dark">View Documentation</a>
@@ -341,9 +346,10 @@
           <form class="checker-form" onsubmit="event.preventDefault();" aria-label="Username checker form">
             <div class="checker-input-wrapper">
               <span class="checker-prefix" aria-hidden="true">netlink.bio/</span>
-              <input type="text" class="checker-input" placeholder="Choose your username..." aria-label="Choose your username" autocomplete="off" spellcheck="false">
+              <input type="text" class="checker-input" id="checkerInput" placeholder="Choose your username..." aria-label="Choose your username" autocomplete="off" spellcheck="false" maxlength="25">
             </div>
-            <button type="submit" class="btn btn-primary checker-btn">Check Availability</button>
+            <p class="checker-status hidden" id="checkerStatus" role="status" aria-live="polite"></p>
+            <button type="submit" class="btn btn-primary checker-btn" id="checkerBtn">Check Availability</button>
           </form>
         </div>
       </div>
@@ -520,6 +526,7 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     (function() {
       'use strict';
@@ -589,11 +596,81 @@
         });
       });
 
+      // ---- Bio Link Availability Checker (live) ----
+      const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
       const checkerForm = document.querySelector('.checker-form');
-      const checkerInput = document.querySelector('.checker-input');
-      const checkerBtn = document.querySelector('.checker-btn');
-      if (checkerForm && checkerInput && checkerBtn) {
-        checkerForm.addEventListener('submit', function(e) {
+      const checkerInput = document.getElementById('checkerInput');
+      const checkerBtn = document.getElementById('checkerBtn');
+      const checkerStatus = document.getElementById('checkerStatus');
+
+      // Token guard: hasil RPC yang "pulang" belakangan setelah pengecekan
+      // yang lebih baru dimulai akan diabaikan, agar status di layar tidak
+      // ketimpa hasil basi (pola sama seperti checkUsernameLive di dashboard).
+      let checkToken = 0;
+      let debounceTimer = null;
+      let lastCheckedAvailable = false;
+
+      function setStatus(text, type) {
+        checkerStatus.textContent = text;
+        checkerStatus.className = 'checker-status status-' + type;
+      }
+      function clearStatus() {
+        checkerStatus.textContent = '';
+        checkerStatus.className = 'checker-status hidden';
+      }
+
+      async function runCheck(username) {
+        const myToken = ++checkToken;
+
+        if (!username) { clearStatus(); lastCheckedAvailable = false; return; }
+        if (username.length < 3) {
+          setStatus('Minimum 3 characters.', 'neutral');
+          lastCheckedAvailable = false;
+          return;
+        }
+        if (username.length > 25) {
+          setStatus('Maximum 25 characters.', 'bad');
+          lastCheckedAvailable = false;
+          return;
+        }
+
+        setStatus('Checking...', 'neutral');
+
+        const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
+          check_slug: username,
+          check_tier: 'basic',
+        });
+
+        if (myToken !== checkToken) return; // hasil basi, abaikan
+
+        if (error) {
+          setStatus('Could not check availability. Try again.', 'bad');
+          lastCheckedAvailable = false;
+          return;
+        }
+
+        if (isAvailable) {
+          setStatus(`netlink.bio/${username} is available!`, 'ok');
+          lastCheckedAvailable = true;
+        } else {
+          setStatus(`netlink.bio/${username} is already taken.`, 'bad');
+          lastCheckedAvailable = false;
+        }
+      }
+
+      if (checkerForm && checkerInput && checkerBtn && checkerStatus) {
+        checkerInput.addEventListener('input', function() {
+          const username = checkerInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+          checkerInput.value = username;
+          lastCheckedAvailable = false;
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(function() { runCheck(username); }, 400);
+        });
+
+        checkerForm.addEventListener('submit', async function(e) {
           e.preventDefault();
           const username = checkerInput.value.trim();
           if (!username) {
@@ -602,11 +679,21 @@
             setTimeout(function() { checkerInput.style.borderColor = ''; }, 2000);
             return;
           }
+
           const originalText = checkerBtn.textContent;
           checkerBtn.textContent = 'Checking...';
           checkerBtn.disabled = true;
           checkerBtn.style.opacity = '0.7';
-          setTimeout(function() { checkerBtn.textContent = originalText; checkerBtn.disabled = false; checkerBtn.style.opacity = ''; }, 1500);
+
+          await runCheck(username);
+
+          checkerBtn.textContent = originalText;
+          checkerBtn.disabled = false;
+          checkerBtn.style.opacity = '';
+
+          if (lastCheckedAvailable) {
+            window.location.href = 'https://netlink-bio.vercel.app/login.html?username=' + encodeURIComponent(username);
+          }
         });
       }
     })();
