@@ -244,7 +244,10 @@
             <div id="tabNotif" class="hidden">
                 <div class="flex items-center justify-between mb-5">
                     <p class="text-xs text-muted">Announcements, rewards &amp; updates</p>
-                    <button onclick="markAllNotificationsRead()" class="text-xs font-semibold text-blue-500 hover:text-blue-600 transition">Mark all read</button>
+                    <div class="flex items-center gap-4">
+                        <button onclick="markAllNotificationsRead()" class="text-xs font-semibold text-blue-500 hover:text-blue-600 transition">Mark all read</button>
+                        <button onclick="dismissReadNotifications()" class="text-xs font-semibold text-rose-500 hover:text-rose-600 transition">Delete read</button>
+                    </div>
                 </div>
                 <div id="notifSkeleton" class="space-y-3">
                     <div class="tx-card rounded-2xl p-4 flex items-center gap-4">
@@ -418,6 +421,19 @@
             } catch (err) { console.error('Failed to mark all read:', err); }
         }
         window.markAllNotificationsRead = markAllNotificationsRead;
+
+        async function dismissReadNotifications() {
+            const readCount = allNotif.filter((n) => n.is_read).length;
+            if (readCount === 0) { showToast('No read notifications to delete'); return; }
+            try {
+                const { error } = await supabaseClient.rpc('dismiss_read_notifications');
+                if (error) { console.error('Failed to delete read notifications:', error); showToast('Could not delete notifications'); return; }
+                allNotif = allNotif.filter((n) => !n.is_read);
+                renderNotifications();
+                showToast('Read notifications deleted');
+            } catch (err) { console.error('Failed to delete read notifications:', err); }
+        }
+        window.dismissReadNotifications = dismissReadNotifications;
         function formatTimeAgo(isoOrDate) { const ts = typeof isoOrDate === 'string' ? new Date(isoOrDate).getTime() : isoOrDate; const diffMs = Date.now() - ts; const mins = Math.floor(diffMs / 60000); if (mins < 1) return 'Just now'; if (mins < 60) return `${mins}m ago`; const hours = Math.floor(mins / 60); if (hours < 24) return `${hours}h ago`; const days = Math.floor(hours / 24); if (days < 7) return `${days}d ago`; return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
         function formatDateHeader(isoOrDate) { const d = new Date(isoOrDate), now = new Date(); if (d.toDateString() === now.toDateString()) return 'Today'; const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1); if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'; return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined }); }
         function formatPolygonScanDate(isoOrDate) { const d = new Date(isoOrDate); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const month = months[d.getUTCMonth()]; const day = String(d.getUTCDate()).padStart(2, '0'); const year = d.getUTCFullYear(); let hours = d.getUTCHours(); const ampm = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${month}-${day}-${year} ${String(hours).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}:${String(d.getUTCSeconds()).padStart(2, '0')} ${ampm} +UTC`; }
