@@ -66,16 +66,16 @@
       html.dark #nlnav-header { background: #0f172a; border-color: rgba(255,255,255,0.06); }
       #nlnav-bottom { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
         background: #ffffff; border-top: 1px solid rgba(0,0,0,0.06);
-        display: flex; padding-bottom: env(safe-area-inset-bottom, 0px); }
+        display: flex; padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
       html.dark #nlnav-bottom { background: #0f172a; border-color: rgba(255,255,255,0.06); }
       #nlnav-bottom button { flex: 1; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 3px; padding: 9px 4px 8px; background: none; border: none;
-        cursor: pointer; color: #94a3b8; font-size: 10.5px; font-weight: 500; position: relative; }
+        justify-content: center; gap: 4px; padding: 12px 4px 6px; background: none; border: none;
+        cursor: pointer; color: #94a3b8; font-size: 11.5px; font-weight: 500; position: relative; }
       #nlnav-bottom button.active { color: #3b82f6; }
-      #nlnav-bottom .nlnav-dot { position: absolute; top: 4px; right: 26%; width: 8px; height: 8px;
+      #nlnav-bottom .nlnav-dot { position: absolute; top: 7px; right: 26%; width: 8px; height: 8px;
         border-radius: 50%; background: #ef4444; border: 2px solid #ffffff; }
       html.dark #nlnav-bottom .nlnav-dot { border-color: #0f172a; }
-      body { padding-top: 60px; padding-bottom: 68px; }
+      body { padding-top: 60px; padding-bottom: 82px; }
 
       #nlnav-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 70;
         opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
@@ -210,6 +210,9 @@
 
     sheet.innerHTML = `
       <div id="nlnav-sheet-handle"></div>
+      <button type="button" id="nlnav-sheet-close" aria-label="Close" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition">
+        <i data-lucide="x" class="w-[18px] h-[18px]"></i>
+      </button>
       <div class="px-5 pt-2 pb-4 flex items-center gap-3">
         ${avatarHtml(p, 'w-14 h-14')}
         <div class="min-w-0">
@@ -254,6 +257,9 @@
         window.dispatchEvent(new CustomEvent('netlink:local-currency-changed', { detail: { currency: value } }));
       });
     }
+
+    // Close button
+    document.getElementById('nlnav-sheet-close').addEventListener('click', closeAccountSheet);
 
     // Theme toggle
     document.getElementById('nlnav-theme-btn').addEventListener('click', toggleTheme);
