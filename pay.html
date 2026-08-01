@@ -380,6 +380,7 @@
                         <div>
                             <p id="balanceUsdc" class="text-4xl font-bold tracking-tight">0.00</p>
                             <p id="balanceUsdcFiat" class="text-white/60 text-sm">= $0.00 USD</p>
+                            <p id="balanceUsdcLocal" class="text-white/45 text-xs mt-0.5 hidden"></p>
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
@@ -811,6 +812,8 @@
         const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
         let currentUser = null;
         let currentWalletAddress = '';
+        let currentLocalCurrency = 'USD';
+        let fxRateCache = { currency: null, rate: null, fetchedAt: 0 };
         window.currentBalances = { net: '0', usdc: '0', pol: '0' };
 
         function showAuthError(msg) {
@@ -861,6 +864,8 @@
 
             currentWalletAddress = data.wallet_address || '';
             window.currentWalletAddress = currentWalletAddress;
+            currentLocalCurrency = (data.local_currency || 'USD').toUpperCase();
+            window.currentLocalCurrency = currentLocalCurrency;
             if (currentWalletAddress) {
                 document.getElementById('noWalletState').classList.add('hidden');
                 document.getElementById('walletContent').classList.remove('hidden');
@@ -932,6 +937,86 @@
             }
         }
 
+        // Local currency conversion — placeholder rate source (not yet the
+        // live Alchemy Pay merchant rate, which needs approved KYB). Uses
+        // the free, no-key fawazahmed0/currency-api (mirrored on jsdelivr +
+        // a Pages fallback) for a general USD reference rate. Cached in
+        // memory for 10 minutes so it isn't re-fetched on every balance poll.
+        const FX_RATE_TTL_MS = 10 * 60 * 1000;
+        const FX_PRIMARY_URL = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
+        const FX_FALLBACK_URL = 'https://latest.currency-api.pages.dev/v1/currencies/usd.json';
+
+        async function fetchFxRate(currencyCode) {
+            const code = currencyCode.toLowerCase();
+            if (code === 'usd') return 1;
+
+            const now = Date.now();
+            if (fxRateCache.currency === code && (now - fxRateCache.fetchedAt) < FX_RATE_TTL_MS) {
+                return fxRateCache.rate;
+            }
+
+            try {
+                let res = await fetch(FX_PRIMARY_URL);
+                if (!res.ok) throw new Error('primary fx source failed');
+                let json = await res.json();
+                const rate = json.usd?.[code];
+                if (!rate) throw new Error(`no rate for ${code}`);
+                fxRateCache = { currency: code, rate, fetchedAt: now };
+                return rate;
+            } catch (err) {
+                console.warn('Primary FX source failed, trying fallback:', err);
+                try {
+                    const res = await fetch(FX_FALLBACK_URL);
+                    if (!res.ok) throw new Error('fallback fx source failed');
+                    const json = await res.json();
+                    const rate = json.usd?.[code];
+                    if (!rate) throw new Error(`no rate for ${code}`);
+                    fxRateCache = { currency: code, rate, fetchedAt: now };
+                    return rate;
+                } catch (fallbackErr) {
+                    console.error('Both FX sources failed:', fallbackErr);
+                    return null;
+                }
+            }
+        }
+
+        async function updateLocalCurrencyDisplay(usdcAmount) {
+            const el = document.getElementById('balanceUsdcLocal');
+            if (!el) return;
+
+            if (!currentLocalCurrency || currentLocalCurrency === 'USD') {
+                el.classList.add('hidden');
+                return;
+            }
+
+            const rate = await fetchFxRate(currentLocalCurrency);
+            if (!rate) { el.classList.add('hidden'); return; }
+
+            const converted = parseFloat(usdcAmount) * rate;
+            let formatted;
+            try {
+                formatted = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currentLocalCurrency,
+                    maximumFractionDigits: converted >= 1000 ? 0 : 2,
+                }).format(converted);
+            } catch (err) {
+                // Intl throws on an unrecognized ISO code — fall back to a
+                // plain number + code suffix instead of hiding entirely.
+                formatted = `${converted.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currentLocalCurrency}`;
+            }
+
+            el.textContent = `≈ ${formatted}`;
+            el.classList.remove('hidden');
+        }
+
+        window.addEventListener('netlink:local-currency-changed', (e) => {
+            currentLocalCurrency = (e.detail?.currency || 'USD').toUpperCase();
+            if (window.currentBalances?.usdc !== undefined) {
+                updateLocalCurrencyDisplay(window.currentBalances.usdc);
+            }
+        });
+
         async function fetchWalletBalances(address) {
             try {
                 const url = `/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
@@ -941,6 +1026,7 @@
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
                 document.getElementById('balanceUsdcFiat').textContent = `= $${formatTokenAmount(data.usdc)} USD`;
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
+                updateLocalCurrencyDisplay(data.usdc);
                 if (window.renderSwapTokens) window.renderSwapTokens();
             } catch (err) {
                 console.error(err);
