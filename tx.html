@@ -84,12 +84,16 @@
         .icon-tier { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); color: #4f46e5; }
         .icon-kyc { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color: #059669; }
         .icon-system { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); color: #64748b; }
+        .icon-promo { background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); color: #db2777; }
+        .icon-contact_added { background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); color: #0891b2; }
         html.dark .icon-announcement { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: #60a5fa; }
         html.dark .icon-reward { background: linear-gradient(135deg, #78350f 0%, #92400e 100%); color: #fbbf24; }
         html.dark .icon-referral { background: linear-gradient(135deg, #581c87 0%, #6b21a8 100%); color: #c084fc; }
         html.dark .icon-tier { background: linear-gradient(135deg, #312e81 0%, #3730a3 100%); color: #a5b4fc; }
         html.dark .icon-kyc { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: #34d399; }
         html.dark .icon-system { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #94a3b8; }
+        html.dark .icon-promo { background: linear-gradient(135deg, #831843 0%, #9d174d 100%); color: #f9a8d4; }
+        html.dark .icon-contact_added { background: linear-gradient(135deg, #164e63 0%, #155e75 100%); color: #67e8f9; }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         .skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
         html.dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
@@ -293,7 +297,7 @@
         let currentUser = null, currentProfile = null, allTx = [], currentFilter = 'all', currentPage = 1;
         let currentModalTx = null, currentTxStatus = 'Success';
         let currentTab = 'tx', allNotif = [], notifLoaded = false;
-        const NOTIF_ICONS = { announcement: 'megaphone', reward: 'gift', referral: 'users', tier: 'star', kyc: 'shield-check', system: 'info' };
+        const NOTIF_ICONS = { announcement: 'megaphone', reward: 'gift', referral: 'users', tier: 'star', kyc: 'shield-check', system: 'info', promo: 'percent', contact_added: 'user-plus' };
 
         function showAuthError(msg) { document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg; }
         window.addEventListener('error', (e) => showAuthError(e.message));
