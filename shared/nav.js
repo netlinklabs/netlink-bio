@@ -138,14 +138,14 @@
     const tierKey = (p.tier || 'basic').toLowerCase();
     const tierLabel = tierKey.charAt(0).toUpperCase() + tierKey.slice(1);
     const verification = verificationLabel(p);
-    const subtitle = `${tierLabel} Member` + (verification ? ` | ${verification} \u2705` : '');
+    const subtitle = `${tierLabel} Member` + (verification ? ` · ${verification} \u2705` : '');
 
     el.innerHTML = `
       <button type="button" id="nlnav-avatar-btn" class="flex items-center gap-3 flex-1 min-w-0 text-left">
         ${avatarHtml(p, 'w-12 h-12')}
-        <span class="min-w-0">
-          <span class="block text-[15px] font-semibold text-slate-900 dark:text-slate-50 truncate max-w-[190px]">${escapeHtml(label)}</span>
-          <span class="block text-xs font-medium truncate max-w-[190px] ${tierAccentClass(tierKey)}">${escapeHtml(subtitle)}</span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-[15px] font-semibold text-slate-900 dark:text-slate-50 truncate">${escapeHtml(label)}</span>
+          <span class="block text-xs font-medium truncate ${tierAccentClass(tierKey)}">${escapeHtml(subtitle)}</span>
         </span>
       </button>
       <img src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-icon.png" alt="Netlink Pay" class="w-9 h-9 rounded-[7px] object-cover flex-shrink-0">
