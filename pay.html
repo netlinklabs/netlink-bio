@@ -844,7 +844,7 @@
 
         async function loadUserProfile() {
             const { data, error } = await supabaseClient
-                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency').eq('id', currentUser.id).single();
+                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, business_verified_at, identity_verified_at').eq('id', currentUser.id).single();
 
             if (error) {
                 console.error('Failed to load profile:', error);
