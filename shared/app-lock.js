@@ -91,6 +91,10 @@
   }
 
   // ---------------- Google Identity Services loader ----------------
+  // Not every page that includes app-lock.js has already loaded the GSI
+  // script (only dashboard.html and pay.html do, for wallet sign-in). Load
+  // it lazily here so the "Forgot PIN? Continue with Google" path works
+  // everywhere app-lock.js is included.
   let gsiLoadPromise = null;
   function loadGoogleIdentity() {
     if (window.google && window.google.accounts && window.google.accounts.id) {
@@ -141,6 +145,11 @@
     return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
+  // Registers a LOCAL platform credential (device biometric) purely as a
+  // convenience shortcut for the app-lock screen. It is NOT a blockchain
+  // signer and is NOT verified server-side -- a successful WebAuthn
+  // assertion (fingerprint/FaceID via the OS) is treated as equivalent
+  // proof-of-presence to typing the correct PIN, for unlocking only.
   async function registerBiometric() {
     if (!webauthnSupported()) throw new Error('Biometric unlock is not supported on this device.');
     const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -176,6 +185,14 @@
     return true;
   }
 
+  // Removes the locally-stored biometric shortcut. Does not touch the PIN
+  // itself (server-side) -- the user can still unlock with their PIN as
+  // normal after this.
+  function removeBiometric() {
+    localStorage.removeItem(LS_WEBAUTHN_CRED);
+    localStorage.removeItem(LS_WEBAUTHN_USER);
+  }
+
   // ---------------- Session-state helpers ----------------
 
   function markUnlocked() {
@@ -184,6 +201,9 @@
   }
 
   // Call this at every logout point, BEFORE supabaseClient.auth.signOut().
+  // Without it, logging out and back in within the same tab would skip the
+  // lock screen, because the "unlocked this session" marker in
+  // sessionStorage survives a logout on its own.
   function clearLockSession() {
     sessionStorage.removeItem(SS_UNLOCKED_AT);
     sessionStorage.removeItem(SS_HIDDEN_AT);
@@ -191,7 +211,7 @@
 
   function needsPassiveLock() {
     const unlockedAt = sessionStorage.getItem(SS_UNLOCKED_AT);
-    if (!unlockedAt) return true;
+    if (!unlockedAt) return true; // first entry this tab session
     const hiddenAt = sessionStorage.getItem(SS_HIDDEN_AT);
     if (hiddenAt && (Date.now() - Number(hiddenAt)) >= BG_LOCK_MS) return true;
     return false;
@@ -267,7 +287,7 @@
 
   function renderSetupScreen(onDone) {
     const overlay = document.getElementById('nlal-overlay');
-    let stage = 'first';
+    let stage = 'first'; // 'first' -> 'confirm'
     let firstPin = '';
 
     function paint() {
@@ -404,6 +424,8 @@
         }
       });
 
+      // Google path: reauthenticates the Supabase session directly via
+      // idToken, no page redirect involved (unlike login.html's OAuth flow).
       try {
         await loadGoogleIdentity();
         const gbtnContainer = document.getElementById('nlal-gbtn');
@@ -500,6 +522,8 @@
     }
   }
 
+  // Always-verify gate for critical actions (delete account, cancel
+  // deletion). Ignores session "already unlocked" state on purpose.
   function requireAppLock(reasonLabel) {
     return new Promise((resolve) => {
       let modalOverlay = document.getElementById('nlal-modal-overlay');
@@ -532,5 +556,6 @@
     hasRegisteredBiometric,
     webauthnSupported,
     clearLockSession,
+    removeBiometric,
   };
 })();
