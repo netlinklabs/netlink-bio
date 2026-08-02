@@ -14,6 +14,12 @@
 //   NetlinkAppLock.init({ supabaseClient, userId, userEmail });
 //   const ok = await NetlinkAppLock.requireAppLock('delete your account');
 //   if (!ok) return;
+//
+// IMPORTANT: call NetlinkAppLock.clearLockSession() at every logout point,
+// BEFORE supabaseClient.auth.signOut(). Without this, logging out and back
+// in within the same browser tab skips the lock screen, because the
+// "already unlocked this session" marker lives in sessionStorage and is
+// otherwise untouched by logout.
 
 (function () {
   const BG_LOCK_MS = 2 * 60 * 1000; // 2 minutes
@@ -85,10 +91,6 @@
   }
 
   // ---------------- Google Identity Services loader ----------------
-  // Not every page that includes app-lock.js has already loaded the GSI
-  // script (only dashboard.html and pay.html do, for wallet sign-in). Load
-  // it lazily here so the "Forgot PIN? Continue with Google" path works
-  // everywhere app-lock.js is included.
   let gsiLoadPromise = null;
   function loadGoogleIdentity() {
     if (window.google && window.google.accounts && window.google.accounts.id) {
@@ -100,7 +102,6 @@
       if (existing) {
         existing.addEventListener('load', () => resolve());
         existing.addEventListener('error', () => reject(new Error('Failed to load Google Identity Services')));
-        // In case it already finished loading before we attached listeners:
         if (window.google && window.google.accounts && window.google.accounts.id) resolve();
         return;
       }
@@ -140,11 +141,6 @@
     return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
-  // Registers a LOCAL platform credential (device biometric) purely as a
-  // convenience shortcut for the app-lock screen. It is NOT a blockchain
-  // signer and is NOT verified server-side -- a successful WebAuthn
-  // assertion (fingerprint/FaceID via the OS) is treated as equivalent
-  // proof-of-presence to typing the correct PIN, for unlocking only.
   async function registerBiometric() {
     if (!webauthnSupported()) throw new Error('Biometric unlock is not supported on this device.');
     const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -187,9 +183,15 @@
     sessionStorage.removeItem(SS_HIDDEN_AT);
   }
 
+  // Call this at every logout point, BEFORE supabaseClient.auth.signOut().
+  function clearLockSession() {
+    sessionStorage.removeItem(SS_UNLOCKED_AT);
+    sessionStorage.removeItem(SS_HIDDEN_AT);
+  }
+
   function needsPassiveLock() {
     const unlockedAt = sessionStorage.getItem(SS_UNLOCKED_AT);
-    if (!unlockedAt) return true; // first entry this tab session
+    if (!unlockedAt) return true;
     const hiddenAt = sessionStorage.getItem(SS_HIDDEN_AT);
     if (hiddenAt && (Date.now() - Number(hiddenAt)) >= BG_LOCK_MS) return true;
     return false;
@@ -265,7 +267,7 @@
 
   function renderSetupScreen(onDone) {
     const overlay = document.getElementById('nlal-overlay');
-    let stage = 'first'; // 'first' -> 'confirm'
+    let stage = 'first';
     let firstPin = '';
 
     function paint() {
@@ -365,6 +367,7 @@
       if (forgotBtn) forgotBtn.addEventListener('click', renderForgotPinFlow);
 
       document.getElementById('nlal-logout-btn').addEventListener('click', async () => {
+        clearLockSession();
         if (state.supabaseClient) await state.supabaseClient.auth.signOut();
         window.location.href = 'login.html';
       });
@@ -401,15 +404,13 @@
         }
       });
 
-      // Google path: reauthenticates the Supabase session directly via
-      // idToken, no page redirect involved (unlike login.html's OAuth flow).
       try {
         await loadGoogleIdentity();
         const gbtnContainer = document.getElementById('nlal-gbtn');
         google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: async (response) => {
-            const msgEl = document.getElementById('nlal-msg');
+            const msgEl2 = document.getElementById('nlal-msg');
             try {
               const { error } = await state.supabaseClient.auth.signInWithIdToken({
                 provider: 'google',
@@ -419,7 +420,7 @@
               renderResetPinFlow();
             } catch (err) {
               console.error('Google reauth failed:', err);
-              if (msgEl) msgEl.textContent = 'Could not verify your Google account. Please try again.';
+              if (msgEl2) msgEl2.textContent = 'Could not verify your Google account. Please try again.';
             }
           },
         });
@@ -499,8 +500,6 @@
     }
   }
 
-  // Always-verify gate for critical actions (delete account, cancel
-  // deletion). Ignores session "already unlocked" state on purpose.
   function requireAppLock(reasonLabel) {
     return new Promise((resolve) => {
       let modalOverlay = document.getElementById('nlal-modal-overlay');
@@ -526,5 +525,12 @@
     checkAndShowLock();
   }
 
-  window.NetlinkAppLock = { init, requireAppLock, registerBiometric, hasRegisteredBiometric, webauthnSupported };
+  window.NetlinkAppLock = {
+    init,
+    requireAppLock,
+    registerBiometric,
+    hasRegisteredBiometric,
+    webauthnSupported,
+    clearLockSession,
+  };
 })();
