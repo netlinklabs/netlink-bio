@@ -203,6 +203,22 @@
       `;
     }
 
+    if (item.type === 'biometric-toggle') {
+      // Hide entirely on devices/browsers without WebAuthn support -- no
+      // point showing a toggle that can never work.
+      if (!window.NetlinkAppLock || !NetlinkAppLock.webauthnSupported()) return '';
+      const enabled = NetlinkAppLock.hasRegisteredBiometric();
+      return `
+        <button type="button" id="nlnav-biometric-btn" data-enabled="${enabled}"
+          class="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+          <span class="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
+            <i data-lucide="${item.icon}" class="w-4 h-4 text-slate-400"></i> ${escapeHtml(item.label)}
+          </span>
+          <span class="text-xs font-medium ${enabled ? 'text-emerald-500' : 'text-slate-400'}">${enabled ? 'Enabled' : 'Disabled'}</span>
+        </button>
+      `;
+    }
+
     const locked = !!item.locked;
     return `
       <button type="button" data-href="${locked ? '' : escapeHtml(item.href || '')}" data-locked="${locked}"
@@ -266,6 +282,7 @@
       <p class="text-center text-[11px] text-slate-400 py-4">Developed by Netlink Labs</p>
     `;
 
+    // Wire item clicks
     sheet.querySelectorAll('button[data-href]').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (btn.dataset.locked === 'true') { toast('Coming soon'); return; }
@@ -274,6 +291,7 @@
       });
     });
 
+    // Currency select
     const currencySelect = document.getElementById('nlnav-currency-select');
     if (currencySelect) {
       currencySelect.addEventListener('change', async () => {
@@ -289,8 +307,34 @@
       });
     }
 
+    // Biometric unlock toggle. Registration/removal is entirely local
+    // (WebAuthn credential lives in localStorage) -- no server round-trip
+    // needed, so we just re-render the row after either action.
+    const biometricBtn = document.getElementById('nlnav-biometric-btn');
+    if (biometricBtn && window.NetlinkAppLock) {
+      biometricBtn.addEventListener('click', async () => {
+        const currentlyEnabled = biometricBtn.dataset.enabled === 'true';
+        try {
+          if (currentlyEnabled) {
+            NetlinkAppLock.removeBiometric();
+            toast('Biometric unlock disabled');
+          } else {
+            await NetlinkAppLock.registerBiometric();
+            toast('Biometric unlock enabled');
+          }
+        } catch (err) {
+          console.error('Biometric toggle failed:', err);
+          toast('Could not update biometric unlock — please try again');
+        }
+        renderAccountSheet();
+        if (window.lucide) lucide.createIcons();
+      });
+    }
+
+    // Close button
     document.getElementById('nlnav-sheet-close').addEventListener('click', closeAccountSheet);
 
+    // Theme toggle
     document.getElementById('nlnav-theme-btn').addEventListener('click', toggleTheme);
     updateThemeLabel();
 
