@@ -802,6 +802,14 @@ window.openNetlinkPay = openNetlinkPay;
                     userId: currentUser.id,
                 });
             }
+
+            if (window.NetlinkAppLock) {
+                NetlinkAppLock.init({
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                    userEmail: currentUser.email,
+                });
+            }
         }
 
         // Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
@@ -1025,7 +1033,7 @@ window.openNetlinkPay = openNetlinkPay;
                 }).eq('id', currentUser.id);
                 if (error) { showToast('Failed to save video link'); return; }
                 showToast('Video link saved');
-                await loadProfile();
+          await loadProfile();
             });
         }
 
@@ -1702,6 +1710,7 @@ window.openNetlinkPay = openNetlinkPay;
 
     <script src="/shared/account-menu.js"></script>
     <script src="/shared/nav.js"></script>
+    <script src="/shared/app-lock.js"></script>
 
     <script type="module">
         const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
@@ -2055,6 +2064,4 @@ window.openNetlinkPay = openNetlinkPay;
     }
 </script>
 </body>
-</html>
-
-        
+</html>      
