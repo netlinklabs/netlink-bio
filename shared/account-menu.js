@@ -19,6 +19,7 @@ const ACCOUNT_MENU = {
         { icon: 'fingerprint', label: 'NET ID & Privacy', href: 'identity.html' },
         { icon: 'shield', label: 'Privacy & Data', href: 'privacy.html' },
         { icon: 'coins', label: 'Local Currency', type: 'currency-select' },
+        { icon: 'scan-face', label: 'Biometric Unlock', type: 'biometric-toggle' },
         { icon: 'settings', label: 'Settings', locked: true },
       ],
     },
