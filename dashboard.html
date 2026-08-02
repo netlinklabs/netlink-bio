@@ -668,6 +668,7 @@
         }
 
         async function handleLogout() {
+            if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
             await supabaseClient.auth.signOut();
             window.location.href = 'login.html';
         }
