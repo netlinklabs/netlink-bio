@@ -71,9 +71,10 @@
       .nlal-links { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
       .nlal-link-btn { font-size: 13px; color: #3b82f6; font-weight: 500; background: none; border: none; cursor: pointer; }
       .nlal-link-btn.muted { color: #94a3b8; }
-      .nlal-biometric-btn { margin: 0 auto 16px; width: 56px; height: 56px; border-radius: 50%;
+      .nlal-biometric-btn { margin: 0 auto 6px; width: 56px; height: 56px; border-radius: 50%;
         background: #eff6ff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
       html.dark .nlal-biometric-btn { background: rgba(59,130,246,0.15); }
+      .nlal-bio-hint { font-size: 11.5px; color: #3b82f6; font-weight: 500; margin-bottom: 16px; }
       .nlal-input { width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 12px;
         font-size: 14px; margin-bottom: 8px; }
       html.dark .nlal-input { background: #1e293b; border-color: rgba(255,255,255,0.08); color: #f8fafc; }
@@ -91,10 +92,6 @@
   }
 
   // ---------------- Google Identity Services loader ----------------
-  // Not every page that includes app-lock.js has already loaded the GSI
-  // script (only dashboard.html and pay.html do, for wallet sign-in). Load
-  // it lazily here so the "Forgot PIN? Continue with Google" path works
-  // everywhere app-lock.js is included.
   let gsiLoadPromise = null;
   function loadGoogleIdentity() {
     if (window.google && window.google.accounts && window.google.accounts.id) {
@@ -145,11 +142,6 @@
     return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
-  // Registers a LOCAL platform credential (device biometric) purely as a
-  // convenience shortcut for the app-lock screen. It is NOT a blockchain
-  // signer and is NOT verified server-side -- a successful WebAuthn
-  // assertion (fingerprint/FaceID via the OS) is treated as equivalent
-  // proof-of-presence to typing the correct PIN, for unlocking only.
   async function registerBiometric() {
     if (!webauthnSupported()) throw new Error('Biometric unlock is not supported on this device.');
     const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -185,9 +177,6 @@
     return true;
   }
 
-  // Removes the locally-stored biometric shortcut. Does not touch the PIN
-  // itself (server-side) -- the user can still unlock with their PIN as
-  // normal after this.
   function removeBiometric() {
     localStorage.removeItem(LS_WEBAUTHN_CRED);
     localStorage.removeItem(LS_WEBAUTHN_USER);
@@ -200,10 +189,6 @@
     sessionStorage.removeItem(SS_HIDDEN_AT);
   }
 
-  // Call this at every logout point, BEFORE supabaseClient.auth.signOut().
-  // Without it, logging out and back in within the same tab would skip the
-  // lock screen, because the "unlocked this session" marker in
-  // sessionStorage survives a logout on its own.
   function clearLockSession() {
     sessionStorage.removeItem(SS_UNLOCKED_AT);
     sessionStorage.removeItem(SS_HIDDEN_AT);
@@ -211,7 +196,7 @@
 
   function needsPassiveLock() {
     const unlockedAt = sessionStorage.getItem(SS_UNLOCKED_AT);
-    if (!unlockedAt) return true; // first entry this tab session
+    if (!unlockedAt) return true;
     const hiddenAt = sessionStorage.getItem(SS_HIDDEN_AT);
     if (hiddenAt && (Date.now() - Number(hiddenAt)) >= BG_LOCK_MS) return true;
     return false;
@@ -272,11 +257,14 @@
     };
   }
 
-  function keypadHtml() {
+  function keypadHtml(showBiometric) {
+    const cornerSlot = showBiometric
+      ? `<button type="button" id="nlal-bio-btn" class="nlal-key ghost">${icon('fingerprint', 'w-6 h-6 text-blue-500 mx-auto')}</button>`
+      : '<span></span>';
     return `
       <div class="nlal-keypad">
         ${[1,2,3,4,5,6,7,8,9].map((n) => `<button type="button" class="nlal-key" data-digit="${n}">${n}</button>`).join('')}
-        <span></span>
+        ${cornerSlot}
         <button type="button" class="nlal-key" data-digit="0">0</button>
         <button type="button" class="nlal-key ghost" data-action="del">${icon('delete', 'w-5 h-5 text-slate-400 mx-auto')}</button>
       </div>
@@ -287,7 +275,7 @@
 
   function renderSetupScreen(onDone) {
     const overlay = document.getElementById('nlal-overlay');
-    let stage = 'first'; // 'first' -> 'confirm'
+    let stage = 'first';
     let firstPin = '';
 
     function paint() {
@@ -339,12 +327,12 @@
       const showBiometric = hasRegisteredBiometric();
       overlay.innerHTML = `
         <div class="nlal-card">
-          ${showBiometric ? `<button type="button" id="nlal-bio-btn" class="nlal-biometric-btn">${icon('fingerprint', 'w-6 h-6 text-blue-500')}</button>` : `<div class="nlal-icon-wrap">${icon('lock')}</div>`}
+          <div class="nlal-icon-wrap">${icon('lock')}</div>
           <p class="nlal-title">Enter your PIN</p>
           <p class="nlal-subtitle">Verify it's you to continue.</p>
           <div class="nlal-dots"></div>
           <p class="nlal-msg" id="nlal-msg">${lockedMsg || ''}</p>
-          ${keypadHtml()}
+          ${keypadHtml(showBiometric)}
           <div class="nlal-links">
             ${allowForgot ? `<button type="button" id="nlal-forgot-btn" class="nlal-link-btn">Forgot PIN?</button>` : ''}
             <button type="button" id="nlal-logout-btn" class="nlal-link-btn muted">Log out</button>
@@ -424,8 +412,6 @@
         }
       });
 
-      // Google path: reauthenticates the Supabase session directly via
-      // idToken, no page redirect involved (unlike login.html's OAuth flow).
       try {
         await loadGoogleIdentity();
         const gbtnContainer = document.getElementById('nlal-gbtn');
@@ -522,8 +508,6 @@
     }
   }
 
-  // Always-verify gate for critical actions (delete account, cancel
-  // deletion). Ignores session "already unlocked" state on purpose.
   function requireAppLock(reasonLabel) {
     return new Promise((resolve) => {
       let modalOverlay = document.getElementById('nlal-modal-overlay');
