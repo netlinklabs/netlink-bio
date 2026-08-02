@@ -47,7 +47,6 @@
 
   function toast(message) {
     if (typeof window.showToast === 'function') { window.showToast(message); return; }
-    // Minimal fallback if a page hasn't defined showToast() itself.
     const el = document.createElement('div');
     el.textContent = message;
     el.style.cssText = 'position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;z-index:80;';
@@ -108,13 +107,6 @@
     return TIER_ACCENT[(tier || 'basic').toLowerCase()] || TIER_ACCENT.basic;
   }
 
-  // Verification fields (business_verified_at / identity_verified_at) are
-  // optional on the profile object passed to init() -- only pages that
-  // select them will show this part of the subtitle. Pages that don't
-  // fetch these columns simply fall back to showing the tier alone.
-  // Colors match the public bio page's badge dots (bio.js): green for a
-  // verified personal profile, gold for a verified business. Business
-  // takes priority if both happen to be set.
   function verificationBadge(profile) {
     if (!profile) return null;
     if (profile.business_verified_at) return { label: 'Verified Business', color: '#f59e0b' };
@@ -274,7 +266,6 @@
       <p class="text-center text-[11px] text-slate-400 py-4">Developed by Netlink Labs</p>
     `;
 
-    // Wire item clicks
     sheet.querySelectorAll('button[data-href]').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (btn.dataset.locked === 'true') { toast('Coming soon'); return; }
@@ -283,7 +274,6 @@
       });
     });
 
-    // Currency select
     const currencySelect = document.getElementById('nlnav-currency-select');
     if (currencySelect) {
       currencySelect.addEventListener('change', async () => {
@@ -299,15 +289,16 @@
       });
     }
 
-    // Close button
     document.getElementById('nlnav-sheet-close').addEventListener('click', closeAccountSheet);
 
-    // Theme toggle
     document.getElementById('nlnav-theme-btn').addEventListener('click', toggleTheme);
     updateThemeLabel();
 
-    // Logout
+    // Logout — clear the app-lock "already unlocked this session" marker
+    // BEFORE signing out, otherwise logging back in within the same tab
+    // would skip the PIN screen entirely.
     document.getElementById('nlnav-logout-btn').addEventListener('click', async () => {
+      if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
       if (typeof state.onLogout === 'function') { await state.onLogout(); return; }
       if (state.supabaseClient) await state.supabaseClient.auth.signOut();
       window.location.href = 'login.html';
