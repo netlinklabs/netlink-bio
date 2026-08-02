@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy & Data - Netlink.bio</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        .hover-surface:hover { background: rgba(0,0,0,0.03); }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .hover-surface:hover { background: rgba(255,255,255,0.05) !important; }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.error { background: #dc2626; }
+
+        .privacy-hero { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #4338ca 100%); border-radius: 20px; position: relative; overflow: hidden; }
+        .privacy-hero::before { content: ''; position: absolute; top: -40%; right: -20%; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+
+        .data-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; }
+        .data-item:not(:last-child) { border-bottom: 1px solid rgba(0,0,0,0.05); }
+        html.dark .data-item:not(:last-child) { border-color: rgba(255,255,255,0.05); }
+
+        .consent-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; font-size: 13px; }
+        .consent-row:not(:last-child) { border-bottom: 1px solid rgba(0,0,0,0.05); }
+        html.dark .consent-row:not(:last-child) { border-color: rgba(255,255,255,0.05); }
+
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+        .status-ok { background: rgba(16,185,129,0.12); color: #059669; }
+        html.dark .status-ok { background: rgba(16,185,129,0.15); color: #34d399; }
+        .status-warn { background: rgba(245,158,11,0.12); color: #b45309; }
+        html.dark .status-warn { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .status-danger { background: rgba(239,68,68,0.12); color: #dc2626; }
+        html.dark .status-danger { background: rgba(239,68,68,0.15); color: #f87171; }
+
+        .danger-card { border: 1px solid rgba(239,68,68,0.25); }
+        html.dark .danger-card { border-color: rgba(239,68,68,0.3); }
+
+        /* Modal shared styles */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 24px; }
+        html.dark .modal-box { background: #1e293b; }
+        .modal-box p { color: #475569; }
+        html.dark .modal-box p { color: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading Privacy & Data...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Saved!</div>
+
+    <!-- Mandatory consent modal: shown only when the user's latest accepted
+         policy version is older than CURRENT_POLICY_VERSION. Cannot be
+         dismissed without an explicit Agree/Decline choice. -->
+    <div id="consentModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div id="consentModalAgreeView">
+                <div class="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4"><i data-lucide="shield-alert" class="w-6 h-6 text-indigo-600"></i></div>
+                <h3 class="font-bold text-primary text-lg mb-2">We've updated our Privacy Policy</h3>
+                <p class="text-sm mb-1">Version <span id="policyVersionText">1.0</span> includes changes to how we handle your data. Please review and confirm to keep using Netlink.</p>
+                <a href="https://netlink.bio/privacy-policy" target="_blank" rel="noopener" class="text-sm text-blue-500 hover:underline inline-block mb-5">Read the full policy →</a>
+                <div class="flex gap-3">
+                    <button onclick="declineConsent()" class="flex-1 py-2.5 border border-subtle text-secondary font-medium rounded-xl transition text-sm hover-surface">Decline</button>
+                    <button onclick="agreeConsent()" id="consentAgreeBtn" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition text-sm">I Agree</button>
+                </div>
+            </div>
+            <div id="consentModalDeclineView" class="hidden">
+                <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mb-4"><i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i></div>
+                <h3 class="font-bold text-primary text-lg mb-2">You've declined the updated policy</h3>
+                <p class="text-sm mb-5">To keep using Netlink, we need your agreement to the current policy. If you don't agree, you can request to close your account instead.</p>
+                <div class="flex gap-3">
+                    <button onclick="showAgreeView()" class="flex-1 py-2.5 border border-subtle text-secondary font-medium rounded-xl transition text-sm hover-surface">Review Again</button>
+                    <button onclick="goToDeletionFromModal()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition text-sm">Delete My Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deletion request confirmation modal -->
+    <div id="deletionModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mb-4"><i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i></div>
+            <h3 class="font-bold text-primary text-lg mb-2">Request account deletion?</h3>
+            <p class="text-sm mb-4">Your account will be scheduled for deletion in <strong>45 days</strong>. You can cancel anytime before then. On-chain wallet data cannot be deleted, as it lives on the blockchain, not our servers.</p>
+            <label class="text-xs font-medium text-secondary block mb-1.5">Reason (optional)</label>
+            <textarea id="deletionReasonInput" rows="2" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary mb-5" placeholder="Help us improve..."></textarea>
+            <div class="flex gap-3">
+                <button onclick="closeDeletionModal()" class="flex-1 py-2.5 border border-subtle text-secondary font-medium rounded-xl transition text-sm hover-surface">Cancel</button>
+                <button onclick="confirmDeletionRequest()" id="confirmDeletionBtn" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition text-sm">Confirm Deletion</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="px-4 pt-4 pb-8 lg:px-8 max-w-2xl mx-auto">
+
+        <!-- Hero -->
+        <div class="privacy-hero p-6 mb-4 text-white relative">
+            <div class="relative z-10">
+                <p class="text-white/70 text-xs font-medium mb-1 flex items-center gap-1.5"><i data-lucide="shield" class="w-3.5 h-3.5"></i> Privacy & Data</p>
+                <h1 class="text-xl font-bold">Your data, your control</h1>
+                <p class="text-white/60 text-xs mt-2">See what we store, export it, manage your consent, or close your account.</p>
+            </div>
+        </div>
+
+        <!-- Data Overview -->
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+            <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="database" class="w-4 h-4 text-blue-500"></i> Data We Store</h3>
+            <p class="text-xs text-muted mb-2">Categories of personal data associated with your account.</p>
+            <div class="data-item"><i data-lucide="user-round" class="w-4 h-4 text-muted mt-0.5"></i><div><p class="text-sm font-medium text-primary">Profile & Account</p><p class="text-xs text-muted">Name, email, username, avatar, bio, CV content</p></div></div>
+            <div class="data-item"><i data-lucide="wallet" class="w-4 h-4 text-muted mt-0.5"></i><div><p class="text-sm font-medium text-primary">Wallet</p><p class="text-xs text-muted">Linked wallet address, wallet email (Google)</p></div></div>
+            <div class="data-item"><i data-lucide="shield-check" class="w-4 h-4 text-muted mt-0.5"></i><div><p class="text-sm font-medium text-primary">Verification (KYC/KYB)</p><p class="text-xs text-muted">Identity/business verification status, handled via our verification partner</p></div></div>
+            <div class="data-item"><i data-lucide="book-user" class="w-4 h-4 text-muted mt-0.5"></i><div><p class="text-sm font-medium text-primary">Contacts</p><p class="text-xs text-muted">Contacts you've saved for payments</p></div></div>
+            <div class="data-item"><i data-lucide="file-check-2" class="w-4 h-4 text-muted mt-0.5"></i><div><p class="text-sm font-medium text-primary">Consent Records</p><p class="text-xs text-muted">History of policy acceptances</p></div></div>
+        </div>
+
+        <!-- Consent -->
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+            <div class="flex items-center justify-between mb-1">
+                <h3 class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="file-check-2" class="w-4 h-4 text-emerald-500"></i> Privacy Policy Consent</h3>
+                <span id="consentStatusBadge" class="status-badge status-ok">Up to date</span>
+            </div>
+            <p class="text-xs text-muted mb-3">Your consent history is kept for your records.</p>
+            <div id="consentHistoryList" class="text-sm">
+                <p class="text-xs text-muted py-2">No consent recorded yet.</p>
+            </div>
+        </div>
+
+        <!-- Export -->
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+            <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="download" class="w-4 h-4 text-blue-500"></i> Export Your Data</h3>
+            <p class="text-xs text-muted mb-4">Download a copy of your personal data as a JSON file.</p>
+            <button id="exportBtn" onclick="exportData()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
+                <i data-lucide="download" class="w-4 h-4"></i> Export My Data
+            </button>
+        </div>
+
+        <!-- Account Deletion -->
+        <div class="card danger-card rounded-2xl p-4 lg:p-6 mb-4">
+            <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i> Delete Account</h3>
+            <div id="deletionNoRequestView">
+                <p class="text-xs text-muted mb-4">Permanently close your account and delete your personal data after a 45-day grace period.</p>
+                <button onclick="openDeletionModal()" class="w-full py-2.5 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-xl transition text-sm">Request Account Deletion</button>
+            </div>
+            <div id="deletionPendingView" class="hidden">
+                <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+                    <p class="text-sm font-medium text-red-700">Deletion scheduled</p>
+                    <p class="text-xs text-red-600 mt-1">Your account will be deleted on <span id="deletionDateText" class="font-semibold">—</span> (<span id="deletionDaysLeftText">—</span> days left).</p>
+                </div>
+                <button onclick="cancelDeletion()" id="cancelDeletionBtn" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition text-sm">Cancel Deletion Request</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Bump this whenever the privacy policy changes. Any user whose
+        // latest accepted 'privacy_policy' consent version is older than
+        // this triggers the mandatory consent modal on load.
+        const CURRENT_POLICY_VERSION = '1.0';
+
+        let currentUser = null;
+        let currentSession = null;
+
+        function showAuthError(msg) {
+            document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
+        }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+        function showToast(message, isError) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.toggle('error', !!isError);
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function daysUntil(iso) {
+            const diffMs = new Date(iso).getTime() - Date.now();
+            return Math.max(0, Math.ceil(diffMs / 86400000));
+        }
+
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login.html'; return; }
+                currentUser = session.user;
+                currentSession = session;
+                document.getElementById('authGate').style.display = 'none';
+                await loadProfileForNav();
+                await Promise.all([checkConsentStatus(), loadDeletionStatus()]);
+                if (window.lucide) lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        // Only fetches what shared/nav.js needs to render the bottom nav
+        // and account sheet consistently with other pages.
+        async function loadProfileForNav() {
+            const { data } = await supabaseClient
+                .from('profiles')
+                .select('username, display_name, avatar_url, tier, local_currency')
+                .eq('id', currentUser.id)
+                .single();
+            if (data && window.NetlinkNav) {
+                NetlinkNav.init({
+                    activePage: null,
+                    profile: data,
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                });
+            }
+        }
+
+        // ---------------- Consent ----------------
+
+        async function checkConsentStatus() {
+            document.getElementById('policyVersionText').textContent = CURRENT_POLICY_VERSION;
+
+            const { data: latestVersion, error: latestErr } = await supabaseClient.rpc('get_latest_consent_version', { p_consent_type: 'privacy_policy' });
+            if (latestErr) console.error('Failed to check consent version:', latestErr);
+
+            const badge = document.getElementById('consentStatusBadge');
+            if (!latestVersion || latestVersion !== CURRENT_POLICY_VERSION) {
+                badge.textContent = 'Action needed';
+                badge.className = 'status-badge status-warn';
+                openConsentModal();
+            } else {
+                badge.textContent = 'Up to date';
+                badge.className = 'status-badge status-ok';
+            }
+
+            await loadConsentHistory();
+        }
+
+        async function loadConsentHistory() {
+            const { data, error } = await supabaseClient.rpc('get_my_consents');
+            const container = document.getElementById('consentHistoryList');
+            if (error) { console.error('Failed to load consent history:', error); return; }
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-xs text-muted py-2">No consent recorded yet.</p>';
+                return;
+            }
+            container.innerHTML = data.map(c => `
+                <div class="consent-row">
+                    <span class="text-secondary">${escapeHtml(c.consent_type)} <span class="text-muted">v${escapeHtml(c.version)}</span></span>
+                    <span class="text-muted">${formatDate(c.accepted_at)}</span>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str == null ? '' : String(str);
+            return div.innerHTML;
+        }
+
+        function openConsentModal() {
+            showAgreeView();
+            document.getElementById('consentModal').classList.remove('hidden');
+        }
+        function closeConsentModal() {
+            document.getElementById('consentModal').classList.add('hidden');
+        }
+        function showAgreeView() {
+            document.getElementById('consentModalAgreeView').classList.remove('hidden');
+            document.getElementById('consentModalDeclineView').classList.add('hidden');
+        }
+        function declineConsent() {
+            document.getElementById('consentModalAgreeView').classList.add('hidden');
+            document.getElementById('consentModalDeclineView').classList.remove('hidden');
+        }
+        window.declineConsent = declineConsent;
+        window.showAgreeView = showAgreeView;
+
+        async function agreeConsent() {
+            const btn = document.getElementById('consentAgreeBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                const res = await fetch('/api/record-consent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.access_token}` },
+                    body: JSON.stringify({ consent_type: 'privacy_policy', version: CURRENT_POLICY_VERSION }),
+                });
+                if (!res.ok) throw new Error('Request failed');
+                closeConsentModal();
+                document.getElementById('consentStatusBadge').textContent = 'Up to date';
+                document.getElementById('consentStatusBadge').className = 'status-badge status-ok';
+                await loadConsentHistory();
+                showToast('Thanks! Your consent has been recorded.');
+            } catch (err) {
+                console.error('Failed to record consent:', err);
+                showToast('Could not save your consent. Please try again.', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'I Agree';
+            }
+        }
+        window.agreeConsent = agreeConsent;
+
+        function goToDeletionFromModal() {
+            closeConsentModal();
+            document.querySelector('.danger-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            openDeletionModal();
+        }
+        window.goToDeletionFromModal = goToDeletionFromModal;
+
+        // ---------------- Data Export ----------------
+
+        async function exportData() {
+            const btn = document.getElementById('exportBtn');
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = 'Preparing export...';
+            try {
+                const res = await fetch('/api/export-data', {
+                    headers: { Authorization: `Bearer ${currentSession.access_token}` },
+                });
+                if (!res.ok) throw new Error('Export failed');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'netlink-data-export.json';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                showToast('Your data export has downloaded.');
+            } catch (err) {
+                console.error('Export failed:', err);
+                showToast('Could not export your data. Please try again.', true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+        window.exportData = exportData;
+
+        // ---------------- Account Deletion ----------------
+
+        async function loadDeletionStatus() {
+            const { data, error } = await supabaseClient.rpc('get_my_deletion_request');
+            if (error) { console.error('Failed to load deletion status:', error); return; }
+            const pending = data && data.length ? data[0] : null;
+            if (pending) {
+                document.getElementById('deletionNoRequestView').classList.add('hidden');
+                document.getElementById('deletionPendingView').classList.remove('hidden');
+                document.getElementById('deletionDateText').textContent = formatDate(pending.scheduled_for);
+                document.getElementById('deletionDaysLeftText').textContent = daysUntil(pending.scheduled_for);
+            } else {
+                document.getElementById('deletionNoRequestView').classList.remove('hidden');
+                document.getElementById('deletionPendingView').classList.add('hidden');
+            }
+        }
+
+        function openDeletionModal() {
+            document.getElementById('deletionModal').classList.remove('hidden');
+        }
+        window.openDeletionModal = openDeletionModal;
+        function closeDeletionModal() {
+            document.getElementById('deletionModal').classList.add('hidden');
+            document.getElementById('deletionReasonInput').value = '';
+        }
+        window.closeDeletionModal = closeDeletionModal;
+
+        async function confirmDeletionRequest() {
+            const btn = document.getElementById('confirmDeletionBtn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+            try {
+                const reason = document.getElementById('deletionReasonInput').value.trim() || null;
+                const { error } = await supabaseClient.rpc('request_account_deletion', { p_reason: reason });
+                if (error) throw error;
+                closeDeletionModal();
+                await loadDeletionStatus();
+                showToast('Account deletion requested. You can cancel anytime within 45 days.');
+            } catch (err) {
+                console.error('Failed to request deletion:', err);
+                showToast('Could not submit your request. Please try again.', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirm Deletion';
+            }
+        }
+        window.confirmDeletionRequest = confirmDeletionRequest;
+
+        async function cancelDeletion() {
+            const btn = document.getElementById('cancelDeletionBtn');
+            btn.disabled = true;
+            btn.textContent = 'Cancelling...';
+            try {
+                const { error } = await supabaseClient.rpc('cancel_account_deletion');
+                if (error) throw error;
+                await loadDeletionStatus();
+                showToast('Deletion request cancelled.');
+            } catch (err) {
+                console.error('Failed to cancel deletion:', err);
+                showToast('Could not cancel your request. Please try again.', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Cancel Deletion Request';
+            }
+        }
+        window.cancelDeletion = cancelDeletion;
+
+        lucide.createIcons();
+        checkAuth();
+    </script>
+
+    <script src="/shared/account-menu.js"></script>
+    <script src="/shared/nav.js"></script>
+</body>
+</html>
