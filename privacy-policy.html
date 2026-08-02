@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Netlink.bio</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://netlink.bio/privacy-policy">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        .text-primary { color: #0f172a; }
+        html.dark .text-primary { color: #f8fafc; }
+        .text-muted { color: #64748b; }
+        html.dark .text-muted { color: #94a3b8; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); }
+        h2 { font-size: 1.05rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.5rem; color: inherit; }
+        h2:first-of-type { margin-top: 0; }
+        p, li { font-size: 0.9rem; line-height: 1.6; color: #475569; }
+        html.dark p, html.dark li { color: #94a3b8; }
+        ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+        a.inline-link { color: #2563eb; text-decoration: underline; }
+        .top-logo { display: inline-flex; align-items: center; gap: 8px; }
+        .badge { display: inline-block; font-size: 11px; font-weight: 600; color: #64748b; background: rgba(100,116,139,0.12); padding: 3px 10px; border-radius: 999px; }
+        html.dark .badge { color: #94a3b8; background: rgba(148,163,184,0.15); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <main class="px-4 pt-8 pb-16 lg:px-8 max-w-2xl mx-auto">
+        <a href="/" class="top-logo mb-6">
+            <img src="/assets/netlinkbio-icon.png" alt="Netlink.bio" class="w-7 h-7 rounded-lg">
+            <span class="font-bold text-primary">Netlink.bio</span>
+        </a>
+
+        <div class="flex items-center gap-2 mb-1">
+            <h1 class="text-2xl font-bold text-primary">Privacy Policy</h1>
+        </div>
+        <div class="flex items-center gap-2 mb-6">
+            <span class="badge">Version 1.0</span>
+            <span class="text-xs text-muted">Effective August 2, 2026</span>
+        </div>
+
+        <div class="card rounded-2xl p-5 lg:p-7">
+            <p>This Privacy Policy explains what personal data Netlink.bio ("Netlink", "we", "us") collects, how we use it, and the choices you have. By using Netlink, you agree to this policy.</p>
+
+            <h2>1. Data We Collect</h2>
+            <ul>
+                <li><strong>Account data:</strong> name, email, username, avatar, password (via Supabase Auth)</li>
+                <li><strong>Profile content:</strong> bio, CV, business page, links you add</li>
+                <li><strong>Wallet data:</strong> your wallet address, and your wallet's linked Google email (if you create a smart wallet)</li>
+                <li><strong>Verification data:</strong> identity/business verification status and documents, processed via our KYC/KYB partner</li>
+                <li><strong>Contacts:</strong> contacts you save for payments</li>
+                <li><strong>Usage data:</strong> local currency preference, theme preference, consent records</li>
+                <li><strong>Technical data:</strong> IP address (captured when you accept a policy), device/browser information</li>
+            </ul>
+            <p>We do <strong>not</strong> collect your wallet's private keys or seed phrase. Wallet creation and signing are handled by our wallet infrastructure partner (Sequence WaaS); we never have access to your keys.</p>
+
+            <h2>2. How We Use Your Data</h2>
+            <ul>
+                <li>To provide and operate your Netlink profile, CV, business page, and wallet features</li>
+                <li>To verify your identity or business where you request verification</li>
+                <li>To process token transfers and display transaction history</li>
+                <li>To communicate service updates, rewards, and account notifications</li>
+                <li>To comply with legal and regulatory obligations</li>
+            </ul>
+
+            <h2>3. Third Parties We Work With</h2>
+            <p>We share limited data with service providers who help us operate Netlink:</p>
+            <ul>
+                <li><strong>Supabase</strong> — database and authentication hosting</li>
+                <li><strong>Vercel</strong> — application hosting</li>
+                <li><strong>Sequence WaaS</strong> — smart wallet infrastructure</li>
+                <li><strong>LI.FI</strong> — token swap routing</li>
+                <li><strong>Our KYC/KYB partner</strong> — identity and business verification</li>
+                <li><strong>Alchemy Pay</strong> — fiat on/off-ramp (where used)</li>
+            </ul>
+            <p>These providers only receive the data needed to perform their function and are not permitted to use it for their own marketing purposes.</p>
+
+            <h2>4. Blockchain Data</h2>
+            <p>Netlink Pay transactions occur on the Polygon blockchain, which is public and immutable by design. Wallet addresses and transaction history recorded on-chain cannot be edited or deleted by us or by you — this is separate from the personal data stored in our own database.</p>
+
+            <h2>5. Your Rights</h2>
+            <p>From your Privacy & Data dashboard, you can:</p>
+            <ul>
+                <li><strong>View</strong> a summary of the data categories we store about you</li>
+                <li><strong>Export</strong> your personal data as a downloadable file</li>
+                <li><strong>Manage consent</strong> and view your consent history</li>
+                <li><strong>Request account deletion</strong> — processed after a 45-day grace period, during which you may cancel the request</li>
+            </ul>
+            <p>Some data (such as blockchain transaction records, or data we are legally required to retain) cannot be deleted even after account closure.</p>
+
+            <h2>6. Data Retention</h2>
+            <p>We retain your data for as long as your account is active, and for a limited period afterward where required for legal, tax, or fraud-prevention purposes.</p>
+
+            <h2>7. Security</h2>
+            <p>We apply access controls (including database-level row security) so that your personal data is only accessible to you and to systems that need it to operate the service.</p>
+
+            <h2>8. Changes to This Policy</h2>
+            <p>When we make material changes to this policy, we will ask you to review and re-confirm your consent the next time you log in.</p>
+
+            <h2>9. Contact</h2>
+            <p>Questions about this policy or your data can be sent to our support channel from within the app.</p>
+        </div>
+
+        <p class="text-xs text-muted text-center mt-6">© 2026 Netlink.bio. This document is provided for transparency and does not constitute legal advice.</p>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
