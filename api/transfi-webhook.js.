@@ -26,48 +26,53 @@ function isValidSignature(body, signatureHeader) {
   return crypto.timingSafeEqual(a, b);
 }
 
-async function upsertOrder(payload) {
-  const order = payload.order || {};
-  const orderId = order.orderId || payload.entityId;
-
-  // customerOrderId must be set to the Netlink user_id when the payin
-  // order is created (Creating Payin Transfer step) -- this is how we
-  // map a TransFi order back to a Netlink account.
-  const userId = order.customerOrderId;
-  if (!userId) {
-    console.error('Webhook received with no customerOrderId, cannot map to a user. orderId:', orderId);
+// Unlike the first version of this file, we no longer depend on TransFi
+// echoing back a customerOrderId to learn which Netlink user an order
+// belongs to. api/transfi-create-order.js already inserts a fiat_orders
+// row (with the correct user_id) the moment the order is created, so this
+// webhook only ever needs to UPDATE that row by order_id.
+async function updateOrderStatus(payload) {
+  const order = payload.order || payload.data?.order || {};
+  const orderId = order.orderId || payload.entityId || payload.data?.entityId;
+  if (!orderId) {
+    console.error('Webhook payload has no orderId/entityId, cannot process:', JSON.stringify(payload));
     return;
   }
 
-  const row = {
-    order_id: orderId,
-    user_id: userId,
-    provider: 'transfi',
-    order_type: order.type || payload.entityType || null,
-    status: payload.status || null,
-    fiat_ticker: order.fiatTicker || null,
-    fiat_amount: order.fiatAmount ?? null,
-    crypto_ticker: order.cryptoTicker || null,
-    crypto_amount: order.cryptoAmount ?? null,
-    wallet_address: order.walletAddress || order.destinationWalletAddress || null,
+  const patch = {
+    status: payload.status || payload.data?.status || null,
     txn_hash: order.txnHash || null,
     raw_payload: payload,
   };
+  // Only overwrite these if TransFi actually sent them -- don't null out
+  // values we already had from order creation.
+  if (order.cryptoAmount != null) patch.crypto_amount = order.cryptoAmount;
+  if (order.walletAddress || order.destinationWalletAddress) {
+    patch.wallet_address = order.walletAddress || order.destinationWalletAddress;
+  }
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/fiat_orders?on_conflict=order_id`, {
-    method: 'POST',
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/fiat_orders?order_id=eq.${encodeURIComponent(orderId)}`, {
+    method: 'PATCH',
     headers: {
       apikey: SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates',
+      Prefer: 'return=representation',
     },
-    body: JSON.stringify(row),
+    body: JSON.stringify(patch),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Supabase upsert failed (${res.status}): ${errText}`);
+    throw new Error(`Supabase update failed (${res.status}): ${errText}`);
+  }
+  const updatedRows = await res.json();
+  if (updatedRows.length === 0) {
+    // No matching row -- most likely this webhook arrived for an order we
+    // don't know about yet (e.g. a race with create-order, or an order
+    // made outside this flow). Log it; nothing more we can safely do
+    // without a Netlink user_id to attach it to.
+    console.warn('No fiat_orders row found for TransFi orderId:', orderId);
   }
 }
 
@@ -90,7 +95,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await upsertOrder(req.body);
+    await updateOrderStatus(req.body);
     // TransFi just needs a 200 to consider delivery successful -- do not
     // add extra latency here (no email/notification side-effects inline).
     res.status(200).json({ received: true });
