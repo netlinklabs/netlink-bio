@@ -1,0 +1,103 @@
+// api/transfi-webhook.js
+// Receives order status updates from TransFi (Payin/Onramp events) and
+// upserts them into the fiat_orders table. Uses the Supabase service-role
+// key because this call comes from TransFi, not from a logged-in user --
+// there is no user access token to attach here, so RLS must be bypassed
+// deliberately and only from this trusted server-side endpoint.
+
+import crypto from 'crypto';
+
+const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const TRANSFI_WEBHOOK_SECRET = process.env.TRANSFI_WEBHOOK_SECRET;
+
+// Vercel auto-parses JSON bodies, so req.body is already an object here.
+// TransFi's own signing example re-stringifies that parsed body and HMACs
+// it -- we mirror that exactly so the hash matches what TransFi computed.
+function isValidSignature(body, signatureHeader) {
+  if (!signatureHeader || !TRANSFI_WEBHOOK_SECRET) return false;
+  const expected = crypto
+    .createHmac('sha256', TRANSFI_WEBHOOK_SECRET)
+    .update(JSON.stringify(body))
+    .digest('hex');
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signatureHeader);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+async function upsertOrder(payload) {
+  const order = payload.order || {};
+  const orderId = order.orderId || payload.entityId;
+
+  // customerOrderId must be set to the Netlink user_id when the payin
+  // order is created (Creating Payin Transfer step) -- this is how we
+  // map a TransFi order back to a Netlink account.
+  const userId = order.customerOrderId;
+  if (!userId) {
+    console.error('Webhook received with no customerOrderId, cannot map to a user. orderId:', orderId);
+    return;
+  }
+
+  const row = {
+    order_id: orderId,
+    user_id: userId,
+    provider: 'transfi',
+    order_type: order.type || payload.entityType || null,
+    status: payload.status || null,
+    fiat_ticker: order.fiatTicker || null,
+    fiat_amount: order.fiatAmount ?? null,
+    crypto_ticker: order.cryptoTicker || null,
+    crypto_amount: order.cryptoAmount ?? null,
+    wallet_address: order.walletAddress || order.destinationWalletAddress || null,
+    txn_hash: order.txnHash || null,
+    raw_payload: payload,
+  };
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/fiat_orders?on_conflict=order_id`, {
+    method: 'POST',
+    headers: {
+      apikey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify(row),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Supabase upsert failed (${res.status}): ${errText}`);
+  }
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+  if (!SERVICE_ROLE_KEY || !TRANSFI_WEBHOOK_SECRET) {
+    console.error('Missing SUPABASE_SERVICE_ROLE_KEY or TRANSFI_WEBHOOK_SECRET env var');
+    res.status(500).json({ error: 'Server misconfiguration' });
+    return;
+  }
+
+  const signature = req.headers['x-transfi-hmac-hash'];
+  if (!isValidSignature(req.body, signature)) {
+    console.error('Invalid TransFi webhook signature');
+    res.status(401).json({ error: 'Invalid signature' });
+    return;
+  }
+
+  try {
+    await upsertOrder(req.body);
+    // TransFi just needs a 200 to consider delivery successful -- do not
+    // add extra latency here (no email/notification side-effects inline).
+    res.status(200).json({ received: true });
+  } catch (err) {
+    console.error('Failed to process TransFi webhook:', err);
+    // Still important: TransFi retries on non-2xx, so a real failure here
+    // should surface as one -- respond 500 so the event gets retried.
+    res.status(500).json({ error: 'Failed to process webhook' });
+  }
+}
