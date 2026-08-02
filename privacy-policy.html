@@ -128,10 +128,34 @@
 
         <p class="text-xs text-muted text-center mt-6 mb-6">© 2026 Netlink.bio. This document is provided for transparency and does not constitute legal advice.</p>
 
-        <a href="privacy.html" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> I've Read It — Back to Privacy Settings
+        <a id="policyBackBtn" href="/" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> <span id="policyBackBtnText">I've Read It — Back to Home</span>
         </a>
     </main>
-    <script>lucide.createIcons();</script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        lucide.createIcons();
+        // This page is public (no auth gate) so it can be read by anyone,
+        // including prospective users who aren't signed in yet. The CTA
+        // below only points back to the logged-in Privacy Settings page
+        // if there's an active session -- otherwise it would redirect a
+        // visitor to login.html, which is confusing for someone who was
+        // never asked to be a member in the first place.
+        (async function () {
+            try {
+                const supabaseClient = window.supabase.createClient(
+                    'https://fuewalufgiclrcgszlit.supabase.co',
+                    'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb'
+                );
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    document.getElementById('policyBackBtn').href = 'privacy.html';
+                    document.getElementById('policyBackBtnText').textContent = "I've Read It — Back to Privacy Settings";
+                }
+            } catch (err) {
+                console.error('Session check failed:', err);
+            }
+        })();
+    </script>
 </body>
 </html>
