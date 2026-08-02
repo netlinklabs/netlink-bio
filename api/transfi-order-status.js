@@ -27,16 +27,22 @@ async function getAuthedUser(accessToken) {
   return res.json();
 }
 
-async function getOwnedOrder(orderId, userId, accessToken) {
-  // Uses the user's own token -- RLS (owner-only SELECT on fiat_orders)
-  // makes sure this can only ever return an order that belongs to them.
+async function getOwnedOrder(orderId, userId) {
+  // Uses the service-role key (bypasses RLS) so a stale/edge-case user
+  // token can't cause a false "not found" -- ownership is verified in
+  // code instead by checking the returned row's user_id.
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/fiat_orders?order_id=eq.${encodeURIComponent(orderId)}&user_id=eq.${userId}&select=order_id`,
-    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` } }
+    `${SUPABASE_URL}/rest/v1/fiat_orders?order_id=eq.${encodeURIComponent(orderId)}&select=order_id,user_id`,
+    { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` } }
   );
-  if (!res.ok) return null;
+  if (!res.ok) {
+    console.error('getOwnedOrder query failed:', res.status, await res.text().catch(() => ''));
+    return null;
+  }
   const rows = await res.json();
-  return rows[0] || null;
+  const row = rows[0];
+  if (!row || row.user_id !== userId) return null;
+  return row;
 }
 
 async function patchOrder(orderId, patch) {
@@ -84,7 +90,7 @@ export default async function handler(req, res) {
   }
 
   // Ownership check via the user's own token/RLS before we touch anything.
-  const owned = await getOwnedOrder(orderId, authedUser.id, accessToken);
+  const owned = await getOwnedOrder(orderId, authedUser.id);
   if (!owned) {
     res.status(404).json({ error: 'Order not found for this account' });
     return;
