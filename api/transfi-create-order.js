@@ -36,8 +36,15 @@ async function transfiRequest(path, options = {}) {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body.status === 'error') {
-    const err = new Error(body.message || body.error || `TransFi request failed (${res.status})`);
-    err.code = body.code || body.errorCode;
+    // TransFi's error envelope is inconsistent: some errors put
+    // { code, message } at the top level, others nest them inside a
+    // `details` array (see docs.transfi.com/docs/error-codes). Check both
+    // so the real reason isn't swallowed.
+    const detail = Array.isArray(body.details) ? body.details[0] : null;
+    const code = body.code || body.errorCode || detail?.code;
+    const message = body.message || body.error || detail?.message || `TransFi request failed (${res.status})`;
+    const err = new Error(message);
+    err.code = code;
     err.status = res.status;
     throw err;
   }
@@ -73,7 +80,10 @@ async function saveTransfiUserId(userId, transfiUserId) {
     },
     body: JSON.stringify({ transfi_user_id: transfiUserId }),
   });
-  if (!res.ok) throw new Error('Failed to save transfi_user_id');
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Failed to save transfi_user_id (${res.status}): ${errText}`);
+  }
 }
 
 async function insertFiatOrder(row) {
