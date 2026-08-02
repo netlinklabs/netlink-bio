@@ -255,6 +255,13 @@
                     userId: currentUser.id,
                 });
             }
+            if (window.NetlinkAppLock) {
+                NetlinkAppLock.init({
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                    userEmail: currentUser.email,
+                });
+            }
         }
 
         // ---------------- Consent ----------------
@@ -412,6 +419,10 @@
         window.closeDeletionModal = closeDeletionModal;
 
         async function confirmDeletionRequest() {
+            if (window.NetlinkAppLock) {
+                const unlocked = await NetlinkAppLock.requireAppLock('delete your account');
+                if (!unlocked) return;
+            }
             const btn = document.getElementById('confirmDeletionBtn');
             btn.disabled = true;
             btn.textContent = 'Submitting...';
@@ -433,6 +444,10 @@
         window.confirmDeletionRequest = confirmDeletionRequest;
 
         async function cancelDeletion() {
+            if (window.NetlinkAppLock) {
+                const unlocked = await NetlinkAppLock.requireAppLock('cancel your account deletion');
+                if (!unlocked) return;
+            }
             const btn = document.getElementById('cancelDeletionBtn');
             btn.disabled = true;
             btn.textContent = 'Cancelling...';
@@ -457,5 +472,6 @@
 
     <script src="/shared/account-menu.js?v=2"></script>
     <script src="/shared/nav.js?v=2"></script>
+    <script src="/shared/app-lock.js?v=2"></script>
 </body>
 </html>
