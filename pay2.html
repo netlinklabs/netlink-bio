@@ -1109,6 +1109,7 @@
                 document.getElementById('transfiSetup').classList.add('hidden');
                 document.getElementById('rampFrameWrap').classList.remove('hidden');
                 document.getElementById('rampFrameWrap').style.display = 'block';
+                startTransfiStatusPolling(result.orderId);
             } catch (err) {
                 console.error('Failed to start TransFi payin:', err);
                 errorEl.textContent = String(err.message || 'Could not start payment — please try again.');
@@ -1120,49 +1121,49 @@
         }
         window.startTransfiPayin = startTransfiPayin;
 
-        // After the TransFi widget redirects back here (?tx=complete), don't
-        // just wait on the webhook -- sandbox testing showed it isn't always
-        // sent. Poll TransFi's own Get Order Status directly using the
-        // orderId we stashed in sessionStorage right before redirecting.
-        async function handleTransfiRedirectBack() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('tx') !== 'complete') return;
-
-            showToast('Payment received — checking status...');
-            window.history.replaceState({}, '', window.location.pathname);
-
-            const orderId = sessionStorage.getItem('netlink:lastTransfiOrderId');
-            if (!orderId) {
-                if (window.currentWalletAddress) fetchWalletBalances(window.currentWalletAddress);
-                return;
-            }
-
-            try {
-                const { data: sessionData } = await supabaseClient.auth.getSession();
-                const accessToken = sessionData?.session?.access_token;
-                const res = await fetch('/api/transfi-order-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-                    body: JSON.stringify({ orderId }),
-                });
-                const result = await res.json();
-                if (res.ok) {
-                    showToast(`Order status: ${result.status}`);
-                } else {
-                    console.error('Order status check failed:', result);
+        // Root cause of the earlier redirect approach not working: TransFi's
+        // successRedirectUrl navigates *inside the iframe*, not the parent
+        // page -- so window.location on this page never changes and never
+        // sees ?tx=complete. Polling sidesteps that entirely: once the
+        // iframe is open, check the order's real status every few seconds
+        // until it leaves 'initiated' or we give up.
+        let transfiPollTimer = null;
+        function startTransfiStatusPolling(orderId) {
+            stopTransfiStatusPolling();
+            let attempts = 0;
+            const maxAttempts = 40; // ~4 minutes at 6s intervals
+            transfiPollTimer = setInterval(async () => {
+                attempts++;
+                if (attempts > maxAttempts) { stopTransfiStatusPolling(); return; }
+                try {
+                    const { data: sessionData } = await supabaseClient.auth.getSession();
+                    const accessToken = sessionData?.session?.access_token;
+                    const res = await fetch('/api/transfi-order-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+                        body: JSON.stringify({ orderId }),
+                    });
+                    const result = await res.json();
+                    if (res.ok && result.status && result.status !== 'initiated') {
+                        stopTransfiStatusPolling();
+                        sessionStorage.removeItem('netlink:lastTransfiOrderId');
+                        showToast(`Order status: ${result.status}`);
+                        if (window.currentWalletAddress) fetchWalletBalances(window.currentWalletAddress);
+                    }
+                } catch (err) {
+                    console.error('Polling transfi-order-status failed:', err);
                 }
-            } catch (err) {
-                console.error('Failed to check TransFi order status:', err);
-            } finally {
-                sessionStorage.removeItem('netlink:lastTransfiOrderId');
-                setTimeout(() => {
-                    if (window.currentWalletAddress) fetchWalletBalances(window.currentWalletAddress);
-                }, 1500);
-            }
+            }, 6000);
         }
-        // checkAuth() (called later on load) sets up the Supabase session --
-        // run this after the page has had a moment to authenticate.
-        setTimeout(handleTransfiRedirectBack, 800);
+        function stopTransfiStatusPolling() {
+            if (transfiPollTimer) { clearInterval(transfiPollTimer); transfiPollTimer = null; }
+        }
+        // Resume polling after a reload/navigation if an order was left
+        // pending -- the test flow involves a lot of manual page reloads.
+        (function resumePendingTransfiPoll() {
+            const pendingOrderId = sessionStorage.getItem('netlink:lastTransfiOrderId');
+            if (pendingOrderId) setTimeout(() => startTransfiStatusPolling(pendingOrderId), 1200);
+        })();
 
         function scrollToRamp() {
             document.getElementById('rampSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
