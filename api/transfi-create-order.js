@@ -139,7 +139,7 @@ export default async function handler(req, res) {
   const {
     amount,
     fiatTicker = 'IDR',
-    cryptoTicker = 'USDC',
+    cryptoTicker = 'USDCPOLYGON',
     walletAddress,
     personalDetails,
   } = req.body || {};
