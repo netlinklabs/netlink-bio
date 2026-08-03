@@ -56,7 +56,6 @@
 }
 #site-header a, #site-footer a {
   text-decoration: none;
-  color: inherit;
   transition: color var(--transition-fast);
   font-family: var(--font-body);
 }
@@ -67,7 +66,7 @@
   background: none;
 }
 #site-header ul, #site-footer ul { list-style: none; margin: 0; padding: 0; }
-#site-header img, #site-footer img { max-width: 100%; height: auto; display: block; }
+#site-header img, #site-footer img { display: block; }
 
 .skip-link { position: absolute; top: -100%; left: var(--space-2); z-index: calc(var(--z-header) + 1); background: var(--color-primary); color: var(--text-on-dark); padding: var(--space-2) var(--space-3); border-radius: var(--radius-btn); font-weight: 600; transition: top var(--transition-fast); }
 .skip-link:focus { top: var(--space-2); }
