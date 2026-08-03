@@ -167,9 +167,10 @@
     /* RESPONSIVE */
     @media (min-width: 640px) {
       .hero-buttons { flex-direction: row; justify-content: center; }
-      .checker-form { flex-direction: row; }
-      .checker-input-wrapper { flex: 1; }
-      .checker-btn { width: auto; }
+      .checker-form { flex-direction: row; flex-wrap: wrap; }
+      .checker-input-wrapper { flex: 1; order: 1; }
+      .checker-btn { width: auto; order: 2; }
+      .checker-status { flex-basis: 100%; order: 3; margin-top: 2px; }
       .features-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (min-width: 768px) {
