@@ -122,15 +122,6 @@ body.has-site-header-offset { padding-top: 96px; }
   body.has-site-header-offset { padding-top: 88px; }
 }
 
-/* LEGAL PAGE SIDEBAR (used by privacy-policy.html, terms.html, cookies.html) */
-.legal-sidebar { display: flex; flex-direction: column; gap: 4px; }
-.legal-sidebar-title { font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: var(--space-2); }
-.legal-sidebar a { display: block; padding: 10px 12px; border-radius: var(--radius-btn); font-size: 0.9375rem; color: var(--text-secondary); transition: all var(--transition-fast); }
-.legal-sidebar a:hover { background-color: var(--bg-secondary); color: var(--text-primary); }
-.legal-sidebar a.active { background-color: rgba(22, 198, 200, 0.10); color: var(--color-primary-dark); font-weight: 600; }
-html.dark .legal-sidebar a:hover { background-color: rgba(255, 255, 255, 0.06); color: #fff; }
-html.dark .legal-sidebar a.active { background-color: rgba(22, 198, 200, 0.15); color: #2DD4D6; }
-
 /* RESPONSIVE */
 @media (min-width: 640px) {
   .footer-grid { grid-template-columns: 1.5fr 1fr 1fr; }
