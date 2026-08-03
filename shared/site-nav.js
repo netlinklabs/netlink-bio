@@ -116,7 +116,6 @@
         </div>
         <div class="footer-bottom">
           <p class="footer-bottom-copyright">&copy; 2026 PT Netlink Labs Global. All rights reserved.</p>
-          <p class="footer-bottom-tagline">Create Link, Build Identity, Earn.</p>
         </div>
       </div>
     </footer>
