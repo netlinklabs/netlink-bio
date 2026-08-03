@@ -33,59 +33,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared/site-nav.css">
 
   <style>
     /* ============================================
-       CSS CUSTOM PROPERTIES (Design Tokens)
+       PAGE-SPECIFIC TOKENS
+       (shared tokens: colors, spacing, header/footer live in shared/site-nav.css)
        ============================================ */
     :root {
-      --bg-primary: #FFFFFF;
-      --bg-secondary: #F5F7FA;
-      --color-primary: #16C6C8;
-      --color-primary-dark: #12A5A7;
-      --color-primary-light: #2DD4D6;
-      --text-primary: #222222;
-      --text-secondary: #6B7280;
-      --border-color: #E5E7EB;
-      --dark-bg: #0A1929;
-      --dark-bg-mid: #0F1D2E;
-      --dark-surface: rgba(255, 255, 255, 0.04);
-      --dark-border: rgba(255, 255, 255, 0.08);
-      --text-on-dark: #FFFFFF;
-      --text-on-dark-secondary: rgba(255, 255, 255, 0.60);
-      --footer-bg: #0D1117;
-      --footer-border: rgba(255, 255, 255, 0.06);
-      --footer-text: rgba(255, 255, 255, 0.55);
-      --footer-text-hover: #16C6C8;
-      --footer-title: rgba(255, 255, 255, 0.90);
-      --btn-primary-bg: #161616;
-      --btn-primary-text: #FFFFFF;
-      --btn-secondary-bg: #112B45;
-      --btn-secondary-text: #FFFFFF;
-      --radius-card: 15px;
-      --radius-btn: 12px;
-      --radius-input: 12px;
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08);
       --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.10);
       --shadow-glow: 0 0 80px rgba(22, 198, 200, 0.18);
-      --space-1: 8px;
-      --space-2: 16px;
-      --space-3: 24px;
-      --space-4: 32px;
-      --space-5: 40px;
-      --space-6: 48px;
-      --space-8: 64px;
-      --space-10: 80px;
-      --space-12: 96px;
-      --space-16: 128px;
-      --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
-      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-      --transition-fast: 150ms ease;
-      --transition-base: 300ms ease;
-      --transition-slow: 500ms ease;
-      --z-header: 1000;
+      --btn-secondary-bg: #112B45;
+      --btn-secondary-text: #FFFFFF;
       --z-modal: 2000;
     }
 
@@ -99,20 +58,11 @@
     input, textarea { font-family: inherit; font-size: inherit; }
     :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-    .skip-link { position: absolute; top: -100%; left: var(--space-2); z-index: calc(var(--z-header) + 1); background: var(--color-primary); color: var(--text-on-dark); padding: var(--space-2) var(--space-3); border-radius: var(--radius-btn); font-weight: 600; transition: top var(--transition-fast); }
-    .skip-link:focus { top: var(--space-2); }
-
-    .container { width: 100%; max-width: 1200px; margin: 0 auto; padding-left: var(--space-3); padding-right: var(--space-3); }
     .section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
     .section-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); text-align: center; margin-bottom: var(--space-3); }
     .section-subtitle { font-size: 1.125rem; color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto var(--space-8); line-height: 1.6; }
     .reveal { opacity: 0; transform: translateY(30px); transition: opacity var(--transition-slow), transform var(--transition-slow); }
     .reveal.visible { opacity: 1; transform: translateY(0); }
-
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); padding: 14px 28px; font-family: var(--font-body); font-size: 0.9375rem; font-weight: 600; border-radius: var(--radius-btn); transition: all var(--transition-base); white-space: nowrap; }
-    .btn-primary { background-color: var(--btn-primary-bg); color: var(--btn-primary-text); box-shadow: var(--shadow-md); }
-    .btn-primary:hover { background-color: #2a2a2a; box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-    .btn-primary:active { transform: translateY(0); }
 
     .btn-hero { background: linear-gradient(135deg, #16C6C8 0%, #0EA5A7 50%, #0D9488 100%); color: #FFFFFF; box-shadow: 0 4px 20px rgba(22, 198, 200, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset; font-weight: 700; letter-spacing: 0.01em; position: relative; overflow: hidden; }
     .btn-hero::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 500ms ease; }
@@ -127,26 +77,6 @@
     .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
     .btn-outline-dark { background-color: transparent; color: var(--text-on-dark); border: 1.5px solid rgba(255, 255, 255, 0.2); box-shadow: none; }
     .btn-outline-dark:hover { border-color: var(--color-primary); color: var(--color-primary); transform: translateY(-2px); }
-
-    /* HEADER */
-    .header { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-header); padding: var(--space-2) 0; transition: background-color var(--transition-base), backdrop-filter var(--transition-base), box-shadow var(--transition-base); }
-    .header.scrolled { background-color: rgba(10, 25, 41, 0.92); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05); }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; padding: 0 var(--space-3); }
-    .header-logo { display: flex; align-items: center; }
-    .header-logo img { height: 48px; width: auto; }
-    .header-nav { display: none; align-items: center; gap: var(--space-1); }
-    .header-nav a { padding: 8px 16px; font-size: 0.9375rem; font-weight: 500; color: rgba(255, 255, 255, 0.70); border-radius: var(--radius-btn); transition: all var(--transition-fast); }
-    .header-nav a:hover { color: var(--text-on-dark); background-color: rgba(255, 255, 255, 0.06); }
-    .header-cta { display: none; }
-    .menu-toggle { display: flex; flex-direction: column; justify-content: center; width: 32px; height: 32px; gap: 5px; padding: 4px; background: none; border: none; cursor: pointer; }
-    .menu-toggle span { display: block; width: 100%; height: 2px; background-color: var(--text-on-dark); border-radius: 2px; transition: all var(--transition-base); }
-    .menu-toggle.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .menu-toggle.active span:nth-child(2) { opacity: 0; }
-    .menu-toggle.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .mobile-nav { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; background-color: rgba(10, 25, 41, 0.98); backdrop-filter: blur(20px); padding: var(--space-4) var(--space-3); display: flex; flex-direction: column; gap: 4px; transform: translateX(100%); transition: transform var(--transition-base); z-index: calc(var(--z-header) - 1); }
-    .mobile-nav.active { transform: translateX(0); }
-    .mobile-nav a { padding: var(--space-2) var(--space-3); font-size: 1.125rem; font-weight: 500; color: rgba(255, 255, 255, 0.80); border-radius: var(--radius-btn); transition: all var(--transition-fast); }
-    .mobile-nav a:hover { color: var(--text-on-dark); background-color: rgba(255, 255, 255, 0.06); }
 
     /* HERO */
     .hero { background: linear-gradient(180deg, var(--dark-bg) 0%, var(--dark-bg-mid) 50%, var(--dark-bg) 100%); padding-top: calc(96px + var(--space-8)); padding-bottom: var(--space-12); overflow: hidden; position: relative; }
@@ -234,22 +164,6 @@
     .cta-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); margin-bottom: var(--space-3); }
     .cta-text { font-size: 1.125rem; color: var(--text-secondary); margin-bottom: var(--space-5); line-height: 1.7; }
 
-    /* FOOTER — DARK, 5 COLUMNS */
-    .footer { background-color: var(--footer-bg); border-top: 1px solid var(--footer-border); padding-top: var(--space-10); padding-bottom: var(--space-5); }
-    .footer-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-6); margin-bottom: var(--space-8); }
-    .footer-brand-block { max-width: 320px; }
-    .footer-brand { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
-    .footer-brand img { height: 48px; width: auto; }
-    .footer-brand-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.125rem; color: var(--footer-title); margin-bottom: var(--space-2); }
-    .footer-brand-desc { font-size: 0.9375rem; color: var(--footer-text); line-height: 1.7; }
-    .footer-col-title { font-family: var(--font-heading); font-size: 0.875rem; font-weight: 600; color: var(--footer-title); margin-bottom: var(--space-3); letter-spacing: 0.02em; }
-    .footer-links { display: flex; flex-direction: column; gap: 10px; }
-    .footer-links a { font-size: 0.9375rem; color: var(--footer-text); transition: color var(--transition-fast); }
-    .footer-links a:hover { color: var(--footer-text-hover); }
-    .footer-bottom { border-top: 1px solid var(--footer-border); padding-top: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-    .footer-bottom-copyright { font-size: 0.875rem; color: var(--footer-text); }
-    .footer-bottom-tagline { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.35); font-weight: 500; }
-
     /* RESPONSIVE */
     @media (min-width: 640px) {
       .hero-buttons { flex-direction: row; justify-content: center; }
@@ -257,12 +171,8 @@
       .checker-input-wrapper { flex: 1; }
       .checker-btn { width: auto; }
       .features-grid { grid-template-columns: repeat(2, 1fr); }
-      .footer-grid { grid-template-columns: 1.5fr 1fr 1fr; }
     }
     @media (min-width: 768px) {
-      .header-nav { display: flex; }
-      .header-cta { display: block; }
-      .menu-toggle { display: none; }
       .hero-inner { padding-top: var(--space-4); }
       .highlights-grid { grid-template-columns: repeat(2, 1fr); }
     }
@@ -273,7 +183,6 @@
       .how-step { flex-direction: column; align-items: center; text-align: center; flex: 1; }
       .how-step-content { margin-top: var(--space-3); }
       .how-step-content:hover { transform: translateY(-4px); }
-      .footer-grid { grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -282,36 +191,7 @@
   </style>
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Skip to main content</a>
-
-  <header class="header" id="header" role="banner">
-    <div class="header-inner">
-      <a href="#" class="header-logo" aria-label="Netlink Home">
-        <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink Logo" width="200" height="48">
-      </a>
-      <nav class="header-nav" role="navigation" aria-label="Main navigation">
-        <a href="#hero">Home</a>
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="#docs">Documentation</a>
-        <a href="https://netlink-bio.vercel.app/login.html">Login</a>
-      </nav>
-      <div class="header-cta">
-        <a href="https://netlink-bio.vercel.app/login.html" class="btn btn-primary">Get Started Free</a>
-      </div>
-      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileNav">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </header>
-
-  <nav class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
-    <a href="#hero">Home</a>
-    <a href="#features">Features</a>
-    <a href="#how-it-works">How It Works</a>
-    <a href="#docs">Documentation</a>
-    <a href="https://netlink-bio.vercel.app/login.html">Login</a>
-  </nav>
+  <div id="site-header"></div>
 
   <main id="main-content">
     <section class="hero" id="hero" aria-label="Hero">
@@ -459,123 +339,13 @@
     </section>
   </main>
 
-  <footer class="footer" role="contentinfo">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand-block">
-          <div class="footer-brand">
-            <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png" alt="Netlink" width="200" height="48">
-          </div>
-          <h4 class="footer-brand-title">About</h4>
-          <p class="footer-brand-desc">Netlink is a modern digital identity platform that helps individuals and businesses create a trusted online presence, showcase their work, connect with opportunities, receive payments, and build an AI-ready profile — all from a single trusted identity.</p>
-        </div>
-        <div>
-          <h4 class="footer-col-title">Product</h4>
-          <div class="footer-links">
-            <a href="#link-in-bio">Link in Bio</a>
-            <a href="#digital-cv">Digital CV</a>
-            <a href="#business-profile">Business Profile</a>
-            <a href="#netlink-pay">Netlink Pay</a>
-            <a href="#netlink-token">Netlink Token (NET)</a>
-            <a href="#verification">Verification</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer-col-title">Resources</h4>
-          <div class="footer-links">
-            <a href="#docs">Documentation</a>
-            <a href="#help">Help Center</a>
-            <a href="#api">API</a>
-            <a href="#blog">Blog</a>
-            <a href="#changelog">Changelog</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer-col-title">Company</h4>
-          <div class="footer-links">
-            <a href="#about">About</a>
-            <a href="#careers">Careers</a>
-            <a href="#contact">Contact</a>
-            <a href="#partners">Partners</a>
-            <a href="#press">Press Kit</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer-col-title">Legal</h4>
-          <div class="footer-links">
-            <a href="#privacy">Privacy Policy</a>
-            <a href="#terms">Terms of Service</a>
-            <a href="#cookies">Cookie Policy</a>
-            <a href="#acceptable-use">Acceptable Use Policy</a>
-            <a href="#security">Security</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer-col-title">Social</h4>
-          <div class="footer-links">
-            <a href="https://twitter.com/netlinkbio" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
-            <a href="https://linkedin.com/company/netlinkbio" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-            <a href="https://github.com/netlinklabs" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="https://youtube.com/@netlinkbio" target="_blank" rel="noopener noreferrer">YouTube</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p class="footer-bottom-copyright">&copy; 2026 Netlink. All rights reserved.</p>
-        <p class="footer-bottom-tagline">Create Link, Build Identity, Earn.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="shared/site-nav.js"></script>
   <script>
     (function() {
       'use strict';
-      const header = document.getElementById('header');
-      let lastScrollY = 0;
-      function updateHeader() {
-        const scrollY = window.scrollY || window.pageYOffset;
-        if (scrollY > 20) { header.classList.add('scrolled'); }
-        else { header.classList.remove('scrolled'); }
-        lastScrollY = scrollY;
-      }
-      let ticking = false;
-      window.addEventListener('scroll', function() {
-        if (!ticking) {
-          window.requestAnimationFrame(function() { updateHeader(); ticking = false; });
-          ticking = true;
-        }
-      }, { passive: true });
-      updateHeader();
-
-      const menuToggle = document.getElementById('menuToggle');
-      const mobileNav = document.getElementById('mobileNav');
-      let menuOpen = false;
-      menuToggle.addEventListener('click', function() {
-        menuOpen = !menuOpen;
-        menuToggle.classList.toggle('active', menuOpen);
-        mobileNav.classList.toggle('active', menuOpen);
-        menuToggle.setAttribute('aria-expanded', menuOpen);
-        document.body.style.overflow = menuOpen ? 'hidden' : '';
-      });
-      mobileNav.querySelectorAll('a').forEach(function(link) {
-        link.addEventListener('click', function() {
-          menuOpen = false;
-          menuToggle.classList.remove('active');
-          mobileNav.classList.remove('active');
-          menuToggle.setAttribute('aria-expanded', 'false');
-          document.body.style.overflow = '';
-        });
-      });
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && menuOpen) {
-          menuOpen = false;
-          menuToggle.classList.remove('active');
-          mobileNav.classList.remove('active');
-          menuToggle.setAttribute('aria-expanded', 'false');
-          document.body.style.overflow = '';
-        }
-      });
 
       const revealElements = document.querySelectorAll('.reveal');
       const revealObserver = new IntersectionObserver(function(entries) {
@@ -590,7 +360,8 @@
           const targetElement = document.querySelector(targetId);
           if (targetElement) {
             e.preventDefault();
-            const headerHeight = header.offsetHeight;
+            const headerEl = document.getElementById('site-header-el');
+            const headerHeight = headerEl ? headerEl.offsetHeight : 0;
             const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20;
             window.scrollTo({ top: targetPosition, behavior: 'smooth' });
           }
