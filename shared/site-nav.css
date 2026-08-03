@@ -1,0 +1,149 @@
+/* ============================================
+   SITE-NAV.CSS — Shared header/footer for public pages
+   (index.html, privacy-policy.html, terms.html, cookies.html, ...)
+   Source of truth: index.html marketing design.
+   ============================================ */
+
+:root {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F7FA;
+  --color-primary: #16C6C8;
+  --color-primary-dark: #12A5A7;
+  --color-primary-light: #2DD4D6;
+  --text-primary: #222222;
+  --text-secondary: #6B7280;
+  --border-color: #E5E7EB;
+  --dark-bg: #0A1929;
+  --dark-bg-mid: #0F1D2E;
+  --dark-surface: rgba(255, 255, 255, 0.04);
+  --dark-border: rgba(255, 255, 255, 0.08);
+  --text-on-dark: #FFFFFF;
+  --text-on-dark-secondary: rgba(255, 255, 255, 0.60);
+  --footer-bg: #0D1117;
+  --footer-border: rgba(255, 255, 255, 0.06);
+  --footer-text: rgba(255, 255, 255, 0.55);
+  --footer-text-hover: #16C6C8;
+  --footer-title: rgba(255, 255, 255, 0.90);
+  --btn-primary-bg: #161616;
+  --btn-primary-text: #FFFFFF;
+  --radius-card: 15px;
+  --radius-btn: 12px;
+  --radius-input: 12px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-12: 96px;
+  --space-16: 128px;
+  --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+  --transition-slow: 500ms ease;
+  --z-header: 1000;
+}
+
+/* Minimal reset scoped to nav elements so it won't fight page-specific frameworks */
+#site-header, #site-header *, #site-footer, #site-footer * {
+  box-sizing: border-box;
+}
+#site-header a, #site-footer a {
+  text-decoration: none;
+  color: inherit;
+  transition: color var(--transition-fast);
+  font-family: var(--font-body);
+}
+#site-header button, #site-footer button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+#site-header ul, #site-footer ul { list-style: none; margin: 0; padding: 0; }
+#site-header img, #site-footer img { max-width: 100%; height: auto; display: block; }
+
+.skip-link { position: absolute; top: -100%; left: var(--space-2); z-index: calc(var(--z-header) + 1); background: var(--color-primary); color: var(--text-on-dark); padding: var(--space-2) var(--space-3); border-radius: var(--radius-btn); font-weight: 600; transition: top var(--transition-fast); }
+.skip-link:focus { top: var(--space-2); }
+
+.container { width: 100%; max-width: 1200px; margin: 0 auto; padding-left: var(--space-3); padding-right: var(--space-3); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); padding: 14px 28px; font-family: var(--font-body); font-size: 0.9375rem; font-weight: 600; border-radius: var(--radius-btn); transition: all var(--transition-base); white-space: nowrap; }
+.btn-primary { background-color: var(--btn-primary-bg); color: var(--btn-primary-text); box-shadow: var(--shadow-md); }
+.btn-primary:hover { background-color: #2a2a2a; box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* HEADER */
+.header { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-header); padding: var(--space-2) 0; transition: background-color var(--transition-base), backdrop-filter var(--transition-base), box-shadow var(--transition-base); }
+.header.scrolled { background-color: rgba(10, 25, 41, 0.92); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05); }
+.header-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; padding: 0 var(--space-3); }
+.header-logo { display: flex; align-items: center; }
+.header-logo img { height: 48px; width: auto; }
+.header-nav { display: none; align-items: center; gap: var(--space-1); }
+.header-nav a { padding: 8px 16px; font-size: 0.9375rem; font-weight: 500; color: rgba(255, 255, 255, 0.70); border-radius: var(--radius-btn); transition: all var(--transition-fast); }
+.header-nav a:hover { color: var(--text-on-dark); background-color: rgba(255, 255, 255, 0.06); }
+.header-cta { display: none; }
+.menu-toggle { display: flex; flex-direction: column; justify-content: center; width: 32px; height: 32px; gap: 5px; padding: 4px; background: none; border: none; cursor: pointer; }
+.menu-toggle span { display: block; width: 100%; height: 2px; background-color: var(--text-on-dark); border-radius: 2px; transition: all var(--transition-base); }
+.menu-toggle.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.menu-toggle.active span:nth-child(2) { opacity: 0; }
+.menu-toggle.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* MOBILE NAV */
+.mobile-nav { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; background-color: rgba(10, 25, 41, 0.98); backdrop-filter: blur(20px); padding: var(--space-4) var(--space-3); display: flex; flex-direction: column; gap: 4px; transform: translateX(100%); transition: transform var(--transition-base); z-index: calc(var(--z-header) - 1); }
+.mobile-nav.active { transform: translateX(0); }
+.mobile-nav a { padding: var(--space-2) var(--space-3); font-size: 1.125rem; font-weight: 500; color: rgba(255, 255, 255, 0.80); border-radius: var(--radius-btn); transition: all var(--transition-fast); }
+.mobile-nav a:hover { color: var(--text-on-dark); background-color: rgba(255, 255, 255, 0.06); }
+
+/* FOOTER — DARK, MULTI-COLUMN */
+.footer { background-color: var(--footer-bg); border-top: 1px solid var(--footer-border); padding-top: var(--space-10); padding-bottom: var(--space-5); }
+.footer-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-6); margin-bottom: var(--space-8); }
+.footer-brand-block { max-width: 320px; }
+.footer-brand { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
+.footer-brand img { height: 48px; width: auto; }
+.footer-brand-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.125rem; color: var(--footer-title); margin-bottom: var(--space-2); }
+.footer-brand-desc { font-size: 0.9375rem; color: var(--footer-text); line-height: 1.7; }
+.footer-col-title { font-family: var(--font-heading); font-size: 0.875rem; font-weight: 600; color: var(--footer-title); margin-bottom: var(--space-3); letter-spacing: 0.02em; }
+.footer-links { display: flex; flex-direction: column; gap: 10px; }
+.footer-links a { font-size: 0.9375rem; color: var(--footer-text); transition: color var(--transition-fast); }
+.footer-links a:hover { color: var(--footer-text-hover); }
+.footer-bottom { border-top: 1px solid var(--footer-border); padding-top: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.footer-bottom-copyright { font-size: 0.875rem; color: var(--footer-text); }
+.footer-bottom-tagline { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.35); font-weight: 500; }
+
+/* Non-index pages have no dark hero under the fixed header, so push content down */
+body.has-site-header-offset { padding-top: 96px; }
+@media (min-width: 768px) {
+  body.has-site-header-offset { padding-top: 88px; }
+}
+
+/* LEGAL PAGE SIDEBAR (used by privacy-policy.html, terms.html, cookies.html) */
+.legal-sidebar { display: flex; flex-direction: column; gap: 4px; }
+.legal-sidebar-title { font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: var(--space-2); }
+.legal-sidebar a { display: block; padding: 10px 12px; border-radius: var(--radius-btn); font-size: 0.9375rem; color: var(--text-secondary); transition: all var(--transition-fast); }
+.legal-sidebar a:hover { background-color: var(--bg-secondary); color: var(--text-primary); }
+.legal-sidebar a.active { background-color: rgba(22, 198, 200, 0.10); color: var(--color-primary-dark); font-weight: 600; }
+html.dark .legal-sidebar a:hover { background-color: rgba(255, 255, 255, 0.06); color: #fff; }
+html.dark .legal-sidebar a.active { background-color: rgba(22, 198, 200, 0.15); color: #2DD4D6; }
+
+/* RESPONSIVE */
+@media (min-width: 640px) {
+  .footer-grid { grid-template-columns: 1.5fr 1fr 1fr; }
+}
+@media (min-width: 768px) {
+  .header-nav { display: flex; }
+  .header-cta { display: block; }
+  .menu-toggle { display: none; }
+}
+@media (min-width: 1024px) {
+  .footer-grid { grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #site-header *, #site-footer * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
