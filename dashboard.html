@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlink.bio - Dashboard</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        .hover-surface:hover { background: rgba(0,0,0,0.03); }
+        .progress-bar { background: #e2e8f0; }
+        .locked-card::before { background: rgba(241, 245, 249, 0.92); }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle, html.dark .border-white\/5 { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .border-white\/10 { border-color: rgba(255,255,255,0.08) !important; }
+        html.dark .hover-surface:hover, html.dark .hover\:bg-white\/5:hover { background: rgba(255,255,255,0.05) !important; }
+        html.dark .progress-bar { background: #0f172a; }
+        html.dark .locked-card::before { background: rgba(15, 23, 42, 0.85); }
+        html.dark .toast { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        html.dark .upgrade-option { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
+        html.dark .upgrade-option:hover { border-color: #3b82f6 !important; }
+        html.dark .link-item { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
+        html.dark .cv-item .bg-white { background: #0f172a !important; color: #f8fafc !important; border-color: rgba(255,255,255,0.12) !important; }
+        html.dark .cv-item .bg-white::placeholder { color: #64748b; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
+        .progress-bar { border-radius: 999px; height: 8px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+        .locked-card { position: relative; overflow: hidden; }
+        .locked-card::before { content: ''; position: absolute; inset: 0; z-index: 10; }
+        .locked-content { position: relative; z-index: 20; }
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        /* Accordion */
+        .accordion-body { display: none; }
+        .accordion-body.open { display: block; }
+        .accordion-chevron { transition: transform 0.2s; }
+        .accordion-chevron.open { transform: rotate(180deg); }
+
+        /* Icon picker popup */
+        .icon-picker-panel { display: none; position: absolute; z-index: 30; margin-top: 4px; width: 100%; max-height: 280px; overflow-y: auto; }
+        .icon-picker-panel.open { display: grid; }
+    
+        /* Theme-aware logo images */
+</style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading your dashboard...</p>
+            <p id="authGateError" class="text-xs text-red-500 font-mono break-all hidden max-w-sm"></p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Saved successfully!</div>
+
+
+    <main class="p-4 lg:p-8 max-w-3xl mx-auto">
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-primary">Wallet</h3>
+                <span id="walletStatusLabel" class="text-xs font-medium text-secondary flex items-center gap-1.5 flex-shrink-0">
+                    <span id="walletStatusDot" class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                    <span id="walletStatusText">Status: Not Connected</span>
+                </span>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-surface rounded-xl p-3 text-center">
+                    <img src="/assets/net-logo.png" alt="NET" class="w-9 h-9 mx-auto mb-2 rounded-full">
+                    <p id="balanceNet" class="text-xs font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">NET</p>
+                </div>
+                <div class="bg-surface rounded-xl p-3 text-center">
+                    <img src="/assets/usdc-logo.png" alt="USDC" class="w-9 h-9 mx-auto mb-2 rounded-full">
+                    <p id="balanceUsdc" class="text-xs font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">USDC</p>
+                </div>
+                <div class="bg-surface rounded-xl p-3 text-center">
+                    <img src="/assets/polygon-logo.png" alt="Polygon" class="w-9 h-9 mx-auto mb-2 rounded-full">
+                    <p id="balancePol" class="text-xs font-semibold text-primary">0.00</p>
+                    <p class="text-xs text-muted">POL</p>
+                </div>
+            </div>
+            <p id="walletTapHint" class="text-center text-xs text-muted mt-2">Tap below to connect</p>
+
+            <div onclick="toggleAccordion('accWalletDetails')" class="flex items-center gap-3 mt-2 py-2 cursor-pointer">
+                <div class="flex-1 border-t border-subtle"></div>
+                <div class="flex-shrink-0 w-9 h-9 rounded-full border border-subtle hover-surface flex items-center justify-center transition">
+                    <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 text-secondary" id="accWalletDetailsChevron"></i>
+                </div>
+                <div class="flex-1 border-t border-subtle"></div>
+            </div>
+
+            <div id="accWalletDetails" class="accordion-body pt-4">
+                <label class="text-sm font-medium text-secondary block mb-1.5">Your wallet address</label>
+                <input id="walletAddressInput" type="hidden" value="">
+                <div class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm mb-2 flex items-center justify-between gap-2">
+                    <span id="walletAddressText" class="font-mono text-muted truncate">Not connected</span>
+                    <button onclick="copyWalletAddress()" class="flex-shrink-0 p-1.5 hover-surface rounded-md transition text-secondary" title="Copy address">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <button id="connectSmartWalletBtn" onclick="openConnectWalletModal()" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="wallet" class="w-4 h-4 flex-shrink-0"></i>
+            <span class="hidden sm:inline">Connect / Create Smart Wallet</span>
+            <span class="sm:hidden">Connect / Create</span>
+        </button>
+        <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
+            <span class="hidden sm:inline">Disconnect</span>
+            <span class="sm:hidden">Disconnect</span>
+        </button>
+    </div>
+                <div class="flex items-center mt-2">
+                    <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline flex items-center gap-1 flex-shrink-0">
+                        About wallet <i data-lucide="info" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            </div>
+
+    <!-- Connect Wallet Modal -->
+    <div id="connectWalletModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-primary">Connect Your Wallet</h3>
+                <button onclick="closeConnectWalletModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-sm text-secondary mb-6">Choose a Google account to link with your wallet. You'll use the same account to access your wallet next time.</p>
+            <div id="googleSignInContainer" class="flex justify-center"></div>
+        </div>
+    </div>
+
+        </div>
+
+
+        <div id="profileCard" class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
+            <h3 class="font-semibold text-primary mb-3">Your Netlink.bio Link</h3>
+            <div class="flex items-center border-2 border-subtle rounded-xl p-1.5 bg-surface">
+                <span class="pl-2 pr-1 text-muted text-sm whitespace-nowrap">netlink.bio/</span>
+                <input id="profileUsername" type="text" pattern="[a-z0-9_]{3,20}" placeholder="yourname" onblur="checkUsernameLive()" class="flex-1 min-w-0 py-2 px-1 text-sm font-medium text-primary bg-transparent outline-none">
+            </div>
+            <p id="usernameStatus" class="mt-1.5 text-xs font-medium hidden"></p>
+
+            <div class="mt-4 flex items-center gap-6">
+                <label class="flex items-center gap-2 text-sm text-secondary">
+                    <input id="profileShowCv" type="checkbox" class="rounded"> Show CV
+                </label>
+                <label class="flex items-center gap-2 text-sm text-secondary">
+                    <input id="profileShowDonate" type="checkbox" class="rounded" onchange="showDonateDirty = true"> Show Wallet
+                </label>
+            </div>
+
+            <button id="linkCardSaveBtn" onclick="saveLinkCardSettings()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+
+            <div class="grid grid-cols-3 gap-2 mt-3">
+                <button onclick="shareProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                </button>
+                <button onclick="previewProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                </button>
+                <button onclick="copyProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                </button>
+            </div>
+
+            <!-- Choose Template -- placeholder only, not wired up yet. Standard
+                 is the only real template today; the Pro card is a preview of
+                 what's coming so users know a template marketplace is planned. -->
+            <div class="mt-4 p-3 bg-surface border border-subtle rounded-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-secondary flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i> Choose Template</span>
+                    <span class="text-[10px] text-muted uppercase tracking-wide">Coming soon</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="border-2 border-blue-500 rounded-lg p-2 text-center">
+                        <div class="h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded mb-1.5"></div>
+                        <span class="text-xs font-medium text-primary">Standard</span>
+                    </div>
+                    <div class="border border-subtle rounded-lg p-2 text-center opacity-50 cursor-not-allowed">
+                        <div class="h-12 bg-white/50 rounded mb-1.5 flex items-center justify-center"><i data-lucide="lock" class="w-4 h-4 text-muted"></i></div>
+                        <span class="text-xs font-medium text-muted">Pro</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl mb-3 overflow-hidden">
+            <button onclick="toggleAccordion('accEditProfile')" class="w-full flex items-center justify-between p-4 lg:p-5">
+                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Edit Profile</span>
+                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accEditProfileChevron"></i>
+            </button>
+            <div id="accEditProfile" class="accordion-body px-4 lg:px-5 pb-5">
+                <div class="flex justify-center mb-4">
+                    <div class="relative">
+                        <div id="avatarPreviewWrap" class="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center text-2xl font-bold text-blue-500 overflow-hidden">
+                            <span id="avatarInitial">?</span>
+                            <img id="avatarImg" class="w-full h-full object-cover hidden" alt="Avatar">
+                        </div>
+                        <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white transition" title="Change photo">
+                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
+                    </div>
+                </div>
+                <p id="avatarStatus" class="text-xs text-center text-muted hidden mb-3"></p>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Display Name</label>
+                        <input id="profileDisplayName" type="text" placeholder="Your Name" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Email</label>
+                        <input id="profileEmail" type="email" placeholder="Contact email" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">WhatsApp</label>
+                        <input id="profileWhatsapp" type="text" placeholder="e.g. 6281234567890" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Telegram</label>
+                        <input id="profileTelegram" type="text" placeholder="Telegram username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                </div>
+                <button id="editProfileSaveBtn" onclick="saveEditProfile()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl mb-3 overflow-hidden">
+            <button onclick="toggleAccordion('accDescription')" class="w-full flex items-center justify-between p-4 lg:p-5">
+                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="align-left" class="w-4 h-4 text-blue-500"></i> Description</span>
+                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accDescriptionChevron"></i>
+            </button>
+            <div id="accDescription" class="accordion-body px-4 lg:px-5 pb-5">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-sm font-medium text-secondary">Tell people about yourself</label>
+                    <span id="profileBioCount" class="text-xs text-muted">0/500</span>
+                </div>
+                <textarea id="profileBio" rows="5" maxlength="500" oninput="document.getElementById('profileBioCount').textContent = this.value.length + '/500'" placeholder="Write a short description for your bio page..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                <button id="descriptionSaveBtn" onclick="saveDescription()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl mb-4 lg:mb-6 overflow-hidden">
+            <button onclick="toggleAccordion('accYoutube')" class="w-full flex items-center justify-between p-4 lg:p-5">
+                <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="youtube" class="w-4 h-4 text-red-500"></i> Video Link</span>
+                <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accYoutubeChevron"></i>
+            </button>
+            <div id="accYoutube" class="accordion-body px-4 lg:px-5 pb-5">
+                <p class="text-xs text-muted mb-3">Free plan: 1 video link.</p>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">Video Title</label>
+                        <input id="youtubeTitleInput" type="text" placeholder="e.g. Watch my latest video" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary block mb-1.5">YouTube Link</label>
+                        <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-secondary">
+                        <input id="youtubeThumbToggle" type="checkbox" class="rounded"> Show video thumbnail (otherwise shown as a regular link card)
+                    </label>
+                </div>
+                <button id="youtubeSaveBtn" onclick="saveYoutube()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl mb-4 lg:mb-6">
+            <div class="p-4 lg:p-6 border-b border-subtle">
+                <h4 class="font-semibold text-primary text-sm mb-1">Your Links</h4>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="text-xs text-muted">Icon shape:</span>
+                    <button type="button" onclick="setIconShape('circle')" id="shapeBtnCircle" class="px-3 py-1 rounded-full text-xs font-medium border transition">Circle</button>
+                    <button type="button" onclick="setIconShape('rounded')" id="shapeBtnRounded" class="px-3 py-1 rounded-lg text-xs font-medium border transition">Rounded</button>
+                </div>
+            </div>
+            <div class="p-4 lg:p-6">
+                <div id="linkList" class="space-y-3">
+                    <p id="linkListEmpty" class="text-sm text-secondary text-center py-6 hidden">No links yet. Add your first one below.</p>
+                </div>
+                <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <span id="linkCountLabel" class="text-sm text-secondary">0/20 links used</span>
+                        <button onclick="openLinkModal()" class="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add more
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
+                    <h3 class="font-semibold text-primary">Complete Your Profile</h3>
+                </div>
+                <span id="completionPct" class="text-sm text-blue-500 font-medium">0%</span>
+            </div>
+            <div class="progress-bar mb-3">
+                <div id="completionFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span id="checkAvatar" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Upload Avatar
+                </span>
+                <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Create Link Bio
+                </span>
+                <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
+                </span>
+            </div>
+            <button id="claimNetBtn" disabled onclick="showToast('NET claiming coming soon — smart contract in progress')" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
+                Claim NET
+            </button>
+        </div>
+
+        <div id="cvCard" class="card rounded-2xl mb-4 lg:mb-6">
+            <div class="p-4 lg:p-6 border-b border-subtle">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Curriculum Vitae
+                        </h3>
+                        <p id="cvUrlHint" class="text-sm text-secondary">netlink.bio/cv/username</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="previewCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="copyCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Copy link"><i data-lucide="copy" class="w-4 h-4 text-secondary"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 lg:p-6 space-y-5">
+
+                <!-- Choose Template -- placeholder only, not wired up yet. -->
+                <div class="p-3 bg-surface border border-subtle rounded-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-secondary flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i> Choose Template</span>
+                        <span class="text-[10px] text-muted uppercase tracking-wide">Coming soon</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="border-2 border-blue-500 rounded-lg p-2 text-center">
+                            <div class="h-12 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded mb-1.5"></div>
+                            <span class="text-xs font-medium text-primary">Standard</span>
+                        </div>
+                        <div class="border border-subtle rounded-lg p-2 text-center opacity-50 cursor-not-allowed">
+                            <div class="h-12 bg-white/50 rounded mb-1.5 flex items-center justify-center"><i data-lucide="lock" class="w-4 h-4 text-muted"></i></div>
+                            <span class="text-xs font-medium text-muted">Pro</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Details - now collapsed accordion -->
+                <div class="border border-subtle rounded-xl overflow-hidden">
+                    <button onclick="toggleAccordion('cvPersonalBody')" class="w-full flex items-center justify-between p-4 bg-surface hover-surface transition">
+                        <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Personal Details</span>
+                        <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvPersonalBodyChevron"></i>
+                    </button>
+                    <div id="cvPersonalBody" class="accordion-body px-4 pb-4 space-y-3">
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Professional Title</label>
+                            <input id="cvTitle" type="text" placeholder="e.g. Senior Product Designer" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Location</label>
+                            <input id="cvLocation" type="text" placeholder="e.g. Jakarta, Indonesia" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Professional Summary</label>
+                            <textarea id="cvSummary" rows="3" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-secondary block mb-1.5">Skills <span class="text-muted">(comma separated)</span></label>
+                            <input id="cvSkills" type="text" placeholder="Figma, React, Project Management, ..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <button type="button" onclick="toggleAccordion('cvExperienceBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Work Experience</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvExperienceBodyChevron"></i>
+                        </button>
+                        <button type="button" onclick="addCvItem('experience')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvExperienceBody" class="accordion-body">
+                        <div id="cvExperienceList" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <button type="button" onclick="toggleAccordion('cvEducationBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Education</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvEducationBodyChevron"></i>
+                        </button>
+                        <button type="button" onclick="addCvItem('education')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvEducationBody" class="accordion-body">
+                        <div id="cvEducationList" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <button type="button" onclick="toggleAccordion('cvProjectsBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Featured Projects</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvProjectsBodyChevron"></i>
+                        </button>
+                        <button type="button" onclick="addCvItem('projects')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvProjectsBody" class="accordion-body">
+                        <div id="cvProjectsList" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <button type="button" onclick="toggleAccordion('cvLanguagesBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Languages</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvLanguagesBodyChevron"></i>
+                        </button>
+                        <button type="button" onclick="addCvItem('languages')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="cvLanguagesBody" class="accordion-body">
+                        <div id="cvLanguagesList" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-subtle">
+                    <div class="flex items-center justify-between mb-2">
+                        <button type="button" onclick="toggleAccordion('cvCertificationsBody')" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-primary">Certifications</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvCertificationsBodyChevron"></i>
+                        </button>
+                    </div>
+                    <div id="cvCertificationsBody" class="accordion-body">
+                        <label class="text-sm font-medium text-secondary block mb-1.5"><span class="text-muted">(one per line)</span></label>
+                        <textarea id="cvCertifications" rows="3" placeholder="Google UX Design Professional Certificate&#10;AWS Cloud Practitioner" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                    </div>
+                </div>
+
+                <button id="cvSaveBtn" onclick="saveCv()" class="w-full mt-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save CV</button>
+            </div>
+        </div>
+
+        <div id="landingPageCard" class="card rounded-2xl mb-4 lg:mb-6">
+            <div class="p-4 lg:p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="globe" class="w-5 h-5 text-purple-500"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-primary">Landing Page</h3>
+                        <p id="landingPageSubtitle" class="text-sm text-secondary">Available from Silver plan and up</p>
+                    </div>
+                </div>
+
+                <!-- Locked state: Basic tier -->
+                <div id="landingPageLocked" class="hidden">
+                    <div class="p-4 bg-surface border border-subtle rounded-xl text-center">
+                        <i data-lucide="lock" class="w-5 h-5 text-muted mx-auto mb-2"></i>
+                        <p class="text-sm text-secondary mb-3">Upgrade to Silver or higher to build a custom landing page.</p>
+                        <button onclick="showToast('Contact us to upgrade your plan')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Upgrade Plan</button>
+                    </div>
+                </div>
+
+                <!-- Empty state: eligible tier, no landing page yet -->
+                <div id="landingPageEmpty" class="hidden">
+                    <button onclick="createLandingPage()" class="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Create Landing Page
+                    </button>
+                </div>
+
+                <!-- Exists state: has a landing page already -->
+                <div id="landingPageExists" class="hidden">
+                    <div class="flex items-center justify-between p-3 bg-surface border border-subtle rounded-xl mb-3">
+                        <div class="min-w-0">
+                            <p id="landingPageTitle" class="text-sm font-medium text-primary truncate">Untitled Page</p>
+                            <p id="landingPageStatus" class="text-xs text-muted">Draft</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="editLandingPage()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                        </button>
+                        <button onclick="previewLandingPage()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                        </button>
+                        <button onclick="deleteLandingPage()" class="py-2 hover:bg-red-500/10 border border-subtle rounded-lg text-xs font-medium text-red-500 transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Disconnect Wallet Confirmation Modal -->
+    <div id="disconnectWalletModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
+            <div class="flex flex-col items-center text-center mb-5">
+                <div class="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-3">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-500"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-primary mb-1">Disconnect Wallet?</h3>
+                <p class="text-sm text-secondary leading-relaxed">Make sure you use the <strong class="text-primary">same Google account</strong> to access your wallet next time. This action cannot be undone.</p>
+            </div>
+            <label class="flex items-start gap-3 p-3 bg-surface border border-subtle rounded-xl mb-5 cursor-pointer">
+                <input id="disconnectConfirmCheckbox" type="checkbox" class="mt-0.5 rounded border-subtle text-blue-500 focus:ring-blue-500/30">
+                <span class="text-sm text-secondary">I understand I need the same Google account to reconnect my wallet.</span>
+            </label>
+            <div class="flex gap-3">
+                <button onclick="closeDisconnectModal()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                <button id="disconnectConfirmBtn" onclick="handleDisconnectConfirm()" disabled class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition opacity-50 cursor-not-allowed">Disconnect</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="linkModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="linkModalTitle" class="text-lg font-semibold text-primary">Add Link</h3>
+                <button onclick="closeLinkModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="linkForm" class="space-y-4">
+                <input id="linkId" type="hidden">
+                <div>
+                    <label class="text-sm font-medium text-secondary block mb-1.5">Title</label>
+                    <input id="linkTitle" type="text" required placeholder="e.g. Instagram" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-secondary block mb-1.5">URL</label>
+                    <input id="linkUrl" type="url" required placeholder="https://instagram.com/username" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-secondary block mb-1.5">Description <span class="text-muted">(optional)</span></label>
+                    <input id="linkDescription" type="text" placeholder="e.g. Follow my daily photography" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                </div>
+                <div class="relative">
+                    <label class="text-sm font-medium text-secondary block mb-1.5">Icon</label>
+                    <button type="button" onclick="toggleIconPicker()" class="w-full flex items-center gap-2 px-3 py-2 border border-subtle bg-surface rounded-lg">
+                        <span id="iconPickerPreview" class="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-subtle overflow-hidden"></span>
+                        <span id="iconPickerLabel" class="text-sm text-primary">Instagram</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted ml-auto"></i>
+                    </button>
+                    <input type="hidden" id="linkIcon" value="instagram">
+                    <div id="iconPickerPanel" class="icon-picker-panel grid-cols-4 gap-2 bg-white card border border-subtle rounded-lg shadow-lg p-2"></div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="linkSaveBtn" type="submit" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition">Save Link</button>
+                    <button id="linkDeleteBtn" type="button" onclick="deleteCurrentLink()" class="hidden px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        function showAuthError(msg) {
+            document.getElementById('authSpinner').classList.add('hidden');
+            document.getElementById('authGateText').textContent = 'Something went wrong:';
+            const errEl = document.getElementById('authGateError');
+            errEl.textContent = msg;
+            errEl.classList.remove('hidden');
+        }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        let currentProfile = null;
+        let currentLinks = [];
+        // Show Wallet (show_donate) is also editable from identity.html.
+        // Only send it in the update payload if the user actually touched
+        // this checkbox during this session -- otherwise a stale checkbox
+        // state (loaded before identity.html changed it elsewhere) would
+        // silently overwrite the other page's change on unrelated saves.
+        let showDonateDirty = false;
+        const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
+
+        // ==========================================
+        // AUTH GATE — FIX untuk race condition setelah redirect Google OAuth
+        // ------------------------------------------
+        // Sebelumnya kode memanggil getSession() langsung saat halaman load.
+        // Masalahnya: begitu Google redirect balik ke dashboard.html, token
+        // masih ada di URL (#access_token=...) dan Supabase client butuh
+        // waktu sepersekian detik untuk mem-parsingnya lalu menyimpan sesi.
+        // Kalau getSession() dipanggil SEBELUM proses itu selesai, ia bisa
+        // return null padahal user sebenarnya baru saja berhasil login —
+        // akibatnya user "sempat lihat dashboard" lalu dilempar balik ke
+        // login.html. Ini paling kentara untuk akun BARU karena ada beban
+        // tambahan (trigger INSERT ke profiles, generate net_id, dst) yang
+        // memperlebar celah race-nya.
+        //
+        // Fix: dengarkan event onAuthStateChange dan tunggu event
+        // INITIAL_SESSION (dikirim otomatis sekali oleh Supabase setelah ia
+        // selesai memeriksa URL/localStorage untuk sesi yang ada). Baru
+        // setelah event itu kita putuskan redirect ke login atau lanjut ke
+        // dashboard — bukan menebak lebih awal dengan getSession().
+        // ==========================================
+        let authResolved = false;
+
+        async function enterDashboard(session) {
+            authResolved = true;
+            currentUser = session.user;
+            document.getElementById('authGate').style.display = 'none';
+            try {
+                await loadDashboardData();
+                applyPendingUsernameClaim();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            if (authResolved) return; // sudah diputuskan sekali, jangan diulang
+
+            if (event === 'INITIAL_SESSION') {
+                if (session) {
+                    await enterDashboard(session);
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } else if (event === 'SIGNED_IN' && session) {
+                // Jaga-jaga kalau INITIAL_SESSION belum sempat fire duluan
+                await enterDashboard(session);
+            }
+        });
+
+        function applyPendingUsernameClaim() {
+            const pending = sessionStorage.getItem('pendingUsername');
+            if (!pending) return;
+            sessionStorage.removeItem('pendingUsername');
+            if (currentProfile && currentProfile.username) return;
+            const input = document.getElementById('profileUsername');
+            if (input) {
+                input.value = pending;
+                showToast(`Hit "Save" to lock in netlink.bio/${pending}`);
+            }
+        }
+
+        async function handleLogout() {
+            if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        function scrollToProfileCard() {
+            document.getElementById('profileCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function getCurrentUsername() {
+            return currentProfile?.username || document.getElementById('profileUsername').value.trim();
+        }
+
+        function copyProfileLink() {
+            const username = getCurrentUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            navigator.clipboard.writeText(`${window.location.origin}/${username}`).then(() => showToast('Link copied!'));
+        }
+
+        function previewProfileLink() {
+            const username = getCurrentUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            window.open(`/${username}`, '_blank');
+        }
+
+        function shareProfileLink() {
+            const username = getCurrentUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            const url = `${window.location.origin}/${username}`;
+            if (navigator.share) {
+                navigator.share({ title: 'My Netlink.bio', url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => showToast('Link copied to share!'));
+            }
+        }
+
+        function copyWalletAddress() {
+            const val = document.getElementById('walletAddressInput').value.trim();
+            if (!val) { showToast('No wallet address yet'); return; }
+            navigator.clipboard.writeText(val).then(() => showToast('Wallet address copied!'));
+        }
+
+        function toggleAccordion(id) {
+            document.getElementById(id).classList.toggle('open');
+            document.getElementById(id + 'Chevron').classList.toggle('open');
+        }
+
+        async function loadDashboardData() {
+            await loadProfile();
+            await loadLinks();
+            await loadLandingPageCard();
+            updateProfileCompletion();
+        }
+
+function openNetlinkPay() {
+    window.location.href = 'https://netlink-bio.vercel.app/pay.html';
+}
+window.openNetlinkPay = openNetlinkPay;
+        // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
+        // trigger handle_new_user() di sisi database, hampir bersamaan
+        // dengan sesi auth tapi tidak 100% instan. Kalau dashboard sempat
+        // query sepersekian detik lebih cepat dari trigger selesai, .single()
+        // akan gagal (0 rows). Retry singkat ini menutup celah itu tanpa
+        // mengganggu akun lama (yang profilnya sudah pasti ada, jadi retry
+        // ini langsung berhasil di percobaan pertama).
+        async function fetchProfileWithRetry(maxAttempts = 4, delayMs = 600) {
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                const { data, error } = await supabaseClient
+                    .from('profiles').select('*').eq('id', currentUser.id).single();
+                if (!error && data) return { data, error: null };
+                if (attempt < maxAttempts) await new Promise(r => setTimeout(r, delayMs));
+                else return { data, error };
+            }
+        }
+
+        async function loadProfile() {
+            const { data, error } = await fetchProfileWithRetry();
+
+            if (error) {
+                console.error('Failed to load profile:', error);
+                return;
+            }
+
+            currentProfile = data;
+
+            if (data.username) {
+                document.getElementById('cvUrlHint').textContent = `netlink.bio/cv/${data.username}`;
+            }
+
+            document.getElementById('profileUsername').value = data.username || '';
+            document.getElementById('profileShowCv').checked = data.show_cv !== false;
+            document.getElementById('profileShowDonate').checked = data.show_donate === true;
+            showDonateDirty = false;
+
+            document.getElementById('profileDisplayName').value = data.display_name || '';
+            document.getElementById('profileEmail').value = data.contact_email || '';
+            document.getElementById('profileWhatsapp').value = data.contact_whatsapp || '';
+            document.getElementById('profileTelegram').value = data.contact_telegram || '';
+
+            document.getElementById('profileBio').value = data.bio || '';
+            document.getElementById('profileBioCount').textContent = (data.bio || '').length + '/500';
+
+            document.getElementById('youtubeTitleInput').value = data.youtube_title || '';
+            document.getElementById('profileYoutube').value = data.youtube_url || '';
+            document.getElementById('youtubeThumbToggle').checked = data.show_youtube_thumbnail !== false;
+
+            document.getElementById('walletAddressInput').value = data.wallet_address || '';
+            if (window.renderWalletAddressUI) window.renderWalletAddressUI(data.wallet_address || '', false);
+            fetchWalletBalances(data.wallet_address);
+
+            setIconShapeButtons(data.link_icon_shape || 'circle');
+            populateCvForm(data.cv_data);
+
+            const initialEl = document.getElementById('avatarInitial');
+            const imgEl = document.getElementById('avatarImg');
+            const initialChar = (data.display_name || data.username || currentUser.email || '?').charAt(0).toUpperCase();
+
+            if (data.avatar_url) {
+                imgEl.src = data.avatar_url;
+                imgEl.classList.remove('hidden');
+                initialEl.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                initialEl.classList.remove('hidden');
+                initialEl.textContent = initialChar;
+            }
+
+            if (window.NetlinkNav) {
+                NetlinkNav.init({
+                    activePage: 'dashboard',
+                    profile: currentProfile,
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                });
+            }
+
+            if (window.NetlinkAppLock) {
+                NetlinkAppLock.init({
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                    userEmail: currentUser.email,
+                });
+            }
+        }
+
+        // Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
+        function requiredTierForLength(len) {
+            if (len >= 5) return 'basic';
+            if (len === 4) return 'silver';
+            if (len === 3) return 'gold';
+            if (len === 2) return 'platinum';
+            return 'reserved';
+        }
+        const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+
+        // Token guard: setiap pemanggilan checkUsernameLive() atau proses
+        // save akan menaikkan angka ini. Kalau hasil RPC pengecekan
+        // "pulang" belakangan (setelah proses save/pengecekan yang lebih
+        // baru dimulai), token-nya sudah tidak cocok lagi -> hasil lama
+        // diabaikan, tidak menimpa status yang sudah benar di layar.
+        let usernameCheckToken = 0;
+
+        async function checkUsernameLive() {
+            const myToken = ++usernameCheckToken;
+            const input = document.getElementById('profileUsername');
+            const status = document.getElementById('usernameStatus');
+            const username = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            input.value = username;
+
+            if (!username) { status.classList.add('hidden'); return; }
+            if (username === currentProfile?.username) {
+                status.textContent = 'This is your current link.';
+                status.className = 'mt-1.5 text-xs font-medium text-muted';
+                status.classList.remove('hidden');
+                return;
+            }
+            if (username.length > 25) {
+                status.textContent = 'Maximum 25 characters.';
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+                status.classList.remove('hidden');
+
+                    return;
+            }
+
+            const myTier = currentProfile?.tier || 'basic';
+            const requiredTier = requiredTierForLength(username.length);
+
+            const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
+                check_slug: username,
+                check_tier: myTier,
+            });
+
+            // Ada pengecekan/proses save lain yang mulai setelah kita —
+            // hasil kita sudah basi, jangan render apa pun.
+            if (myToken !== usernameCheckToken) return;
+
+            if (error) {
+                status.textContent = 'Failed to check availability.';
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+                status.classList.remove('hidden');
+                return;
+            }
+
+            if (!isAvailable) {
+                if (requiredTier === 'reserved') {
+                    status.textContent = '1-character usernames are reserved — contact us to request one.';
+                } else if (requiredTier !== myTier && requiredTier !== 'basic') {
+                    status.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
+                } else {
+                    status.textContent = `netlink.bio/${username} is taken.`;
+                }
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+            } else {
+                status.textContent = `netlink.bio/${username} is available!`;
+                status.className = 'mt-1.5 text-xs font-medium text-green-600';
+            }
+            status.classList.remove('hidden');
+        }
+
+        async function withSaving(btnId, fn) {
+            const btn = document.getElementById(btnId);
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await fn();
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        }
+
+        async function saveWallet() {
+            const wallet_address = document.getElementById('walletAddressInput').value.trim();
+            if (wallet_address && !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
+                showToast('That doesn\'t look like a valid wallet address');
+                return;
+            }
+            const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
+            if (error) { showToast('Failed to save wallet address'); return; }
+            showToast('Wallet address saved');
+
+            // The DB write above is what actually matters for "success".
+            // Everything below is cosmetic UI refresh — if any of it throws,
+            // don't let that bubble up and make the caller think the save
+            // itself failed.
+            try {
+                await loadProfile();
+                updateProfileCompletion();
+                fetchWalletBalances(wallet_address);
+            } catch (refreshErr) {
+                console.error('Wallet saved, but UI refresh failed:', refreshErr);
+            }
+        }
+        function formatTokenAmount(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return '0.00';
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        async function fetchWalletBalances(address) {
+            if (!address) {
+                document.getElementById('balanceNet').textContent = '0.00';
+                document.getElementById('balanceUsdc').textContent = '0.00';
+                document.getElementById('balancePol').textContent = '0.00';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
+                if (!res.ok) throw new Error('Failed to fetch balances');
+                const data = await res.json();
+
+                document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
+                document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
+                document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
+            } catch (err) {
+                console.error(err);
+                showToast('Could not fetch wallet balances');
+            }
+        }
+
+        async function saveLinkCardSettings() {
+            await withSaving('linkCardSaveBtn', async () => {
+                usernameCheckToken++; // batalkan pengecekan username yang mungkin masih menggantung
+                const usernameStatus = document.getElementById('usernameStatus');
+                usernameStatus.classList.add('hidden'); // sembunyikan status lama selagi proses save jalan
+                const username = document.getElementById('profileUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+                document.getElementById('profileUsername').value = username;
+
+                if (username.length > 25) {
+                    usernameStatus.textContent = 'Maximum 25 characters.';
+                    usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                    usernameStatus.classList.remove('hidden');
+                    return;
+                }
+
+                const updatePayload = {
+                    username,
+                    show_cv: document.getElementById('profileShowCv').checked,
+                };
+                // Only include show_donate if the user actually touched this
+                // checkbox this session -- it's also editable from
+                // identity.html, so an untouched (possibly stale) value here
+                // must not silently overwrite a change made there.
+                if (showDonateDirty) {
+                    updatePayload.show_donate = document.getElementById('profileShowDonate').checked;
+                }
+
+                const { error } = await supabaseClient.from('profiles').update(updatePayload).eq('id', currentUser.id);
+
+                if (error) {
+                    if (error.code === '23505') {
+                        usernameStatus.textContent = `netlink.bio/${username} is already taken.`;
+                        usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                        usernameStatus.classList.remove('hidden');
+                    } else if (error.message && error.message.includes('does not meet the length requirement')) {
+                        const requiredTier = requiredTierForLength(username.length);
+                        usernameStatus.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
+                        usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                        usernameStatus.classList.remove('hidden');
+                    } else {
+                        showToast('Failed to save');
+                    }
+                    return;
+                }
+                showToast('Saved!');
+                usernameStatus.classList.add('hidden');
+                await loadProfile();
+                updateProfileCompletion();
+            });
+        }
+
+        async function saveEditProfile() {
+            await withSaving('editProfileSaveBtn', async () => {
+                const { error } = await supabaseClient.from('profiles').update({
+                    display_name: document.getElementById('profileDisplayName').value.trim() || null,
+                    contact_email: document.getElementById('profileEmail').value.trim() || null,
+                    contact_whatsapp: document.getElementById('profileWhatsapp').value.trim() || null,
+                    contact_telegram: document.getElementById('profileTelegram').value.trim() || null,
+                }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save profile'); return; }
+                showToast('Profile saved');
+                await loadProfile();
+            });
+        }
+
+        async function saveDescription() {
+            await withSaving('descriptionSaveBtn', async () => {
+                const bio = document.getElementById('profileBio').value.trim().slice(0, 500);
+                const { error } = await supabaseClient.from('profiles').update({ bio: bio || null }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save description'); return; }
+                showToast('Description saved');
+                await loadProfile();
+            });
+        }
+
+        async function saveYoutube() {
+            await withSaving('youtubeSaveBtn', async () => {
+                const { error } = await supabaseClient.from('profiles').update({
+                    youtube_title: document.getElementById('youtubeTitleInput').value.trim() || null,
+                    youtube_url: document.getElementById('profileYoutube').value.trim() || null,
+                    show_youtube_thumbnail: document.getElementById('youtubeThumbToggle').checked,
+                }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save video link'); return; }
+                showToast('Video link saved');
+          await loadProfile();
+            });
+        }
+
+        const CV_DEFAULT = { title: '', location: '', summary: '', skills: [], education: [], languages: [], experience: [], projects: [], certifications: [] };
+        let currentCvData = { ...CV_DEFAULT };
+
+        function scrollToCvCard() {
+            document.getElementById('cvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function scrollToLandingPageCard() {
+            document.getElementById('landingPageCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        let currentLandingPage = null;
+
+        async function loadLandingPageCard() {
+            const tier = currentProfile?.tier || 'basic';
+            const lockedEl = document.getElementById('landingPageLocked');
+            const emptyEl = document.getElementById('landingPageEmpty');
+            const existsEl = document.getElementById('landingPageExists');
+            const subtitleEl = document.getElementById('landingPageSubtitle');
+            lockedEl.classList.add('hidden');
+            emptyEl.classList.add('hidden');
+            existsEl.classList.add('hidden');
+
+            // Basic tier can't create a landing page at all.
+            if (tier === 'basic') {
+                subtitleEl.textContent = 'Available from Silver plan and up';
+                lockedEl.classList.remove('hidden');
+                return;
+            }
+
+            subtitleEl.textContent = 'One custom landing page for your business';
+
+            const { data, error } = await supabaseClient
+                .from('landing_pages').select('*').eq('user_id', currentUser.id).maybeSingle();
+
+            if (error) {
+                console.error('Failed to load landing page:', error);
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            currentLandingPage = data;
+
+            if (!data) {
+                emptyEl.classList.remove('hidden');
+            } else {
+                document.getElementById('landingPageTitle').textContent = data.title || 'Untitled Page';
+                document.getElementById('landingPageStatus').textContent = data.is_published ? 'Published' : 'Draft';
+                existsEl.classList.remove('hidden');
+            }
+        }
+
+        async function createLandingPage() {
+            const { data, error } = await supabaseClient
+                .from('landing_pages')
+                .insert({ user_id: currentUser.id, title: 'Untitled Page', content: {}, is_published: false })
+                .select().single();
+
+            if (error) {
+                if (error.message && error.message.includes('available from the Silver plan')) {
+                    showToast('Landing Page requires the Silver plan or higher');
+                } else {
+                    showToast('Failed to create landing page');
+                    console.error(error);
+                }
+                return;
+            }
+
+            currentLandingPage = data;
+            showToast('Landing page created — opening editor...');
+            window.open(`page-builder.html?id=${data.id}`, '_blank');
+            await loadLandingPageCard();
+        }
+
+        function editLandingPage() {
+            if (!currentLandingPage) { showToast('No landing page found'); return; }
+            window.open(`page-builder.html?id=${currentLandingPage.id}`, '_blank');
+        }
+
+        function previewLandingPage() {
+            // There's no public-facing rendering endpoint for landing pages yet
+            // (the equivalent of api/bio.js or api/cv.js for this feature isn't
+            // built). Being upfront about that here instead of opening a dead link.
+            showToast('Public preview link is not wired up yet — open the editor to preview inside the builder for now');
+        }
+
+        async function deleteLandingPage() {
+            if (!currentLandingPage) return;
+            if (!confirm('Delete your landing page? This cannot be undone.')) return;
+
+            const { error } = await supabaseClient
+                .from('landing_pages').delete().eq('user_id', currentUser.id);
+
+            if (error) { showToast('Failed to delete landing page'); console.error(error); return; }
+
+            currentLandingPage = null;
+            showToast('Landing page deleted');
+            await loadLandingPageCard();
+        }
+
+        function getCvUsername() {
+            return currentProfile?.username || '';
+        }
+
+        function copyCvLink() {
+            const username = getCvUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            navigator.clipboard.writeText(`${window.location.origin}/cv/${username}`).then(() => showToast('CV link copied!'));
+        }
+
+        function previewCvLink() {
+            const username = getCvUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            window.open(`/cv/${username}`, '_blank');
+        }
+
+        function populateCvForm(cv) {
+            currentCvData = {
+                ...CV_DEFAULT,
+                ...cv,
+                skills: cv?.skills || [],
+                education: cv?.education || [],
+                languages: cv?.languages || [],
+                experience: cv?.experience || [],
+                projects: cv?.projects || [],
+                certifications: cv?.certifications || [],
+            };
+            document.getElementById('cvTitle').value = currentCvData.title || '';
+            document.getElementById('cvLocation').value = currentCvData.location || '';
+            document.getElementById('cvSummary').value = currentCvData.summary || '';
+            document.getElementById('cvSkills').value = (currentCvData.skills || []).join(', ');
+            document.getElementById('cvCertifications').value = (currentCvData.certifications || []).join('\n');
+            renderCvLists();
+        }
+
+        function renderCvLists() {
+            renderCvSection('experience', 'cvExperienceList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
+                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('experience', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <input class="cv-exp-title w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Job Title" value="${escapeHtml(item.title)}">
+                    <input class="cv-exp-company w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Company" value="${escapeHtml(item.company)}">
+                    <input class="cv-exp-date w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2021 — Present" value="${escapeHtml(item.date)}">
+                    <textarea class="cv-exp-bullets w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="3" placeholder="One achievement per line">${escapeHtml((item.bullets || []).join('\n'))}</textarea>
+                </div>
+            `);
+            renderCvSection('education', 'cvEducationList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
+                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('education', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <input class="cv-edu-degree w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Degree" value="${escapeHtml(item.degree)}">
+                    <input class="cv-edu-school w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="School" value="${escapeHtml(item.school)}">
+                    <input class="cv-edu-year w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2016 — 2018" value="${escapeHtml(item.year)}">
+                    <input class="cv-edu-detail w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Detail (optional)" value="${escapeHtml(item.detail)}">
+                </div>
+            `);
+            renderCvSection('projects', 'cvProjectsList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
+                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('projects', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <input class="cv-proj-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Project Name" value="${escapeHtml(item.name)}">
+                    <textarea class="cv-proj-desc w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="2" placeholder="Short description">${escapeHtml(item.description)}</textarea>
+                    <input class="cv-proj-tags w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Tags, comma separated" value="${escapeHtml((item.tags || []).join(', '))}">
+                </div>
+            `);
+            renderCvSection('languages', 'cvLanguagesList', (item, idx) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
+                    <input class="cv-lang-name flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Language" value="${escapeHtml(item.name)}">
+                    <input class="cv-lang-level flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Level" value="${escapeHtml(item.level)}">
+                    <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 flex-shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+            `);
+            lucide.createIcons();
+            // CV sections stay collapsed by default now (even if they already
+            // have saved data) — user has to tap to expand, keeps the card short.
+        }
+
+        function openAccordion(id) {
+            const body = document.getElementById(id);
+            const chevron = document.getElementById(id + 'Chevron');
+            if (body && !body.classList.contains('open')) body.classList.add('open');
+            if (chevron && !chevron.classList.contains('open')) chevron.classList.add('open');
+        }
+
+        function autoOpenCvAccordions() {
+            const map = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
+            Object.entries(map).forEach(([key, bodyId]) => {
+                if ((currentCvData[key] || []).length > 0) openAccordion(bodyId);
+            });
+        }
+
+        function renderCvSection(key, listId, rowTemplate) {
+            const list = document.getElementById(listId);
+            const items = currentCvData[key] || [];
+            list.innerHTML = items.length
+                ? items.map((item, idx) => rowTemplate(item, idx)).join('')
+                : `<p class="text-xs text-muted text-center py-3">None added yet.</p>`;
+        }
+
+        function addCvItem(section) {
+            const blanks = {
+                experience: { title: '', company: '', date: '', bullets: [] },
+                education: { degree: '', school: '', year: '', detail: '' },
+                projects: { name: '', description: '', tags: [] },
+                languages: { name: '', level: '' },
+            };
+            const bodyMap = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
+            syncCvSectionFromDom(section);
+            currentCvData[section] = [...(currentCvData[section] || []), blanks[section]];
+            renderCvLists();
+            openAccordion(bodyMap[section]);
+        }
+
+        function removeCvItem(section, idx) {
+            syncCvSectionFromDom(section);
+            currentCvData[section].splice(idx, 1);
+            renderCvLists();
+        }
+
+        function syncCvSectionFromDom(section) {
+            const container = document.getElementById(
+                { experience: 'cvExperienceList', education: 'cvEducationList', projects: 'cvProjectsList', languages: 'cvLanguagesList' }[section]
+            );
+            const rows = [...container.querySelectorAll('.cv-item')];
+            if (section === 'experience') {
+                currentCvData.experience = rows.map(row => ({
+                    title: row.querySelector('.cv-exp-title').value.trim(),
+                    company: row.querySelector('.cv-exp-company').value.trim(),
+                    date: row.querySelector('.cv-exp-date').value.trim(),
+                    bullets: row.querySelector('.cv-exp-bullets').value.split('\n').map(s => s.trim()).filter(Boolean),
+                }));
+            } else if (section === 'education') {
+                currentCvData.education = rows.map(row => ({
+                    degree: row.querySelector('.cv-edu-degree').value.trim(),
+                    school: row.querySelector('.cv-edu-school').value.trim(),
+                    year: row.querySelector('.cv-edu-year').value.trim(),
+                    detail: row.querySelector('.cv-edu-detail').value.trim(),
+                }));
+            } else if (section === 'projects') {
+                currentCvData.projects = rows.map(row => ({
+                    name: row.querySelector('.cv-proj-name').value.trim(),
+                    description: row.querySelector('.cv-proj-desc').value.trim(),
+                    tags: row.querySelector('.cv-proj-tags').value.split(',').map(s => s.trim()).filter(Boolean),
+                }));
+            } else if (section === 'languages') {
+                currentCvData.languages = rows.map(row => ({
+                    name: row.querySelector('.cv-lang-name').value.trim(),
+                    level: row.querySelector('.cv-lang-level').value.trim(),
+                }));
+            }
+        }
+
+        async function saveCv() {
+            await withSaving('cvSaveBtn', async () => {
+                ['experience', 'education', 'projects', 'languages'].forEach(syncCvSectionFromDom);
+
+                const payload = {
+                    title: document.getElementById('cvTitle').value.trim(),
+                    location: document.getElementById('cvLocation').value.trim(),
+                    summary: document.getElementById('cvSummary').value.trim(),
+                    skills: document.getElementById('cvSkills').value.split(',').map(s => s.trim()).filter(Boolean),
+                    certifications: document.getElementById('cvCertifications').value.split('\n').map(s => s.trim()).filter(Boolean),
+                    experience: currentCvData.experience,
+                    education: currentCvData.education,
+                    projects: currentCvData.projects,
+                    languages: currentCvData.languages,
+                };
+
+                const { error } = await supabaseClient.from('profiles').update({ cv_data: payload }).eq('id', currentUser.id);
+                if (error) { showToast('Failed to save CV'); return; }
+                showToast('CV saved!');
+                currentCvData = payload;
+            });
+        }
+
+        function updateProfileCompletion() {
+            const hasAvatar = !!currentProfile?.avatar_url;
+            const hasLink = currentLinks.length > 0;
+            const hasWallet = !!currentProfile?.wallet_address;
+            const items = [
+                ['checkAvatar', hasAvatar], ['checkLinkBio', hasLink], ['checkWallet', hasWallet],
+            ];
+            let count = 0;
+            items.forEach(([id, done]) => {
+                const el = document.getElementById(id);
+                const icon = el.querySelector('i');
+                if (done) {
+                    count++;
+                    el.className = 'text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1';
+                    icon.setAttribute('data-lucide', 'check');
+                } else {
+                    el.className = 'text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1';
+                    icon.setAttribute('data-lucide', 'circle');
+                }
+            });
+            lucide.createIcons();
+
+            const pct = Math.round((count / items.length) * 100);
+            document.getElementById('completionPct').textContent = pct + '%';
+            document.getElementById('completionFill').style.width = pct + '%';
+
+            const claimBtn = document.getElementById('claimNetBtn');
+            if (pct === 100) {
+                claimBtn.disabled = false;
+                claimBtn.className = 'w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm';
+            } else {
+                claimBtn.disabled = true;
+                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
+            }
+        }
+
+        function compressImage(file, maxDimension = 512, quality = 0.75) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const reader = new FileReader();
+                reader.onload = (e) => { img.src = e.target.result; };
+                reader.onerror = reject;
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > height && width > maxDimension) { height = Math.round(height * (maxDimension / width)); width = maxDimension; }
+                    else if (height > maxDimension) { width = Math.round(width * (maxDimension / height)); height = maxDimension; }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', quality);
+                };
+                img.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const status = document.getElementById('avatarStatus');
+            status.textContent = 'Compressing & uploading...';
+            status.classList.remove('hidden');
+
+            try {
+                const compressed = await compressImage(file);
+                const path = `${currentUser.id}/avatar.jpg`;
+                const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+                if (uploadError) throw uploadError;
+
+                const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+                const avatarUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+                const { error: updateError } = await supabaseClient.from('profiles').update({ avatar_url: avatarUrl }).eq('id', currentUser.id);
+                if (updateError) throw updateError;
+
+                status.textContent = 'Photo updated!';
+                setTimeout(() => status.classList.add('hidden'), 2000);
+                await loadProfile();
+                updateProfileCompletion();
+            } catch (err) {
+                console.error(err);
+                status.textContent = 'Upload failed. Please try a different image.';
+            }
+        }
+
+        async function loadLinks() {
+            const { data, error } = await supabaseClient.from('links').select('*').eq('user_id', currentUser.id).order('position', { ascending: true });
+            if (error) { console.error('Failed to load links:', error); return; }
+            currentLinks = data || [];
+            renderLinks();
+        }
+
+        const ICON_OPTIONS = [
+            { key: 'instagram', label: 'Instagram' },
+            { key: 'x', label: 'Twitter / X' },
+            { key: 'facebook', label: 'Facebook' },
+            { key: 'linkedin', label: 'LinkedIn' },
+            { key: 'youtube', label: 'YouTube' },
+            { key: 'tiktok', label: 'TikTok' },
+            { key: 'whatsapp', label: 'WhatsApp' },
+            { key: 'telegram', label: 'Telegram' },
+            { key: 'threads', label: 'Threads' },
+            { key: 'pinterest', label: 'Pinterest' },
+            { key: 'snapchat', label: 'Snapchat' },
+            { key: 'twitch', label: 'Twitch' },
+            { key: 'discord', label: 'Discord' },
+            { key: 'spotify', label: 'Spotify' },
+            { key: 'soundcloud', label: 'SoundCloud' },
+            { key: 'applemusic', label: 'Apple Music' },
+            { key: 'github', label: 'GitHub' },
+            { key: 'behance', label: 'Behance' },
+            { key: 'dribbble', label: 'Dribbble' },
+            { key: 'medium', label: 'Medium' },
+            { key: 'reddit', label: 'Reddit' },
+            { key: 'paypal', label: 'PayPal' },
+            { key: 'patreon', label: 'Patreon' },
+            { key: 'vimeo', label: 'Vimeo' },
+            { key: 'netflix', label: 'Netflix' },
+            { key: 'briefcase', label: 'Professional' },
+            { key: 'building', label: 'Building' },
+            { key: 'building-2', label: 'Office' },
+            { key: 'graduation-cap', label: 'Student' },
+            { key: 'user', label: 'Person' },
+            { key: 'users', label: 'People' },
+            { key: 'award', label: 'Award' },
+            { key: 'briefcase-business', label: 'Business' },
+            { key: 'home', label: 'House' },
+            { key: 'map-pin', label: 'Location' },
+            { key: 'plane', label: 'Travel' },
+            { key: 'car', label: 'Car' },
+            { key: 'book', label: 'Book' },
+            { key: 'book-open', label: 'Reading' },
+            { key: 'file-text', label: 'Document' },
+            { key: 'dumbbell', label: 'Fitness' },
+            { key: 'trophy', label: 'Sports' },
+            { key: 'heart', label: 'Health' },
+            { key: 'coins', label: 'Coin' },
+            { key: 'wallet', label: 'Wallet' },
+            { key: 'banknote', label: 'Currency' },
+            { key: 'trending-up', label: 'Chart' },
+            { key: 'bar-chart-3', label: 'Statistics' },
+            { key: 'credit-card', label: 'Payment' },
+            { key: 'camera', label: 'Photography' },
+            { key: 'music', label: 'Music' },
+            { key: 'video', label: 'Video' },
+            { key: 'palette', label: 'Design' },
+            { key: 'code', label: 'Code' },
+            { key: 'gamepad-2', label: 'Gaming' },
+            { key: 'coffee', label: 'Coffee' },
+            { key: 'gift', label: 'Gift' },
+            { key: 'shopping-cart', label: 'Shop' },
+            { key: 'star', label: 'Star' },
+            { key: 'calendar', label: 'Calendar' },
+            { key: 'phone', label: 'Phone' },
+            { key: 'globe', label: 'Website' },
+            { key: 'mail', label: 'Email' },
+            { key: 'link', label: 'Other' },
+        ];
+
+        const BRAND_SLUGS = {
+            instagram: 'instagram', x: 'x', facebook: 'facebook', linkedin: 'linkedin',
+            youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsapp', telegram: 'telegram',
+            threads: 'threads', pinterest: 'pinterest', snapchat: 'snapchat', twitch: 'twitch',
+            discord: 'discord', spotify: 'spotify', soundcloud: 'soundcloud', applemusic: 'applemusic',
+            github: 'github', behance: 'behance', dribbble: 'dribbble', medium: 'medium',
+            reddit: 'reddit', paypal: 'paypal', patreon: 'patreon', vimeo: 'vimeo', netflix: 'netflix',
+        };
+
+        function iconWrapperClass(shape) {
+            const base = 'w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center flex-shrink-0';
+            return shape === 'rounded' ? `${base} rounded-xl` : `${base} rounded-full`;
+        }
+
+        function getIconInnerHtml(iconKey) {
+            const slug = BRAND_SLUGS[iconKey];
+            if (slug) {
+                return {
+                    wrapperExtra: 'bg-white border border-subtle p-2',
+                    inner: `<img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg" class="w-full h-full" alt="${iconKey}" onerror="this.style.display='none'">`,
+                };
+            }
+            return { wrapperExtra: 'bg-gradient-to-br from-blue-500 to-purple-600', inner: `<i data-lucide="${iconKey}" class="w-5 h-5 lg:w-6 lg:h-6 text-white"></i>` };
+        }
+
+        function setIconShapeButtons(shape) {
+            document.getElementById('shapeBtnCircle').classList.toggle('bg-blue-500', shape === 'circle');
+            document.getElementById('shapeBtnCircle').classList.toggle('text-white', shape === 'circle');
+            document.getElementById('shapeBtnCircle').classList.toggle('border-blue-500', shape === 'circle');
+            document.getElementById('shapeBtnRounded').classList.toggle('bg-blue-500', shape === 'rounded');
+            document.getElementById('shapeBtnRounded').classList.toggle('text-white', shape === 'rounded');
+            document.getElementById('shapeBtnRounded').classList.toggle('border-blue-500', shape === 'rounded');
+        }
+
+        async function setIconShape(shape) {
+            setIconShapeButtons(shape);
+            if (currentProfile) currentProfile.link_icon_shape = shape;
+            renderLinks();
+            const { error } = await supabaseClient.from('profiles').update({ link_icon_shape: shape }).eq('id', currentUser.id);
+            if (error) {
+                console.error(error);
+                showToast('Failed to save icon shape — please try again');
+                return;
+            }
+            showToast(`Icon shape set to ${shape === 'rounded' ? 'Rounded' : 'Circle'}`);
+        }
+
+        function renderLinks() {
+            const list = document.getElementById('linkList');
+            const empty = document.getElementById('linkListEmpty');
+            const tier = currentProfile?.tier || 'basic';
+            const limit = LINK_LIMITS[tier] ?? 20;
+            const shape = currentProfile?.link_icon_shape || 'circle';
+
+            document.getElementById('linkCountLabel').textContent = `${currentLinks.length}/${limit} links used`;
+            list.querySelectorAll('.link-item').forEach(el => el.remove());
+
+            if (currentLinks.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+
+            currentLinks.forEach((link, index) => {
+                const { wrapperExtra, inner } = getIconInnerHtml(link.icon);
+                const div = document.createElement('div');
+                div.className = 'link-item rounded-xl p-3 lg:p-4 flex items-center gap-3 lg:gap-4';
+                div.innerHTML = `
+                    <div class="${iconWrapperClass(shape)} ${wrapperExtra}">${inner}</div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium text-primary text-sm lg:text-base">${escapeHtml(link.title)}</h4>
+                        <p class="text-xs lg:text-sm text-secondary truncate">${escapeHtml(link.description || link.url)}</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="moveLink(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="moveLink(${index}, 1)" ${index === currentLinks.length - 1 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="openLinkModal('${link.id}')" class="p-1.5 hover-surface rounded-lg transition"><i data-lucide="pencil" class="w-4 h-4 text-secondary"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        async function moveLink(index, direction) {
+            const otherIndex = index + direction;
+            if (otherIndex < 0 || otherIndex >= currentLinks.length) return;
+            const a = currentLinks[index];
+            const b = currentLinks[otherIndex];
+            [currentLinks[index], currentLinks[otherIndex]] = [b, a];
+            renderLinks();
+            await Promise.all([
+                supabaseClient.from('links').update({ position: b.position }).eq('id', a.id),
+                supabaseClient.from('links').update({ position: a.position }).eq('id', b.id),
+            ]);
+            const tmp = a.position; a.position = b.position; b.position = tmp;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function renderIconPickerPanel() {
+            const panel = document.getElementById('iconPickerPanel');
+            panel.innerHTML = ICON_OPTIONS.map(opt => {
+                const { wrapperExtra, inner } = getIconInnerHtml(opt.key);
+                return `
+                    <button type="button" onclick="selectLinkIcon('${opt.key}', '${opt.label}')" class="flex flex-col items-center gap-1 p-2 hover-surface rounded-lg transition">
+                        <span class="w-8 h-8 rounded-full flex items-center justify-center ${wrapperExtra}">${inner.replace(/w-5 h-5 lg:w-6 lg:h-6/, 'w-4 h-4').replace(/w-5 h-5 lg:w-6 lg:h-6 text-white/, 'w-4 h-4 text-white')}</span>
+                        <span class="text-[10px] text-secondary">${opt.label}</span>
+                    </button>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function toggleIconPicker() {
+            const panel = document.getElementById('iconPickerPanel');
+            if (!panel.classList.contains('open')) renderIconPickerPanel();
+            panel.classList.toggle('open');
+        }
+
+        function selectLinkIcon(key, label) {
+            document.getElementById('linkIcon').value = key;
+            document.getElementById('iconPickerLabel').textContent = label;
+            const { wrapperExtra, inner } = getIconInnerHtml(key);
+            const preview = document.getElementById('iconPickerPreview');
+            preview.className = `w-6 h-6 flex items-center justify-center rounded-full overflow-hidden ${wrapperExtra}`;
+            preview.innerHTML = inner.replace(/w-5 h-5 lg:w-6 lg:h-6/, 'w-4 h-4').replace(/w-5 h-5 lg:w-6 lg:h-6 text-white/, 'w-4 h-4 text-white');
+            lucide.createIcons();
+            document.getElementById('iconPickerPanel').classList.remove('open');
+        }
+
+        function openLinkModal(linkId = null) {
+            const tier = currentProfile?.tier || 'basic';
+            const limit = LINK_LIMITS[tier] ?? 20;
+            if (!linkId && currentLinks.length >= limit) { showToast('Limit reached — upgrade your plan for more links'); return; }
+
+            const link = linkId ? currentLinks.find(l => l.id === linkId) : null;
+            document.getElementById('linkModalTitle').textContent = link ? 'Edit Link' : 'Add Link';
+            document.getElementById('linkId').value = link ? link.id : '';
+            document.getElementById('linkTitle').value = link ? link.title : '';
+            document.getElementById('linkUrl').value = link ? link.url : '';
+            document.getElementById('linkDescription').value = link ? (link.description || '') : '';
+
+            const iconKey = link ? (link.icon || 'link') : 'instagram';
+            const opt = ICON_OPTIONS.find(o => o.key === iconKey) || ICON_OPTIONS[0];
+            selectLinkIcon(opt.key, opt.label);
+
+            document.getElementById('linkDeleteBtn').classList.toggle('hidden', !link);
+            document.getElementById('linkModal').classList.add('active');
+        }
+
+        function closeLinkModal() {
+            document.getElementById('linkModal').classList.remove('active');
+            document.getElementById('iconPickerPanel').classList.remove('open');
+        }
+
+        document.getElementById('linkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('linkSaveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const id = document.getElementById('linkId').value;
+            const payload = {
+                title: document.getElementById('linkTitle').value.trim(),
+                url: document.getElementById('linkUrl').value.trim(),
+                description: document.getElementById('linkDescription').value.trim() || null,
+                icon: document.getElementById('linkIcon').value,
+            };
+
+            let error;
+            if (id) {
+                ({ error } = await supabaseClient.from('links').update(payload).eq('id', id));
+            } else {
+                payload.user_id = currentUser.id;
+                payload.position = currentLinks.length;
+                ({ error } = await supabaseClient.from('links').insert(payload));
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Save Link';
+
+            if (error) { console.error(error); showToast('Failed to save link'); return; }
+
+            showToast(id ? 'Link updated' : 'Link added');
+            closeLinkModal();
+            await loadLinks();
+            updateProfileCompletion();
+        });
+
+        async function deleteCurrentLink() {
+            const id = document.getElementById('linkId').value;
+            if (!id) return;
+            const { error } = await supabaseClient.from('links').delete().eq('id', id);
+            if (error) { showToast('Failed to delete link'); return; }
+            showToast('Link deleted');
+            closeLinkModal();
+            await loadLinks();
+            updateProfileCompletion();
+        }
+
+        document.getElementById('linkModal').addEventListener('click', function(e) {
+            if (e.target === this) closeLinkModal();
+        });
+
+    document.getElementById('disconnectWalletModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDisconnectModal();
+    });
+
+    document.getElementById('connectWalletModal').addEventListener('click', function(e) {
+        if (e.target === this) closeConnectWalletModal();
+    });
+
+        // Tidak perlu panggil manual di sini — onAuthStateChange di atas
+        // otomatis fire event INITIAL_SESSION begitu listener didaftarkan,
+        // itulah yang memicu alur masuk dashboard / redirect ke login.
+    </script>
+
+    <script>
+        lucide.createIcons();
+
+        // Theme (dark/light) is now controlled from the Account sheet in
+        // shared/nav.js -- NetlinkNav.init() applies the saved theme on
+        // load. This page keeps its own showToast() since shared/nav.js
+        // calls window.showToast() when present.
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        document.addEventListener('click', function(e) {
+            const iconPanel = document.getElementById('iconPickerPanel');
+            const iconBtn = e.target.closest('button[onclick="toggleIconPicker()"]');
+            if (!iconBtn && !e.target.closest('#iconPickerPanel')) iconPanel.classList.remove('open');
+        });
+    </script>
+
+    <script src="/shared/account-menu.js"></script>
+    <script src="/shared/nav.js"></script>
+    <script src="/shared/app-lock.js?v=3"></script>
+
+    <script type="module">
+        const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
+        const POLYGON_CHAIN_ID = 137;
+        let wcProvider = null;
+        let EthereumProviderClass = null;
+
+        function truncateAddress(addr) {
+            if (!addr) return '';
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+
+        function renderWalletAddressUI(address, isLive) {
+            const textEl = document.getElementById('walletAddressText');
+            const statusDot = document.getElementById('walletStatusDot');
+            const statusText = document.getElementById('walletStatusText');
+            const connectBtn = document.getElementById('connectSmartWalletBtn');
+            const disconnectBtn = document.getElementById('disconnectWalletBtn');
+            const tapHint = document.getElementById('walletTapHint');
+            const hasAddress = !!address;
+
+            if (hasAddress) {
+                textEl.textContent = truncateAddress(address);
+                textEl.classList.remove('text-muted');
+                textEl.classList.add('text-primary');
+
+                if(statusText) statusText.textContent = 'Status: Connected';
+                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
+                if(tapHint) tapHint.classList.add('hidden');
+
+                // Show Disconnect, hide Connect
+                if (connectBtn) connectBtn.classList.add('hidden');
+                if (disconnectBtn) disconnectBtn.classList.remove('hidden');
+            } else {
+                textEl.textContent = 'Not connected';
+                textEl.classList.add('text-muted');
+                textEl.classList.remove('text-primary');
+
+                if(statusText) statusText.textContent = 'Status: Not Connected';
+                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
+                if(tapHint) tapHint.classList.remove('hidden');
+
+                // Show Connect, hide Disconnect
+                if (connectBtn) connectBtn.classList.remove('hidden');
+                if (disconnectBtn) disconnectBtn.classList.add('hidden');
+            }
+            setWalletConnectBtnState(isLive);
+        }
+        window.renderWalletAddressUI = renderWalletAddressUI;
+
+        function setWalletConnectBtnState(isLive) {
+    const btn = document.getElementById('walletConnectBtn');
+    if (!btn) return;
+    btn.innerHTML = '<i data-lucide="external-link" class="w-4 h-4"></i> Open Wallet';
+    btn.onclick = openNetlinkPay;
+    if (window.lucide) lucide.createIcons();
+}
+
+        async function loadEthereumProvider() {
+            if (EthereumProviderClass) return EthereumProviderClass;
+            
+            const mod = await import("https://esm.sh/@walletconnect/ethereum-provider@2?bundle");
+            
+            EthereumProviderClass = mod.EthereumProvider;
+            return EthereumProviderClass;
+        }
+
+        async function getWcProvider() {
+            if (wcProvider) return wcProvider;
+            const EthereumProvider = await loadEthereumProvider();
+            wcProvider = await EthereumProvider.init({
+                projectId: WC_PROJECT_ID,
+                metadata: {
+                    name: 'Netlink.bio',
+                    description: 'One link for everything — bio, CV, and crypto wallet in one page.',
+                    url: 'https://netlink-bio.vercel.app',
+                    icons: ['https://netlink-bio.vercel.app/assets/netlinkbio-icon.png'],
+                },
+                showQrModal: true,
+                optionalChains: [POLYGON_CHAIN_ID],
+                rpcMap: { [POLYGON_CHAIN_ID]: 'https://polygon-rpc.com' },
+            });
+
+            wcProvider.on('accountsChanged', (accounts) => {
+                if (accounts && accounts.length) applyConnectedWallet(accounts[0]);
+            });
+            wcProvider.on('disconnect', () => {
+                renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
+                showToast('Wallet disconnected');
+            });
+
+            return wcProvider;
+        }
+
+        async function applyConnectedWallet(address) {
+            document.getElementById('walletAddressInput').value = address;
+            renderWalletAddressUI(address, true);
+            await saveWallet(); 
+            renderWalletAddressUI(address, true); 
+        }
+
+        async function connectWallet() {
+            const btn = document.getElementById('walletConnectBtn');
+            btn.disabled = true;
+            const original = btn.innerHTML;
+            btn.textContent = 'Loading...';
+            try {
+                const provider = await getWcProvider();
+                btn.textContent = 'Connecting...';
+                await provider.connect();
+                if (provider.accounts && provider.accounts.length) {
+                    await applyConnectedWallet(provider.accounts[0]);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Could not load/connect wallet — check your internet connection and try again');
+                btn.innerHTML = original;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function disconnectWallet() {
+            try {
+                if (wcProvider) await wcProvider.disconnect();
+            } catch (err) {
+                console.error(err);
+            }
+            renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
+            showToast('Wallet disconnected');
+        }
+
+    async function removeWalletAddress() {
+            const current = document.getElementById('walletAddressInput').value;
+            if (!current) return;
+
+            try {
+                if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
+                const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
+                if (error) {
+                    console.error('Supabase error removing wallet:', error);
+                    // Continue anyway - update UI to reflect disconnected state
+                }
+                document.getElementById('walletAddressInput').value = '';
+                renderWalletAddressUI('', false);
+                fetchWalletBalances('');
+                updateProfileCompletion();
+                showToast('Wallet disconnected');
+            } catch (err) {
+                console.error('Disconnect error:', err);
+                // Even if there's an error, try to update UI
+                document.getElementById('walletAddressInput').value = '';
+                renderWalletAddressUI('', false);
+                fetchWalletBalances('');
+                updateProfileCompletion();
+                showToast('Wallet disconnected');
+            }
+        }
+
+        window.connectWallet = connectWallet;
+        window.disconnectWallet = disconnectWallet;
+        window.removeWalletAddress = removeWalletAddress;
+    </script>
+    <script type="module">
+    import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
+
+    const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
+    const sequenceWaas = new SequenceWaaS({
+        network: 'polygon',
+        projectAccessKey: 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA',
+        waasConfigKey: 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=',
+    });
+    window.sequenceWaas = sequenceWaas;
+
+    let googleWalletReady = false;
+    let googleWalletInitAttempts = 0;
+    const MAX_INIT_ATTEMPTS = 30;
+
+    // Decodes the `email` claim from a Google ID token's JWT payload.
+    // No signature verification needed here -- sequenceWaas.signIn() above
+    // already validates the token is genuine; we're only reading a field
+    // for display purposes, not making an authorization decision with it.
+    function decodeGoogleIdTokenEmail(idToken) {
+        try {
+            const payloadBase64 = idToken.split('.')[1];
+            const normalized = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+            const payloadJson = decodeURIComponent(
+                atob(normalized).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+            );
+            const payload = JSON.parse(payloadJson);
+            return payload.email || null;
+        } catch (err) {
+            console.error('Failed to decode Google ID token email:', err);
+            return null;
+        }
+    }
+
+    async function handleGoogleWalletCredential(response) {
+        closeConnectWalletModal();
+        const idToken = response.credential;
+        const btn = document.getElementById('connectSmartWalletBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block mr-2"></span>Connecting...';
+        }
+        try {
+            const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Web');
+
+            // Guard: check if result is valid
+            if (!waasResult) {
+                throw new Error('No response from wallet service');
+            }
+
+            // Sequence WaaS can return wallet address directly or as property
+            const walletAddress = waasResult.wallet || waasResult;
+
+            if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
+                console.error('Invalid wallet response:', waasResult);
+                throw new Error('Invalid wallet address received');
+            }
+
+            document.getElementById('walletAddressInput').value = walletAddress;
+            await window.saveWallet(true);
+
+            // Google's idToken already carries the account email as a JWT
+            // claim -- decode it here (no extra API call needed) and record
+            // it so identity.html can show "Wallet Email" and flag if it
+            // differs from the account login email.
+            const googleEmail = decodeGoogleIdTokenEmail(idToken);
+            if (googleEmail) {
+                const { error: emailSaveError } = await supabaseClient
+                    .from('profiles').update({ wallet_google_email: googleEmail }).eq('id', currentUser.id);
+                if (emailSaveError) console.error('Failed to save wallet_google_email:', emailSaveError);
+            }
+
+            window.renderWalletAddressUI(walletAddress, true);
+            showToast('Wallet connected!');
+        } catch (err) {
+            console.error('Wallet connection error:', err);
+
+            // Guard: sometimes sequenceWaas.signIn() rejects (e.g. a
+            // confirmation timeout) even though the wallet WAS created and
+            // already saved successfully a few lines above. Re-check the
+            // actual saved state before showing a "failed" toast — showing
+            // an error after a real success is more confusing than showing
+            // nothing.
+            const savedAddress = document.getElementById('walletAddressInput').value.trim();
+            if (savedAddress && /^0x[a-fA-F0-9]{40}$/.test(savedAddress)) {
+                console.warn('Wallet connection reported an error, but a valid address is already saved — suppressing failure toast.');
+                window.renderWalletAddressUI(savedAddress, true);
+                showToast('Wallet connected!');
+                return;
+            }
+
+            const msg = err?.message || '';
+            if (msg.includes('already exists') || msg.includes('conflict')) {
+                showToast('This Google account is already linked to a wallet.');
+            } else if (msg.includes('network') || msg.includes('fetch')) {
+                showToast('Network error. Please check your connection and try again.');
+            } else {
+                showToast('Could not connect wallet. Please try again.');
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="wallet" class="w-4 h-4"></i> Connect Smart Wallet';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    }
+
+    function initGoogleWallet() {
+        if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+            googleWalletInitAttempts++;
+            if (googleWalletInitAttempts < MAX_INIT_ATTEMPTS) {
+                setTimeout(initGoogleWallet, 200);
+            } else {
+                console.error('Google Identity Services failed to load after ' + MAX_INIT_ATTEMPTS + ' attempts');
+            }
+            return;
+        }
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleWalletCredential,
+            auto_select: false,
+            cancel_on_tap_outside: false,
+            itp_support: true,
+        });
+        googleWalletReady = true;
+    }
+
+    window.openConnectWalletModal = function () {
+        if (!googleWalletReady) {
+            showToast('Google Sign-In is still loading, please wait a moment...');
+            return;
+        }
+        const modal = document.getElementById('connectWalletModal');
+        const container = document.getElementById('googleSignInContainer');
+        if (!modal || !container) return;
+
+        // Clear previous button and render fresh
+        container.innerHTML = '';
+        google.accounts.id.renderButton(container, {
+            type: 'standard',
+            size: 'large',
+            theme: 'outline',
+            text: 'signin_with',
+            width: '100%',
+        });
+
+        modal.classList.add('active');
+    };
+
+    window.closeConnectWalletModal = function () {
+        const modal = document.getElementById('connectWalletModal');
+        if (modal) modal.classList.remove('active');
+    };
+
+    window.confirmDisconnectWallet = function () {
+        document.getElementById('disconnectWalletModal').classList.add('active');
+    };
+
+    window.closeDisconnectModal = function () {
+        document.getElementById('disconnectWalletModal').classList.remove('active');
+        document.getElementById('disconnectConfirmCheckbox').checked = false;
+        document.getElementById('disconnectConfirmBtn').disabled = true;
+    };
+
+    window.handleDisconnectConfirm = function () {
+        const checkbox = document.getElementById('disconnectConfirmCheckbox');
+        if (!checkbox.checked) return;
+        closeDisconnectModal();
+        removeWalletAddress();
+    };
+
+    // Enable/disable confirm button based on checkbox
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkbox = document.getElementById('disconnectConfirmCheckbox');
+        const btn = document.getElementById('disconnectConfirmBtn');
+        if (checkbox && btn) {
+            checkbox.addEventListener('change', function () {
+                btn.disabled = !this.checked;
+                btn.classList.toggle('opacity-50', !this.checked);
+                btn.classList.toggle('cursor-not-allowed', !this.checked);
+            });
+        }
+    });
+
+    // Start initialization with retry
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGoogleWallet);
+    } else {
+        initGoogleWallet();
+    }
+</script>
+</body>
+</html>      
