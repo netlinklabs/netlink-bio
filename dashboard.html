@@ -321,33 +321,6 @@
             </div>
         </div>
 
-        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
-                    <h3 class="font-semibold text-primary">Complete Your Profile</h3>
-                </div>
-                <span id="completionPct" class="text-sm text-blue-500 font-medium">0%</span>
-            </div>
-            <div class="progress-bar mb-3">
-                <div id="completionFill" class="progress-fill" style="width: 0%"></div>
-            </div>
-            <div class="flex flex-wrap gap-2 mb-4">
-                <span id="checkAvatar" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Upload Avatar
-                </span>
-                <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Create Link Bio
-                </span>
-                <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
-                </span>
-            </div>
-            <button id="claimNetBtn" disabled onclick="showToast('NET claiming coming soon — smart contract in progress')" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
-                Claim NET
-            </button>
-        </div>
-
         <div id="cvCard" class="card rounded-2xl mb-4 lg:mb-6">
             <div class="p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -527,6 +500,33 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
+                    <h3 class="font-semibold text-primary">Complete Your Profile</h3>
+                </div>
+                <span id="completionPct" class="text-sm text-blue-500 font-medium">0%</span>
+            </div>
+            <div class="progress-bar mb-3">
+                <div id="completionFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span id="checkAvatar" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Upload Avatar
+                </span>
+                <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Create Link Bio
+                </span>
+                <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
+                </span>
+            </div>
+            <button id="claimNetBtn" disabled onclick="showToast('NET claiming coming soon — smart contract in progress')" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
+                Claim NET
+            </button>
         </div>
     </main>
 
