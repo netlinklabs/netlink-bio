@@ -63,46 +63,50 @@
             <h4 class="footer-brand-title">About</h4>
             <p class="footer-brand-desc">Netlink is a modern digital identity platform that helps individuals and businesses create a trusted online presence, showcase their work, connect with opportunities, receive payments, and build an AI-ready profile — all from a single trusted identity.</p>
           </div>
-          <div>
-            <h4 class="footer-col-title">Product</h4>
-            <div class="footer-links">
-              <a href="${link('#link-in-bio')}">Link in Bio</a>
-              <a href="${link('#digital-cv')}">Digital CV</a>
-              <a href="${link('#business-profile')}">Business Profile</a>
-              <a href="${link('#netlink-pay')}">Netlink Pay</a>
-              <a href="${link('#netlink-token')}">Netlink Token (NET)</a>
-              <a href="${link('#verification')}">Verification</a>
+          <div class="footer-group footer-group-left">
+            <div>
+              <h4 class="footer-col-title">Product</h4>
+              <div class="footer-links">
+                <a href="${link('#link-in-bio')}">Link in Bio</a>
+                <a href="${link('#digital-cv')}">Digital CV</a>
+                <a href="${link('#business-profile')}">Business Profile</a>
+                <a href="${link('#netlink-pay')}">Netlink Pay</a>
+                <a href="${link('#netlink-token')}">Netlink Token (NET)</a>
+                <a href="${link('#verification')}">Verification</a>
+              </div>
+            </div>
+            <div>
+              <h4 class="footer-col-title">Resources</h4>
+              <div class="footer-links">
+                <a href="${link('#docs')}">Documentation</a>
+                <a href="${link('#help')}">Help Center</a>
+                <a href="${link('#api')}">API</a>
+                <a href="${link('#blog')}">Blog</a>
+                <a href="${link('#changelog')}">Changelog</a>
+              </div>
             </div>
           </div>
-          <div>
-            <h4 class="footer-col-title">Resources</h4>
-            <div class="footer-links">
-              <a href="${link('#docs')}">Documentation</a>
-              <a href="${link('#help')}">Help Center</a>
-              <a href="${link('#api')}">API</a>
-              <a href="${link('#blog')}">Blog</a>
-              <a href="${link('#changelog')}">Changelog</a>
+          <div class="footer-group footer-group-right">
+            <div>
+              <h4 class="footer-col-title">Company</h4>
+              <div class="footer-links">
+                <a href="${link('#about')}">About</a>
+                <a href="${link('#careers')}">Careers</a>
+                <a href="${link('#contact')}">Contact</a>
+                <a href="${link('#partners')}">Partners</a>
+                <a href="${link('#press')}">Press Kit</a>
+              </div>
             </div>
-          </div>
-          <div>
-            <h4 class="footer-col-title">Company</h4>
-            <div class="footer-links">
-              <a href="${link('#about')}">About</a>
-              <a href="${link('#careers')}">Careers</a>
-              <a href="${link('#contact')}">Contact</a>
-              <a href="${link('#partners')}">Partners</a>
-              <a href="${link('#press')}">Press Kit</a>
-            </div>
-          </div>
-          <div>
-            <h4 class="footer-col-title">Legal</h4>
-            <div class="footer-links">
-              <a href="privacy-policy.html">Privacy Policy</a>
-              <a href="terms.html">Terms of Service</a>
-              <a href="terms-of-use.html">Terms of Use (Netlink Pay)</a>
-              <a href="cookies.html">Cookie Policy</a>
-              <a href="acceptable-use.html">Acceptable Use Policy</a>
-              <a href="security.html">Security</a>
+            <div>
+              <h4 class="footer-col-title">Legal</h4>
+              <div class="footer-links">
+                <a href="privacy-policy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="terms-of-use.html">Terms of Use (Netlink Pay)</a>
+                <a href="cookies.html">Cookie Policy</a>
+                <a href="acceptable-use.html">Acceptable Use Policy</a>
+                <a href="security.html">Security</a>
+              </div>
             </div>
           </div>
           <div>
