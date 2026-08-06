@@ -104,6 +104,7 @@
                 <a href="${link('#contact')}">Contact</a>
                 <a href="${link('#partners')}">Partners</a>
                 <a href="${link('#press')}">Press Kit</a>
+                <a href="investor.html">Investor</a>
               </div>
             </div>
             <div>
