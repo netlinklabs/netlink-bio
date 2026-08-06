@@ -130,7 +130,9 @@ body.has-site-header-offset { padding-top: 96px; }
   .footer-group { display: flex; flex-direction: column; gap: var(--space-4); flex: 1 1 0; min-width: 0; }
   .footer-group-left { order: 1; }
   .footer-group-right { order: 2; }
-  .footer-grid > div:last-child { width: 100%; order: 3; } /* Social, full width, always last */
+}
+@media (min-width: 640px) {
+  .footer-social { order: 6; }
 }
 @media (min-width: 640px) {
   .footer-grid { grid-template-columns: 1.5fr 1fr 1fr; }
