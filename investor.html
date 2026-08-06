@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investor Relations - Netlink.bio</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://netlink.bio/investor.html">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="shared/site-nav.css">
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        .text-primary { color: #0f172a; }
+        html.dark .text-primary { color: #f8fafc; }
+        .text-muted { color: #64748b; }
+        html.dark .text-muted { color: #94a3b8; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        h2 { font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.75rem; color: inherit; }
+        p { font-size: 0.9375rem; line-height: 1.75; color: #475569; margin-bottom: 1rem; }
+        p:last-child { margin-bottom: 0; }
+        li { font-size: 0.9375rem; line-height: 1.75; color: #475569; margin-bottom: 0.5rem; }
+        html.dark p, html.dark li { color: #94a3b8; }
+        ul { list-style: disc; padding-left: 1.375rem; margin-bottom: 0; }
+        strong { font-weight: 700; }
+        .layer-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; letter-spacing: 0.02em; text-transform: uppercase; }
+        .layer-badge-web2 { color: #1d4ed8; background: rgba(37,99,235,0.1); }
+        html.dark .layer-badge-web2 { color: #93c5fd; background: rgba(37,99,235,0.15); }
+        .layer-badge-web3 { color: #0f766e; background: rgba(13,148,136,0.1); }
+        html.dark .layer-badge-web3 { color: #5eead4; background: rgba(13,148,136,0.15); }
+        .fact-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; }
+        .fact-row:last-child { border-bottom: none; }
+        html.dark .fact-row { border-bottom-color: rgba(255,255,255,0.06); }
+        .fact-label { color: #64748b; }
+        html.dark .fact-label { color: #94a3b8; }
+        .fact-value { font-weight: 600; text-align: right; color: inherit; }
+        .disclaimer-box { background: rgba(100,116,139,0.08); border: 1px solid rgba(100,116,139,0.15); border-radius: 0.75rem; padding: 1rem 1.1rem; }
+        .disclaimer-box p { color: #64748b; font-size: 0.8125rem; margin-bottom: 0; }
+        html.dark .disclaimer-box { background: rgba(148,163,184,0.06); border-color: rgba(148,163,184,0.12); }
+        html.dark .disclaimer-box p { color: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="site-header"></div>
+
+    <main class="px-4 pt-8 pb-16 lg:px-8 max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold text-primary mb-2">Investor Relations</h1>
+        <p class="text-sm text-muted mb-6">We're open to conversations with partners and investors — across two distinct layers of the Netlink ecosystem.</p>
+
+        <div class="card rounded-2xl p-5 lg:p-7 mb-4">
+            <p class="mb-5">Netlink operates as two intentionally separate layers. Understanding this distinction is essential before reaching out.</p>
+
+            <div class="mb-6">
+                <span class="layer-badge layer-badge-web2 mb-3">Layer 1 — Platform</span>
+                <h2 class="mt-3">PT Netlink Labs Global</h2>
+                <p>A conventional software company operating Link in Bio, Digital CV, Business Profile, and identity verification products. Revenue is generated through membership plans, verification (KYC/KYB) services, and platform features — not from NET token price movement.</p>
+                <div class="mt-4">
+                    <div class="fact-row"><span class="fact-label">Structure</span><span class="fact-value">Equity (PT), Indonesia</span></div>
+                    <div class="fact-row"><span class="fact-label">Team</span><span class="fact-value">Solo-founder, 3 people</span></div>
+                    <div class="fact-row"><span class="fact-label">Funding to date</span><span class="fact-value">Bootstrapped</span></div>
+                    <div class="fact-row"><span class="fact-label">Open to</span><span class="fact-value">Seed / Series A / Series B</span></div>
+                </div>
+            </div>
+
+            <div>
+                <span class="layer-badge layer-badge-web3 mb-3">Layer 2 — Web3</span>
+                <h2 class="mt-3">NET Token</h2>
+                <p>A community utility token on the Polygon network, built to reward participation in the Netlink ecosystem. NET is <strong>not equity</strong> in PT Netlink Labs Global and does not represent ownership, profit-sharing, or any guaranteed value. Tokenomics includes an allocation reserved for early ecosystem participants and investors — mechanics are shared directly with interested parties, not published as a public sale.</p>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl p-5 lg:p-7 mb-4 text-center">
+            <p class="mb-4">Interested in discussing partnership or investment — at the platform level, the token level, or both? Let us know a bit about you and we'll follow up directly.</p>
+            <a href="https://forms.gle/REPLACE_WITH_YOUR_FORM_ID" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">
+                <i data-lucide="external-link" class="w-4 h-4"></i> Get in Touch
+            </a>
+        </div>
+
+        <div class="disclaimer-box">
+            <p>This page is for general informational purposes only. It is not an offer or solicitation to sell securities, equity, or any crypto asset, and no investment decision should be made based solely on the information here. Any future agreement — equity or token-related — will be subject to separate, formal documentation and applicable law.</p>
+        </div>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="shared/site-nav.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
