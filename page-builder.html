@@ -1485,8 +1485,20 @@ const headerText = document.getElementById('headerTextWrap');
 // when the visitor doesn't see it rendered (e.g. landscape logo already
 // contains the wordmark).
 if (showLogoText) { toggle.classList.add('active'); headerText.classList.remove('sr-only'); }
-else { toggle.classList.remove('active'); headerText
-      function handleHeroUpload(event) {
+else { toggle.classList.remove('active'); headerText.classList.add('sr-only'); }
+autoSave();
+}
+
+function setLogoShape(shape) {
+logoShape = shape;
+const logoBox = document.getElementById('logoBox');
+logoBox.classList.toggle('landscape', shape === 'landscape');
+document.getElementById('logoShapeSquareBtn').classList.toggle('active', shape === 'square');
+document.getElementById('logoShapeLandscapeBtn').classList.toggle('active', shape === 'landscape');
+autoSave();
+}
+
+function handleHeroUpload(event) {
 const file = event.target.files[0];
 if (!file) return;
 const reader = new FileReader();
@@ -2195,4 +2207,3 @@ handleGalleryUpload(event);
 </script>
 </body>
 </html>
-
