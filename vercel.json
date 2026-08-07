@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/cv/:username([a-z0-9_]{3,20})", "destination": "/api/cv?username=:username" },
+    { "source": "/page/:slug([a-z0-9_-]{1,25})", "destination": "/api/landing?slug=:slug" },
     { "source": "/:username([a-z0-9_]{3,20})", "destination": "/api/bio?username=:username" }
   ]
 }
