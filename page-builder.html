@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PageBuilder - Responsive Landing Page</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; overflow-x: hidden; }
+
+/* Struktur Responsif Utama */
+#previewArea { width: 100%; margin: 0; background: white; min-height: 100vh; position: relative; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.section-inner { max-width: 800px; margin: 0 auto; width: 100%; }
+
+/* Header */
+.page-header { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #f0f0f0; padding: 12px 24px; }
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.logo-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; transition: background 0.3s, width 0.3s, border-radius 0.3s; overflow: hidden; flex-shrink: 0; }
+.logo-box img { width: 100%; height: 100%; object-fit: cover; }
+.logo-box.landscape { width: auto; min-width: 90px; max-width: 170px; height: 40px; border-radius: 8px; padding: 0 6px; }
+.logo-box.landscape img { width: auto; height: 100%; object-fit: contain; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.field-hint { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 6px; display: flex; align-items: center; gap: 5px; line-height: 1.4; }
+.field-hint.warning { color: #FFB74D; }
+.header-text h1 { font-size: 15px; font-weight: 700; color: #212121; line-height: 1.2; }
+.header-text p { font-size: 12px; color: #999; }
+
+/* Sections Common */
+.about-section, .gallery-section, .services-section, .location-section, .hours-section, .contact-section, .image-section { padding: 40px 24px; }
+.section-title { font-size: 18px; font-weight: 700; color: #212121; margin-bottom: 20px; }
+
+/* Hero Section */
+.hero-section { position: relative; height: 380px; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #D4A574 0%, #E8953A 100%); transition: all 0.7s; }
+.hero-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 2; pointer-events: none; }
+.hero-portrait-frame { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; display: none; }
+.hero-portrait-frame.active { display: flex; }
+.hero-portrait-frame .portrait { height: 100%; width: auto; max-width: 60%; background: linear-gradient(180deg, #F8BBD0 0%, #BA68C8 100%); border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); }
+.hero-content-wrap { position: absolute; inset: 0; z-index: 3; display: flex; align-items: flex-end; padding: 32px 24px; }
+.hero-content { color: white; width: 100%; }
+.hero-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); width: fit-content; margin-bottom: 12px; }
+.hero-title { font-size: 32px; font-weight: 700; margin-bottom: 12px; line-height: 1.2; }
+.hero-subtitle { font-size: 15px; color: rgba(255,255,255,0.9); margin-bottom: 20px; max-width: 600px; }
+.hero-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-primary { padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: transform 0.2s; }
+.btn-primary:active { transform: scale(0.95); }
+.btn-secondary { padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); color: white; cursor: pointer; transition: background 0.2s; }
+.btn-secondary:hover { background: rgba(255,255,255,0.25); }
+
+/* About Section */
+.about-section { background: white; }
+.about-content { display: flex; align-items: flex-start; gap: 20px; }
+.about-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.3s; }
+.about-icon svg { width: 28px; height: 28px; }
+.about-text h3 { font-size: 18px; font-weight: 700; color: #212121; margin-bottom: 8px; }
+.about-text p { font-size: 15px; color: #555; line-height: 1.7; }
+
+/* Gallery Section */
+.gallery-section { background: #f8f8f8; }
+.gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.gallery-item { aspect-ratio: 1; border-radius: 16px; overflow: hidden; position: relative; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-item .placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.gallery-item .hover-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.4); font-size: 24px; }
+.gallery-item:hover .hover-overlay { opacity: 1; }
+
+/* Offerings/Services */
+.services-section { background: #f5f0eb; transition: background 0.3s; }
+#servicesGrid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.service-card { background: white; border-radius: 16px; padding: 20px; display: flex; align-items: flex-start; gap: 16px; border: 1px solid #f0f0f0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: transform 0.2s; }
+.service-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.06); }
+.service-info h4 { font-size: 16px; font-weight: 700; color: #212121; margin-bottom: 4px; }
+.service-info p { font-size: 13px; color: #777; line-height: 1.5; }
+
+/* Additional Image Section */
+.image-section { background: white; }
+#additionalImageContainer { width: 100%; border-radius: 16px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center; min-height: 200px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+#additionalImg { width: 100%; height: auto; object-fit: cover; display: none; }
+
+/* Location Section */
+.location-section { background: white; }
+.map-container { height: 220px; border-radius: 16px; overflow: hidden; background: #e0e0e0; position: relative; display: flex; align-items: center; justify-content: center; }
+.map-content { text-align: center; }
+.map-pin { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: white; font-size: 24px; transition: background 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+.map-content p { font-size: 15px; font-weight: 700; color: #212121; }
+.map-content span { font-size: 13px; color: #777; }
+.direction-btn { width: 100%; margin-top: 16px; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; cursor: pointer; transition: all 0.3s; }
+.direction-btn:hover { filter: brightness(0.95); }
+
+/* Hours Section */
+.hours-section { background: #f8f8f8; }
+.hours-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #f0f0f0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.hours-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+.hours-row:not(:last-child) { border-bottom: 1px solid #f0f0f0; }
+.hours-row span:first-child { font-size: 14px; color: #666; }
+.hours-row span:last-child { font-size: 14px; font-weight: 600; color: #212121; }
+.hours-status { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.hours-status span { font-size: 13px; color: #4CAF50; font-weight: 600; }
+
+/* Contact Section */
+.contact-section { background: white; }
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.contact-btn { padding: 16px; border-radius: 16px; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; border: none; }
+.contact-btn:active { transform: scale(0.98); }
+.wa-btn { background: #5D4037; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.wa-btn:hover { filter: brightness(1.1); }
+.phone-btn { background: transparent; border: 2px solid #5D4037; color: #5D4037; }
+.phone-btn:hover { background: rgba(0,0,0,0.03); }
+
+/* Footer */
+.page-footer { padding: 32px 24px; text-align: center; background: #f8f8f8; border-top: 1px solid #f0f0f0; }
+.page-footer p { font-size: 13px; color: #999; font-weight: 500; }
+
+/* Utilities */
+.hidden { display: none !important; }
+
+/* Responsive Adjustments for Tablet & Desktop */
+@media (min-width: 768px) {
+    .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    #servicesGrid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .hero-section { height: 440px; }
+    .hero-title { font-size: 40px; }
+    .hero-subtitle { font-size: 16px; }
+}
+
+@media (min-width: 1024px) {
+    #previewArea.sidebar-open { width: calc(100% - 420px); }
+    .gallery-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    #servicesGrid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .hero-section { height: 500px; }
+    .hero-title { font-size: 48px; }
+    .hero-subtitle { font-size: 18px; }
+    .about-section, .gallery-section, .services-section, .location-section, .hours-section, .contact-section, .image-section { padding: 60px 40px; }
+    .map-container { height: 300px; }
+    .direction-btn { width: fit-content; padding: 14px 32px; margin: 20px auto 0; }
+}
+
+/* Edit Toggle Button */
+#editToggleBtn { position: fixed; bottom: 32px; right: 32px; z-index: 50; width: 60px; height: 60px; border-radius: 50%; background: #333333; border: 2px solid #E0E0E0; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transition: all 0.3s ease; font-size: 20px; }
+#editToggleBtn:hover { transform: scale(1.1); }
+#editToggleBtn:active { transform: scale(0.95); }
+#editToggleBtn.active { background: #E0E0E0; border-color: #333333; color: #333333; }
+
+/* Sidebar Overlay */
+#sidebarOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 45; opacity: 0; transition: opacity 0.3s; pointer-events: none; backdrop-filter: blur(2px); }
+#sidebarOverlay.active { opacity: 1; pointer-events: auto; }
+
+/* Sidebar Editor */
+#sidebar { position: fixed; top: 0; right: 0; height: 100vh; width: 100%; max-width: 420px; background: #2D2D2D; z-index: 50; transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; box-shadow: -8px 0 30px rgba(0,0,0,0.3); }
+#sidebar.active { transform: translateX(0); }
+.sidebar-header { position: sticky; top: 0; z-index: 10; background: #3A3A3A; padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; }
+.sidebar-header h2 { color: #F5F5F5; font-size: 18px; font-weight: 700; }
+.sidebar-header p { color: rgba(255,255,255,0.45); font-size: 12px; margin-top: 4px; }
+.sidebar-close { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: #F5F5F5; cursor: pointer; transition: background 0.2s; font-size: 18px; }
+.sidebar-close:hover { background: rgba(255,255,255,0.1); }
+.sidebar-content { padding: 24px; }
+.sidebar-section { margin-bottom: 32px; }
+.sidebar-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #BDBDBD; margin-bottom: 12px; display: block; }
+.sidebar-select { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: #3A3A3A; color: #F5F5F5; font-size: 14px; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23BDBDBD' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; }
+.sidebar-select:focus { border-color: #BDBDBD; }
+.color-picker { display: flex; gap: 10px; flex-wrap: wrap; }
+.color-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+.color-btn:hover { transform: scale(1.1); }
+.color-btn.active { border-color: #E0E0E0; box-shadow: 0 0 0 3px rgba(224,224,224,0.3); }
+.secondary-preview { width: 100%; padding: 14px; border-radius: 12px; text-align: center; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.12); }
+.module-toggle { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+.module-toggle:hover { background: rgba(255,255,255,0.05); }
+.module-toggle input[type="checkbox"] { width: 20px; height: 20px; accent-color: #9E9E9E; cursor: pointer; }
+.module-toggle span { color: rgba(255,255,255,0.85); font-size: 14px; font-weight: 500; }
+.sidebar-input { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: #3A3A3A; color: #F5F5F5; font-size: 14px; outline: none; margin-top: 6px; }
+.sidebar-input:focus { border-color: #BDBDBD; }
+.sidebar-input::placeholder { color: rgba(255,255,255,0.3); }
+.sidebar-textarea { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: #3A3A3A; color: #F5F5F5; font-size: 14px; outline: none; margin-top: 6px; resize: vertical; min-height: 100px; font-family: inherit; }
+.sidebar-textarea:focus { border-color: #BDBDBD; }
+.sidebar-textarea::placeholder { color: rgba(255,255,255,0.3); }
+.sidebar-input-label { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 4px; display: block; }
+.sidebar-btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-gold { background: #E0E0E0; color: #2D2D2D; }
+.btn-gold:hover { background: #F5F5F5; }
+.btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); }
+.btn-outline:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); }
+.auto-save-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; color: rgba(255,255,255,0.35); font-size: 12px; }
+.hero-img-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.hero-img-option { aspect-ratio: 16/9; border-radius: 10px; border: 2px solid transparent; overflow: hidden; position: relative; cursor: pointer; transition: all 0.2s; }
+.hero-img-option:hover { transform: scale(1.05); }
+.hero-img-option.active { border-color: #E0E0E0; box-shadow: 0 0 0 2px rgba(224,224,224,0.2); }
+.hero-img-option span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #333; background: rgba(255,255,255,0.3); }
+
+/* Uploader Areas */
+.gallery-upload-area, .logo-upload-area { border: 2px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; background: rgba(0,0,0,0.1); }
+.gallery-upload-area:hover, .logo-upload-area:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); }
+.gallery-upload-area.dragover { border-color: #BDBDBD; background: rgba(255,255,255,0.1); }
+.gallery-upload-area p, .logo-upload-area p { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 12px; }
+.gallery-list { display: flex; flex-direction: column; gap: 8px; }
+.gallery-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #3A3A3A; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); }
+.gallery-list-item img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.gallery-list-item .gallery-info { flex: 1; min-width: 0; }
+.gallery-list-item .gallery-info span { display: block; color: rgba(255,255,255,0.8); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gallery-list-item .gallery-actions { display: flex; gap: 6px; }
+.gallery-list-item .gallery-actions button { width: 30px; height: 30px; border-radius: 6px; border: none; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; }
+.gallery-list-item .gallery-actions button:hover { background: rgba(255,255,255,0.2); }
+.gallery-list-item .gallery-actions .btn-delete:hover { background: rgba(239,83,80,0.2); color: #ef5350; }
+.gallery-limit { color: rgba(255,255,255,0.4); font-size: 12px; text-align: center; margin-top: 10px; }
+.logo-preview { display: flex; align-items: center; gap: 12px; padding: 12px; background: #3A3A3A; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); }
+.logo-preview img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+.logo-preview .logo-info { flex: 1; }
+.logo-preview .logo-info span { display: block; color: rgba(255,255,255,0.8); font-size: 13px; }
+.logo-preview .logo-actions button { width: 30px; height: 30px; border-radius: 6px; border: none; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; }
+.logo-preview .logo-actions button:hover { background: rgba(239,83,80,0.2); color: #ef5350; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+.toggle-row span { color: rgba(255,255,255,0.85); font-size: 14px; font-weight: 500; }
+.toggle-switch { position: relative; width: 48px; height: 26px; background: rgba(255,255,255,0.15); border-radius: 13px; cursor: pointer; transition: background 0.3s; }
+.toggle-switch.active { background: #9E9E9E; }
+.toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.3s; }
+.toggle-switch.active::after { transform: translateX(22px); }
+
+/* Lightbox & Modals */
+#lightbox, #updateModal, #draftModal, #iconPickerModal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(10,10,10,0.95); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+#lightbox.active, #updateModal.active, #draftModal.active, #iconPickerModal.active { display: flex; }
+.lightbox-content { position: relative; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; align-items: center; }
+.lightbox-img-wrap { display: flex; align-items: center; justify-content: center; max-width: 100%; max-height: 80vh; }
+.lightbox-img-wrap img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px; }
+.lightbox-close { position: absolute; top: -50px; right: 0; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.lightbox-close:hover { background: rgba(255,255,255,0.3); }
+.lightbox-nav { display: flex; align-items: center; gap: 24px; margin-top: 20px; }
+.lightbox-nav button { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.lightbox-nav button:hover { background: rgba(255,255,255,0.3); }
+.lightbox-counter { color: rgba(255,255,255,0.8); font-size: 15px; font-weight: 500; min-width: 70px; text-align: center; }
+.modal-box, .draft-box { width: 90%; max-width: 380px; background: #3A3A3A; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px; text-align: center; }
+.modal-icon, .draft-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(224,224,224,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #E0E0E0; font-size: 32px; }
+.modal-icon.spinning::after { content: ''; width: 28px; height: 28px; border: 3px solid rgba(224,224,224,0.2); border-top-color: #E0E0E0; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.modal-title { color: #F5F5F5; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.modal-status { color: rgba(255,255,255,0.6); font-size: 15px; margin-bottom: 24px; }
+.progress-bar-bg { width: 100%; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); overflow: hidden; margin-bottom: 8px; }
+.progress-bar-fill { height: 100%; border-radius: 4px; background: #E0E0E0; transition: width 0.3s; width: 0%; }
+.progress-text { color: #E0E0E0; font-size: 14px; font-weight: 600; font-family: monospace; }
+.modal-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Icon Picker Modal */
+.icon-picker-box { width: 90%; max-width: 420px; max-height: 80vh; background: #2D2D2D; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; }
+.icon-picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.icon-picker-header h3 { color: #F5F5F5; font-size: 18px; font-weight: 700; }
+.icon-picker-close { background: transparent; border: none; color: #F5F5F5; font-size: 24px; cursor: pointer; }
+.icon-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 12px; overflow-y: auto; padding-right: 4px; }
+.icon-picker-grid::-webkit-scrollbar { width: 6px; }
+.icon-picker-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+.icon-btn { aspect-ratio: 1; border-radius: 12px; background: #3A3A3A; border: 1px solid rgba(255,255,255,0.08); color: #E0E0E0; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+.icon-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div id="lightbox" onclick="closeLightbox(event)">
+<div class="lightbox-content" onclick="event.stopPropagation()">
+<button class="lightbox-close" onclick="closeLightbox()">×</button>
+<div class="lightbox-img-wrap"><img id="lightboxImg" src="" alt="Gallery"></div>
+<div class="lightbox-nav">
+<button onclick="prevLightbox()">❮</button>
+<span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
+<button onclick="nextLightbox()">❯</button>
+</div>
+</div>
+</div>
+
+<div id="previewArea">
+
+<header class="page-header">
+<div class="section-inner" style="display: flex; align-items: center; justify-content: space-between;">
+<div class="header-brand">
+<div id="logoBox" class="logo-box" style="background: #5D4037;">K</div>
+<div class="header-text" id="headerTextWrap">
+<h1 id="bizName">Kopi Senja</h1>
+<p id="bizTagline">Cafe & Roastery</p>
+</div>
+</div>
+</div>
+</header>
+
+<section id="heroModule" class="hero-section">
+<div id="heroBg" class="hero-bg"></div>
+<div class="hero-overlay"></div>
+<div id="heroPortraitFrame" class="hero-portrait-frame"><div class="portrait"></div></div>
+<div class="hero-content-wrap">
+<div class="section-inner hero-content">
+<span class="hero-badge" id="heroBadge">Open Today</span>
+<h1 class="hero-title" id="heroTitle">Crafted with Heart</h1>
+<p class="hero-subtitle" id="heroSubtitle">From local farmers, to your table every morning.</p>
+<div class="hero-buttons">
+<button id="heroCta" class="btn-primary" style="background: #FFF8E1; color: #5D4037;">View Menu</button>
+<button class="btn-secondary" onclick="document.getElementById('locationModule').scrollIntoView({behavior:'smooth'})">Location</button>
+</div>
+</div>
+</div>
+</section>
+
+<section id="aboutModule" class="about-section">
+<div class="section-inner about-content">
+<div id="aboutIcon" class="about-icon" style="background: rgba(93,64,55,0.1);">
+<svg style="color: #5D4037;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+</div>
+<div class="about-text">
+<h3 id="aboutTitle">About</h3>
+<p id="aboutText">Started from a small garage in 2019, we now serve coffee from hand-picked beans by farmers in Toraja and Gayo. Every cup is a journey of flavor.</p>
+</div>
+</div>
+</section>
+
+<section id="galleryModule" class="gallery-section">
+<div class="section-inner">
+<h3 class="section-title" id="galleryTitle">Gallery</h3>
+<div class="gallery-grid" id="galleryGrid">
+<div class="gallery-item" onclick="openLightbox(0)">
+<div class="placeholder" style="background: linear-gradient(135deg, #E8D5C4, #D4C4B0);"></div>
+<div class="hover-overlay">🔍</div>
+</div>
+<div class="gallery-item" onclick="openLightbox(1)">
+<div class="placeholder" style="background: linear-gradient(135deg, #F5E6D3, #E8D5C4);"></div>
+<div class="hover-overlay">🔍</div>
+</div>
+<div class="gallery-item" onclick="openLightbox(2)">
+<div class="placeholder" style="background: linear-gradient(135deg, #D4C4B0, #C9B8A4);"></div>
+<div class="hover-overlay">🔍</div>
+</div>
+<div class="gallery-item" onclick="openLightbox(3)">
+<div class="placeholder" style="background: linear-gradient(135deg, #C9B8A4, #B8A894);"></div>
+<div class="hover-overlay">🔍</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="servicesModule" class="services-section">
+</section>
+
+<section id="imageModule" class="image-section">
+<div class="section-inner">
+<div id="additionalImageContainer">
+<span id="additionalImgPlaceholder" style="color: #999; font-size: 15px; font-weight: 500;">Additional Image (Full Width)</span>
+<img id="additionalImg" src="" alt="Additional Image">
+</div>
+</div>
+</section>
+
+<section id="locationModule" class="location-section">
+<div class="section-inner">
+<h3 class="section-title" id="locationTitle">Location</h3>
+<div class="map-container" id="mapContainer" onclick="openMapsLink()" style="cursor: pointer;">
+<iframe id="mapEmbed" src="" style="width: 100%; height: 100%; border: 0; pointer-events: none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+</div>
+<div style="text-align: center; margin-top: 14px;">
+<p id="addressLine" style="font-size: 15px; font-weight: 700; color: #212121;">Jl. Raya Kopi No. 42</p>
+<span id="addressCity" style="font-size: 13px; color: #777;">Bandung, Jawa Barat</span>
+</div>
+<button id="directionBtn" class="direction-btn" style="background: rgba(93,64,55,0.1); color: #5D4037;"><i class="fa-solid fa-map-location-dot"></i> Open in Maps</button>
+<p id="closingText" style="margin-top: 20px; font-size: 14px; color: #666; line-height: 1.7; font-style: italic; text-align: center;"></p>
+</div>
+</section>
+
+<section id="hoursModule" class="hours-section hidden">
+<div class="section-inner">
+<h3 class="section-title">Opening Hours</h3>
+<div class="hours-card">
+<div class="hours-row"><span>Mon - Fri</span><span>07:00 - 22:00</span></div>
+<div class="hours-row"><span>Sat - Sun</span><span>08:00 - 23:00</span></div>
+<div class="hours-status"><div class="status-dot"></div><span>Open now</span></div>
+</div>
+</div>
+</section>
+
+<section id="contactModule" class="contact-section">
+<div class="section-inner">
+<h3 class="section-title" id="contactTitle">Contact Us</h3>
+<div class="contact-grid" id="contactGrid"></div>
+</div>
+</section>
+
+<footer class="page-footer">
+<div class="section-inner">
+<a href="https://netlink.bio" target="_blank" rel="noopener" style="color: #999; font-size: 13px; font-weight: 500; text-decoration: none;">Made with Netlink.bio</a>
+</div>
+</footer>
+</div>
+
+<button id="editToggleBtn" onclick="toggleSidebar()"><span id="editIcon">✎</span><span id="closeIcon" style="display: none;">✕</span></button>
+
+<div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<div id="sidebar">
+<div class="sidebar-header" style="flex-direction: column; align-items: stretch; gap: 14px; padding: 16px 24px;">
+<div style="display:flex;align-items:center;justify-content:space-between;">
+<img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/main/assets/netlinkbio-darkBG.png" alt="Netlink.bio" style="height:40px;width:auto;flex-shrink:0;">
+<button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+</div>
+<div style="display:flex;align-items:center;gap:10px;">
+<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+<i class="fa-solid fa-user" style="color:rgba(255,255,255,0.5);font-size:13px;"></i>
+</div>
+<div style="flex:1;min-width:0;">
+<p style="color:#F5F5F5;font-size:13px;font-weight:600;line-height:1.2;">Your Account</p>
+<p id="accountEmail" style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">user@example.com</p>
+<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(224,224,224,0.15);color:#E0E0E0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;">
+<i class="fa-solid fa-star" style="font-size:9px;"></i> Silver Plan
+</span>
+</div>
+<button type="button" onclick="alert('Subscription management is coming soon!')" style="flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;">Manage Plan</button>
+</div>
+</div>
+<div class="sidebar-content">
+
+<div class="sidebar-section">
+<label class="sidebar-label">Logo</label>
+<div class="hero-img-selector" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 12px;">
+<button class="hero-img-option active" id="logoShapeSquareBtn" onclick="setLogoShape('square')" style="background: #3A3A3A;"><span style="background: rgba(255,255,255,0.15); color: #F5F5F5;">Square</span></button>
+<button class="hero-img-option" id="logoShapeLandscapeBtn" onclick="setLogoShape('landscape')" style="background: #3A3A3A;"><span style="background: rgba(255,255,255,0.15); color: #F5F5F5;">Landscape</span></button>
+</div>
+<div class="logo-upload-area" id="logoUploadArea" onclick="document.getElementById('logoInput').click()">
+<i class="fa-solid fa-cloud-arrow-up" style="font-size: 28px; color: rgba(255,255,255,0.4);"></i>
+<p>Click to upload logo image</p>
+</div>
+<input type="file" id="logoInput" accept="image/*" style="display: none;" onchange="handleLogoUpload(event)">
+<div id="logoPreviewWrap" style="display: none;">
+<div class="logo-preview">
+<img id="logoPreviewImg" src="" alt="Logo">
+<div class="logo-info"><span id="logoFileName">logo.png</span></div>
+<div class="logo-actions"><button onclick="removeLogo()">🗑</button></div>
+</div>
+</div>
+<div class="toggle-row" style="margin-top: 12px;">
+<span>Show text title</span>
+<div class="toggle-switch active" id="logoTextToggle" onclick="toggleLogoText()"></div>
+</div>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Content</label>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Business Name</label>
+<input type="text" id="inputName" class="sidebar-input" value="Kopi Senja" oninput="updateContent()">
+<p id="hintName" class="field-hint"></p>
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Tagline</label>
+<input type="text" id="inputTagline" class="sidebar-input" value="Cafe & Roastery" oninput="updateContent()">
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Hero Headline</label>
+<input type="text" id="inputHeadline" class="sidebar-input" value="Crafted with Heart" oninput="updateContent()">
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Hero Subtitle</label>
+<input type="text" id="inputSubtitle" class="sidebar-input" value="From local farmers, to your table every morning." oninput="updateContent()">
+</div>
+<div>
+<label class="sidebar-input-label">Business Description</label>
+<textarea id="inputDesc" class="sidebar-textarea" placeholder="Describe your business..." oninput="updateContent()"></textarea>
+<p id="hintDesc" class="field-hint"></p>
+</div>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Page URL</label>
+<div style="display: flex; align-items: center; border: 2px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 6px; background: rgba(255,255,255,0.03);">
+<span style="padding-left: 8px; padding-right: 2px; color: rgba(255,255,255,0.35); font-size: 13px; white-space: nowrap;">netlink.bio/page/</span>
+<input type="text" id="inputSlug" placeholder="yourbusiness" style="flex: 1; min-width: 0; padding: 8px 4px; font-size: 13px; font-weight: 600; color: #F5F5F5; background: transparent; border: none; outline: none;" oninput="checkSlugLive()">
+</div>
+<p id="slugStatus" class="field-hint"></p>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Business Type</label>
+<select id="businessType" class="sidebar-select" onchange="changeBusinessType()">
+<optgroup label="🔥 Popular">
+<option value="creator">Content Creator</option>
+<option value="web3">Web3 / Crypto Project</option>
+<option value="freelance">Freelancer</option>
+</optgroup>
+<optgroup label="Creative & Content">
+<option value="photography">Photography</option>
+<option value="author">Book Author</option>
+<option value="educator">Online Educator</option>
+<option value="musician">Musician / Band</option>
+<option value="podcaster">Podcaster</option>
+<option value="artist">Digital Artist / Illustrator</option>
+<option value="workshop">Creative Workshop</option>
+</optgroup>
+<optgroup label="Food & Beverage">
+<option value="cafe">Cafe</option>
+<option value="restaurant">Restaurant</option>
+<option value="bakery">Bakery</option>
+</optgroup>
+<optgroup label="Beauty & Wellness">
+<option value="salon">Beauty Salon</option>
+<option value="barbershop">Barbershop</option>
+<option value="yoga">Yoga Studio</option>
+<option value="fitness">Fitness & Gym</option>
+<option value="trainer">Personal Trainer</option>
+<option value="clinic">Health Clinic</option>
+</optgroup>
+<optgroup label="Property & Real Estate">
+<option value="property">Property Developer</option>
+<option value="agent">Real Estate Agent</option>
+</optgroup>
+<optgroup label="Retail & Local Business">
+<option value="umkm">Local Store</option>
+<option value="florist">Florist</option>
+</optgroup>
+<optgroup label="Hospitality & Travel">
+<option value="hotel">Hotel & Homestay</option>
+<option value="travel">Travel Agency</option>
+<option value="event">Event Organizer</option>
+</optgroup>
+<optgroup label="Professional Services">
+<option value="professional">Professional Service</option>
+<option value="consulting">Consulting Firm</option>
+<option value="tutor">Private Tutor</option>
+<option value="repair">Repair Service</option>
+<option value="laundry">Laundry</option>
+<option value="coworking">Coworking Space</option>
+</optgroup>
+<optgroup label="Community">
+<option value="nonprofit">NGO / Community</option>
+</optgroup>
+</select>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Brand Colors</label>
+<div style="margin-bottom: 16px;">
+<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+<span style="color: rgba(255,255,255,0.8); font-size: 14px;">Primary</span>
+<span id="primaryLabel" style="color: #BDBDBD; font-size: 12px; font-family: monospace;">#5D4037</span>
+</div>
+<div class="color-picker">
+<button class="color-btn active" style="background: #5D4037;" onclick="setPrimary('#5D4037')" data-color="#5D4037"></button>
+<button class="color-btn" style="background: #1A237E;" onclick="setPrimary('#1A237E')" data-color="#1A237E"></button>
+<button class="color-btn" style="background: #C62828;" onclick="setPrimary('#C62828')" data-color="#C62828"></button>
+<button class="color-btn" style="background: #2E7D32;" onclick="setPrimary('#2E7D32')" data-color="#2E7D32"></button>
+<button class="color-btn" style="background: #F9A825;" onclick="setPrimary('#F9A825')" data-color="#F9A825"></button>
+<button class="color-btn" style="background: #212121;" onclick="setPrimary('#212121')" data-color="#212121"></button>
+</div>
+</div>
+<div>
+<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+<span style="color: rgba(255,255,255,0.8); font-size: 14px;">Secondary (Auto)</span>
+<span id="secondaryLabel" style="color: #BDBDBD; font-size: 12px; font-family: monospace;">#FFF8E1</span>
+</div>
+<div id="secondaryPreview" class="secondary-preview" style="background: #FFF8E1; color: #5D4037;">Auto Contrast</div>
+</div>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Hero Banner Image</label>
+<div class="hero-img-selector" style="margin-bottom: 12px;">
+<button class="hero-img-option active" onclick="setHeroImage('landscape')" data-type="landscape" style="background: linear-gradient(135deg, #D4A574, #E8953A);"><span>Landscape</span></button>
+<button class="hero-img-option" onclick="setHeroImage('portrait')" data-type="portrait" style="background: linear-gradient(135deg, #F8BBD0, #BA68C8);"><span style="background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 4px;">Portrait</span></button>
+<button class="hero-img-option" onclick="setHeroImage('mixed')" data-type="mixed" style="background: linear-gradient(135deg, #90CAF9, #4FC3F7);"><span>Mixed</span></button>
+</div>
+<div class="logo-upload-area" id="heroUploadArea" onclick="document.getElementById('heroInput').click()">
+<i class="fa-solid fa-image" style="font-size: 28px; color: rgba(255,255,255,0.4);"></i>
+<p>Click to upload hero banner</p>
+</div>
+<input type="file" id="heroInput" accept="image/*" style="display: none;" onchange="handleHeroUpload(event)">
+<div id="heroPreviewWrap" style="display: none;">
+<div class="logo-preview">
+<img id="heroPreviewImg" src="" alt="Hero">
+<div class="logo-info"><span id="heroFileName">hero.jpg</span></div>
+<div class="logo-actions"><button onclick="removeHero()">🗑</button></div>
+</div>
+</div>
+<p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 8px;">Dark overlay auto-applied for text readability</p>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Modules</label>
+<div>
+<label class="module-toggle"><input type="checkbox" id="modHero" checked onchange="toggleModule('hero')"><span>Hero</span></label>
+<label class="module-toggle"><input type="checkbox" id="modAbout" checked onchange="toggleModule('about')"><span>About</span></label>
+<label class="module-toggle"><input type="checkbox" id="modGallery" checked onchange="toggleModule('gallery')"><span>Gallery</span></label>
+<label class="module-toggle"><input type="checkbox" id="modServices" checked onchange="toggleModule('services')"><span>Offerings</span></label>
+<label class="module-toggle"><input type="checkbox" id="modImage" checked onchange="toggleModule('image')"><span>Additional Image</span></label>
+<label class="module-toggle"><input type="checkbox" id="modLocation" checked onchange="toggleModule('location')"><span>Location</span></label>
+<label class="module-toggle"><input type="checkbox" id="modHours" onchange="toggleModule('hours')"><span>Hours</span></label>
+<label class="module-toggle"><input type="checkbox" id="modContact" checked onchange="toggleModule('contact')"><span>Contact</span></label>
+</div>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Gallery Photos</label>
+<div class="gallery-upload-area" id="galleryUploadArea" onclick="document.getElementById('galleryInput').click()">
+<i class="fa-solid fa-images" style="font-size: 28px; color: rgba(255,255,255,0.4);"></i>
+<p>Click or drag photos here</p>
+</div>
+<input type="file" id="galleryInput" accept="image/*" multiple style="display: none;" onchange="handleGalleryUpload(event)">
+<div class="gallery-list" id="galleryList"></div>
+<p class="gallery-limit" id="galleryLimit">0 / 10 photos uploaded</p>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Offerings (Menu / Services)</label>
+<div style="margin-bottom: 14px;">
+<label class="sidebar-input-label">Currency</label>
+<select id="currencySelect" class="sidebar-select" onchange="updateCurrency(this.value)">
+<optgroup label="🔥 Popular">
+<option value="IDR">IDR — Indonesian Rupiah</option>
+<option value="USD">USD — US Dollar</option>
+<option value="EUR">EUR — Euro</option>
+<option value="GBP">GBP — British Pound</option>
+<option value="SGD">SGD — Singapore Dollar</option>
+<option value="MYR">MYR — Malaysian Ringgit</option>
+<option value="JPY">JPY — Japanese Yen</option>
+<option value="AUD">AUD — Australian Dollar</option>
+<option value="CNY">CNY — Chinese Yuan</option>
+<option value="THB">THB — Thai Baht</option>
+</optgroup>
+<optgroup label="All Currencies (A-Z)">
+<option value="AED">AED — United Arab Emirates Dirham</option>
+<option value="AFN">AFN — Afghan Afghani</option>
+<option value="ALL">ALL — Albanian Lek</option>
+<option value="AMD">AMD — Armenian Dram</option>
+<option value="ANG">ANG — Netherlands Antillean Guilder</option>
+<option value="AOA">AOA — Angolan Kwanza</option>
+<option value="ARS">ARS — Argentine Peso</option>
+<option value="AWG">AWG — Aruban Florin</option>
+<option value="AZN">AZN — Azerbaijani Manat</option>
+<option value="BAM">BAM — Bosnia-Herzegovina Convertible Mark</option>
+<option value="BBD">BBD — Barbadian Dollar</option>
+<option value="BDT">BDT — Bangladeshi Taka</option>
+<option value="BGN">BGN — Bulgarian Lev</option>
+<option value="BHD">BHD — Bahraini Dinar</option>
+<option value="BIF">BIF — Burundian Franc</option>
+<option value="BMD">BMD — Bermudan Dollar</option>
+<option value="BND">BND — Brunei Dollar</option>
+<option value="BOB">BOB — Bolivian Boliviano</option>
+<option value="BRL">BRL — Brazilian Real</option>
+<option value="BSD">BSD — Bahamian Dollar</option>
+<option value="BTN">BTN — Bhutanese Ngultrum</option>
+<option value="BWP">BWP — Botswanan Pula</option>
+<option value="BYN">BYN — Belarusian Ruble</option>
+<option value="BZD">BZD — Belize Dollar</option>
+<option value="CAD">CAD — Canadian Dollar</option>
+<option value="CDF">CDF — Congolese Franc</option>
+<option value="CHF">CHF — Swiss Franc</option>
+<option value="CLP">CLP — Chilean Peso</option>
+<option value="COP">COP — Colombian Peso</option>
+<option value="CRC">CRC — Costa Rican Colón</option>
+<option value="CUP">CUP — Cuban Peso</option>
+<option value="CVE">CVE — Cape Verdean Escudo</option>
+<option value="CZK">CZK — Czech Koruna</option>
+<option value="DJF">DJF — Djiboutian Franc</option>
+<option value="DKK">DKK — Danish Krone</option>
+<option value="DOP">DOP — Dominican Peso</option>
+<option value="DZD">DZD — Algerian Dinar</option>
+<option value="EGP">EGP — Egyptian Pound</option>
+<option value="ERN">ERN — Eritrean Nakfa</option>
+<option value="ETB">ETB — Ethiopian Birr</option>
+<option value="FJD">FJD — Fijian Dollar</option>
+<option value="FKP">FKP — Falkland Islands Pound</option>
+<option value="GEL">GEL — Georgian Lari</option>
+<option value="GHS">GHS — Ghanaian Cedi</option>
+<option value="GIP">GIP — Gibraltar Pound</option>
+<option value="GMD">GMD — Gambian Dalasi</option>
+<option value="GNF">GNF — Guinean Franc</option>
+<option value="GTQ">GTQ — Guatemalan Quetzal</option>
+<option value="GYD">GYD — Guyanaese Dollar</option>
+<option value="HKD">HKD — Hong Kong Dollar</option>
+<option value="HNL">HNL — Honduran Lempira</option>
+<option value="HTG">HTG — Haitian Gourde</option>
+<option value="HUF">HUF — Hungarian Forint</option>
+<option value="ILS">ILS — Israeli New Shekel</option>
+<option value="INR">INR — Indian Rupee</option>
+<option value="IQD">IQD — Iraqi Dinar</option>
+<option value="IRR">IRR — Iranian Rial</option>
+<option value="ISK">ISK — Icelandic Króna</option>
+<option value="JMD">JMD — Jamaican Dollar</option>
+<option value="JOD">JOD — Jordanian Dinar</option>
+<option value="KES">KES — Kenyan Shilling</option>
+<option value="KGS">KGS — Kyrgyz Som</option>
+<option value="KHR">KHR — Cambodian Riel</option>
+<option value="KMF">KMF — Comorian Franc</option>
+<option value="KPW">KPW — North Korean Won</option>
+<option value="KRW">KRW — South Korean Won</option>
+<option value="KWD">KWD — Kuwaiti Dinar</option>
+<option value="KYD">KYD — Cayman Islands Dollar</option>
+<option value="KZT">KZT — Kazakhstani Tenge</option>
+<option value="LAK">LAK — Laotian Kip</option>
+<option value="LBP">LBP — Lebanese Pound</option>
+<option value="LKR">LKR — Sri Lankan Rupee</option>
+<option value="LRD">LRD — Liberian Dollar</option>
+<option value="LSL">LSL — Lesotho Loti</option>
+<option value="LYD">LYD — Libyan Dinar</option>
+<option value="MAD">MAD — Moroccan Dirham</option>
+<option value="MDL">MDL — Moldovan Leu</option>
+<option value="MGA">MGA — Malagasy Ariary</option>
+<option value="MKD">MKD — Macedonian Denar</option>
+<option value="MMK">MMK — Myanmar Kyat</option>
+<option value="MNT">MNT — Mongolian Tugrik</option>
+<option value="MOP">MOP — Macanese Pataca</option>
+<option value="MRU">MRU — Mauritanian Ouguiya</option>
+<option value="MUR">MUR — Mauritian Rupee</option>
+<option value="MVR">MVR — Maldivian Rufiyaa</option>
+<option value="MWK">MWK — Malawian Kwacha</option>
+<option value="MXN">MXN — Mexican Peso</option>
+<option value="MZN">MZN — Mozambican Metical</option>
+<option value="NAD">NAD — Namibian Dollar</option>
+<option value="NGN">NGN — Nigerian Naira</option>
+<option value="NIO">NIO — Nicaraguan Córdoba</option>
+<option value="NOK">NOK — Norwegian Krone</option>
+<option value="NPR">NPR — Nepalese Rupee</option>
+<option value="NZD">NZD — New Zealand Dollar</option>
+<option value="OMR">OMR — Omani Rial</option>
+<option value="PAB">PAB — Panamanian Balboa</option>
+<option value="PEN">PEN — Peruvian Sol</option>
+<option value="PGK">PGK — Papua New Guinean Kina</option>
+<option value="PHP">PHP — Philippine Peso</option>
+<option value="PKR">PKR — Pakistani Rupee</option>
+<option value="PLN">PLN — Polish Zloty</option>
+<option value="PYG">PYG — Paraguayan Guarani</option>
+<option value="QAR">QAR — Qatari Riyal</option>
+<option value="RON">RON — Romanian Leu</option>
+<option value="RSD">RSD — Serbian Dinar</option>
+<option value="RUB">RUB — Russian Ruble</option>
+<option value="RWF">RWF — Rwandan Franc</option>
+<option value="SAR">SAR — Saudi Riyal</option>
+<option value="SBD">SBD — Solomon Islands Dollar</option>
+<option value="SCR">SCR — Seychellois Rupee</option>
+<option value="SDG">SDG — Sudanese Pound</option>
+<option value="SEK">SEK — Swedish Krona</option>
+<option value="SHP">SHP — St. Helena Pound</option>
+<option value="SLE">SLE — Sierra Leonean Leone</option>
+<option value="SOS">SOS — Somali Shilling</option>
+<option value="SRD">SRD — Surinamese Dollar</option>
+<option value="SSP">SSP — South Sudanese Pound</option>
+<option value="STN">STN — São Tomé & Príncipe Dobra</option>
+<option value="SVC">SVC — Salvadoran Colón</option>
+<option value="SYP">SYP — Syrian Pound</option>
+<option value="SZL">SZL — Swazi Lilangeni</option>
+<option value="TJS">TJS — Tajikistani Somoni</option>
+<option value="TMT">TMT — Turkmenistani Manat</option>
+<option value="TND">TND — Tunisian Dinar</option>
+<option value="TOP">TOP — Tongan Paʻanga</option>
+<option value="TRY">TRY — Turkish Lira</option>
+<option value="TTD">TTD — Trinidad & Tobago Dollar</option>
+<option value="TWD">TWD — New Taiwan Dollar</option>
+<option value="TZS">TZS — Tanzanian Shilling</option>
+<option value="UAH">UAH — Ukrainian Hryvnia</option>
+<option value="UGX">UGX — Ugandan Shilling</option>
+<option value="UYU">UYU — Uruguayan Peso</option>
+<option value="UZS">UZS — Uzbekistani Som</option>
+<option value="VES">VES — Venezuelan Bolívar</option>
+<option value="VND">VND — Vietnamese Dong</option>
+<option value="VUV">VUV — Vanuatu Vatu</option>
+<option value="WST">WST — Samoan Tala</option>
+<option value="XAF">XAF — Central African CFA Franc</option>
+<option value="XCD">XCD — East Caribbean Dollar</option>
+<option value="XOF">XOF — West African CFA Franc</option>
+<option value="XPF">XPF — CFP Franc</option>
+<option value="YER">YER — Yemeni Rial</option>
+<option value="ZAR">ZAR — South African Rand</option>
+<option value="ZMW">ZMW — Zambian Kwacha</option>
+<option value="ZWG">ZWG — Zimbabwean Gold</option>
+</optgroup>
+</select>
+<p style="color: rgba(255,255,255,0.35); font-size: 11px; margin-top: 6px;">This is for you while editing — visitors just see the formatted price, not a picker.</p>
+</div>
+<div id="offerEditorList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
+    </div>
+<button onclick="addOffer()" class="sidebar-btn btn-outline" style="font-size: 13px; padding: 12px;">+ Add New Item</button>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Additional Full Image</label>
+<div class="logo-upload-area" id="additionalUploadArea" onclick="document.getElementById('additionalInput').click()">
+<i class="fa-solid fa-panorama" style="font-size: 28px; color: rgba(255,255,255,0.4);"></i>
+<p>Click to upload full-width image</p>
+</div>
+<input type="file" id="additionalInput" accept="image/*" style="display: none;" onchange="handleAdditionalUpload(event)">
+<div id="additionalPreviewWrap" style="display: none;">
+<div class="logo-preview">
+<img id="additionalPreviewSidebarImg" src="" alt="Additional">
+<div class="logo-info"><span id="additionalFileName">image.jpg</span></div>
+<div class="logo-actions"><button onclick="removeAdditionalImage()">🗑</button></div>
+</div>
+</div>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Location</label>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">Address</label>
+<input type="text" id="inputAddressLine" class="sidebar-input" placeholder="e.g. Jl. Raya Kopi No. 42" value="Jl. Raya Kopi No. 42" oninput="updateContent()">
+</div>
+<div style="margin-bottom: 16px;">
+<label class="sidebar-input-label">City / Area</label>
+<input type="text" id="inputAddressCity" class="sidebar-input" placeholder="e.g. Bandung, Jawa Barat" value="Bandung, Jawa Barat" oninput="updateContent()">
+<p id="hintAddress" class="field-hint"></p>
+</div>
+<div>
+<label class="sidebar-input-label">Google Maps Link</label>
+<input type="text" id="inputMapLink" class="sidebar-input" placeholder="https://maps.google.com/..." value="https://maps.google.com/" oninput="updateContent()">
+</div>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Closing Message</label>
+<p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-bottom: 8px;">A short heartfelt note shown right after "Open in Maps", just before your Contact section.</p>
+<textarea id="inputClosingText" class="sidebar-textarea" maxlength="300" placeholder="Thank you for visiting..." oninput="updateClosingText()">Thank you for visiting — we can't wait to hear from you and bring your vision to life together.</textarea>
+</div>
+
+<div class="sidebar-section">
+<label class="sidebar-label">Contact Channels</label>
+<p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-bottom: 14px;">Pick how visitors reach you — mix and match for wherever your audience is (works well for global audiences too).</p>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanWhatsappToggle" checked onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-whatsapp" style="width:16px;text-align:center;color:#25D366;"></i> WhatsApp</span></label>
+<input type="text" id="chanWhatsappValue" class="sidebar-input" placeholder="e.g. 6281234567890 (with country code, no +)" value="6281234567890" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanPhoneToggle" checked onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-phone" style="width:16px;text-align:center;color:rgba(255,255,255,0.6);"></i> Phone Call</span></label>
+<input type="text" id="chanPhoneValue" class="sidebar-input" placeholder="e.g. +62 812 3456 7890" value="+6281234567890" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanTelegramToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-telegram" style="width:16px;text-align:center;color:#229ED9;"></i> Telegram</span></label>
+<input type="text" id="chanTelegramValue" class="sidebar-input" placeholder="Telegram username (without @)" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanLineToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-line" style="width:16px;text-align:center;color:#00B900;"></i> LINE</span></label>
+<input type="text" id="chanLineValue" class="sidebar-input" placeholder="LINE ID" oninput="updateContactChannels()">
+</div>
+
+<div style="margin-bottom: 14px;">
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanWechatToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-brands fa-weixin" style="width:16px;text-align:center;color:#07C160;"></i> WeChat</span></label>
+<input type="text" id="chanWechatValue" class="sidebar-input" placeholder="WeChat ID" oninput="updateContactChannels()">
+<p style="color: rgba(255,255,255,0.35); font-size: 10px; margin-top: 4px;">WeChat can't be opened directly from a browser — visitors will copy this ID and search it inside the app.</p>
+</div>
+
+<div>
+<label class="module-toggle" style="margin-bottom: 6px;"><input type="checkbox" id="chanEmailToggle" onchange="updateContactChannels()"><span style="display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-envelope" style="width:16px;text-align:center;color:rgba(255,255,255,0.6);"></i> Email</span></label>
+<input type="text" id="chanEmailValue" class="sidebar-input" placeholder="you@business.com" oninput="updateContactChannels()">
+</div>
+<p id="hintContact" class="field-hint"></p>
+</div>
+
+<div class="sidebar-section" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px;">
+<button onclick="startUpdatePage()" class="sidebar-btn btn-gold" style="margin-bottom: 12px;"><i class="fa-solid fa-check"></i> Update Page</button>
+<button onclick="previewPage()" class="sidebar-btn btn-outline"><i class="fa-solid fa-eye"></i> Preview</button>
+</div>
+
+<div class="auto-save-indicator"><div class="auto-save-dot"></div><span>Auto-saved to browser</span></div>
+</div>
+</div>
+
+<div id="updateModal">
+<div class="modal-box">
+<div id="updateIcon" class="modal-icon spinning"></div>
+<h3 class="modal-title" id="updateTitle">Updating...</h3>
+<p class="modal-status" id="updateStatus">Uploading images...</p>
+<div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
+<p class="progress-text" id="progressText">0%</p>
+<div id="updateActions" class="modal-actions" style="display: none;"><button onclick="closeUpdateModal()" class="sidebar-btn btn-gold">Done</button></div>
+<div id="retryActions" class="modal-actions" style="display: none;"><button onclick="retryUpdate()" class="sidebar-btn btn-gold">Try Again</button><button onclick="closeUpdateModal()" class="sidebar-btn btn-outline">Close</button></div>
+</div>
+</div>
+
+<div id="draftModal">
+<div class="draft-box">
+<div class="draft-icon"><i class="fa-regular fa-pen-to-square"></i></div>
+<h3 style="color:#F5F5F5;font-size:18px;margin-bottom:8px;">Unsaved Changes Found</h3>
+<p id="draftMessage" style="color:rgba(255,255,255,0.6);font-size:14px;margin-bottom:24px;">You have an edit from earlier.</p>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<button onclick="restoreDraft()" class="sidebar-btn btn-gold">Continue Editing</button>
+<button onclick="discardDraft()" class="sidebar-btn btn-outline">Start Fresh</button>
+</div>
+</div>
+</div>
+
+<div id="iconPickerModal">
+<div class="icon-picker-box">
+<div class="icon-picker-header">
+<h3>Choose Icon</h3>
+<button class="icon-picker-close" onclick="closeIconPicker()"><i class="fa-solid fa-xmark"></i></button>
+</div>
+<div class="icon-picker-grid" id="iconPickerGrid"></div>
+</div>
+</div>
+
+<script>
+let sidebarOpen = false;
+let currentPrimary = '#5D4037';
+let currentSecondary = '#FFF8E1';
+let currentTextOnPrimary = '#FFFFFF';
+let currentTextOnSecondary = '#5D4037';
+let galleryImages = [];
+let logoImage = null;
+let heroImage = null;
+let additionalImage = null; // Variabel baru untuk gambar tambahan
+// Update 07082026: page-builder.html now talks to Supabase for the full
+// flow -- slug availability, loading an existing landing_pages row on
+// open, and actually publishing (upsert into `landing_pages` + image
+// uploads to the `landing-images` storage bucket) when "Update Page" is
+// pressed. localStorage is still used, but only as a short-lived
+// "unsaved changes" draft, not as the source of truth.
+const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;      // set by initAuth() once session is confirmed
+let landingPageId = null;    // id of this user's existing landing_pages row, if any
+
+let slugCheckTimeout = null;
+
+// Length policy: basic min 5, silver min 4, gold min 3, platinum min 2, max 25.
+function requiredTierForLength(len) {
+if (len >= 5) return 'basic';
+if (len === 4) return 'silver';
+if (len === 3) return 'gold';
+if (len === 2) return 'platinum';
+return 'reserved';
+}
+const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+let myTier = 'silver'; // safe fallback -- Landing Page requires Silver+
+
+// Auth gate + initial data load. page-builder.html is opened from
+// dashboard.html (window.open), so unlike dashboard.html itself there's
+// no Google OAuth redirect race to worry about -- a plain getSession()
+// is enough here (same pattern as identity.html / privacy.html).
+async function initAuth() {
+try {
+const { data: { session }, error } = await supabaseClient.auth.getSession();
+if (error) throw error;
+if (!session) { window.location.href = 'login.html'; return; }
+currentUser = session.user;
+
+try {
+const { data } = await supabaseClient.from('profiles').select('tier').eq('id', currentUser.id).single();
+if (data?.tier) myTier = data.tier;
+} catch (err) {
+console.error('Failed to fetch user tier:', err);
+}
+
+await loadExistingLandingPage();
+} catch (err) {
+console.error('Auth check failed:', err);
+}
+}
+
+// Loads this user's landing_pages row (max 1, user_id is unique) and
+// applies its saved content into the form, so re-opening the builder
+// shows what's actually published -- not a blank page.
+async function loadExistingLandingPage() {
+try {
+const { data: page, error } = await supabaseClient
+.from('landing_pages')
+.select('id, slug, content')
+.eq('user_id', currentUser.id)
+.maybeSingle();
+if (error) throw error;
+if (page) {
+landingPageId = page.id;
+if (page.content && Object.keys(page.content).length) {
+applyPageData(page.content);
+}
+}
+} catch (err) {
+console.error('Failed to load existing landing page:', err);
+}
+}
+
+function sanitizeSlug(raw) {
+return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+}
+
+function checkSlugLive() {
+const input = document.getElementById('inputSlug');
+const status = document.getElementById('slugStatus');
+const slug = sanitizeSlug(input.value);
+input.value = slug;
+
+clearTimeout(slugCheckTimeout);
+autoSave();
+
+if (!slug) {
+status.textContent = '';
+status.classList.remove('warning');
+return;
+}
+if (slug.length > 25) {
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Maximum 25 characters.';
+status.classList.add('warning');
+return;
+}
+
+status.textContent = 'Checking availability...';
+status.classList.remove('warning');
+
+// Debounce so we don't fire a request on every single keystroke.
+slugCheckTimeout = setTimeout(async () => {
+try {
+const { data, error } = await supabaseClient.rpc('is_slug_available', { check_slug: slug, check_tier: myTier, exclude_user_id: currentUser?.id ?? null });
+if (error) throw error;
+if (data) {
+status.textContent = `netlink.bio/page/${slug} is available!`;
+status.classList.remove('warning');
+} else {
+const requiredTier = requiredTierForLength(slug.length);
+if (requiredTier === 'reserved') {
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 1-character slugs are reserved — contact us.';
+} else if (requiredTier !== myTier && requiredTier !== 'basic') {
+status.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${slug.length}-character slugs require the ${TIER_LABEL[requiredTier]} plan or higher.`;
+} else {
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> That URL is taken or reserved — try another.';
+}
+status.classList.add('warning');
+}
+} catch (err) {
+console.error(err);
+status.textContent = 'Could not check availability right now.';
+}
+}, 500);
+}
+
+let showLogoText = true;
+let logoShape = 'square';
+let lightboxIndex = 0;
+let currentCurrency = 'IDR';
+let currentIconEditingIndex = null;
+
+<!-- ==== END PART 1 -- lanjut ke page-builder_PART2.html, tempel langsung setelah baris ini ==== -->
+    <!-- ==== LANJUTAN DARI PART 1 -- mulai dari sini ==== -->
+
+// Kumpulan 64 Ikon Populer untuk Offerings (Kategori Bisnis, Kuliner, Web3, dll)
+const faIcons = [
+    {v: 'fa-solid fa-coffee', l: 'Coffee/Cafe'}, {v: 'fa-solid fa-utensils', l: 'Restaurant/Food'},
+    {v: 'fa-solid fa-burger', l: 'Burger/Fast Food'}, {v: 'fa-solid fa-pizza-slice', l: 'Pizza'},
+    {v: 'fa-solid fa-mug-hot', l: 'Hot Drink'}, {v: 'fa-solid fa-cake-candles', l: 'Cake/Bakery'},
+    {v: 'fa-solid fa-ice-cream', l: 'Ice Cream/Dessert'}, {v: 'fa-solid fa-wine-glass', l: 'Bar/Wine'},
+    {v: 'fa-solid fa-bowl-food', l: 'Food Bowl'}, {v: 'fa-solid fa-apple-whole', l: 'Healthy/Fruit'},
+    {v: 'fa-solid fa-briefcase', l: 'Business/Job'}, {v: 'fa-solid fa-building', l: 'Company/Office'},
+    {v: 'fa-solid fa-chart-line', l: 'Growth/Chart'}, {v: 'fa-solid fa-chart-pie', l: 'Analytics'},
+    {v: 'fa-solid fa-handshake', l: 'Deal/Partner'}, {v: 'fa-solid fa-shop', l: 'Shop/Retail'},
+    {v: 'fa-solid fa-store', l: 'Store'}, {v: 'fa-solid fa-calculator', l: 'Accounting'},
+    {v: 'fa-solid fa-paperclip', l: 'Office Supplies'}, {v: 'fa-solid fa-pen-nib', l: 'Design/Writing'},
+    {v: 'fa-solid fa-laptop', l: 'Laptop/IT'}, {v: 'fa-solid fa-desktop', l: 'Desktop/PC'},
+    {v: 'fa-solid fa-mobile-screen', l: 'Mobile/App'}, {v: 'fa-solid fa-camera', l: 'Photography'},
+    {v: 'fa-solid fa-video', l: 'Video/Film'}, {v: 'fa-solid fa-microphone', l: 'Podcast/Audio'},
+    {v: 'fa-solid fa-music', l: 'Music'}, {v: 'fa-solid fa-headphones', l: 'Headphones'},
+    {v: 'fa-solid fa-gamepad', l: 'Gaming'}, {v: 'fa-solid fa-tv', l: 'Television'},
+    {v: 'fa-solid fa-scissors', l: 'Salon/Barber'}, {v: 'fa-solid fa-hammer', l: 'Construction'},
+    {v: 'fa-solid fa-wrench', l: 'Repair/Mechanic'}, {v: 'fa-solid fa-paintbrush', l: 'Painting'},
+    {v: 'fa-solid fa-palette', l: 'Art/Palette'}, {v: 'fa-solid fa-stethoscope', l: 'Medical/Clinic'},
+    {v: 'fa-solid fa-tooth', l: 'Dental'}, {v: 'fa-solid fa-car', l: 'Automotive/Car'},
+    {v: 'fa-solid fa-truck', l: 'Logistics/Delivery'}, {v: 'fa-solid fa-plane', l: 'Travel/Flight'},
+    {v: 'fa-solid fa-book', l: 'Book/Education'}, {v: 'fa-solid fa-dumbbell', l: 'Fitness/Gym'},
+    {v: 'fa-solid fa-bicycle', l: 'Cycling'}, {v: 'fa-solid fa-futbol', l: 'Sports/Soccer'},
+    {v: 'fa-solid fa-person-swimming', l: 'Swimming'}, {v: 'fa-solid fa-guitar', l: 'Guitar'},
+    {v: 'fa-solid fa-masks-theater', l: 'Theater/Acting'}, {v: 'fa-solid fa-seedling', l: 'Agriculture/Plant'},
+    {v: 'fa-solid fa-leaf', l: 'Nature/Eco'}, {v: 'fa-solid fa-paw', l: 'Pets/Vet'},
+    {v: 'fa-solid fa-house', l: 'Property/House'}, {v: 'fa-solid fa-key', l: 'Keys/Rentals'},
+    {v: 'fa-solid fa-cube', l: 'Web3/Blockchain'}, {v: 'fa-solid fa-coins', l: 'Crypto/Token'},
+    {v: 'fa-solid fa-link', l: 'Chain/Link'}, {v: 'fa-solid fa-drum', l: 'Band/Drums'},
+    {v: 'fa-solid fa-podcast', l: 'Podcast Show'}, {v: 'fa-solid fa-id-badge', l: 'Agent/ID'},
+    {v: 'fa-solid fa-graduation-cap', l: 'Tutor/Graduate'}, {v: 'fa-solid fa-chalkboard-user', l: 'Teaching/Class'},
+    {v: 'fa-solid fa-hand-holding-heart', l: 'Charity/Care'}, {v: 'fa-solid fa-people-group', l: 'Community/NGO'}
+];
+
+const defaultOffers = [
+    { title: 'Espresso Toraja', desc: 'Single origin, dark chocolate notes', price: '25000', icon: 'fa-solid fa-coffee' },
+    { title: 'V60 Pour Over', desc: 'Gayo, floral & citrusy', price: '32000', icon: 'fa-solid fa-mug-hot' },
+    { title: 'Cold Brew', desc: '12-hour steeped, smooth finish', price: '28000', icon: 'fa-solid fa-wine-glass' }
+];
+let offers = [];
+
+const businessData = {
+cafe: { name: 'Kopi Senja', tagline: 'Cafe & Roastery', heroTitle: 'Crafted with Heart', heroSubtitle: 'From local farmers, to your table every morning.', aboutTitle: 'Our Story', aboutText: 'Started from a small garage in 2019, we now serve coffee from hand-picked beans by farmers in Toraja and Gayo. Every cup is a journey of flavor.', servicesTitle: 'Featured Menu', locationTitle: 'Location', contactTitle: 'Contact Us', galleryTitle: 'Gallery', heroBadge: 'Open Today', logo: 'K' },
+salon: { name: 'Glowing Studio', tagline: 'Beauty & Wellness', heroTitle: 'Trust Your Beauty to Experts', heroSubtitle: 'Facial, hair, and body treatments with premium products.', aboutTitle: 'About Us', aboutText: 'Founded by beauty enthusiasts with 10 years of experience. We believe everyone deserves to feel beautiful and confident.', servicesTitle: 'Services', locationTitle: 'Studio Location', contactTitle: 'Contact Us', galleryTitle: 'Our Work', heroBadge: 'Slots Available', logo: 'G' },
+property: { name: 'Citra Land', tagline: 'Property & Development', heroTitle: 'Dream Home in Strategic Location', heroSubtitle: 'Houses, apartments, and shop houses with modern and sustainable concepts.', aboutTitle: 'Company Profile', aboutText: 'Over 50 residential and commercial projects spread across 8 major cities. Our commitment: quality, location, and resident satisfaction.', servicesTitle: 'Our Projects', locationTitle: 'Project Locations', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: 'New Project', logo: 'C' },
+umkm: { name: 'Berkah Store', tagline: 'Daily Needs', heroTitle: 'Complete, Affordable, Trusted', heroSubtitle: 'Groceries, household supplies, and family needs in one place.', aboutTitle: 'About Our Store', aboutText: 'A family store serving the neighborhood since 2015. Friendly prices, quality goods, and warm service.', servicesTitle: 'Product Categories', locationTitle: 'Store Address', contactTitle: 'Contact Us', galleryTitle: 'Featured Products', heroBadge: 'Free Delivery', logo: 'B' },
+professional: { name: 'Aditya Consulting', tagline: 'Business Strategy', heroTitle: 'Measurable Business Solutions', heroSubtitle: 'Strategy, branding, and digital transformation consulting for SMEs.', aboutTitle: 'About Me', aboutText: '10 years helping 200+ SMEs grow. I believe every business has potential, it just needs the right strategy.', servicesTitle: 'Consulting Services', locationTitle: 'Office / Meeting Point', contactTitle: 'Contact Us', galleryTitle: 'Results', heroBadge: '1 Slot This Week', logo: 'A' },
+creator: { name: 'Nanda Vlogs', tagline: 'Content Creator', heroTitle: 'Stories That Inspire', heroSubtitle: 'Daily vlogs, tech reviews, and lifestyle content from Jakarta.', aboutTitle: 'About Me', aboutText: 'Creating content since 2018. Over 500K subscribers who trust my honest reviews and authentic storytelling. Let us collaborate!', servicesTitle: 'Collaboration', locationTitle: 'Based In', contactTitle: 'Contact Us', galleryTitle: 'Content', heroBadge: 'Open Collab', logo: 'N' },
+author: { name: 'Luna Writes', tagline: 'Author & Storyteller', heroTitle: 'Words That Move Hearts', heroSubtitle: 'Bestselling novels, poetry collections, and writing workshops.', aboutTitle: 'My Journey', aboutText: 'Published 12 novels and 3 poetry collections. My writing explores love, loss, and the beauty of everyday moments. Join my reader community.', servicesTitle: 'Books & Services', locationTitle: 'Events', contactTitle: 'Contact Us', galleryTitle: 'Books', heroBadge: 'New Release', logo: 'L' },
+educator: { name: 'LearnWithRina', tagline: 'Online Education', heroTitle: 'Learn Anytime, Anywhere', heroSubtitle: 'Interactive courses in design, coding, and digital marketing.', aboutTitle: 'About The Course', aboutText: 'Over 10,000 students have joined my online courses. Learn at your own pace with lifetime access and community support.', servicesTitle: 'Courses', locationTitle: 'Workshop Venue', contactTitle: 'Contact Us', galleryTitle: 'Classroom', heroBadge: 'New Course', logo: 'R' },
+restaurant: { name: 'Warung Nusantara', tagline: 'Indonesian Cuisine', heroTitle: 'Authentic Taste of Indonesia', heroSubtitle: 'From Sabang to Merauke, served on your plate.', aboutTitle: 'Our Story', aboutText: 'Founded by a chef who traveled across 34 provinces to collect authentic recipes. Every dish tells a story of Indonesian heritage.', servicesTitle: 'Menu', locationTitle: 'Restaurant Location', contactTitle: 'Contact Us', galleryTitle: 'Dishes', heroBadge: 'Open Now', logo: 'W' },
+hotel: { name: 'The Sunrise Inn', tagline: 'Hotel & Homestay', heroTitle: 'Your Home Away From Home', heroSubtitle: 'Cozy rooms, stunning views, and warm hospitality.', aboutTitle: 'About Us', aboutText: 'Nestled in the hills with panoramic mountain views. 20 uniquely designed rooms, an infinity pool, and farm-to-table dining.', servicesTitle: 'Rooms', locationTitle: 'Address', contactTitle: 'Contact Us', galleryTitle: 'Gallery', heroBadge: 'Rooms Available', logo: 'S' },
+fitness: { name: 'IronFit Gym', tagline: 'Fitness Center', heroTitle: 'Build Your Best Self', heroSubtitle: 'Modern equipment, expert trainers, and a supportive community.', aboutTitle: 'Our Mission', aboutText: 'More than a gym — we are a community. Personal training, group classes, and nutrition coaching all under one roof.', servicesTitle: 'Membership', locationTitle: 'Gym Location', contactTitle: 'Contact Us', galleryTitle: 'Facilities', heroBadge: 'Open 24h', logo: 'I' },
+yoga: { name: 'Serenity Yoga', tagline: 'Yoga & Meditation', heroTitle: 'Find Your Inner Peace', heroSubtitle: 'Hatha, Vinyasa, and meditation classes for all levels.', aboutTitle: 'Our Philosophy', aboutText: 'Yoga is not about touching your toes. It is about what you learn on the way down. Beginner-friendly classes in a calming space.', servicesTitle: 'Classes', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Studio', heroBadge: 'New Class', logo: 'S' },
+clinic: { name: 'Sehat Clinic', tagline: 'Health & Wellness', heroTitle: 'Care You Can Trust', heroSubtitle: 'General practice, dental care, and health screenings.', aboutTitle: 'About Us', aboutText: 'Serving the community for over 15 years with compassionate care. Modern facilities and experienced medical professionals.', servicesTitle: 'Services', locationTitle: 'Clinic Address', contactTitle: 'Contact Us', galleryTitle: 'Facility', heroBadge: 'Walk-ins OK', logo: 'S' },
+photography: { name: 'Lens & Light', tagline: 'Photography Studio', heroTitle: 'Capture The Moment', heroSubtitle: 'Wedding, portrait, and commercial photography.', aboutTitle: 'Our Approach', aboutText: 'Every photo tells a story. With 8 years of experience, we capture emotions that last a lifetime. Natural light specialist.', servicesTitle: 'Packages', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: 'Weekend Slots', logo: 'L' },
+event: { name: 'Grand Event', tagline: 'Event Organizer', heroTitle: 'Your Dream Event, Realized', heroSubtitle: 'Weddings, corporate events, and celebrations.', aboutTitle: 'Who We Are', aboutText: 'From intimate gatherings to grand celebrations, we handle every detail. 200+ successful events and counting.', servicesTitle: 'Packages', locationTitle: 'Office', contactTitle: 'Contact Us', galleryTitle: 'Events', heroBadge: '2026 Open', logo: 'G' },
+travel: { name: 'Wanderlust Tours', tagline: 'Travel Agency', heroTitle: 'Adventure Awaits', heroSubtitle: 'Curated trips, visa assistance, and travel insurance.', aboutTitle: 'Our Story', aboutText: 'We have explored 50+ countries so you do not have to worry about the details. Custom itineraries for solo, couple, and group travel.', servicesTitle: 'Destinations', locationTitle: 'Office', contactTitle: 'Contact Us', galleryTitle: 'Destinations', heroBadge: 'Early Bird', logo: 'W' },
+laundry: { name: 'Clean & Fresh', tagline: 'Laundry Service', heroTitle: 'Spotless, Every Time', heroSubtitle: 'Wash, dry, fold, and express service available.', aboutTitle: 'About Us', aboutText: 'Eco-friendly detergents, careful handling of delicate fabrics, and same-day express service. Your clothes deserve the best.', servicesTitle: 'Services', locationTitle: 'Outlet', contactTitle: 'Contact Us', galleryTitle: 'Process', heroBadge: 'Express Ready', logo: 'C' },
+repair: { name: 'FixIt Pro', tagline: 'Repair Service', heroTitle: 'We Fix Everything', heroSubtitle: 'Phones, laptops, appliances, and home repairs.', aboutTitle: 'Our Expertise', aboutText: 'Certified technicians with 10+ years experience. Genuine parts warranty and transparent pricing. No fix, no fee policy.', servicesTitle: 'Repairs', locationTitle: 'Service Center', contactTitle: 'Contact Us', galleryTitle: 'Workshop', heroBadge: 'Same Day', logo: 'F' },
+bakery: { name: 'Sweet Crumbs', tagline: 'Bakery & Cakes', heroTitle: 'Baked With Love', heroSubtitle: 'Custom cakes, pastries, and daily fresh bread.', aboutTitle: 'Our Story', aboutText: 'A family bakery using recipes passed down three generations. Everything baked fresh daily with premium ingredients.', servicesTitle: 'Menu', locationTitle: 'Bakery', contactTitle: 'Contact Us', galleryTitle: 'Creations', heroBadge: 'Fresh Daily', logo: 'S' },
+florist: { name: 'Bloom & Petal', tagline: 'Flower Shop', heroTitle: 'Flowers For Every Occasion', heroSubtitle: 'Bouquets, arrangements, and event decorations.', aboutTitle: 'Our Passion', aboutText: 'We source the freshest flowers daily and create arrangements that speak emotions. Same-day delivery available.', servicesTitle: 'Collections', locationTitle: 'Shop', contactTitle: 'Contact Us', galleryTitle: 'Arrangements', heroBadge: 'Same Day', logo: 'B' },
+barbershop: { name: 'The Gentlemen Cut', tagline: 'Barbershop', heroTitle: 'Sharp Looks, Confident You', heroSubtitle: 'Classic cuts, modern styles, and hot towel shaves.', aboutTitle: 'Our Craft', aboutText: 'Master barbers with 15+ years experience. Premium products, relaxed atmosphere, and attention to every detail.', servicesTitle: 'Services', locationTitle: 'Shop', contactTitle: 'Contact Us', galleryTitle: 'Styles', heroBadge: 'Walk-ins OK', logo: 'G' },
+coworking: { name: 'Hub Space', tagline: 'Coworking Space', heroTitle: 'Work Smarter, Together', heroSubtitle: 'Hot desks, private offices, and meeting rooms.', aboutTitle: 'Our Space', aboutText: 'High-speed internet, free coffee, and a community of innovators. Flexible plans for freelancers to growing teams.', servicesTitle: 'Plans', locationTitle: 'Location', contactTitle: 'Contact Us', galleryTitle: 'Space', heroBadge: 'Day Pass', logo: 'H' },
+workshop: { name: 'Craft Studio', tagline: 'Creative Workshop', heroTitle: 'Create Something Beautiful', heroSubtitle: 'Pottery, painting, and craft classes for all ages.', aboutTitle: 'Our Studio', aboutText: 'A creative sanctuary where you can disconnect and make something with your hands. All materials provided. No experience needed.', servicesTitle: 'Workshops', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Creations', heroBadge: 'New Workshop', logo: 'C' },
+consulting: { name: 'Prime Consulting', tagline: 'Business Consulting', heroTitle: 'Grow Your Business', heroSubtitle: 'Strategy, operations, and financial advisory.', aboutTitle: 'Our Firm', aboutText: 'Helping businesses scale for 12 years. Data-driven strategies tailored to your industry and growth stage.', servicesTitle: 'Services', locationTitle: 'Office', contactTitle: 'Contact Us', galleryTitle: 'Clients', heroBadge: 'Free Call', logo: 'P' },
+freelance: { name: 'Dika Creative', tagline: 'Freelance Designer', heroTitle: 'Design That Converts', heroSubtitle: 'Branding, UI/UX, and social media design.', aboutTitle: 'About Me', aboutText: '5 years creating designs that tell stories and drive results. From startups to established brands, I bring ideas to life.', servicesTitle: 'Services', locationTitle: 'Remote / Worldwide', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: '1 Slot Left', logo: 'D' },
+web3: { name: 'MetaVerse DAO', tagline: 'Web3 / Crypto Project', heroTitle: 'Building The Decentralized Future', heroSubtitle: 'A community-owned project on Polygon, powered by our token holders.', aboutTitle: 'About The Project', aboutText: 'Launched by a team of builders passionate about decentralization. Our roadmap is public, our treasury is transparent, and our community drives every decision.', servicesTitle: 'Tokenomics & Utility', locationTitle: 'Community Hub', contactTitle: 'Contact Us', galleryTitle: 'Milestones', heroBadge: 'Live on Polygon', logo: 'M' },
+musician: { name: 'Rhea Sound', tagline: 'Musician & Producer', heroTitle: 'Music That Moves You', heroSubtitle: 'Original tracks, live performances, and studio collaborations.', aboutTitle: 'About Me', aboutText: 'Independent artist blending electronic and acoustic sounds since 2017. Streamed over 2 million times across platforms worldwide.', servicesTitle: 'Music & Bookings', locationTitle: 'Based In', contactTitle: 'Contact Us', galleryTitle: 'Releases', heroBadge: 'New Single Out', logo: 'R' },
+podcaster: { name: 'The Real Talk', tagline: 'Podcast Host', heroTitle: 'Conversations Worth Hearing', heroSubtitle: 'Weekly episodes on business, life, and everything in between.', aboutTitle: 'About The Show', aboutText: 'Over 150 episodes and 80,000 monthly listeners. We bring honest conversations with guests who have real stories to tell.', servicesTitle: 'Episodes & Sponsorship', locationTitle: 'Recording Studio', contactTitle: 'Contact Us', galleryTitle: 'Episodes', heroBadge: 'New Episode Weekly', logo: 'T' },
+artist: { name: 'Nova Illustrates', tagline: 'Digital Artist & Illustrator', heroTitle: 'Art That Tells Your Story', heroSubtitle: 'Character design, commissions, and NFT collections.', aboutTitle: 'About My Art', aboutText: 'Self-taught digital artist with 6 years of experience across illustration and character design. Open for commissions and collaborations.', servicesTitle: 'Commissions', locationTitle: 'Studio', contactTitle: 'Contact Us', galleryTitle: 'Portfolio', heroBadge: 'Slots Open', logo: 'N' },
+trainer: { name: 'Coach Bima', tagline: 'Personal Trainer', heroTitle: 'Your Goals, My Mission', heroSubtitle: 'Personalized training programs for strength, weight loss, and performance.', aboutTitle: 'About Me', aboutText: 'Certified personal trainer with 8 years of experience helping clients reach their fitness goals. Programs tailored to every body and every level.', servicesTitle: 'Programs', locationTitle: 'Training Location', contactTitle: 'Contact Us', galleryTitle: 'Transformations', heroBadge: 'Free Consultation', logo: 'B' },
+agent: { name: 'Prime Realty', tagline: 'Real Estate Agent', heroTitle: 'Find Your Perfect Property', heroSubtitle: 'Trusted guidance through every step of buying, selling, and renting.', aboutTitle: 'About Me', aboutText: '10+ years of experience helping families and investors find the right property. Honest advice, market insight, and a network you can rely on.', servicesTitle: 'Listings', locationTitle: 'Coverage Area', contactTitle: 'Contact Us', galleryTitle: 'Featured Properties', heroBadge: 'New Listings', logo: 'P' },
+tutor: { name: 'Learn With Sam', tagline: 'Private Tutor', heroTitle: 'Personalized Learning That Works', heroSubtitle: 'One-on-one tutoring in math, science, and languages.', aboutTitle: 'About Me', aboutText: 'Certified educator with 9 years of tutoring experience. Lessons designed around how each student learns best, online or in person.', servicesTitle: 'Subjects & Rates', locationTitle: 'Available Areas', contactTitle: 'Contact Us', galleryTitle: 'Student Results', heroBadge: 'Slots This Week', logo: 'S' },
+nonprofit: { name: 'Hope Foundation', tagline: 'NGO / Nonprofit', heroTitle: 'Together We Can Change Lives', heroSubtitle: 'Supporting communities through education, health, and relief programs.', aboutTitle: 'Our Mission', aboutText: 'A registered nonprofit serving communities since 2016. 100% of donations go directly to programs on the ground.', servicesTitle: 'Our Programs', locationTitle: 'Operating Areas', contactTitle: 'Contact Us', galleryTitle: 'Impact', heroBadge: 'Donations Open', logo: 'H' }
+};
+
+function toggleSidebar() {
+sidebarOpen = !sidebarOpen;
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+const editBtn = document.getElementById('editToggleBtn');
+const editIcon = document.getElementById('editIcon');
+const closeIcon = document.getElementById('closeIcon');
+const previewArea = document.getElementById('previewArea');
+if (sidebarOpen) {
+sidebar.classList.add('active'); overlay.classList.add('active'); editBtn.classList.add('active');
+editIcon.style.display = 'none'; closeIcon.style.display = 'block'; previewArea.classList.add('sidebar-open');
+} else {
+sidebar.classList.remove('active'); overlay.classList.remove('active'); editBtn.classList.remove('active');
+editIcon.style.display = 'block'; closeIcon.style.display = 'none'; previewArea.classList.remove('sidebar-open');
+}
+}
+
+function setPrimary(color) {
+currentPrimary = color;
+document.getElementById('primaryLabel').textContent = color.toUpperCase();
+document.querySelectorAll('.color-btn').forEach(btn => {
+if (btn.dataset.color === color) btn.classList.add('active');
+else btn.classList.remove('active');
+});
+const rgb = hexToRgb(color);
+const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+if (brightness < 128) { currentSecondary = '#FFF8E1'; currentTextOnPrimary = '#FFFFFF'; currentTextOnSecondary = color; }
+else { currentSecondary = '#212121'; currentTextOnPrimary = '#212121'; currentTextOnSecondary = '#FFFFFF'; }
+document.getElementById('secondaryLabel').textContent = currentSecondary;
+const secPreview = document.getElementById('secondaryPreview');
+secPreview.style.background = currentSecondary;
+secPreview.style.color = currentTextOnSecondary;
+applyColors();
+renderOffers();
+autoSave();
+}
+
+function hexToRgb(hex) {
+const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 0, g: 0, b: 0 };
+}
+
+// ===== Flexible contact channels (global reach: WhatsApp, Telegram, LINE, WeChat, Phone, Email) =====
+const contactChannelDefs = [
+{ key: 'whatsapp', label: 'Chat on WhatsApp', icon: 'fa-brands fa-whatsapp' },
+{ key: 'telegram', label: 'Message on Telegram', icon: 'fa-brands fa-telegram' },
+{ key: 'line', label: 'Add on LINE', icon: 'fa-brands fa-line' },
+{ key: 'wechat', label: 'WeChat', icon: 'fa-brands fa-weixin' },
+{ key: 'phone', label: 'Call Us', icon: 'fa-solid fa-phone' },
+{ key: 'email', label: 'Email Us', icon: 'fa-solid fa-envelope' },
+];
+
+function capKey(key) { return key.charAt(0).toUpperCase() + key.slice(1); }
+
+function getChannelHref(key, value) {
+if (key === 'whatsapp') return 'https://wa.me/' + value.replace(/[^0-9]/g, '');
+if (key === 'telegram') return 'https://t.me/' + value.replace(/^[@~]/, '').trim();
+if (key === 'line') return 'https://line.me/ti/p/~' + value.replace(/^[@~]/, '').trim();
+if (key === 'phone') return 'tel:' + value.replace(/[^0-9+]/g, '');
+if (key === 'email') return 'mailto:' + value.trim();
+return '#';
+}
+
+function copyWeChatId(id) {
+// WeChat has no universal web deep-link for arbitrary contacts, so we copy
+// the ID instead and ask the visitor to search it inside the WeChat app.
+navigator.clipboard.writeText(id).then(() => {
+alert('WeChat ID "' + id + '" copied! Search this ID inside the WeChat app to add.');
+}).catch(() => {
+alert('WeChat ID: ' + id + ' (search this inside the WeChat app to add).');
+});
+}
+
+function renderContactButtons() {
+const grid = document.getElementById('contactGrid');
+if (!grid) return;
+
+const active = contactChannelDefs.filter(ch => {
+const toggle = document.getElementById('chan' + capKey(ch.key) + 'Toggle');
+const input = document.getElementById('chan' + capKey(ch.key) + 'Value');
+return toggle && input && toggle.checked && input.value.trim();
+});
+
+if (active.length === 0) {
+grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #999; font-size: 13px;">Add at least one contact channel in the editor.</p>';
+return;
+}
+
+grid.innerHTML = active.map((ch, i) => {
+const input = document.getElementById('chan' + capKey(ch.key) + 'Value');
+const value = input.value.trim();
+const isPrimary = i === 0;
+const btnClass = isPrimary ? 'contact-btn wa-btn' : 'contact-btn phone-btn';
+const style = isPrimary
+? 'background:' + currentPrimary + ';'
+: 'border-color:' + currentPrimary + '; color:' + currentPrimary + ';';
+
+if (ch.key === 'wechat') {
+return '<button type="button" class="' + btnClass + '" style="' + style + '" onclick="copyWeChatId(\'' + value.replace(/'/g, "\\'") + '\')"><i class="' + ch.icon + '" style="font-size:18px;"></i> WeChat: ' + value + '</button>';
+}
+
+const href = getChannelHref(ch.key, value);
+return '<a href="' + href + '" target="_blank" rel="noopener" class="' + btnClass + '" style="' + style + ' text-decoration:none;"><i class="' + ch.icon + '" style="font-size:18px;"></i> ' + ch.label + '</a>';
+}).join('');
+}
+
+function setFieldHint(hintId, isEmpty, filledText, emptyText) {
+const el = document.getElementById(hintId);
+if (!el) return;
+if (isEmpty) {
+el.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + emptyText;
+el.classList.add('warning');
+} else {
+el.textContent = filledText;
+el.classList.remove('warning');
+}
+}
+
+function updateFieldHints() {
+setFieldHint('hintName', !document.getElementById('inputName').value.trim(),
+'Helps AI assistants and search engines recognize your business name.',
+'Empty — AI assistants may not index your business optimally without a name.');
+
+setFieldHint('hintDesc', !document.getElementById('inputDesc').value.trim(),
+'Helps AI assistants and search engines understand what your business offers.',
+'Empty — AI assistants may not index your business optimally without a description.');
+
+const addrEmpty = !document.getElementById('inputAddressLine').value.trim() || !document.getElementById('inputAddressCity').value.trim();
+setFieldHint('hintAddress', addrEmpty,
+'Helps AI assistants and search engines show your business location accurately.',
+'Empty — AI assistants may not show your business location without a complete address.');
+
+const anyContactActive = contactChannelDefs.some(ch => {
+const toggle = document.getElementById('chan' + capKey(ch.key) + 'Toggle');
+const input = document.getElementById('chan' + capKey(ch.key) + 'Value');
+return toggle.checked && input.value.trim();
+});
+setFieldHint('hintContact', !anyContactActive,
+'At least one contact channel helps AI assistants and visitors reach you.',
+"No contact channel active — AI assistants and visitors won't know how to reach you.");
+}
+
+function updateContactChannels() {
+renderContactButtons();
+updateFieldHints();
+updateJsonLd();
+autoSave();
+}
+
+// ===== JSON-LD (schema.org) for AI assistants & search engine indexing =====
+const businessTypeSchema = {
+cafe: 'CafeOrCoffeeShop', restaurant: 'Restaurant', bakery: 'Bakery',
+salon: 'BeautySalon', barbershop: 'HairSalon', yoga: 'ExerciseGym', fitness: 'ExerciseGym',
+clinic: 'MedicalClinic', property: 'RealEstateAgent', agent: 'RealEstateAgent',
+umkm: 'Store', florist: 'Florist', hotel: 'LodgingBusiness', travel: 'TravelAgency',
+event: 'Organization', laundry: 'DryCleaningOrLaundry', repair: 'ProfessionalService',
+coworking: 'LocalBusiness', workshop: 'EducationalOrganization', consulting: 'ProfessionalService',
+professional: 'ProfessionalService', nonprofit: 'NGO', web3: 'Organization',
+creator: 'Person', freelance: 'Person', author: 'Person', educator: 'Person',
+musician: 'Person', podcaster: 'Person', artist: 'Person', trainer: 'Person', tutor: 'Person',
+photography: 'ProfessionalService'
+};
+
+function updateJsonLd() {
+const type = document.getElementById('businessType').value;
+const schemaType = businessTypeSchema[type] || 'LocalBusiness';
+const name = document.getElementById('inputName').value.trim();
+const description = document.getElementById('inputDesc').value.trim();
+const addressLine = document.getElementById('inputAddressLine').value.trim();
+const addressCity = document.getElementById('inputAddressCity').value.trim();
+
+const data = { '@context': 'https://schema.org', '@type': schemaType };
+if (name) data.name = name;
+if (description) data.description = description;
+
+if (addressLine || addressCity) {
+data.address = { '@type': 'PostalAddress' };
+if (addressLine) data.address.streetAddress = addressLine;
+if (addressCity) data.address.addressLocality = addressCity;
+}
+
+const phoneChecked = document.getElementById('chanPhoneToggle').checked;
+const phoneValue = document.getElementById('chanPhoneValue').value.trim();
+const waChecked = document.getElementById('chanWhatsappToggle').checked;
+const waValue = document.getElementById('chanWhatsappValue').value.trim();
+if (phoneChecked && phoneValue) data.telephone = phoneValue;
+else if (waChecked && waValue) data.telephone = '+' + waValue.replace(/[^0-9]/g, '');
+
+const emailChecked = document.getElementById('chanEmailToggle').checked;
+const emailValue = document.getElementById('chanEmailValue').value.trim();
+if (emailChecked && emailValue) data.email = emailValue;
+
+if (logoImage) data.image = logoImage;
+else if (heroImage) data.image = heroImage;
+
+data.url = window.location.href;
+
+if (document.getElementById('modHours').checked) {
+data.openingHoursSpecification = [
+{ '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '07:00', closes: '22:00' },
+{ '@type': 'OpeningHoursSpecification', dayOfWeek: ['Saturday', 'Sunday'], opens: '08:00', closes: '23:00' }
+];
+}
+
+let scriptEl = document.getElementById('jsonLdScript');
+if (!scriptEl) {
+scriptEl = document.createElement('script');
+scriptEl.type = 'application/ld+json';
+scriptEl.id = 'jsonLdScript';
+document.head.appendChild(scriptEl);
+}
+scriptEl.textContent = JSON.stringify(data, null, 2);
+}
+
+
+function applyColors() {
+const logoBox = document.getElementById('logoBox');
+if (!logoImage) logoBox.style.background = currentPrimary;
+const heroCta = document.getElementById('heroCta');
+heroCta.style.background = currentSecondary;
+heroCta.style.color = currentTextOnSecondary;
+document.getElementById('aboutIcon').style.background = currentPrimary + '15';
+document.querySelector('#aboutIcon svg').style.color = currentPrimary;
+const dirBtn = document.getElementById('directionBtn');
+dirBtn.style.background = currentPrimary + '15';
+dirBtn.style.color = currentPrimary;
+renderContactButtons();
+}
+
+function toggleModule(module) {
+const el = document.getElementById(module + 'Module');
+if (el) { if (el.classList.contains('hidden')) el.classList.remove('hidden'); else el.classList.add('hidden'); }
+autoSave();
+}
+
+function setHeroImage(type) {
+const heroBg = document.getElementById('heroBg');
+const portraitFrame = document.getElementById('heroPortraitFrame');
+document.querySelectorAll('.hero-img-option').forEach(btn => {
+if (btn.dataset.type === type) btn.classList.add('active');
+else btn.classList.remove('active');
+});
+if (heroImage) {
+heroBg.innerHTML = '<img src="' + heroImage + '" alt="Hero" style="width:100%;height:100%;object-fit:cover;display:block;">';
+heroBg.style.background = 'none';
+heroBg.style.filter = 'none';
+portraitFrame.classList.remove('active');
+} else {
+if (type === 'portrait') { portraitFrame.classList.add('active'); heroBg.style.filter = 'blur(4px)'; heroBg.innerHTML = ''; heroBg.style.background = 'linear-gradient(135deg, #D4A574 0%, #E8953A 100%)'; }
+else if (type === 'mixed') { portraitFrame.classList.remove('active'); heroBg.style.filter = 'none'; heroBg.innerHTML = ''; heroBg.style.background = 'linear-gradient(135deg, #90CAF9 0%, #4FC3F7 50%, #F8BBD0 100%)'; }
+else { portraitFrame.classList.remove('active'); heroBg.style.filter = 'none'; heroBg.innerHTML = ''; heroBg.style.background = 'linear-gradient(135deg, #D4A574 0%, #E8953A 100%)'; }
+}
+autoSave();
+}
+
+function changeBusinessType() {
+const type = document.getElementById('businessType').value;
+const data = businessData[type];
+if (!data) return;
+document.getElementById('bizName').textContent = data.name;
+document.getElementById('bizTagline').textContent = data.tagline;
+document.getElementById('heroTitle').textContent = data.heroTitle;
+document.getElementById('heroSubtitle').textContent = data.heroSubtitle;
+document.getElementById('aboutText').textContent = data.aboutText;
+document.getElementById('locationTitle').textContent = data.locationTitle;
+document.getElementById('contactTitle').textContent = data.contactTitle;
+document.getElementById('heroBadge').textContent = data.heroBadge;
+if (!logoImage) document.getElementById('logoBox').textContent = data.logo;
+document.getElementById('inputName').value = data.name;
+document.getElementById('inputTagline').value = data.tagline;
+document.getElementById('inputHeadline').value = data.heroTitle;
+document.getElementById('inputSubtitle').value = data.heroSubtitle;
+renderOffers();
+updateJsonLd();
+autoSave();
+}
+
+function updateContent() {
+document.getElementById('bizName').textContent = document.getElementById('inputName').value || 'Business Name';
+document.getElementById('bizTagline').textContent = document.getElementById('inputTagline').value || 'Tagline';
+document.getElementById('heroTitle').textContent = document.getElementById('inputHeadline').value || 'Headline';
+document.getElementById('heroSubtitle').textContent = document.getElementById('inputSubtitle').value || 'Subtitle';
+const desc = document.getElementById('inputDesc').value;
+if (desc) document.getElementById('aboutText').textContent = desc;
+if (!logoImage) document.getElementById('logoBox').textContent = (document.getElementById('inputName').value || 'B').charAt(0).toUpperCase();
+
+const addrLine = document.getElementById('inputAddressLine').value;
+const addrCity = document.getElementById('inputAddressCity').value;
+document.getElementById('addressLine').textContent = addrLine || 'Address line';
+document.getElementById('addressCity').textContent = addrCity || 'City, Region';
+
+// Update Maps Link behavior
+document.getElementById('directionBtn').onclick = openMapsLink;
+updateMapEmbed();
+
+updateFieldHints();
+updateJsonLd();
+autoSave();
+}
+
+function openMapsLink() {
+const mapUrl = document.getElementById('inputMapLink').value;
+window.open(mapUrl || 'https://maps.google.com/', '_blank');
+}
+
+function updateMapEmbed() {
+const addrLine = document.getElementById('inputAddressLine').value.trim();
+const addrCity = document.getElementById('inputAddressCity').value.trim();
+const query = [addrLine, addrCity].filter(Boolean).join(', ') || 'Indonesia';
+document.getElementById('mapEmbed').src = 'https://www.google.com/maps?q=' + encodeURIComponent(query) + '&output=embed';
+}
+
+function updateClosingText() {
+const val = document.getElementById('inputClosingText').value.trim();
+const el = document.getElementById('closingText');
+el.textContent = val;
+el.style.display = val ? 'block' : 'none';
+autoSave();
+}
+
+function handleLogoUpload(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+logoImage = e.target.result;
+const logoBox = document.getElementById('logoBox');
+logoBox.innerHTML = '<img src="' + logoImage + '" alt="Logo">';
+logoBox.style.background = 'transparent';
+document.getElementById('logoUploadArea').style.display = 'none';
+document.getElementById('logoPreviewWrap').style.display = 'block';
+document.getElementById('logoPreviewImg').src = logoImage;
+document.getElementById('logoFileName').textContent = file.name;
+autoSave();
+};
+reader.readAsDataURL(file);
+}
+
+function removeLogo() {
+logoImage = null;
+const logoBox = document.getElementById('logoBox');
+logoBox.innerHTML = (document.getElementById('inputName').value || 'B').charAt(0).toUpperCase();
+logoBox.style.background = currentPrimary;
+document.getElementById('logoUploadArea').style.display = 'block';
+document.getElementById('logoPreviewWrap').style.display = 'none';
+document.getElementById('logoInput').value = '';
+autoSave();
+}
+
+function toggleLogoText() {
+showLogoText = !showLogoText;
+const toggle = document.getElementById('logoTextToggle');
+const headerText = document.getElementById('headerTextWrap');
+// Visually hide only (sr-only), never display:none — the business name must
+// stay present in the DOM so AI crawlers / JSON-LD still pick it up even
+// when the visitor doesn't see it rendered (e.g. landscape logo already
+// contains the wordmark).
+if (showLogoText) { toggle.classList.add('active'); headerText.classList.remove('sr-only'); }
+else { toggle.classList.remove('active'); headerText.classList.add('sr-only'); }
+autoSave();
+}
+
+function setLogoShape(shape) {
+logoShape = shape;
+const logoBox = document.getElementById('logoBox');
+logoBox.classList.toggle('landscape', shape === 'landscape');
+document.getElementById('logoShapeSquareBtn').classList.toggle('active', shape === 'square');
+document.getElementById('logoShapeLandscapeBtn').classList.toggle('active', shape === 'landscape');
+autoSave();
+}
+
+function handleHeroUpload(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+heroImage = e.target.result;
+const heroBg = document.getElementById('heroBg');
+heroBg.innerHTML = '<img src="' + heroImage + '" alt="Hero" style="width:100%;height:100%;object-fit:cover;display:block;">';
+heroBg.style.background = 'none';
+heroBg.style.filter = 'none';
+document.getElementById('heroUploadArea').style.display = 'none';
+document.getElementById('heroPreviewWrap').style.display = 'block';
+document.getElementById('heroPreviewImg').src = heroImage;
+document.getElementById('heroFileName').textContent = file.name;
+autoSave();
+};
+reader.readAsDataURL(file);
+}
+
+function removeHero() {
+heroImage = null;
+const heroBg = document.getElementById('heroBg');
+heroBg.innerHTML = '';
+heroBg.style.background = 'linear-gradient(135deg, #D4A574 0%, #E8953A 100%)';
+document.getElementById('heroUploadArea').style.display = 'block';
+document.getElementById('heroPreviewWrap').style.display = 'none';
+document.getElementById('heroInput').value = '';
+autoSave();
+}
+
+function handleGalleryUpload(event) {
+const files = Array.from(event.target.files);
+const remaining = 10 - galleryImages.length;
+if (remaining <= 0) { alert('Maximum 10 photos allowed'); return; }
+const toProcess = files.slice(0, remaining);
+toProcess.forEach(file => {
+const reader = new FileReader();
+reader.onload = function(e) {
+galleryImages.push({ src: e.target.result, name: file.name });
+renderGallery();
+renderGalleryList();
+autoSave();
+};
+reader.readAsDataURL(file);
+});
+event.target.value = '';
+}
+
+// Logic untuk Additional Image
+function handleAdditionalUpload(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+additionalImage = e.target.result;
+document.getElementById('additionalImg').src = additionalImage;
+document.getElementById('additionalImg').style.display = 'block';
+document.getElementById('additionalImgPlaceholder').style.display = 'none';
+document.getElementById('additionalUploadArea').style.display = 'none';
+document.getElementById('additionalPreviewWrap').style.display = 'block';
+document.getElementById('additionalPreviewSidebarImg').src = additionalImage;
+document.getElementById('additionalFileName').textContent = file.name;
+autoSave();
+};
+reader.readAsDataURL(file);
+}
+
+function removeAdditionalImage() {
+additionalImage = null;
+document.getElementById('additionalImg').src = '';
+document.getElementById('additionalImg').style.display = 'none';
+document.getElementById('additionalImgPlaceholder').style.display = 'block';
+document.getElementById('additionalUploadArea').style.display = 'block';
+document.getElementById('additionalPreviewWrap').style.display = 'none';
+document.getElementById('additionalInput').value = '';
+autoSave();
+}
+
+function renderGallery() {
+const grid = document.getElementById('galleryGrid');
+if (galleryImages.length === 0) {
+grid.innerHTML = '<div class="gallery-item" onclick="openLightbox(0)"><div class="placeholder" style="background: linear-gradient(135deg, #E8D5C4, #D4C4B0);"></div><div class="hover-overlay"><i class="fa-solid fa-magnifying-glass"></i></div></div>' +
+'<div class="gallery-item" onclick="openLightbox(1)"><div class="placeholder" style="background: linear-gradient(135deg, #F5E6D3, #E8D5C4);"></div><div class="hover-overlay"><i class="fa-solid fa-magnifying-glass"></i></div></div>' +
+'<div class="gallery-item" onclick="openLightbox(2)"><div class="placeholder" style="background: linear-gradient(135deg, #D4C4B0, #C9B8A4);"></div><div class="hover-overlay"><i class="fa-solid fa-magnifying-glass"></i></div></div>' +
+'<div class="gallery-item" onclick="openLightbox(3)"><div class="placeholder" style="background: linear-gradient(135deg, #C9B8A4, #B8A894);"></div><div class="hover-overlay"><i class="fa-solid fa-magnifying-glass"></i></div></div>';
+} else {
+grid.innerHTML = galleryImages.map((img, i) =>
+'<div class="gallery-item" onclick="openLightbox(' + i + ')"><img src="' + img.src + '" alt="Gallery"><div class="hover-overlay"><i class="fa-solid fa-magnifying-glass" style="color:white;"></i></div></div>'
+).join('');
+}
+document.getElementById('galleryLimit').textContent = galleryImages.length + ' / 10 photos uploaded';
+}
+
+function renderGalleryList() {
+const list = document.getElementById('galleryList');
+list.innerHTML = galleryImages.map((img, i) =>
+'<div class="gallery-list-item">' +
+'<img src="' + img.src + '" alt="">' +
+'<div class="gallery-info"><span>' + img.name + '</span></div>' +
+'<div class="gallery-actions">' +
+'<button onclick="moveGalleryUp(' + i + ')"' + (i === 0 ? ' style="opacity:0.3;cursor:not-allowed;"' : '') + '><i class="fa-solid fa-arrow-up"></i></button>' +
+'<button onclick="moveGalleryDown(' + i + ')"' + (i === galleryImages.length - 1 ? ' style="opacity:0.3;cursor:not-allowed;"' : '') + '><i class="fa-solid fa-arrow-down"></i></button>' +
+'<button class="btn-delete" onclick="deleteGalleryImage(' + i + ')">🗑</button>' +
+'</div></div>'
+).join('');
+}
+
+function moveGalleryUp(index) {
+if (index === 0) return;
+const temp = galleryImages[index];
+galleryImages[index] = galleryImages[index - 1];
+galleryImages[index - 1] = temp;
+renderGallery();
+renderGalleryList();
+autoSave();
+}
+
+function moveGalleryDown(index) {
+if (index >= galleryImages.length - 1) return;
+const temp = galleryImages[index];
+galleryImages[index] = galleryImages[index + 1];
+galleryImages[index + 1] = temp;
+renderGallery();
+renderGalleryList();
+autoSave();
+}
+
+function deleteGalleryImage(index) {
+galleryImages.splice(index, 1);
+renderGallery();
+renderGalleryList();
+autoSave();
+}
+
+function openLightbox(index) {
+if (galleryImages.length === 0) return;
+lightboxIndex = index;
+const lightbox = document.getElementById('lightbox');
+const img = document.getElementById('lightboxImg');
+const counter = document.getElementById('lightboxCounter');
+img.src = galleryImages[index].src;
+counter.textContent = (index + 1) + ' / ' + galleryImages.length;
+lightbox.classList.add('active');
+document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox(event) {
+if (event && event.target !== event.currentTarget) return;
+document.getElementById('lightbox').classList.remove('active');
+document.body.style.overflow = '';
+}
+
+function prevLightbox() {
+if (galleryImages.length === 0) return;
+lightboxIndex = (lightboxIndex - 1 + galleryImages.length) % galleryImages.length;
+document.getElementById('lightboxImg').src = galleryImages[lightboxIndex].src;
+document.getElementById('lightboxCounter').textContent = (lightboxIndex + 1) + ' / ' + galleryImages.length;
+}
+
+function nextLightbox() {
+if (galleryImages.length === 0) return;
+lightboxIndex = (lightboxIndex + 1) % galleryImages.length;
+document.getElementById('lightboxImg').src = galleryImages[lightboxIndex].src;
+document.getElementById('lightboxCounter').textContent = (lightboxIndex + 1) + ' / ' + galleryImages.length;
+}
+
+function formatPrice(value, currency) {
+if (!value || isNaN(value)) return value || 'Free';
+return new Intl.NumberFormat(currency === 'IDR' ? 'id-ID' : 'en-US', {
+style: 'currency',
+currency: currency,
+maximumFractionDigits: 0
+}).format(value);
+}
+
+function updateCurrency(val) {
+currentCurrency = val;
+renderOffers();
+autoSave();
+}
+
+function renderOffers() {
+const container = document.getElementById('servicesModule');
+const type = document.getElementById('businessType').value;
+const data = businessData[type];
+const currentTitle = data ? data.servicesTitle : 'Offerings';
+
+const headerHtml = `
+<div style="margin-bottom: 20px;">
+<h3 class="section-title" id="servicesTitle" style="margin-bottom: 0;">${currentTitle}</h3>
+</div>
+`;
+
+const cardsHtml = `<div id="servicesGrid">` + offers.map(offer => `
+<div class="service-card">
+<div class="service-icon" style="width: 56px; height: 56px; border-radius: 12px; background: ${currentPrimary}15; color: ${currentPrimary}; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+<i class="${offer.icon}"></i>
+</div>
+<div class="service-info" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 56px; width: 100%;">
+<div>
+<h4>${offer.title}</h4>
+<p>${offer.desc}</p>
+</div>
+<div style="text-align: right; margin-top: 10px;">
+<span class="service-price" style="color: ${currentPrimary}; font-size: 14px; font-weight: 700;">${formatPrice(offer.price, currentCurrency)}</span>
+</div>
+</div>
+</div>
+`).join('') + `</div>`;
+
+container.innerHTML = `<div class="section-inner">${headerHtml + cardsHtml}</div>`;
+}
+
+function openIconPicker(index) {
+currentIconEditingIndex = index;
+const grid = document.getElementById('iconPickerGrid');
+if (grid.innerHTML === '') {
+grid.innerHTML = faIcons.map(ic => `<button class="icon-btn" onclick="selectIcon('${ic.v}')" title="${ic.l}"><i class="${ic.v}"></i></button>`).join('');
+}
+document.getElementById('iconPickerModal').classList.add('active');
+}
+
+function closeIconPicker() {
+document.getElementById('iconPickerModal').classList.remove('active');
+currentIconEditingIndex = null;
+}
+
+function selectIcon(iconClass) {
+if (currentIconEditingIndex !== null) {
+updateOffer(currentIconEditingIndex, 'icon', iconClass);
+}
+closeIconPicker();
+}
+
+function renderOfferEditor() {
+const list = document.getElementById('offerEditorList');
+list.innerHTML = offers.map((offer, i) => `
+<div style="background: #3A3A3A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px;">
+<div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+<span style="color:#F5F5F5; font-size:13px; font-weight:600;">Item ${i+1}</span>
+<button onclick="deleteOffer(${i})" style="background:transparent; border:none; color:#ef5350; cursor:pointer; font-size:16px;" title="Delete Item"><i class="fa-solid fa-trash-can"></i></button>
+</div>
+
+<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); transition: background 0.2s;" onclick="openIconPicker(${i})" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
+            <i class="${offer.icon}"></i>
+        </div>
+        <span style="color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500;">Change Icon</span>
+    </div>
+    <span style="color: rgba(255,255,255,0.4); font-size: 14px;">❯</span>
+</div>
+
+<input type="text" class="sidebar-input" style="padding:10px; margin-bottom:8px; font-size:13px;" placeholder="Title" value="${offer.title}" oninput="updateOffer(${i}, 'title', this.value)">
+<input type="text" class="sidebar-input" style="padding:10px; margin-bottom:8px; font-size:13px;" placeholder="Description" value="${offer.desc}" oninput="updateOffer(${i}, 'desc', this.value)">
+<input type="text" class="sidebar-input" style="padding:10px; font-size:13px;" placeholder="Price (Numeric, e.g. 25000)" value="${offer.price}" oninput="updateOffer(${i}, 'price', this.value)">
+</div>
+`).join('');
+}
+
+function updateOffer(index, field, value) {
+offers[index][field] = value;
+renderOffers();
+// Icon changes come from the icon-picker modal (not a text field the user is
+// typing in), so it's safe to refresh the editor thumbnail here. We skip this
+// for title/desc/price because re-rendering on every keystroke would steal
+// focus from the input the user is actively typing in.
+if (field === 'icon') renderOfferEditor();
+autoSave();
+}
+
+function addOffer() {
+offers.push({ title: "New Item", desc: "Short description...", price: "0", icon: "fa-solid fa-star" });
+renderOfferEditor();
+renderOffers();
+autoSave();
+}
+
+function deleteOffer(index) {
+offers.splice(index, 1);
+renderOfferEditor();
+renderOffers();
+autoSave();
+}
+
+// ==========================================
+// PUBLISH FLOW (real Supabase save)
+// ------------------------------------------
+// Update 07082026: "Update Page" now actually publishes. Base64 images
+// stay in memory for instant preview while editing, and are only
+// converted + compressed + uploaded to the `landing-images` storage
+// bucket at save time -- so picking a photo stays instant, and only
+// a compact URL (not the raw base64) ends up in the database.
+// Publishing is always immediate (is_published: true) -- there is no
+// separate draft/publish toggle, matching the rest of the editor (no
+// undo either).
+// ==========================================
+
+function setUpdateProgress(pct, message) {
+document.getElementById('progressBar').style.width = pct + '%';
+document.getElementById('progressText').textContent = Math.floor(pct) + '%';
+if (message) document.getElementById('updateStatus').textContent = message;
+}
+
+function showUpdateError(message) {
+document.getElementById('updateTitle').textContent = 'Something went wrong';
+document.getElementById('updateStatus').textContent = message || 'Please try again.';
+document.getElementById('updateIcon').classList.remove('spinning');
+document.getElementById('updateIcon').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+document.getElementById('updateActions').style.display = 'none';
+document.getElementById('retryActions').style.display = 'flex';
+}
+
+function showUpdateSuccess() {
+document.getElementById('updateTitle').textContent = 'Updated!';
+document.getElementById('updateStatus').textContent = 'Your page is now live.';
+document.getElementById('updateIcon').classList.remove('spinning');
+document.getElementById('updateIcon').innerHTML = '<i class="fa-solid fa-check"></i>';
+document.getElementById('updateActions').style.display = 'flex';
+document.getElementById('retryActions').style.display = 'none';
+localStorage.removeItem('pageBuilderDraft');
+}
+
+// Converts a base64 data URL into a Blob so it can be uploaded to
+// Supabase Storage (upload() needs a Blob/File, not a data URL string).
+function dataURLtoBlob(dataUrl) {
+const [header, base64] = dataUrl.split(',');
+const mimeMatch = header.match(/data:(.*?);base64/);
+const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+const binary = atob(base64);
+const bytes = new Uint8Array(binary.length);
+for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+return new Blob([bytes], { type: mime });
+}
+
+// Resizes + re-encodes as JPEG so we never upload an untouched multi-MB
+// phone photo straight into storage. Same idea as dashboard.html's
+// compressImage() for avatars, adapted to work from a Blob instead of a
+// file input (page-builder.html already has the image as a data URL by
+// the time the user hits "Update Page").
+function compressImageBlob(blob, maxDim = 1600, quality = 0.82) {
+return new Promise((resolve, reject) => {
+const img = new Image();
+img.onload = () => {
+let { width, height } = img;
+if (width > maxDim || height > maxDim) {
+if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+else { width = Math.round(width * maxDim / height); height = maxDim; }
+}
+const canvas = document.createElement('canvas');
+canvas.width = width;
+canvas.height = height;
+canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+canvas.toBlob(
+(out) => out ? resolve(out) : reject(new Error('Image compression failed')),
+'image/jpeg',
+quality
+);
+URL.revokeObjectURL(img.src);
+};
+img.onerror = () => reject(new Error('Could not read image for compression'));
+img.src = URL.createObjectURL(blob);
+});
+}
+
+// Uploads one image to the `landing-images` bucket under this user's
+// folder and returns its public URL. If the value passed in is already
+// an https URL (uploaded in a previous save, untouched this session),
+// it's returned as-is -- no wasted re-upload.
+async function uploadLandingImage(dataUrlOrUrl, filename) {
+if (!dataUrlOrUrl) return null;
+if (!dataUrlOrUrl.startsWith('data:')) return dataUrlOrUrl;
+const rawBlob = dataURLtoBlob(dataUrlOrUrl);
+const compressed = await compressImageBlob(rawBlob);
+const path = `${currentUser.id}/${filename}.jpg`;
+const { error } = await supabaseClient.storage
+.from('landing-images')
+.upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+if (error) throw error;
+const { data } = supabaseClient.storage.from('landing-images').getPublicUrl(path);
+return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+function startUpdatePage() {
+const modal = document.getElementById('updateModal');
+modal.classList.add('active');
+document.getElementById('updateTitle').textContent = 'Updating...';
+document.getElementById('updateIcon').classList.add('spinning');
+document.getElementById('updateIcon').innerHTML = '';
+document.getElementById('updateActions').style.display = 'none';
+document.getElementById('retryActions').style.display = 'none';
+setUpdateProgress(0, 'Checking URL availability...');
+performUpdatePage();
+}
+
+async function performUpdatePage() {
+if (!currentUser) {
+showUpdateError('Your session expired. Please refresh and sign in again.');
+return;
+}
+
+const slugInput = document.getElementById('inputSlug');
+const slug = sanitizeSlug(slugInput.value);
+slugInput.value = slug;
+
+if (!slug) {
+showUpdateError('Please set a URL slug before publishing.');
+return;
+}
+
+try {
+setUpdateProgress(10, 'Checking URL availability...');
+const { data: available, error: slugErr } = await supabaseClient.rpc('is_slug_available', {
+check_slug: slug,
+check_tier: myTier,
+exclude_user_id: currentUser.id,
+});
+if (slugErr) throw slugErr;
+if (!available) throw new Error('That URL is taken or reserved — try another.');
+
+const data = buildPageData();
+
+setUpdateProgress(25, 'Uploading images...');
+const [logoUrl, heroUrl, additionalUrl] = await Promise.all([
+uploadLandingImage(data.logoImage, 'logo'),
+uploadLandingImage(data.heroImage, 'hero'),
+uploadLandingImage(data.additionalImage, 'additional'),
+]);
+logoImage = data.logoImage = logoUrl;
+heroImage = data.heroImage = heroUrl;
+additionalImage = data.additionalImage = additionalUrl;
+
+setUpdateProgress(55, 'Uploading gallery photos...');
+const uploadedGallery = [];
+for (let i = 0; i < data.galleryImages.length; i++) {
+const item = data.galleryImages[i];
+const url = await uploadLandingImage(item.src, `gallery-${i}`);
+uploadedGallery.push({ src: url, name: item.name });
+setUpdateProgress(55 + (30 * (i + 1) / data.galleryImages.length));
+}
+galleryImages = data.galleryImages = uploadedGallery;
+
+setUpdateProgress(88, 'Publishing page...');
+const { error: upsertErr } = await supabaseClient
+.from('landing_pages')
+.upsert(
+{
+user_id: currentUser.id,
+slug,
+title: data.name || null,
+business_type: data.businessType || null,
+content: data,
+is_published: true,
+},
+{ onConflict: 'user_id' }
+);
+if (upsertErr) throw upsertErr;
+
+setUpdateProgress(100, 'Almost done...');
+setTimeout(showUpdateSuccess, 400);
+} catch (err) {
+console.error('Failed to update landing page:', err);
+showUpdateError(err.message);
+}
+}
+
+function closeUpdateModal() {
+document.getElementById('updateModal').classList.remove('active');
+document.getElementById('updateIcon').innerHTML = '';
+}
+
+function retryUpdate() { startUpdatePage(); }
+function previewPage() { toggleSidebar(); }
+
+// Returns the current builder state as a plain object -- same shape used
+// for both the localStorage draft (autoSave) and the `content` jsonb
+// column sent to Supabase when publishing (performUpdatePage).
+function buildPageData() {
+const data = {
+primary: currentPrimary,
+businessType: document.getElementById('businessType').value,
+name: document.getElementById('inputName').value,
+tagline: document.getElementById('inputTagline').value,
+headline: document.getElementById('inputHeadline').value,
+subtitle: document.getElementById('inputSubtitle').value,
+desc: document.getElementById('inputDesc').value,
+mapLink: document.getElementById('inputMapLink').value,
+slug: document.getElementById('inputSlug').value,
+addressLine: document.getElementById('inputAddressLine').value,
+addressCity: document.getElementById('inputAddressCity').value,
+contactChannels: contactChannelDefs.reduce((acc, ch) => {
+acc[ch.key] = {
+checked: document.getElementById('chan' + capKey(ch.key) + 'Toggle').checked,
+value: document.getElementById('chan' + capKey(ch.key) + 'Value').value
+};
+return acc;
+}, {}),
+logoImage: logoImage,
+heroImage: heroImage,
+additionalImage: additionalImage,
+showLogoText: showLogoText,
+logoShape: logoShape,
+galleryImages: galleryImages,
+currentCurrency: currentCurrency,
+offers: offers,
+closingText: document.getElementById('inputClosingText').value,
+modules: {
+hero: document.getElementById('modHero').checked,
+about: document.getElementById('modAbout').checked,
+gallery: document.getElementById('modGallery').checked,
+services: document.getElementById('modServices').checked,
+image: document.getElementById('modImage').checked,
+location: document.getElementById('modLocation').checked,
+hours: document.getElementById('modHours').checked,
+contact: document.getElementById('modContact').checked
+},
+timestamp: Date.now()
+};
+return data;
+}
+
+function autoSave() {
+localStorage.setItem('pageBuilderDraft', JSON.stringify(buildPageData()));
+}
+
+function checkDraft() {
+const draft = localStorage.getItem('pageBuilderDraft');
+if (draft) {
+const data = JSON.parse(draft);
+const hoursAgo = Math.floor((Date.now() - data.timestamp) / 3600000);
+const timeText = hoursAgo < 1 ? 'less than an hour' : hoursAgo + ' hours';
+document.getElementById('draftMessage').textContent = 'You have an edit from ' + timeText + ' ago.';
+document.getElementById('draftModal').classList.add('active');
+}
+}
+
+// Populates the whole builder form from a saved data object -- shared by
+// restoreDraft() (source: localStorage, "Continue Editing") and
+// loadExistingLandingPage() (source: Supabase `landing_pages.content`).
+function applyPageData(data) {
+if (!data) return;
+setPrimary(data.primary);
+document.getElementById('businessType').value = data.businessType;
+document.getElementById('inputName').value = data.name;
+document.getElementById('inputTagline').value = data.tagline;
+document.getElementById('inputHeadline').value = data.headline;
+document.getElementById('inputSubtitle').value = data.subtitle;
+document.getElementById('inputDesc').value = data.desc || '';
+
+if (data.mapLink) {
+    document.getElementById('inputMapLink').value = data.mapLink;
+}
+if (data.addressLine) document.getElementById('inputAddressLine').value = data.addressLine;
+if (data.addressCity) document.getElementById('inputAddressCity').value = data.addressCity;
+
+if (data.slug) {
+    document.getElementById('inputSlug').value = data.slug;
+    checkSlugLive();
+}
+
+if (data.contactChannels) {
+contactChannelDefs.forEach(ch => {
+const saved = data.contactChannels[ch.key];
+if (!saved) return;
+document.getElementById('chan' + capKey(ch.key) + 'Toggle').checked = saved.checked;
+document.getElementById('chan' + capKey(ch.key) + 'Value').value = saved.value || '';
+});
+}
+renderContactButtons();
+
+if (data.logoImage) {
+logoImage = data.logoImage;
+const logoBox = document.getElementById('logoBox');
+logoBox.innerHTML = '<img src="' + logoImage + '" alt="Logo">';
+logoBox.style.background = 'transparent';
+document.getElementById('logoUploadArea').style.display = 'none';
+document.getElementById('logoPreviewWrap').style.display = 'block';
+document.getElementById('logoPreviewImg').src = logoImage;
+}
+
+if (data.heroImage) {
+heroImage = data.heroImage;
+const heroBg = document.getElementById('heroBg');
+heroBg.innerHTML = '<img src="' + heroImage + '" alt="Hero" style="width:100%;height:100%;object-fit:cover;display:block;">';
+heroBg.style.background = 'none';
+heroBg.style.filter = 'none';
+document.getElementById('heroUploadArea').style.display = 'none';
+document.getElementById('heroPreviewWrap').style.display = 'block';
+document.getElementById('heroPreviewImg').src = heroImage;
+}
+
+if (data.additionalImage) {
+additionalImage = data.additionalImage;
+document.getElementById('additionalImg').src = additionalImage;
+document.getElementById('additionalImg').style.display = 'block';
+document.getElementById('additionalImgPlaceholder').style.display = 'none';
+document.getElementById('additionalUploadArea').style.display = 'none';
+document.getElementById('additionalPreviewWrap').style.display = 'block';
+document.getElementById('additionalPreviewSidebarImg').src = additionalImage;
+}
+
+if (data.showLogoText !== undefined) {
+showLogoText = data.showLogoText;
+const toggle = document.getElementById('logoTextToggle');
+const headerText = document.getElementById('headerTextWrap');
+if (showLogoText) { toggle.classList.add('active'); headerText.classList.remove('sr-only'); }
+else { toggle.classList.remove('active'); headerText.classList.add('sr-only'); }
+
+if (data.logoShape) setLogoShape(data.logoShape);
+}
+
+if (data.galleryImages) {
+galleryImages = data.galleryImages;
+renderGallery();
+renderGalleryList();
+}
+
+if (data.offers) offers = data.offers;
+else offers = JSON.parse(JSON.stringify(defaultOffers));
+
+if (data.closingText !== undefined) {
+document.getElementById('inputClosingText').value = data.closingText;
+}
+updateClosingText();
+
+
+if (data.currentCurrency) {
+    currentCurrency = data.currentCurrency;
+    document.getElementById('currencySelect').value = currentCurrency;
+}
+
+if (data.modules) {
+document.getElementById('modHero').checked = data.modules.hero;
+document.getElementById('modAbout').checked = data.modules.about;
+document.getElementById('modGallery').checked = data.modules.gallery;
+document.getElementById('modServices').checked = data.modules.services;
+
+if (data.modules.image !== undefined) {
+document.getElementById('modImage').checked = data.modules.image;
+}
+
+document.getElementById('modLocation').checked = data.modules.location;
+document.getElementById('modHours').checked = data.modules.hours;
+document.getElementById('modContact').checked = data.modules.contact;
+}
+
+changeBusinessType();
+updateContent();
+renderOffers();
+renderOfferEditor();
+
+if (data.modules) {
+Object.keys(data.modules).forEach(mod => {
+const el = document.getElementById(mod + 'Module');
+if (el) {
+if (data.modules[mod]) el.classList.remove('hidden');
+else el.classList.add('hidden');
+}
+});
+}
+}
+
+function restoreDraft() {
+const draft = JSON.parse(localStorage.getItem('pageBuilderDraft'));
+if (draft) applyPageData(draft);
+document.getElementById('draftModal').classList.remove('active');
+}
+
+function discardDraft() {
+localStorage.removeItem('pageBuilderDraft');
+document.getElementById('draftModal').classList.remove('active');
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+document.getElementById('currencySelect').value = currentCurrency;
+applyColors();
+renderGallery();
+renderGalleryList();
+
+offers = JSON.parse(JSON.stringify(defaultOffers));
+renderOffers();
+renderOfferEditor();
+updateContent();
+updateClosingText();
+updateFieldHints();
+
+// Paints defaults first, then loads the real saved page (if any) from
+// Supabase and overwrites the form -- so the builder isn't blank while
+// waiting on the network.
+await initAuth();
+
+setTimeout(checkDraft, 500);
+
+const galleryUploadArea = document.getElementById('galleryUploadArea');
+galleryUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); galleryUploadArea.classList.add('dragover'); });
+galleryUploadArea.addEventListener('dragleave', () => { galleryUploadArea.classList.remove('dragover'); });
+galleryUploadArea.addEventListener('drop', (e) => {
+e.preventDefault();
+galleryUploadArea.classList.remove('dragover');
+const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+if (files.length > 0) {
+const event = { target: { files: files } };
+handleGalleryUpload(event);
+}
+});
+});
+</script>
+</body>
+</html>
+
