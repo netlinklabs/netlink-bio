@@ -5,9 +5,11 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Added
+- `app.html` — "coming soon" placeholder page for the main app (dark slate-900 theme with teal/blue gradients matching netlink-token's landing page style): banner with a subtle float/glow animation, "In Development" status badge, Q3 2026 timeline note, a 3-pillar Netlink/Netlink Pay/NET Token grid linking out to docs and the whitepaper, secondary CTAs (Whitepaper, Documentation), and social links (Telegram, X/Twitter, Instagram).
 - **NET ID** — permanent per-user identifier, format `NET` + 10 random digits (e.g. `NET1234567890`), stored plain in `profiles.net_id`, rendered with a cosmetic hyphen grouping (`NET-12345-67890`) via `formatNetId()`. Auto-generated on profile creation via DB trigger (`generate_net_id()`); existing users backfilled. Currently identity-only — no transactional use yet.
 
 ### Changed
+- `shared/site-nav.js` — the header's "Get Started Free" CTA now points to `app.html` (temporary, until the app is live) instead of `login.html`. The "Login" nav links are unchanged.
 - `pay.html` — USDC card ID display now reads the real `net_id` from Supabase instead of generating a random value on every page load.
 
 ---
