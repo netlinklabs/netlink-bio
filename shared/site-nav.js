@@ -20,6 +20,9 @@
 
   const LOGO_LIGHT = 'https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png';
   const LOGIN_URL = 'https://netlink-bio.vercel.app/login.html';
+  // Temporary: the app isn't live yet, so the primary "Get Started Free" CTA
+  // points to the coming-soon page instead of login. "Login" links are unaffected.
+  const APP_URL = 'app.html';
 
   const headerHTML = `
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -36,7 +39,7 @@
           <a href="${LOGIN_URL}">Login</a>
         </nav>
         <div class="header-cta">
-          <a href="${LOGIN_URL}" class="btn btn-primary">Get Started Free</a>
+          <a href="${APP_URL}" class="btn btn-primary">Get Started Free</a>
         </div>
         <button class="menu-toggle" id="siteMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="siteMobileNav">
           <span></span><span></span><span></span>

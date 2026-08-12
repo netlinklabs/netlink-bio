@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coming Soon — Netlink</title>
+  <meta name="description" content="Netlink is coming — a unified home for digital identity, payments, and Web3 access. The app is currently in development.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://netlink.bio/app.html">
+  <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="shared/site-nav.css">
+  <style>
+    .gradient-text {
+      background: linear-gradient(135deg, #2dd4bf, #3b82f6, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    @keyframes bannerFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-14px); }
+    }
+    @keyframes bannerGlow {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.08); }
+    }
+    .app-banner-float { animation: bannerFloat 5s ease-in-out infinite; }
+    .app-banner-glow { animation: bannerGlow 5s ease-in-out infinite; }
+  </style>
+</head>
+<body class="font-inter text-slate-300 antialiased bg-slate-900">
+
+  <!-- Navbar -->
+  <div id="site-header"></div>
+
+  <main>
+    <!-- Hero -->
+    <section class="relative flex items-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden py-20 md:py-28">
+      <div class="absolute inset-0">
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+      </div>
+      <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-medium mb-8 backdrop-blur-sm">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-teal-400"></span>
+          </span>
+          In Development
+        </span>
+
+        <div class="relative max-w-md mx-auto mb-10">
+          <div class="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-blue-600/20 blur-3xl rounded-full app-banner-glow"></div>
+          <img src="assets/linkbio-banner.png" alt="Netlink" class="relative w-full h-auto rounded-2xl app-banner-float">
+        </div>
+
+        <h1 class="font-poppins text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight leading-tight">
+          Building the Future of<br><span class="gradient-text">Digital Identity</span>
+        </h1>
+        <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          Netlink is coming — a unified home for your digital identity, payments, and Web3 access. We're heads-down building it right.
+        </p>
+
+        <div class="inline-flex flex-col items-center gap-2">
+          <p class="text-teal-400 font-semibold text-sm sm:text-base">Finalization targeted for Q3 2026*</p>
+          <p class="text-slate-500 text-xs italic">*Subject to development milestones and system readiness.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ecosystem Pillars -->
+    <section class="py-20 lg:py-24 bg-slate-900 border-t border-slate-800/60">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="font-poppins text-3xl sm:text-4xl font-bold text-white mb-4">The Netlink Ecosystem</h2>
+          <p class="text-slate-400 max-w-2xl mx-auto">Three connected pillars, one trusted identity.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+          <!-- Netlink -->
+          <a href="https://docs.netlinktoken.com" target="_blank" rel="noopener" class="group relative block bg-slate-800/50 rounded-3xl p-8 border border-slate-700/50 hover:border-teal-500/40 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-500/10 to-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 transition-transform group-hover:scale-150 duration-700"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center mb-6 shadow-lg shadow-teal-500/20 group-hover:shadow-teal-500/40 transition-shadow duration-300">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+              </div>
+              <h3 class="font-poppins text-xl font-bold text-white mb-3">Netlink</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-5">Link in Bio, Digital CV, and Business Page — one trusted profile for everything you do online.</p>
+              <span class="inline-flex items-center gap-1.5 text-teal-400 text-sm font-semibold">
+                Learn more
+                <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+              </span>
+            </div>
+          </a>
+          <!-- Netlink Pay -->
+          <a href="https://docs.netlinktoken.com" target="_blank" rel="noopener" class="group relative block bg-slate-800/50 rounded-3xl p-8 border border-slate-700/50 hover:border-teal-500/40 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-500/10 to-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 transition-transform group-hover:scale-150 duration-700"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center mb-6 shadow-lg shadow-teal-500/20 group-hover:shadow-teal-500/40 transition-shadow duration-300">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+              </div>
+              <h3 class="font-poppins text-xl font-bold text-white mb-3">Netlink Pay</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-5">An embedded crypto wallet, built directly into Netlink for everyday payments — no separate app required.</p>
+              <span class="inline-flex items-center gap-1.5 text-teal-400 text-sm font-semibold">
+                Learn more
+                <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+              </span>
+            </div>
+          </a>
+          <!-- NET Token -->
+          <a href="https://netlinktoken.com/whitepaper.html" target="_blank" rel="noopener" class="group relative block bg-slate-800/50 rounded-3xl p-8 border border-slate-700/50 hover:border-teal-500/40 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-500/10 to-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 transition-transform group-hover:scale-150 duration-700"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center mb-6 shadow-lg shadow-teal-500/20 group-hover:shadow-teal-500/40 transition-shadow duration-300">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <h3 class="font-poppins text-xl font-bold text-white mb-3">NET Token</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-5">Netlink Ecosystem Token, a utility token on Polygon PoS powering access, rewards, and payments.</p>
+              <span class="inline-flex items-center gap-1.5 text-teal-400 text-sm font-semibold">
+                Learn more
+                <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+              </span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Secondary CTA -->
+    <section class="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-800/60 relative overflow-hidden">
+      <div class="absolute inset-0">
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+      </div>
+      <div class="relative max-w-3xl mx-auto px-4 text-center">
+        <h2 class="font-poppins text-2xl sm:text-3xl font-bold text-white mb-4">Want to Know More Before We Launch?</h2>
+        <p class="text-slate-400 mb-10">Read the technical details, or follow the documentation for the latest updates.</p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+          <a href="https://netlinktoken.com/whitepaper.html" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-teal-500 to-blue-600 text-white font-semibold hover:shadow-2xl hover:shadow-teal-500/30 transition-all duration-300 transform hover:-translate-y-1">
+            Read the Whitepaper
+          </a>
+          <a href="https://docs.netlinktoken.com" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-8 py-4 rounded-full border border-slate-600 text-slate-300 font-semibold hover:border-teal-500/50 hover:text-teal-400 transition-all duration-300">
+            View Documentation
+          </a>
+        </div>
+
+        <p class="text-slate-500 text-sm mb-5">Follow us for the latest updates</p>
+        <div class="flex items-center justify-center gap-4">
+          <a href="https://t.me/netlinktoken" target="_blank" rel="noopener" aria-label="Telegram" class="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-teal-500/20 transition-colors duration-300 group">
+            <svg class="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+          </a>
+          <a href="https://twitter.com/netlinktoken" target="_blank" rel="noopener" aria-label="X / Twitter" class="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-teal-500/20 transition-colors duration-300 group">
+            <svg class="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="https://instagram.com/netlinktoken" target="_blank" rel="noopener" aria-label="Instagram" class="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-teal-500/20 transition-colors duration-300 group">
+            <svg class="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <div id="site-footer"></div>
+
+  <script src="shared/site-nav.js"></script>
+</body>
+</html>
