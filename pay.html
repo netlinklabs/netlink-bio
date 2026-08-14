@@ -344,6 +344,9 @@
         .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
         .gas-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
         html.dark .gas-warning { background: rgba(252,211,77,0.1); border-color: rgba(252,211,77,0.3); color: #fcd34d; }
+
+        .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="min-h-screen">
@@ -374,42 +377,36 @@
     <div id="toast" class="toast">Saved successfully!</div>
 
     <main class="px-4 pt-4 pb-8 lg:px-8 max-w-md mx-auto">
-        <!-- No-wallet empty state -->
-        <div id="noWalletState" class="hidden card rounded-2xl p-8 mb-5 text-center">
-            <i data-lucide="sparkles" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
-            <p class="text-sm text-secondary mb-4">You don't have a Netlink Pay wallet yet. Create one instantly with your Google account.</p>
-            <button onclick="openCreateWalletModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">
-                <i data-lucide="wallet" class="w-4 h-4"></i> Create Wallet
-            </button>
+        <!-- USDC Premium Card -->
+        <div class="usdc-card p-6 lg:p-8 mb-4 text-white relative">
+            <div class="relative z-10">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <p class="text-white font-semibold text-lg">USDC Balance</p>
+                        <p class="text-white/60 text-xs">USDC Coin (Polygon)</p>
+                    </div>
+                    <img id="usdcCardLogo" src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-16 w-auto opacity-90">
+                </div>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
+                    </div>
+                    <div>
+                        <p id="balanceUsdc" class="text-4xl font-bold tracking-tight">0.00</p>
+                        <p id="balanceUsdcLocal" class="text-white/80 text-base font-semibold mt-0.5 hidden"></p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <p id="cardIdDisplay" class="text-white/70 text-xs font-mono">ID: NET-000000000000</p>
+                    <span id="cardTierBadge" class="hidden tier-badge px-4 py-1.5 rounded-full text-xs font-semibold text-white">Basic</span>
+                    <button id="cardConnectBtn" onclick="openCreateWalletModal()" class="hidden inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition">
+                        <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div id="walletContent">
-            <!-- USDC Premium Card -->
-            <div class="usdc-card p-6 lg:p-8 mb-4 text-white relative">
-                <div class="relative z-10">
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <p class="text-white font-semibold text-lg">USDC Balance</p>
-                            <p class="text-white/60 text-xs">USDC Coin (Polygon)</p>
-                        </div>
-                        <img id="usdcCardLogo" src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-16 w-auto opacity-90">
-                    </div>
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
-                        </div>
-                        <div>
-                            <p id="balanceUsdc" class="text-4xl font-bold tracking-tight">0.00</p>
-                            <p id="balanceUsdcLocal" class="text-white/80 text-base font-semibold mt-0.5 hidden"></p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <p id="cardIdDisplay" class="text-white/70 text-xs font-mono">ID: NET-000000000000</p>
-                        <span id="cardTierBadge" class="tier-badge px-4 py-1.5 rounded-full text-xs font-semibold text-white">Basic</span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Wallet Address Bar -->
             <div id="deletionPendingBanner" class="deletion-banner hidden">
                 <i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline-block mr-1"></i>
@@ -670,10 +667,41 @@
         <div class="modal-box text-center">
             <button class="modal-close" onclick="closeCreateWalletModal()">&times;</button>
             <i data-lucide="sparkles" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
-            <h3 class="font-semibold text-primary text-lg mb-2">Create Your Wallet</h3>
-            <p class="text-sm text-secondary mb-5">Choose a Google account to create your Netlink Pay wallet instantly.</p>
+            <h3 class="font-semibold text-primary text-lg mb-2">Connect Your Wallet</h3>
+            <p class="text-sm text-secondary mb-5">Sign in with Google, or use email if Google isn't available. Returning users land on the same wallet either way.</p>
             <div id="createWalletGoogleWrap" class="flex items-center justify-center mb-3"></div>
-            <p id="createWalletStatus" class="text-xs text-muted"></p>
+            <p id="createWalletStatus" class="text-xs text-muted mb-3"></p>
+
+            <div class="flex items-center gap-3 my-4">
+                <div class="flex-1 h-px border-t border-subtle"></div>
+                <span class="text-xs text-muted">or</span>
+                <div class="flex-1 h-px border-t border-subtle"></div>
+            </div>
+
+            <div id="createWalletEmailStep" class="text-left">
+                <label class="text-xs font-medium text-secondary block mb-1.5">Email address</label>
+                <input id="createWalletEmailInput" type="email" placeholder="you@example.com"
+                    class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-3">
+                <button id="createWalletEmailBtn" onclick="startEmailWalletConnect()"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
+                    <span id="createWalletEmailBtnText">Continue with email</span>
+                </button>
+                <p id="createWalletEmailError" class="text-xs text-red-500 mt-2 hidden"></p>
+            </div>
+
+            <div id="createWalletOtpStep" class="hidden text-left">
+                <label class="text-xs font-medium text-secondary block mb-1.5">Enter the 6-digit code sent to <span id="createWalletOtpEmail" class="text-primary font-medium"></span></label>
+                <input id="createWalletOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+                    class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary text-center tracking-[0.4em] font-semibold mb-3">
+                <button id="createWalletOtpBtn" onclick="confirmEmailWalletConnect()"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
+                    <span id="createWalletOtpBtnText">Confirm</span>
+                </button>
+                <button type="button" onclick="resetEmailWalletConnect()" class="w-full text-center text-xs text-muted mt-3 hover:text-secondary transition">
+                    Use a different email
+                </button>
+                <p id="createWalletOtpError" class="text-xs text-red-500 mt-2 hidden"></p>
+            </div>
         </div>
     </div>
 
@@ -903,6 +931,12 @@
             }
         }
 
+        function updateCardConnectState() {
+            document.getElementById('cardTierBadge').classList.toggle('hidden', !currentWalletAddress);
+            document.getElementById('cardConnectBtn').classList.toggle('hidden', !!currentWalletAddress);
+            if (window.lucide) lucide.createIcons();
+        }
+
         function formatNetId(rawId) {
             if (!rawId) return 'ID: —';
             const digits = rawId.replace(/^NET/i, '');
@@ -934,16 +968,15 @@
             currentLocalCurrency = (data.local_currency || 'USD').toUpperCase();
             window.currentLocalCurrency = currentLocalCurrency;
             if (currentWalletAddress) {
-                document.getElementById('noWalletState').classList.add('hidden');
                 document.getElementById('walletContent').classList.remove('hidden');
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
                 updateRampIframe(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
-                document.getElementById('noWalletState').classList.remove('hidden');
                 document.getElementById('walletContent').classList.add('hidden');
             }
+            updateCardConnectState();
 
             if (window.lucide) lucide.createIcons();
 
@@ -1188,7 +1221,7 @@
             }
         }
 
-        // ---- Create Wallet (from noWalletState, no dashboard round-trip) ----
+        // ---- Create/Connect Wallet ----
         // No signature verification needed here -- sequenceWaas.signIn() below
         // already validates the token is genuine; we're only reading a field
         // for display purposes, not making an authorization decision with it.
@@ -1209,6 +1242,7 @@
         window.openCreateWalletModal = function () {
             document.getElementById('createWalletStatus').textContent = '';
             renderCreateWalletGoogleButton();
+            resetEmailWalletConnect();
             document.getElementById('createWalletModal').classList.add('active');
         };
         window.closeCreateWalletModal = function () {
@@ -1236,6 +1270,43 @@
             });
         }
 
+        // Shared by both the Google flow and the Email OTP flow below — same
+        // wallet-linking logic applies whether this is a brand-new wallet or
+        // a returning user signing back into an existing one (including a
+        // wallet whose email was federated later via recovery.html).
+        async function finalizeWalletConnection(walletAddress, recoveryEmail) {
+            // Never overwrite an existing wallet_address — only write if null.
+            const { data: existing, error: fetchErr } = await supabaseClient
+                .from('profiles').select('wallet_address').eq('id', currentUser.id).single();
+            if (fetchErr) throw fetchErr;
+
+            if (!existing.wallet_address) {
+                const { error: saveErr } = await supabaseClient
+                    .from('profiles').update({ wallet_address: walletAddress }).eq('id', currentUser.id);
+                if (saveErr) throw saveErr;
+
+                if (recoveryEmail) {
+                    const { error: emailErr } = await supabaseClient
+                        .from('profiles').update({ wallet_google_email: recoveryEmail }).eq('id', currentUser.id);
+                    if (emailErr) console.error('Failed to save wallet_google_email:', emailErr);
+                }
+            }
+
+            const finalAddress = existing.wallet_address || walletAddress;
+            currentWalletAddress = finalAddress;
+            window.currentWalletAddress = finalAddress;
+
+            document.getElementById('walletContent').classList.remove('hidden');
+            document.getElementById('walletAddressDisplay').textContent = truncateAddress(finalAddress);
+            updateCardConnectState();
+            updateRampIframe(finalAddress);
+            fetchWalletBalances(finalAddress);
+            if (window.lucide) lucide.createIcons();
+
+            closeCreateWalletModal();
+            showToast('Wallet connected!');
+        }
+
         async function onCreateWalletCredential(response) {
             const statusEl = document.getElementById('createWalletStatus');
             const container = document.getElementById('createWalletGoogleWrap');
@@ -1250,37 +1321,8 @@
                     throw new Error('Invalid wallet address received');
                 }
 
-                // Never overwrite an existing wallet_address — only write if null.
-                const { data: existing, error: fetchErr } = await supabaseClient
-                    .from('profiles').select('wallet_address').eq('id', currentUser.id).single();
-                if (fetchErr) throw fetchErr;
-
-                if (!existing.wallet_address) {
-                    const { error: saveErr } = await supabaseClient
-                        .from('profiles').update({ wallet_address: walletAddress }).eq('id', currentUser.id);
-                    if (saveErr) throw saveErr;
-
-                    const googleEmail = decodeGoogleIdTokenEmail(idToken);
-                    if (googleEmail) {
-                        const { error: emailErr } = await supabaseClient
-                            .from('profiles').update({ wallet_google_email: googleEmail }).eq('id', currentUser.id);
-                        if (emailErr) console.error('Failed to save wallet_google_email:', emailErr);
-                    }
-                }
-
-                const finalAddress = existing.wallet_address || walletAddress;
-                currentWalletAddress = finalAddress;
-                window.currentWalletAddress = finalAddress;
-
-                document.getElementById('noWalletState').classList.add('hidden');
-                document.getElementById('walletContent').classList.remove('hidden');
-                document.getElementById('walletAddressDisplay').textContent = truncateAddress(finalAddress);
-                updateRampIframe(finalAddress);
-                fetchWalletBalances(finalAddress);
-                if (window.lucide) lucide.createIcons();
-
-                closeCreateWalletModal();
-                showToast('Wallet created!');
+                const googleEmail = decodeGoogleIdTokenEmail(idToken);
+                await finalizeWalletConnection(walletAddress, googleEmail);
             } catch (err) {
                 console.error('Wallet creation error:', err);
 
@@ -1290,7 +1332,7 @@
                 // before showing a "failed" toast.
                 if (window.currentWalletAddress && /^0x[a-fA-F0-9]{40}$/.test(window.currentWalletAddress)) {
                     closeCreateWalletModal();
-                    showToast('Wallet created!');
+                    showToast('Wallet connected!');
                     return;
                 }
 
@@ -1299,6 +1341,107 @@
                 showToast('Could not create wallet. Please try again.');
             }
         }
+
+        // ---- Email OTP flow (alternative to Google) ----
+        // Same underlying wallet as Google: sequenceWaas.initAuth({ email })
+        // issues a challenge, sequenceWaas.signIn(challenge.withAnswer(code))
+        // resolves it to the (possibly pre-existing, federated) wallet.
+        let pendingConnectChallenge = null;
+        let pendingConnectEmail = null;
+
+        window.startEmailWalletConnect = async function () {
+            const emailInput = document.getElementById('createWalletEmailInput');
+            const errorEl = document.getElementById('createWalletEmailError');
+            const btn = document.getElementById('createWalletEmailBtn');
+            const btnText = document.getElementById('createWalletEmailBtnText');
+            errorEl.classList.add('hidden');
+
+            const email = emailInput.value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.textContent = 'Enter a valid email address.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                pendingConnectChallenge = await sequenceWaas.initAuth({ email });
+                pendingConnectEmail = email;
+                document.getElementById('createWalletOtpEmail').textContent = email;
+                document.getElementById('createWalletEmailStep').classList.add('hidden');
+                document.getElementById('createWalletOtpStep').classList.remove('hidden');
+                document.getElementById('createWalletOtpInput').focus();
+            } catch (err) {
+                console.error('initAuth failed:', err);
+                errorEl.textContent = 'Could not send code. Please check the email and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Continue with email';
+            }
+        };
+
+        window.confirmEmailWalletConnect = async function () {
+            const codeInput = document.getElementById('createWalletOtpInput');
+            const errorEl = document.getElementById('createWalletOtpError');
+            const btn = document.getElementById('createWalletOtpBtn');
+            const btnText = document.getElementById('createWalletOtpBtnText');
+            errorEl.classList.add('hidden');
+
+            const code = codeInput.value.trim();
+            if (!code || code.length < 6) {
+                errorEl.textContent = 'Enter the 6-digit code from your email.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!pendingConnectChallenge) {
+                errorEl.textContent = 'Your code expired. Please request a new one.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                const waasResult = await sequenceWaas.signIn(pendingConnectChallenge.withAnswer(code), 'Netlink Pay');
+                if (!waasResult) throw new Error('No response from wallet service');
+                const walletAddress = waasResult.wallet || waasResult;
+                if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
+                    throw new Error('Invalid wallet address received');
+                }
+
+                const email = pendingConnectEmail;
+                pendingConnectChallenge = null;
+                pendingConnectEmail = null;
+                await finalizeWalletConnection(walletAddress, email);
+            } catch (err) {
+                console.error('signIn (email OTP) failed:', err);
+
+                if (window.currentWalletAddress && /^0x[a-fA-F0-9]{40}$/.test(window.currentWalletAddress)) {
+                    closeCreateWalletModal();
+                    showToast('Wallet connected!');
+                    return;
+                }
+
+                errorEl.textContent = 'That code didn\'t work. Please check it and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Confirm';
+            }
+        };
+
+        window.resetEmailWalletConnect = function () {
+            pendingConnectChallenge = null;
+            pendingConnectEmail = null;
+            document.getElementById('createWalletEmailInput').value = '';
+            document.getElementById('createWalletOtpInput').value = '';
+            document.getElementById('createWalletEmailError').classList.add('hidden');
+            document.getElementById('createWalletOtpError').classList.add('hidden');
+            document.getElementById('createWalletOtpStep').classList.add('hidden');
+            document.getElementById('createWalletEmailStep').classList.remove('hidden');
+        };
 
         const TOKEN_CONFIG = {
             NET: { address: '0x0e893B239094A5c573373d44CF1C7D03576b95cb', decimals: 18 },
