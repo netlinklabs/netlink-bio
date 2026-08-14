@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Your Wallet — Netlink Pay</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        .hover-surface:hover { background: rgba(0,0,0,0.03); }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .hover-surface:hover { background: rgba(255,255,255,0.05) !important; }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 24px; right: 20px; left: 20px; margin: 0 auto; max-width: 320px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.error { background: #ef4444; }
+
+        .method-row { display: flex; align-items: center; justify-content: between; gap: 12px; padding: 14px 16px; border-radius: 12px; }
+
+        .otp-input { letter-spacing: 0.4em; text-align: center; font-size: 1.25rem; font-weight: 600; }
+
+        .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Saved</div>
+
+    <header class="max-w-md mx-auto px-4 pt-5 pb-2 flex items-center gap-3">
+        <a href="pay.html" class="w-9 h-9 flex items-center justify-center rounded-full hover-surface transition">
+            <i data-lucide="arrow-left" class="w-5 h-5 text-secondary"></i>
+        </a>
+        <h1 class="text-lg font-semibold text-primary">Secure Your Wallet</h1>
+    </header>
+
+    <main class="px-4 pb-10 max-w-md mx-auto">
+
+        <!-- Intro -->
+        <div class="card rounded-2xl p-5 mb-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-blue-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-primary mb-1">Add a backup sign-in method</p>
+                    <p class="text-xs text-secondary leading-relaxed">
+                        Your wallet currently only opens with Google. If you ever lose access to your Google account, or Google is temporarily unavailable, you won't be able to sign in. Adding an email backup gives you a second way in — same wallet, same address, same balance.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current sign-in methods -->
+        <div class="card rounded-2xl p-5 mb-4">
+            <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Sign-in methods</p>
+            <div id="methodsList" class="flex flex-col gap-2">
+                <div class="method-row bg-surface">
+                    <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 border border-subtle">
+                        <div class="w-4 h-4 rounded-full border-2 border-slate-300 border-t-blue-500 animate-spin"></div>
+                    </div>
+                    <p class="text-sm text-muted">Checking your account...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add email backup -->
+        <div id="addEmailCard" class="card rounded-2xl p-5 mb-4">
+            <p class="text-sm font-semibold text-primary mb-1">Add email backup</p>
+            <p class="text-xs text-secondary mb-4">We'll send a one-time code to confirm it's you.</p>
+
+            <div id="emailStep">
+                <label class="text-xs font-medium text-muted mb-1.5 block">Email address</label>
+                <input id="recoveryEmailInput" type="email" placeholder="you@example.com"
+                    class="w-full px-4 py-3 rounded-xl bg-surface border border-subtle text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                <button id="sendCodeBtn" onclick="sendRecoveryCode()"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
+                    <span id="sendCodeBtnText">Send code</span>
+                </button>
+                <p id="emailStepError" class="text-xs text-red-500 mt-2 hidden"></p>
+            </div>
+
+            <div id="codeStep" class="hidden">
+                <label class="text-xs font-medium text-muted mb-1.5 block">Enter the 6-digit code sent to <span id="codeStepEmail" class="text-primary font-medium"></span></label>
+                <input id="recoveryCodeInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+                    class="otp-input w-full px-4 py-3 rounded-xl bg-surface border border-subtle text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                <button id="confirmCodeBtn" onclick="confirmRecoveryCode()"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
+                    <span id="confirmCodeBtnText">Confirm</span>
+                </button>
+                <button onclick="resetEmailStep()" class="w-full text-center text-xs text-muted mt-3 hover:text-secondary transition">
+                    Use a different email
+                </button>
+                <p id="codeStepError" class="text-xs text-red-500 mt-2 hidden"></p>
+            </div>
+        </div>
+
+        <!-- Already linked state -->
+        <div id="alreadyLinkedCard" class="hidden card rounded-2xl p-5 mb-4 text-center">
+            <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500 mx-auto mb-2"></i>
+            <p class="text-sm font-semibold text-primary">Email backup is active</p>
+            <p class="text-xs text-secondary mt-1">You can sign in with Google or your email — both open the same wallet.</p>
+        </div>
+
+        <p class="text-[11px] text-muted text-center leading-relaxed px-4">
+            Adding a backup method never changes your wallet address or moves your funds. It only adds another way to sign in.
+        </p>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
+
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
+        const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
+        const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
+
+        const sequenceWaas = new SequenceWaaS({
+            network: 'polygon',
+            projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
+            waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
+        });
+
+        let currentUser = null;
+        let pendingChallenge = null;
+        let pendingEmail = null;
+
+        function showToast(msg, isError) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.toggle('error', !!isError);
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3200);
+        }
+        function showAuthError(msg) {
+            document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
+        }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+        // ---- App auth (Supabase) gate ----
+        async function checkAppAuth() {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (error) throw error;
+            if (!session) { window.location.href = 'login.html'; return null; }
+            currentUser = session.user;
+            return session;
+        }
+
+        // ---- Wallet session (Sequence WaaS) ----
+        // Must be signed in to sequenceWaas (an active embedded wallet
+        // session) to call initAuth/linkAccount. If there's no active
+        // Sequence session in this browser, send the person to sign in
+        // via pay.html first.
+        async function ensureWalletSession() {
+            const isSignedIn = await sequenceWaas.isSignedIn();
+            if (!isSignedIn) {
+                document.getElementById('authGateText').innerHTML =
+                    'Please <a href="pay.html" class="text-blue-500 underline">open Netlink Pay</a> and sign in first, then come back here.';
+                document.getElementById('authSpinner').classList.add('hidden');
+                return false;
+            }
+            return true;
+        }
+
+        async function renderMethods() {
+            const list = document.getElementById('methodsList');
+            try {
+                const response = await sequenceWaas.listAccounts();
+                const accounts = response.accounts || [];
+
+                const hasGoogle = accounts.some(a => (a.type || '').toLowerCase().includes('oidc') || (a.issuer || '').toLowerCase().includes('google'));
+                const hasEmail = accounts.some(a => (a.type || '').toLowerCase().includes('email'));
+
+                list.innerHTML = '';
+                list.innerHTML += methodRow('mail', 'Google', hasGoogle);
+                list.innerHTML += methodRow('at-sign', 'Email', hasEmail, accounts.find(a => (a.type || '').toLowerCase().includes('email'))?.issuer);
+
+                if (hasEmail) {
+                    document.getElementById('addEmailCard').classList.add('hidden');
+                    document.getElementById('alreadyLinkedCard').classList.remove('hidden');
+                }
+                if (window.lucide) lucide.createIcons();
+            } catch (err) {
+                console.error('Failed to list accounts:', err);
+                list.innerHTML = '<p class="text-xs text-red-500">Could not load your sign-in methods.</p>';
+            }
+        }
+
+        function methodRow(icon, label, active, sub) {
+            return `
+                <div class="method-row ${active ? 'bg-emerald-500/10' : 'bg-surface'}">
+                    <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 border border-subtle">
+                        <i data-lucide="${icon}" class="w-4 h-4 text-secondary"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-primary">${label}</p>
+                        ${sub ? `<p class="text-xs text-muted truncate">${sub}</p>` : ''}
+                    </div>
+                    ${active
+                        ? '<span class="text-xs font-medium text-emerald-600 flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5"></i>Active</span>'
+                        : '<span class="text-xs text-muted">Not set up</span>'}
+                </div>`;
+        }
+
+        // ---- Step 1: send OTP ----
+        window.sendRecoveryCode = async function () {
+            const emailInput = document.getElementById('recoveryEmailInput');
+            const errorEl = document.getElementById('emailStepError');
+            const btn = document.getElementById('sendCodeBtn');
+            const btnText = document.getElementById('sendCodeBtnText');
+            errorEl.classList.add('hidden');
+
+            const email = emailInput.value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.textContent = 'Enter a valid email address.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                pendingChallenge = await sequenceWaas.initAuth({ email });
+                pendingEmail = email;
+                document.getElementById('codeStepEmail').textContent = email;
+                document.getElementById('emailStep').classList.add('hidden');
+                document.getElementById('codeStep').classList.remove('hidden');
+                document.getElementById('recoveryCodeInput').focus();
+            } catch (err) {
+                console.error('initAuth failed:', err);
+                errorEl.textContent = 'Could not send code. Please check the email and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Send code';
+            }
+        };
+
+        // ---- Step 2: confirm OTP and link ----
+        window.confirmRecoveryCode = async function () {
+            const codeInput = document.getElementById('recoveryCodeInput');
+            const errorEl = document.getElementById('codeStepError');
+            const btn = document.getElementById('confirmCodeBtn');
+            const btnText = document.getElementById('confirmCodeBtnText');
+            errorEl.classList.add('hidden');
+
+            const code = codeInput.value.trim();
+            if (!code || code.length < 6) {
+                errorEl.textContent = 'Enter the 6-digit code from your email.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!pendingChallenge) {
+                errorEl.textContent = 'Your code expired. Please request a new one.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                await sequenceWaas.linkAccount(pendingChallenge.withAnswer(code));
+
+                // Best-effort: keep Supabase profile in sync for support/reference.
+                try {
+                    await supabaseClient.from('profiles')
+                        .update({ wallet_recovery_email: pendingEmail })
+                        .eq('id', currentUser.id);
+                } catch (syncErr) {
+                    console.error('Non-critical: failed to sync recovery email to profile:', syncErr);
+                }
+
+                showToast('Email backup added!');
+                pendingChallenge = null;
+                await renderMethods();
+            } catch (err) {
+                console.error('linkAccount failed:', err);
+                errorEl.textContent = 'That code didn\'t work. Please check it and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Confirm';
+            }
+        };
+
+        window.resetEmailStep = function () {
+            pendingChallenge = null;
+            pendingEmail = null;
+            document.getElementById('recoveryEmailInput').value = '';
+            document.getElementById('recoveryCodeInput').value = '';
+            document.getElementById('emailStepError').classList.add('hidden');
+            document.getElementById('codeStepError').classList.add('hidden');
+            document.getElementById('codeStep').classList.add('hidden');
+            document.getElementById('emailStep').classList.remove('hidden');
+        };
+
+        // ---- Boot ----
+        (async function init() {
+            try {
+                await checkAppAuth();
+                if (!currentUser) return;
+
+                const hasWalletSession = await ensureWalletSession();
+                if (!hasWalletSession) return;
+
+                document.getElementById('authGate').style.display = 'none';
+                await renderMethods();
+                if (window.lucide) lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        })();
+    </script>
+</body>
+</html>
