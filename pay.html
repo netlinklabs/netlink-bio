@@ -1342,12 +1342,19 @@
             }
         }
 
-        // ---- Email OTP flow (alternative to Google) ----
-        // Same underlying wallet as Google: sequenceWaas.initAuth({ email })
-        // issues a challenge, sequenceWaas.signIn(challenge.withAnswer(code))
-        // resolves it to the (possibly pre-existing, federated) wallet.
-        let pendingConnectChallenge = null;
+        // ---- Email OTP flow (Sequence WaaS signIn + onEmailAuthCodeRequired) ----
+        // IMPORTANT: sequenceWaas.signIn({ email }) internally sends the OTP and
+        // triggers onEmailAuthCodeRequired with a respondWithCode(code) function.
+        // The original signIn() promise stays pending until respondWithCode()
+        // resolves. This is NOT the initAuth()/challenge.withAnswer() pattern --
+        // that one is only for linkAccount() / account federation (recovery.html).
+        let pendingEmailAuthCode = null;      // respondWithCode callback from Sequence
+        let pendingEmailSignInPromise = null; // the outstanding signIn() promise
         let pendingConnectEmail = null;
+
+        sequenceWaas.onEmailAuthCodeRequired(async (respondWithCode) => {
+            pendingEmailAuthCode = respondWithCode;
+        });
 
         window.startEmailWalletConnect = async function () {
             const emailInput = document.getElementById('createWalletEmailInput');
@@ -1366,14 +1373,29 @@
             btn.disabled = true;
             btnText.innerHTML = '<span class="spinner"></span>';
             try {
-                pendingConnectChallenge = await sequenceWaas.initAuth({ email });
                 pendingConnectEmail = email;
+                pendingEmailAuthCode = null;
+                // Fire signIn -- it sends the OTP email and will invoke
+                // onEmailAuthCodeRequired above. Deliberately not awaited fully
+                // here; we await it later in confirmEmailWalletConnect(), once
+                // the user has submitted the code.
+                pendingEmailSignInPromise = sequenceWaas.signIn({ email }, 'Netlink Pay');
+
+                // Give the SDK a moment to fire the callback and populate
+                // pendingEmailAuthCode before revealing the code-entry step.
+                for (let i = 0; i < 30 && !pendingEmailAuthCode; i++) {
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                }
+                if (!pendingEmailAuthCode) {
+                    throw new Error('Did not receive an OTP request from the wallet service.');
+                }
+
                 document.getElementById('createWalletOtpEmail').textContent = email;
                 document.getElementById('createWalletEmailStep').classList.add('hidden');
                 document.getElementById('createWalletOtpStep').classList.remove('hidden');
                 document.getElementById('createWalletOtpInput').focus();
             } catch (err) {
-                console.error('initAuth failed:', err);
+                console.error('signIn (email OTP) start failed:', err);
                 errorEl.textContent = 'Could not send code. Please check the email and try again.';
                 errorEl.classList.remove('hidden');
             } finally {
@@ -1395,7 +1417,7 @@
                 errorEl.classList.remove('hidden');
                 return;
             }
-            if (!pendingConnectChallenge) {
+            if (!pendingEmailAuthCode || !pendingEmailSignInPromise) {
                 errorEl.textContent = 'Your code expired. Please request a new one.';
                 errorEl.classList.remove('hidden');
                 return;
@@ -1404,7 +1426,14 @@
             btn.disabled = true;
             btnText.innerHTML = '<span class="spinner"></span>';
             try {
-                const waasResult = await sequenceWaas.signIn(pendingConnectChallenge.withAnswer(code), 'Netlink Pay');
+                // Submits the code to Sequence -- may reject on a wrong code and
+                // can be retried (per Sequence docs, up to 3 times) without
+                // restarting the whole flow.
+                await pendingEmailAuthCode(code);
+
+                // Now that the code was accepted, the original signIn() promise
+                // resolves with the actual wallet result.
+                const waasResult = await pendingEmailSignInPromise;
                 if (!waasResult) throw new Error('No response from wallet service');
                 const walletAddress = waasResult.wallet || waasResult;
                 if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
@@ -1412,11 +1441,12 @@
                 }
 
                 const email = pendingConnectEmail;
-                pendingConnectChallenge = null;
+                pendingEmailAuthCode = null;
+                pendingEmailSignInPromise = null;
                 pendingConnectEmail = null;
                 await finalizeWalletConnection(walletAddress, email);
             } catch (err) {
-                console.error('signIn (email OTP) failed:', err);
+                console.error('signIn (email OTP) confirm failed:', err);
 
                 if (window.currentWalletAddress && /^0x[a-fA-F0-9]{40}$/.test(window.currentWalletAddress)) {
                     closeCreateWalletModal();
@@ -1424,7 +1454,7 @@
                     return;
                 }
 
-                errorEl.textContent = 'That code didn\'t work. Please check it and try again.';
+                errorEl.textContent = "That code didn't work. Please check it and try again.";
                 errorEl.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
@@ -1433,7 +1463,8 @@
         };
 
         window.resetEmailWalletConnect = function () {
-            pendingConnectChallenge = null;
+            pendingEmailAuthCode = null;
+            pendingEmailSignInPromise = null;
             pendingConnectEmail = null;
             document.getElementById('createWalletEmailInput').value = '';
             document.getElementById('createWalletOtpInput').value = '';
