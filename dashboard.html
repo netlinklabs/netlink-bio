@@ -111,43 +111,7 @@
                     <p class="text-xs text-muted">POL</p>
                 </div>
             </div>
-            <p id="walletTapHint" class="text-center text-xs text-muted mt-2">Tap below to connect</p>
-
-            <div onclick="toggleAccordion('accWalletDetails')" class="flex items-center gap-3 mt-2 py-2 cursor-pointer">
-                <div class="flex-1 border-t border-subtle"></div>
-                <div class="flex-shrink-0 w-9 h-9 rounded-full border border-subtle hover-surface flex items-center justify-center transition">
-                    <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 text-secondary" id="accWalletDetailsChevron"></i>
-                </div>
-                <div class="flex-1 border-t border-subtle"></div>
-            </div>
-
-            <div id="accWalletDetails" class="accordion-body pt-4">
-                <label class="text-sm font-medium text-secondary block mb-1.5">Your wallet address</label>
-                <input id="walletAddressInput" type="hidden" value="">
-                <div class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm mb-2 flex items-center justify-between gap-2">
-                    <span id="walletAddressText" class="font-mono text-muted truncate">Not connected</span>
-                    <button onclick="copyWalletAddress()" class="flex-shrink-0 p-1.5 hover-surface rounded-md transition text-secondary" title="Copy address">
-                        <i data-lucide="copy" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <button id="connectSmartWalletBtn" onclick="window.location.href='pay.html'" class="flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
-            <i data-lucide="wallet" class="w-4 h-4 flex-shrink-0"></i>
-            <span class="hidden sm:inline">Connect / Create Smart Wallet</span>
-            <span class="sm:hidden">Connect / Create</span>
-        </button>
-        <button id="disconnectWalletBtn" onclick="confirmDisconnectWallet()" class="hidden flex-1 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5 whitespace-nowrap">
-            <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
-            <span class="hidden sm:inline">Disconnect</span>
-            <span class="sm:hidden">Disconnect</span>
-        </button>
-    </div>
-                <div class="flex items-center mt-2">
-                    <button onclick="showToast('Coming soon')" class="text-xs text-blue-500 hover:underline flex items-center gap-1 flex-shrink-0">
-                        About wallet <i data-lucide="info" class="w-3 h-3"></i>
-                    </button>
-                </div>
-            </div>
+            <input id="walletAddressInput" type="hidden" value="">
 
     <!-- Connect Wallet Modal -->
     <div id="connectWalletModal" class="modal">
@@ -1745,25 +1709,29 @@ window.openNetlinkPay = openNetlinkPay;
             const hasAddress = !!address;
 
             if (hasAddress) {
-                textEl.textContent = truncateAddress(address);
-                textEl.classList.remove('text-muted');
-                textEl.classList.add('text-primary');
+                if (textEl) {
+                    textEl.textContent = truncateAddress(address);
+                    textEl.classList.remove('text-muted');
+                    textEl.classList.add('text-primary');
+                }
 
-                if(statusText) statusText.textContent = 'Status: Connected';
-                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
-                if(tapHint) tapHint.classList.add('hidden');
+                if (statusText) statusText.textContent = 'Status: Connected';
+                if (statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0';
+                if (tapHint) tapHint.classList.add('hidden');
 
                 // Show Disconnect, hide Connect
                 if (connectBtn) connectBtn.classList.add('hidden');
                 if (disconnectBtn) disconnectBtn.classList.remove('hidden');
             } else {
-                textEl.textContent = 'Not connected';
-                textEl.classList.add('text-muted');
-                textEl.classList.remove('text-primary');
+                if (textEl) {
+                    textEl.textContent = 'Not connected';
+                    textEl.classList.add('text-muted');
+                    textEl.classList.remove('text-primary');
+                }
 
-                if(statusText) statusText.textContent = 'Status: Not Connected';
-                if(statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
-                if(tapHint) tapHint.classList.remove('hidden');
+                if (statusText) statusText.textContent = 'Status: Not Connected';
+                if (statusDot) statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0';
+                if (tapHint) tapHint.classList.remove('hidden');
 
                 // Show Connect, hide Disconnect
                 if (connectBtn) connectBtn.classList.remove('hidden');
