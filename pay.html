@@ -398,9 +398,11 @@
                 </div>
                 <div class="flex items-center justify-between">
                     <p id="cardIdDisplay" class="text-white/70 text-xs font-mono">ID: NET-000000000000</p>
-                    <span id="cardTierBadge" class="hidden tier-badge px-4 py-1.5 rounded-full text-xs font-semibold text-white">Basic</span>
                     <button id="cardConnectBtn" onclick="openCreateWalletModal()" class="hidden inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition">
                         <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet
+                    </button>
+                    <button id="cardDisconnectBtn" onclick="openDisconnectWalletModal()" class="hidden inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Disconnect
                     </button>
                 </div>
             </div>
@@ -543,6 +545,13 @@
                     <i data-lucide="lock" class="w-8 h-8 text-muted mb-3"></i>
                     <p class="text-sm font-medium text-primary mb-1">Buy/Sell temporarily unavailable</p>
                     <p class="text-xs text-muted max-w-xs">The Alchemy Pay ramp also supports selling crypto to fiat, so it's disabled while your account deletion is pending. <a href="privacy.html" class="text-blue-500 underline">Cancel the request</a> to re-enable it.</p>
+                </div>
+                <div id="rampNotConnectedState" class="rounded-xl border border-subtle p-6 text-center" style="height: 520px; display: none; flex-direction: column; align-items: center; justify-content: center;">
+                    <i data-lucide="wallet" class="w-8 h-8 text-muted mb-3"></i>
+                    <p class="text-sm font-medium text-primary mb-1">Connect your wallet to buy crypto</p>
+                    <button onclick="openCreateWalletModal()" class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">
+                        <i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet
+                    </button>
                 </div>
                 <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by Alchemy Pay.</p>
             </div>
@@ -701,6 +710,26 @@
                     Use a different email
                 </button>
                 <p id="createWalletOtpError" class="text-xs text-red-500 mt-2 hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disconnect Wallet Modal -->
+    <div id="disconnectWalletModal" class="modal-overlay" onclick="if(event.target===this) closeDisconnectWalletModal()">
+        <div class="modal-box text-center">
+            <button class="modal-close" onclick="closeDisconnectWalletModal()">&times;</button>
+            <i data-lucide="log-out" class="w-8 h-8 text-red-500 mx-auto mb-3"></i>
+            <h3 class="font-semibold text-primary text-lg mb-2">Disconnect Wallet</h3>
+            <p class="text-sm text-secondary mb-4 text-left">
+                This unlinks your wallet from this account, but doesn't delete it. To use it again, reconnect with the same sign-in method you used originally (Google or email) — make sure you remember which one it was, since that's what brings you back to the same wallet.
+            </p>
+            <label class="flex items-start gap-2 text-left text-xs text-secondary mb-5">
+                <input id="disconnectConfirmCheckbox" type="checkbox" onchange="onDisconnectCheckboxChange()" class="mt-0.5">
+                <span>I understand, and I know which sign-in method to use to reconnect to this wallet later.</span>
+            </label>
+            <div class="flex gap-2">
+                <button onclick="closeDisconnectWalletModal()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                <button id="disconnectConfirmBtn" onclick="handleDisconnectWalletConfirm()" disabled class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition">Disconnect</button>
             </div>
         </div>
     </div>
@@ -921,19 +950,41 @@
                 if (error) { console.error('Failed to check deletion status:', error); return; }
                 window.hasPendingDeletion = !!(data && data.length);
                 document.getElementById('deletionPendingBanner').classList.toggle('hidden', !window.hasPendingDeletion);
-                // The ramp widget supports selling crypto to fiat too (not
-                // just buying), so it's blocked the same as Send/Swap --
-                // see rampBlockedState markup above.
-                document.getElementById('rampFrameWrap').style.display = window.hasPendingDeletion ? 'none' : 'block';
-                document.getElementById('rampBlockedState').style.display = window.hasPendingDeletion ? 'flex' : 'none';
+                updateRampVisibility();
             } catch (err) {
                 console.error('Failed to check deletion status:', err);
             }
         }
 
+        // The Buy/Sell ramp has three mutually exclusive states: the live
+        // iframe, blocked (account deletion pending -- the ramp also
+        // supports selling crypto to fiat, so it's gated the same as
+        // Send/Swap), or not-connected (no wallet linked yet).
+        function updateRampVisibility() {
+            const frameWrap = document.getElementById('rampFrameWrap');
+            const blocked = document.getElementById('rampBlockedState');
+            const notConnected = document.getElementById('rampNotConnectedState');
+            if (!frameWrap || !blocked || !notConnected) return;
+
+            if (window.hasPendingDeletion) {
+                frameWrap.style.display = 'none';
+                blocked.style.display = 'flex';
+                notConnected.style.display = 'none';
+            } else if (!currentWalletAddress) {
+                frameWrap.style.display = 'none';
+                blocked.style.display = 'none';
+                notConnected.style.display = 'flex';
+            } else {
+                frameWrap.style.display = 'block';
+                blocked.style.display = 'none';
+                notConnected.style.display = 'none';
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
         function updateCardConnectState() {
-            document.getElementById('cardTierBadge').classList.toggle('hidden', !currentWalletAddress);
             document.getElementById('cardConnectBtn').classList.toggle('hidden', !!currentWalletAddress);
+            document.getElementById('cardDisconnectBtn').classList.toggle('hidden', !currentWalletAddress);
             if (window.lucide) lucide.createIcons();
         }
 
@@ -953,14 +1004,6 @@
                 return;
             }
 
-            const tierKey = (data.tier || 'basic').toLowerCase();
-            const tierLabel = TIER_DISPLAY[tierKey];
-
-            const badge = document.getElementById('cardTierBadge');
-            Object.values(TIER_BADGE_CLASS).forEach(cls => badge.classList.remove(cls));
-            badge.classList.add(TIER_BADGE_CLASS[tierKey] || TIER_BADGE_CLASS.basic);
-            badge.textContent = tierLabel;
-
             document.getElementById('cardIdDisplay').textContent = formatNetId(data.net_id);
 
             currentWalletAddress = data.wallet_address || '';
@@ -968,15 +1011,14 @@
             currentLocalCurrency = (data.local_currency || 'USD').toUpperCase();
             window.currentLocalCurrency = currentLocalCurrency;
             if (currentWalletAddress) {
-                document.getElementById('walletContent').classList.remove('hidden');
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
                 updateRampIframe(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
             } else {
-                document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
-                document.getElementById('walletContent').classList.add('hidden');
+                document.getElementById('walletAddressDisplay').textContent = 'Not connected';
             }
             updateCardConnectState();
+            updateRampVisibility();
 
             if (window.lucide) lucide.createIcons();
 
@@ -1296,9 +1338,9 @@
             currentWalletAddress = finalAddress;
             window.currentWalletAddress = finalAddress;
 
-            document.getElementById('walletContent').classList.remove('hidden');
             document.getElementById('walletAddressDisplay').textContent = truncateAddress(finalAddress);
             updateCardConnectState();
+            updateRampVisibility();
             updateRampIframe(finalAddress);
             fetchWalletBalances(finalAddress);
             if (window.lucide) lucide.createIcons();
@@ -1306,6 +1348,56 @@
             closeCreateWalletModal();
             showToast('Wallet connected!');
         }
+
+        // ---- Disconnect Wallet ----
+        window.openDisconnectWalletModal = function () {
+            document.getElementById('disconnectConfirmCheckbox').checked = false;
+            document.getElementById('disconnectConfirmBtn').disabled = true;
+            document.getElementById('disconnectWalletModal').classList.add('active');
+        };
+        window.closeDisconnectWalletModal = function () {
+            document.getElementById('disconnectWalletModal').classList.remove('active');
+        };
+        window.onDisconnectCheckboxChange = function () {
+            document.getElementById('disconnectConfirmBtn').disabled = !document.getElementById('disconnectConfirmCheckbox').checked;
+        };
+
+        window.handleDisconnectWalletConfirm = async function () {
+            const btn = document.getElementById('disconnectConfirmBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+            try {
+                // Soft disconnect only -- we don't call sequenceWaas.signOut()
+                // here. Reconnecting with the same login method (Google or
+                // email) deterministically resolves to the same wallet for
+                // this project, so there's no need to tear down the Sequence
+                // session itself.
+                const { error } = await supabaseClient
+                    .from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
+                if (error) throw error;
+
+                currentWalletAddress = '';
+                window.currentWalletAddress = '';
+                window.currentBalances = { net: '0', usdc: '0', pol: '0' };
+                document.getElementById('walletAddressDisplay').textContent = 'Not connected';
+                document.getElementById('balanceNet').textContent = '0.00';
+                document.getElementById('balanceUsdc').textContent = '0.00';
+                document.getElementById('balancePol').textContent = '0.00';
+                const localEl = document.getElementById('balanceUsdcLocal');
+                if (localEl) localEl.classList.add('hidden');
+
+                updateCardConnectState();
+                updateRampVisibility();
+                closeDisconnectWalletModal();
+                showToast('Wallet disconnected');
+            } catch (err) {
+                console.error('Failed to disconnect wallet:', err);
+                showToast('Could not disconnect wallet. Please try again.');
+            } finally {
+                btn.textContent = 'Disconnect';
+                btn.disabled = !document.getElementById('disconnectConfirmCheckbox').checked;
+            }
+        };
 
         async function onCreateWalletCredential(response) {
             const statusEl = document.getElementById('createWalletStatus');
