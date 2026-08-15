@@ -779,10 +779,48 @@
                     <p class="text-xs text-muted mb-1">To</p>
                     <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
                 </div>
-                <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Confirm with Google to authorize this transfer.</p>
-                <div class="flex gap-2">
-                    <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
-                    <div id="googleConfirmWrap" class="flex-1 flex items-center justify-center"></div>
+                <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Confirm your identity to authorize this transfer.</p>
+
+                <!-- Default view: Google button + Cancel, same as before. Email is a
+                     collapsed fallback, not a second co-equal option, so users who
+                     always use Google see no change to this screen. -->
+                <div id="sendConfirmGoogleStep">
+                    <div id="googleConfirmWrap" class="flex items-center justify-center mb-3"></div>
+                    <div class="flex gap-2 mb-3">
+                        <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                    </div>
+                    <button type="button" onclick="expandSendConfirmEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
+                        Trouble with Google? Use email instead
+                    </button>
+                </div>
+
+                <!-- Email entry -- revealed in place (expands downward in this same
+                     modal) only when the link above is clicked. Never a separate
+                     modal/dialog. -->
+                <div id="sendConfirmEmailStep" class="hidden">
+                    <input id="sendConfirmEmailInput" type="email" placeholder="you@example.com"
+                        class="w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                    <button id="sendConfirmEmailBtn" onclick="startSendConfirmEmail()"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
+                        <span id="sendConfirmEmailBtnText">Continue with email</span>
+                    </button>
+                    <p id="sendConfirmEmailError" class="text-xs text-red-500 mb-3 hidden"></p>
+                    <div class="flex gap-2">
+                        <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                        <button type="button" onclick="collapseSendConfirmEmail()" class="flex-1 py-2.5 text-xs text-muted hover:text-secondary transition">Back to Google</button>
+                    </div>
+                </div>
+
+                <div id="sendConfirmOtpStep" class="hidden">
+                    <label class="text-xs font-medium text-secondary block mb-1.5">Enter the 6-digit code sent to <span id="sendConfirmOtpEmail" class="text-primary font-medium"></span></label>
+                    <input id="sendConfirmOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+                        class="w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-primary text-center tracking-[0.4em] text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                    <button id="sendConfirmOtpBtn" onclick="confirmSendConfirmEmail()"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
+                        <span id="sendConfirmOtpBtnText">Confirm</span>
+                    </button>
+                    <p id="sendConfirmOtpError" class="text-xs text-red-500 mb-3 hidden"></p>
+                    <button onclick="resetSendConfirmEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Use a different email</button>
                 </div>
             </div>
         </div>
@@ -1257,7 +1295,7 @@
                 await doExecuteSend();
             } catch (err) {
                 console.error(err);
-                statusEl.textContent = 'Confirm with Google to authorize this transfer.';
+                statusEl.textContent = 'Confirm your identity to authorize this transfer.';
                 container.style.opacity = '1';
                 showToast('Could not verify your identity — please try again.');
             }
@@ -1816,15 +1854,128 @@
             }
             document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
             document.getElementById('confirmToAddress').textContent = to;
-            document.getElementById('sendConfirmStatus').textContent = 'Confirm with Google to authorize this transfer.';
+            document.getElementById('sendConfirmStatus').textContent = 'Confirm your identity to authorize this transfer.';
             document.getElementById('sendStepForm').classList.add('hidden');
             document.getElementById('sendStepConfirm').classList.remove('hidden');
             renderGoogleConfirmButton();
+            resetSendConfirmEmail();
+            collapseSendConfirmEmail();
         };
 
         window.backToSendForm = function () {
             document.getElementById('sendStepConfirm').classList.add('hidden');
             document.getElementById('sendStepForm').classList.remove('hidden');
+        };
+
+        window.expandSendConfirmEmail = function () {
+            document.getElementById('sendConfirmGoogleStep').classList.add('hidden');
+            document.getElementById('sendConfirmEmailStep').classList.remove('hidden');
+            document.getElementById('sendConfirmEmailInput').focus();
+        };
+
+        window.collapseSendConfirmEmail = function () {
+            document.getElementById('sendConfirmEmailStep').classList.add('hidden');
+            document.getElementById('sendConfirmOtpStep').classList.add('hidden');
+            document.getElementById('sendConfirmGoogleStep').classList.remove('hidden');
+        };
+
+        // ---- Send confirm: Email OTP fallback for Google ----
+        // Same signIn()+onEmailAuthCodeRequired callback pattern as the wallet
+        // connect flow (see startEmailWalletConnect/confirmEmailWalletConnect).
+        // Uses its own dedicated state variables so it never collides with the
+        // connect-wallet modal's flow, even though both ultimately call
+        // sequenceWaas.signIn({ email }, 'Netlink Pay').
+        let pendingSendConfirmAuthCode = null;
+        let pendingSendConfirmSignInPromise = null;
+
+        window.startSendConfirmEmail = async function () {
+            const emailInput = document.getElementById('sendConfirmEmailInput');
+            const errorEl = document.getElementById('sendConfirmEmailError');
+            const btn = document.getElementById('sendConfirmEmailBtn');
+            const btnText = document.getElementById('sendConfirmEmailBtnText');
+            errorEl.classList.add('hidden');
+
+            const email = emailInput.value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.textContent = 'Enter a valid email address.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                pendingEmailAuthCode = null; // shared callback slot (see onEmailAuthCodeRequired registration)
+                pendingSendConfirmSignInPromise = sequenceWaas.signIn({ email }, 'Netlink Pay');
+
+                for (let i = 0; i < 30 && !pendingEmailAuthCode; i++) {
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                }
+                if (!pendingEmailAuthCode) {
+                    throw new Error('Did not receive an OTP request from the wallet service.');
+                }
+                pendingSendConfirmAuthCode = pendingEmailAuthCode;
+
+                document.getElementById('sendConfirmOtpEmail').textContent = email;
+                document.getElementById('sendConfirmEmailStep').classList.add('hidden');
+                document.getElementById('sendConfirmOtpStep').classList.remove('hidden');
+                document.getElementById('sendConfirmOtpInput').focus();
+            } catch (err) {
+                console.error('signIn (send confirm email OTP) start failed:', err);
+                errorEl.textContent = 'Could not send code. Please check the email and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Continue with email';
+            }
+        };
+
+        window.confirmSendConfirmEmail = async function () {
+            const codeInput = document.getElementById('sendConfirmOtpInput');
+            const errorEl = document.getElementById('sendConfirmOtpError');
+            const btn = document.getElementById('sendConfirmOtpBtn');
+            const btnText = document.getElementById('sendConfirmOtpBtnText');
+            errorEl.classList.add('hidden');
+
+            const code = codeInput.value.trim();
+            if (!code || code.length < 6) {
+                errorEl.textContent = 'Enter the 6-digit code from your email.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!pendingSendConfirmAuthCode || !pendingSendConfirmSignInPromise) {
+                errorEl.textContent = 'Your code expired. Please request a new one.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                await pendingSendConfirmAuthCode(code);
+                await pendingSendConfirmSignInPromise;
+                pendingSendConfirmAuthCode = null;
+                pendingSendConfirmSignInPromise = null;
+                await doExecuteSend();
+            } catch (err) {
+                console.error('signIn (send confirm email OTP) confirm failed:', err);
+                errorEl.textContent = "That code didn't work. Please check it and try again.";
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Confirm';
+            }
+        };
+
+        window.resetSendConfirmEmail = function () {
+            pendingSendConfirmAuthCode = null;
+            pendingSendConfirmSignInPromise = null;
+            document.getElementById('sendConfirmEmailInput').value = '';
+            document.getElementById('sendConfirmOtpInput').value = '';
+            document.getElementById('sendConfirmEmailError').classList.add('hidden');
+            document.getElementById('sendConfirmOtpError').classList.add('hidden');
+            document.getElementById('sendConfirmOtpStep').classList.add('hidden');
+            document.getElementById('sendConfirmEmailStep').classList.remove('hidden');
         };
 
         function encodeErc20Transfer(to, valueWei) {
@@ -1907,7 +2058,7 @@
                 console.error(err);
                 const msg = String(err?.message || err || '');
                 showToast(msg || 'Transaction failed');
-                statusEl.textContent = 'Confirm with Google to authorize this transfer.';
+                statusEl.textContent = 'Confirm your identity to authorize this transfer.';
                 document.getElementById('googleConfirmWrap').style.opacity = '1';
             }
         }
