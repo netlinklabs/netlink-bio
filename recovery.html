@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Your Wallet — Netlink Pay</title>
+    <title>Wallet Security — Netlink Pay</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,7 +40,7 @@
         #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
         html.dark #authGate { background: #0f172a; }
 
-        .toast { position: fixed; bottom: 24px; right: 20px; left: 20px; margin: 0 auto; max-width: 320px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; }
+        .toast { position: fixed; bottom: 96px; right: 20px; left: 20px; margin: 0 auto; max-width: 320px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .toast.error { background: #ef4444; }
 
@@ -50,6 +50,20 @@
 
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Hero, matching privacy.html's pattern */
+        .security-hero { background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%); border-radius: 20px; }
+
+        /* Emergency export card accents */
+        .export-hero { background: linear-gradient(135deg, #7c2d12 0%, #1e293b 100%); border-radius: 20px; }
+        .export-warning { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
+        html.dark .export-warning { background: rgba(239, 68, 68, 0.12); }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: #ffffff; border-radius: 20px; padding: 24px; max-width: 400px; width: 100%; position: relative; max-height: 88vh; overflow-y: auto; }
+        html.dark .modal-box { background: #1e293b; }
+        .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -63,14 +77,16 @@
 
     <div id="toast" class="toast">Saved</div>
 
-    <header class="max-w-md mx-auto px-4 pt-5 pb-2 flex items-center gap-3">
-        <a href="pay.html" class="w-9 h-9 flex items-center justify-center rounded-full hover-surface transition">
-            <i data-lucide="arrow-left" class="w-5 h-5 text-secondary"></i>
-        </a>
-        <h1 class="text-lg font-semibold text-primary">Secure Your Wallet</h1>
-    </header>
+    <main class="px-4 pt-4 pb-8 lg:px-8 max-w-md mx-auto">
 
-    <main class="px-4 pb-10 max-w-md mx-auto">
+        <!-- Hero -->
+        <div class="security-hero p-6 mb-4 text-white relative">
+            <div class="relative z-10">
+                <p class="text-white/70 text-xs font-medium mb-1 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Wallet Security</p>
+                <h1 class="text-xl font-bold">Keep access to your wallet</h1>
+                <p class="text-white/60 text-xs mt-2">Add a backup sign-in method, and set up an emergency export plan in case you ever need to move everything out fast.</p>
+            </div>
+        </div>
 
         <!-- Intro -->
         <div class="card rounded-2xl p-5 mb-4">
@@ -138,15 +154,147 @@
             <p class="text-xs text-secondary mt-1">You can sign in with Google or your email — both open the same wallet.</p>
         </div>
 
-        <p class="text-[11px] text-muted text-center leading-relaxed px-4">
+        <p class="text-[11px] text-muted text-center leading-relaxed px-4 mb-6">
             Adding a backup method never changes your wallet address or moves your funds. It only adds another way to sign in.
         </p>
 
+        <!-- Emergency Export hero -->
+        <div class="export-hero p-6 mb-4 text-white relative">
+            <div class="relative z-10">
+                <p class="text-white/70 text-xs font-medium mb-1 flex items-center gap-1.5"><i data-lucide="triangle-alert" class="w-3.5 h-3.5"></i> Emergency Only</p>
+                <h1 class="text-xl font-bold">Export all assets</h1>
+                <p class="text-white/60 text-xs mt-2">Move every token in your wallet — POL, USDC, and NET — to an external wallet like MetaMask or Trust Wallet in a single transaction.</p>
+            </div>
+        </div>
+
+        <div class="card rounded-2xl p-5 mb-4">
+            <div class="export-warning rounded-xl p-3.5 mb-4">
+                <p class="text-xs text-red-600 dark:text-red-400 leading-relaxed">
+                    <i data-lucide="triangle-alert" class="w-3.5 h-3.5 inline-block mr-1 align-text-top"></i>
+                    Use this only if you're moving away from Netlink Pay or believe your account is at risk. This sends everything at once and cannot be undone.
+                </p>
+            </div>
+
+            <label class="text-xs font-medium text-secondary mb-1.5 block">Destination wallet address</label>
+            <input id="exportDestAddress" type="text" placeholder="0x..." autocomplete="off" spellcheck="false"
+                class="w-full px-4 py-3 rounded-xl bg-surface border border-subtle text-sm font-mono text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
+            <p id="exportAddressError" class="text-xs text-red-500 mb-2 hidden"></p>
+            <p class="text-[11px] text-muted mb-4">Must be a wallet you control outside Netlink Pay — MetaMask, Trust Wallet, or similar. Double-check it before continuing.</p>
+
+            <div class="bg-surface rounded-xl p-4 mb-4">
+                <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Will export</p>
+                <div id="exportPreviewList" class="flex flex-col gap-2 text-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-secondary">USDC</span>
+                        <span id="exportPreviewUsdc" class="font-mono text-primary">0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-secondary">NET</span>
+                        <span id="exportPreviewNet" class="font-mono text-primary">0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-secondary">POL</span>
+                        <span id="exportPreviewPol" class="font-mono text-primary">0.00</span>
+                    </div>
+                </div>
+                <p class="text-[11px] text-muted mt-3">A small amount of POL is automatically reserved to pay the network fee for this transaction.</p>
+            </div>
+
+            <button id="openExportBtn" onclick="openExportModal()" disabled
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition">
+                <i data-lucide="send" class="w-4 h-4"></i> Export All Assets
+            </button>
+        </div>
+
     </main>
 
+    <!-- Export Confirmation Modal -->
+    <div id="exportModal" class="modal-overlay" onclick="if(event.target===this && !window.exportInProgress) closeExportModal()">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeExportModal()">&times;</button>
+
+            <!-- Step 1: review + type-to-confirm -->
+            <div id="exportStepReview">
+                <i data-lucide="triangle-alert" class="w-8 h-8 text-red-500 mb-3"></i>
+                <h3 class="font-semibold text-primary text-lg mb-2">Confirm emergency export</h3>
+                <p class="text-sm text-secondary mb-4">You're about to send everything in your Netlink Pay wallet to:</p>
+                <p id="exportReviewAddress" class="text-xs font-mono text-primary bg-surface border border-subtle rounded-lg p-3 mb-4 break-all"></p>
+
+                <div class="bg-surface rounded-xl p-3.5 mb-4 text-sm">
+                    <div class="flex items-center justify-between mb-1.5"><span class="text-secondary">USDC</span><span id="exportReviewUsdc" class="font-mono text-primary"></span></div>
+                    <div class="flex items-center justify-between mb-1.5"><span class="text-secondary">NET</span><span id="exportReviewNet" class="font-mono text-primary"></span></div>
+                    <div class="flex items-center justify-between"><span class="text-secondary">POL</span><span id="exportReviewPol" class="font-mono text-primary"></span></div>
+                </div>
+
+                <label class="text-xs font-medium text-secondary mb-1.5 block">Type the last 4 characters of the destination address to confirm</label>
+                <input id="exportConfirmSuffix" type="text" maxlength="4" placeholder="????" autocomplete="off" spellcheck="false"
+                    oninput="this.value = this.value.toUpperCase(); validateExportSuffix();"
+                    class="w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-primary text-center tracking-[0.3em] font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 mb-2">
+                <p id="exportSuffixError" class="text-xs text-red-500 mb-3 hidden">Doesn't match — check the address above.</p>
+
+                <div class="flex gap-2">
+                    <button onclick="closeExportModal()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
+                    <button id="exportContinueBtn" onclick="proceedToExportAuth()" disabled class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition">Continue</button>
+                </div>
+            </div>
+
+            <!-- Step 2: re-auth (Google default, email fallback expands in place) -->
+            <div id="exportStepAuth" class="hidden">
+                <i data-lucide="shield-check" class="w-8 h-8 text-blue-500 mb-3"></i>
+                <h3 class="font-semibold text-primary text-lg mb-2">Confirm your identity</h3>
+                <p id="exportAuthStatus" class="text-sm text-secondary mb-4">One last step — confirm it's you to authorize this transfer.</p>
+
+                <div id="exportAuthGoogleStep">
+                    <div id="exportGoogleConfirmWrap" class="flex items-center justify-center mb-3"></div>
+                    <div class="flex gap-2 mb-3">
+                        <button onclick="backToExportReview()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Back</button>
+                    </div>
+                    <button type="button" onclick="expandExportEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
+                        Trouble with Google? Use email instead
+                    </button>
+                </div>
+
+                <div id="exportAuthEmailStep" class="hidden">
+                    <input id="exportEmailInput" type="email" placeholder="you@example.com"
+                        class="w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                    <button id="exportEmailBtn" onclick="startExportEmail()"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
+                        <span id="exportEmailBtnText">Continue with email</span>
+                    </button>
+                    <p id="exportEmailError" class="text-xs text-red-500 mb-3 hidden"></p>
+                    <div class="flex gap-2">
+                        <button onclick="backToExportReview()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Back</button>
+                        <button type="button" onclick="collapseExportEmail()" class="flex-1 py-2.5 text-xs text-muted hover:text-secondary transition">Back to Google</button>
+                    </div>
+                </div>
+
+                <div id="exportAuthOtpStep" class="hidden">
+                    <label class="text-xs font-medium text-secondary block mb-1.5">Enter the 6-digit code sent to <span id="exportOtpEmail" class="text-primary font-medium"></span></label>
+                    <input id="exportOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+                        class="w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-primary text-center tracking-[0.4em] text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                    <button id="exportOtpBtn" onclick="confirmExportEmail()"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
+                        <span id="exportOtpBtnText">Confirm</span>
+                    </button>
+                    <p id="exportOtpError" class="text-xs text-red-500 mb-3 hidden"></p>
+                    <button onclick="resetExportEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Use a different email</button>
+                </div>
+            </div>
+
+            <!-- Step 3: executing -->
+            <div id="exportStepExecuting" class="hidden text-center py-4">
+                <div class="w-10 h-10 border-4 border-slate-200 dark:border-slate-700 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
+                <p id="exportExecutingStatus" class="text-sm text-secondary">Sending your assets...</p>
+                <p class="text-xs text-muted mt-2">Please don't close this window.</p>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/shared/account-menu.js?v=3"></script>
+    <script src="/shared/nav.js?v=3"></script>
     <script type="module">
-        import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
+        import { SequenceWaaS, isSentTransactionResponse } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
 
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -163,6 +311,8 @@
         });
 
         let currentUser = null;
+        let currentProfile = null;
+        let currentWalletAddress = null;
         let pendingChallenge = null;
         let pendingEmail = null;
 
@@ -180,11 +330,32 @@
         window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
 
         // ---- App auth (Supabase) gate ----
+        // Also loads the full profile row so the shared header/bottom-nav/
+        // account menu (shared/nav.js) can render exactly like every other
+        // page in the app.
         async function checkAppAuth() {
             const { data: { session }, error } = await supabaseClient.auth.getSession();
             if (error) throw error;
             if (!session) { window.location.href = 'login.html'; return null; }
             currentUser = session.user;
+
+            const { data: profile, error: profileErr } = await supabaseClient
+                .from('profiles')
+                .select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, business_verified_at, identity_verified_at')
+                .eq('id', currentUser.id).single();
+            if (profileErr) throw profileErr;
+            currentProfile = profile;
+            currentWalletAddress = profile.wallet_address || null;
+
+            if (window.NetlinkNav) {
+                NetlinkNav.init({
+                    activePage: null,
+                    profile: currentProfile,
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                });
+            }
+
             return session;
         }
 
@@ -336,6 +507,430 @@
             document.getElementById('emailStep').classList.remove('hidden');
         };
 
+        // ============================================================
+        // ---- Emergency Export: move all assets to an external wallet ----
+        // ============================================================
+
+        const TOKEN_CONFIG = {
+            NET: { address: '0x0e893B239094A5c573373d44CF1C7D03576b95cb', decimals: 18 },
+            USDC: { address: '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359', decimals: 6 },
+            POL: { address: null, decimals: 18 },
+        };
+        // Extra safety margin added on top of the estimated gas cost when
+        // reserving POL, since the quote can shift slightly between
+        // estimate and execution.
+        const POL_GAS_SAFETY_BUFFER = '0.01';
+
+        window.currentBalances = { net: '0', usdc: '0', pol: '0' };
+
+        function formatTokenAmount(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return '0.00';
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+        }
+
+        async function fetchWithRetry(url, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return await res.json();
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise((r) => setTimeout(r, 1500));
+                }
+            }
+        }
+
+        function toWei(amountStr, decimals) {
+            const [whole, frac = ''] = String(amountStr).split('.');
+            const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+            const wholeBig = BigInt(whole || '0');
+            const fracBig = BigInt(fracPadded || '0');
+            return (wholeBig * (10n ** BigInt(decimals)) + fracBig).toString();
+        }
+
+        function fromWei(weiStr, decimals) {
+            const big = BigInt(weiStr);
+            const divisor = 10n ** BigInt(decimals);
+            const whole = big / divisor;
+            const frac = (big % divisor).toString().padStart(decimals, '0');
+            return `${whole}.${frac}`;
+        }
+
+        function subtractDecimalStrings(a, b, decimals) {
+            const result = BigInt(toWei(a, decimals)) - BigInt(toWei(b, decimals));
+            if (result < 0n) return '0';
+            return fromWei(result.toString(), decimals);
+        }
+
+        async function loadExportBalances() {
+            if (!currentWalletAddress) return;
+            try {
+                const url = `/api/wallet-balance?address=${encodeURIComponent(currentWalletAddress)}&_t=${Date.now()}`;
+                const data = await fetchWithRetry(url);
+                window.currentBalances = { net: data.net || '0', usdc: data.usdc || '0', pol: data.pol || '0' };
+                document.getElementById('exportPreviewUsdc').textContent = formatTokenAmount(data.usdc);
+                document.getElementById('exportPreviewNet').textContent = formatTokenAmount(data.net);
+                document.getElementById('exportPreviewPol').textContent = formatTokenAmount(data.pol);
+            } catch (err) {
+                console.error('Failed to load balances for export:', err);
+            }
+        }
+
+        function isValidAddress(addr) {
+            return /^0x[a-fA-F0-9]{40}$/.test(addr);
+        }
+
+        function validateExportDestination() {
+            const input = document.getElementById('exportDestAddress');
+            const errorEl = document.getElementById('exportAddressError');
+            const openBtn = document.getElementById('openExportBtn');
+            const addr = input.value.trim();
+            errorEl.classList.add('hidden');
+
+            if (!addr) { openBtn.disabled = true; return; }
+            if (!isValidAddress(addr)) {
+                errorEl.textContent = 'Enter a valid wallet address (starts with 0x, 42 characters).';
+                errorEl.classList.remove('hidden');
+                openBtn.disabled = true;
+                return;
+            }
+            if (currentWalletAddress && addr.toLowerCase() === currentWalletAddress.toLowerCase()) {
+                errorEl.textContent = "That's your own Netlink Pay wallet address — enter an external wallet instead.";
+                errorEl.classList.remove('hidden');
+                openBtn.disabled = true;
+                return;
+            }
+            const hasAnyBalance = parseFloat(window.currentBalances.net) > 0
+                || parseFloat(window.currentBalances.usdc) > 0
+                || parseFloat(window.currentBalances.pol) > 0;
+            openBtn.disabled = !hasAnyBalance;
+        }
+        document.getElementById('exportDestAddress').addEventListener('input', validateExportDestination);
+
+        // ---- Modal open/close ----
+        window.openExportModal = function () {
+            const addr = document.getElementById('exportDestAddress').value.trim();
+            if (!isValidAddress(addr)) return;
+
+            document.getElementById('exportReviewAddress').textContent = addr;
+            document.getElementById('exportReviewUsdc').textContent = formatTokenAmount(window.currentBalances.usdc) + ' USDC';
+            document.getElementById('exportReviewNet').textContent = formatTokenAmount(window.currentBalances.net) + ' NET';
+            document.getElementById('exportReviewPol').textContent = '~' + formatTokenAmount(window.currentBalances.pol) + ' POL (minus network fee)';
+
+            document.getElementById('exportConfirmSuffix').value = '';
+            document.getElementById('exportSuffixError').classList.add('hidden');
+            document.getElementById('exportContinueBtn').disabled = true;
+
+            document.getElementById('exportStepReview').classList.remove('hidden');
+            document.getElementById('exportStepAuth').classList.add('hidden');
+            document.getElementById('exportStepExecuting').classList.add('hidden');
+            collapseExportEmail();
+            resetExportEmail();
+
+            document.getElementById('exportModal').classList.add('active');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeExportModal = function () {
+            if (window.exportInProgress) return;
+            document.getElementById('exportModal').classList.remove('active');
+        };
+
+        window.validateExportSuffix = function () {
+            const addr = document.getElementById('exportDestAddress').value.trim();
+            const typed = document.getElementById('exportConfirmSuffix').value.trim().toUpperCase();
+            const actualSuffix = addr.slice(-4).toUpperCase();
+            const errorEl = document.getElementById('exportSuffixError');
+            const continueBtn = document.getElementById('exportContinueBtn');
+
+            if (typed.length < 4) {
+                continueBtn.disabled = true;
+                errorEl.classList.add('hidden');
+                return;
+            }
+            if (typed === actualSuffix) {
+                continueBtn.disabled = false;
+                errorEl.classList.add('hidden');
+            } else {
+                continueBtn.disabled = true;
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        window.proceedToExportAuth = function () {
+            document.getElementById('exportStepReview').classList.add('hidden');
+            document.getElementById('exportStepAuth').classList.remove('hidden');
+            renderExportGoogleButton();
+        };
+
+        window.backToExportReview = function () {
+            document.getElementById('exportStepAuth').classList.add('hidden');
+            document.getElementById('exportStepReview').classList.remove('hidden');
+        };
+
+        // ---- Step 2a: Google re-auth ----
+        function renderExportGoogleButton() {
+            const container = document.getElementById('exportGoogleConfirmWrap');
+            container.innerHTML = '';
+            if (!window.google) {
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                return;
+            }
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: onExportGoogleCredential,
+            });
+            google.accounts.id.renderButton(container, {
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'pill',
+                width: 240,
+            });
+        }
+
+        async function onExportGoogleCredential(response) {
+            const statusEl = document.getElementById('exportAuthStatus');
+            const container = document.getElementById('exportGoogleConfirmWrap');
+            container.style.opacity = '0.5';
+            statusEl.textContent = 'Confirming your identity...';
+            try {
+                await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                await doExecuteExport();
+            } catch (err) {
+                console.error('Export identity confirm (Google) failed:', err);
+                statusEl.textContent = "One last step — confirm it's you to authorize this transfer.";
+                container.style.opacity = '1';
+                showToast('Could not verify your identity — please try again.');
+            }
+        }
+
+        // ---- Step 2b: Email OTP re-auth (progressive disclosure) ----
+        let pendingEmailAuthCode = null;
+        let pendingExportAuthCode = null;
+        let pendingExportSignInPromise = null;
+
+        sequenceWaas.onEmailAuthCodeRequired(async (respondWithCode) => {
+            pendingEmailAuthCode = respondWithCode;
+        });
+
+        window.expandExportEmail = function () {
+            document.getElementById('exportAuthGoogleStep').classList.add('hidden');
+            document.getElementById('exportAuthEmailStep').classList.remove('hidden');
+            document.getElementById('exportEmailInput').focus();
+        };
+
+        window.collapseExportEmail = function () {
+            document.getElementById('exportAuthEmailStep').classList.add('hidden');
+            document.getElementById('exportAuthOtpStep').classList.add('hidden');
+            document.getElementById('exportAuthGoogleStep').classList.remove('hidden');
+        };
+
+        window.startExportEmail = async function () {
+            const emailInput = document.getElementById('exportEmailInput');
+            const errorEl = document.getElementById('exportEmailError');
+            const btn = document.getElementById('exportEmailBtn');
+            const btnText = document.getElementById('exportEmailBtnText');
+            errorEl.classList.add('hidden');
+
+            const email = emailInput.value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.textContent = 'Enter a valid email address.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                pendingEmailAuthCode = null;
+                pendingExportSignInPromise = sequenceWaas.signIn({ email }, 'Netlink Pay');
+
+                for (let i = 0; i < 30 && !pendingEmailAuthCode; i++) {
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                }
+                if (!pendingEmailAuthCode) {
+                    throw new Error('Did not receive an OTP request from the wallet service.');
+                }
+                pendingExportAuthCode = pendingEmailAuthCode;
+
+                document.getElementById('exportOtpEmail').textContent = email;
+                document.getElementById('exportAuthEmailStep').classList.add('hidden');
+                document.getElementById('exportAuthOtpStep').classList.remove('hidden');
+                document.getElementById('exportOtpInput').focus();
+            } catch (err) {
+                console.error('signIn (export email OTP) start failed:', err);
+                errorEl.textContent = 'Could not send code. Please check the email and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Continue with email';
+            }
+        };
+
+        window.confirmExportEmail = async function () {
+            const codeInput = document.getElementById('exportOtpInput');
+            const errorEl = document.getElementById('exportOtpError');
+            const btn = document.getElementById('exportOtpBtn');
+            const btnText = document.getElementById('exportOtpBtnText');
+            errorEl.classList.add('hidden');
+
+            const code = codeInput.value.trim();
+            if (!code || code.length < 6) {
+                errorEl.textContent = 'Enter the 6-digit code from your email.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!pendingExportAuthCode || !pendingExportSignInPromise) {
+                errorEl.textContent = 'Your code expired. Please request a new one.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                await pendingExportAuthCode(code);
+                await pendingExportSignInPromise;
+                pendingExportAuthCode = null;
+                pendingExportSignInPromise = null;
+                await doExecuteExport();
+            } catch (err) {
+                console.error('signIn (export email OTP) confirm failed:', err);
+                errorEl.textContent = "That code didn't work. Please check it and try again.";
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Confirm';
+            }
+        };
+
+        window.resetExportEmail = function () {
+            pendingExportAuthCode = null;
+            pendingExportSignInPromise = null;
+            const emailInput = document.getElementById('exportEmailInput');
+            const codeInput = document.getElementById('exportOtpInput');
+            if (emailInput) emailInput.value = '';
+            if (codeInput) codeInput.value = '';
+            document.getElementById('exportEmailError').classList.add('hidden');
+            document.getElementById('exportOtpError').classList.add('hidden');
+            document.getElementById('exportAuthOtpStep').classList.add('hidden');
+            document.getElementById('exportAuthEmailStep').classList.remove('hidden');
+        };
+
+        // ---- Step 3: build + send the batched transaction ----
+        function encodeErc20Transfer(to, valueWei) {
+            const toPadded = to.toLowerCase().replace('0x', '').padStart(64, '0');
+            const valueHex = BigInt(valueWei).toString(16).padStart(64, '0');
+            return '0xa9059cbb' + toPadded + valueHex;
+        }
+
+        async function doExecuteExport() {
+            window.exportInProgress = true;
+            document.getElementById('exportStepAuth').classList.add('hidden');
+            document.getElementById('exportStepExecuting').classList.remove('hidden');
+            const statusEl = document.getElementById('exportExecutingStatus');
+
+            try {
+                const to = document.getElementById('exportDestAddress').value.trim();
+                const netBalance = window.currentBalances.net || '0';
+                const usdcBalance = window.currentBalances.usdc || '0';
+                const polBalance = window.currentBalances.pol || '0';
+
+                // Pass 1: build a transaction set using the FULL POL balance
+                // as a placeholder, just to get an accurate fee estimate for
+                // a batch of this shape (gas cost barely depends on the
+                // native-transfer value itself).
+                function buildTransactions(polAmountToSend) {
+                    const txs = [];
+                    if (parseFloat(usdcBalance) > 0) {
+                        const data = encodeErc20Transfer(to, toWei(usdcBalance, TOKEN_CONFIG.USDC.decimals));
+                        txs.push({ to: TOKEN_CONFIG.USDC.address, data, value: '0' });
+                    }
+                    if (parseFloat(netBalance) > 0) {
+                        const data = encodeErc20Transfer(to, toWei(netBalance, TOKEN_CONFIG.NET.decimals));
+                        txs.push({ to: TOKEN_CONFIG.NET.address, data, value: '0' });
+                    }
+                    if (parseFloat(polAmountToSend) > 0) {
+                        txs.push({ to, value: toWei(polAmountToSend, TOKEN_CONFIG.POL.decimals) });
+                    }
+                    return txs;
+                }
+
+                statusEl.textContent = 'Estimating network fee...';
+                const estimateTxs = buildTransactions(polBalance);
+                if (estimateTxs.length === 0) {
+                    throw new Error('Nothing to export — your wallet balance is zero.');
+                }
+                const estimateResp = await sequenceWaas.feeOptions({ network: 'polygon', transactions: estimateTxs });
+                const estimateFeeOptions = estimateResp.data?.feeOptions;
+                if (!estimateFeeOptions || estimateFeeOptions.length === 0) {
+                    throw new Error('Gas payment options are not available from the relayer right now.');
+                }
+                const estimatePolFee = estimateFeeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC');
+                if (!estimatePolFee) {
+                    throw new Error('POL is required to pay the network fee for this transaction, and none was quoted. Please try again later.');
+                }
+                const estimatedFeePol = fromWei(estimatePolFee.value || '0', 18);
+
+                // Reserve fee + safety buffer, send the rest of POL.
+                const feeToReserve = (parseFloat(estimatedFeePol) + parseFloat(POL_GAS_SAFETY_BUFFER)).toString();
+                const polToSend = subtractDecimalStrings(polBalance, feeToReserve, 18);
+
+                if (parseFloat(polToSend) <= 0 && parseFloat(polBalance) > 0) {
+                    // Not enough POL to both cover gas AND send a meaningful
+                    // remainder -- still fine if POL balance itself is 0,
+                    // but if there IS a POL balance too small to net out
+                    // positive after fees, skip sending POL and just move
+                    // the tokens, keeping POL in the wallet to pay for it.
+                    console.warn('POL balance too low to export a meaningful remainder; sending tokens only.');
+                }
+
+                statusEl.textContent = 'Confirm the transaction in your wallet...';
+                const finalTxs = buildTransactions(parseFloat(polToSend) > 0 ? polToSend : '0');
+                const finalFeeResp = await sequenceWaas.feeOptions({ network: 'polygon', transactions: finalTxs });
+                const finalFeeQuote = finalFeeResp.data?.feeQuote;
+                const finalFeeOptions = finalFeeResp.data?.feeOptions;
+                if (!finalFeeOptions || finalFeeOptions.length === 0) {
+                    throw new Error('Gas payment options are not available from the relayer right now.');
+                }
+                const finalPolFee = finalFeeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || finalFeeOptions[0];
+
+                statusEl.textContent = 'Sending your assets...';
+                const tx = await sequenceWaas.sendTransaction({
+                    network: 'polygon',
+                    transactions: finalTxs,
+                    transactionsFeeOption: finalPolFee,
+                    transactionsFeeQuote: finalFeeQuote,
+                });
+                if (!isSentTransactionResponse(tx)) {
+                    console.error('Sequence did not return a sent-transaction response:', tx);
+                    throw new Error('Transaction was not sent — please try again.');
+                }
+                if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
+                    console.error('Export transaction reverted:', tx.receipt);
+                    throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
+                }
+
+                window.exportInProgress = false;
+                document.getElementById('exportModal').classList.remove('active');
+                showToast('Assets exported!');
+                await loadExportBalances();
+                document.getElementById('exportDestAddress').value = '';
+                validateExportDestination();
+            } catch (err) {
+                console.error('Export execution failed:', err);
+                window.exportInProgress = false;
+                const msg = String(err?.message || err || 'Export failed');
+                showToast(msg, true);
+                document.getElementById('exportStepExecuting').classList.add('hidden');
+                document.getElementById('exportStepAuth').classList.remove('hidden');
+                document.getElementById('exportAuthStatus').textContent = "One last step — confirm it's you to authorize this transfer.";
+            }
+        }
+
         // ---- Boot ----
         (async function init() {
             try {
@@ -347,6 +942,8 @@
 
                 document.getElementById('authGate').style.display = 'none';
                 await renderMethods();
+                await loadExportBalances();
+                validateExportDestination();
                 if (window.lucide) lucide.createIcons();
             } catch (err) {
                 console.error(err);
