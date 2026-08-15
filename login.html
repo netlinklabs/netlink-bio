@@ -42,45 +42,80 @@
         </div>
 
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div class="flex mb-6 border-b border-gray-100">
-                <button id="tabSignIn" onclick="switchTab('signin')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-tosca tosca">Log in</button>
-                <button id="tabSignUp" onclick="switchTab('signup')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-400">Sign up</button>
-            </div>
-
-            <button type="button" onclick="handleGoogleLogin()" class="w-full py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl transition flex items-center justify-center gap-3 mb-4 shadow-sm text-sm">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5">
-                Continue with Google
-            </button>
-            
-            <p class="text-center text-[11px] text-gray-400 -mt-2 mb-4">Connect your Web3 Wallet in the dashboard later</p>
-            <div class="flex items-center gap-3 mb-4">
-                <div class="flex-1 h-px bg-gray-100"></div>
-                <span class="text-xs text-gray-400">or</span>
-                <div class="flex-1 h-px bg-gray-100"></div>
-            </div>
-
-            <form id="authForm" class="space-y-4">
-                <div>
-                    <label class="text-sm font-medium text-gray-700 block mb-1.5">Email</label>
-                    <input id="email" type="email" required placeholder="you@example.com"
-                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tosca/30 focus:border-tosca transition">
+            <div id="authView">
+                <div class="flex mb-6 border-b border-gray-100">
+                    <button id="tabSignIn" onclick="switchTab('signin')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-tosca tosca">Log in</button>
+                    <button id="tabSignUp" onclick="switchTab('signup')" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-400">Sign up</button>
                 </div>
-                <div>
-                    <label class="text-sm font-medium text-gray-700 block mb-1.5">Password</label>
-                    <input id="password" type="password" required minlength="6" placeholder="••••••••"
-                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tosca/30 focus:border-tosca transition">
-                </div>
-                <button id="submitBtn" type="submit"
-                    class="w-full py-3 bg-tosca hover-bg-tosca-dark text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
-                    <span id="submitLabel">Log in</span>
-                    <i id="submitSpinner" data-lucide="loader-2" class="w-4 h-4 animate-spin hidden"></i>
+
+                <button type="button" onclick="handleGoogleLogin()" class="w-full py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl transition flex items-center justify-center gap-3 mb-4 shadow-sm text-sm">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5">
+                    Continue with Google
                 </button>
-            </form>
 
-            <p id="switchHint" class="text-center text-sm text-gray-500 mt-5">
-                Don't have an account?
-                <button onclick="switchTab('signup')" class="tosca font-medium hover:underline">Sign up</button>
-            </p>
+                <p class="text-center text-[11px] text-gray-400 -mt-2 mb-4">Connect your Web3 Wallet in the dashboard later</p>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex-1 h-px bg-gray-100"></div>
+                    <span class="text-xs text-gray-400">or</span>
+                    <div class="flex-1 h-px bg-gray-100"></div>
+                </div>
+
+                <form id="authForm" class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 block mb-1.5">Email</label>
+                        <input id="email" type="email" required placeholder="you@example.com"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tosca/30 focus:border-tosca transition">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 block mb-1.5">Password</label>
+                        <input id="password" type="password" required minlength="6" placeholder="••••••••"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tosca/30 focus:border-tosca transition">
+                    </div>
+                    <button id="submitBtn" type="submit"
+                        class="w-full py-3 bg-tosca hover-bg-tosca-dark text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                        <span id="submitLabel">Log in</span>
+                        <i id="submitSpinner" data-lucide="loader-2" class="w-4 h-4 animate-spin hidden"></i>
+                    </button>
+                </form>
+
+                <p id="switchHint" class="text-center text-sm text-gray-500 mt-5">
+                    Don't have an account?
+                    <button onclick="switchTab('signup')" class="tosca font-medium hover:underline">Sign up</button>
+                </p>
+            </div>
+
+            <div id="otpView" class="hidden">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-tosca/10 flex items-center justify-center">
+                        <i data-lucide="mail-check" class="w-6 h-6 tosca"></i>
+                    </div>
+                    <h2 class="font-poppins text-lg font-bold text-gray-800">Verify your email</h2>
+                    <p class="text-sm text-gray-500 mt-1">Enter the 6-digit code sent to<br><span id="otpEmailLabel" class="font-semibold text-gray-700"></span></p>
+                </div>
+
+                <form id="otpForm" class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 block mb-1.5">Verification code</label>
+                        <input id="otpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" required placeholder="123456"
+                            oninput="this.value = this.value.replace(/\D/g, '')"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-[0.5em] font-semibold focus:outline-none focus:ring-2 focus:ring-tosca/30 focus:border-tosca transition">
+                    </div>
+                    <p id="otpError" class="hidden text-sm text-red-500 text-center"></p>
+                    <button id="otpSubmitBtn" type="submit"
+                        class="w-full py-3 bg-tosca hover-bg-tosca-dark text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                        <span id="otpSubmitLabel">Verify</span>
+                        <i id="otpSubmitSpinner" data-lucide="loader-2" class="w-4 h-4 animate-spin hidden"></i>
+                    </button>
+                </form>
+
+                <p class="text-center text-sm text-gray-500 mt-5">
+                    Didn't get the code?
+                    <button id="resendBtn" type="button" onclick="handleResendOtp()" class="tosca font-medium hover:underline">Resend code</button>
+                </p>
+                <p class="text-center text-sm text-gray-500 mt-2">
+                    <button type="button" onclick="backToLogin()" class="text-gray-400 font-medium hover:underline">Use a different email</button>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -126,6 +161,109 @@
             document.getElementById('submitSpinner').classList.toggle('hidden', !isLoading);
         }
 
+        // ==========================================
+        // Email OTP verification step
+        // ==========================================
+        let pendingOtpEmail = '';
+        let resendCooldownInterval = null;
+        const RESEND_COOLDOWN_SECONDS = 60;
+
+        function showOtpStep(email) {
+            pendingOtpEmail = email;
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('otpView').classList.remove('hidden');
+            document.getElementById('otpEmailLabel').textContent = email;
+            document.getElementById('otpCode').value = '';
+            hideOtpError();
+            startResendCooldown();
+        }
+
+        function backToLogin() {
+            clearInterval(resendCooldownInterval);
+            pendingOtpEmail = '';
+            document.getElementById('otpView').classList.add('hidden');
+            document.getElementById('authView').classList.remove('hidden');
+            hideOtpError();
+        }
+        window.backToLogin = backToLogin;
+
+        function showOtpError(message) {
+            const el = document.getElementById('otpError');
+            el.textContent = message;
+            el.classList.remove('hidden');
+        }
+
+        function hideOtpError() {
+            const el = document.getElementById('otpError');
+            el.textContent = '';
+            el.classList.add('hidden');
+        }
+
+        function setOtpLoading(isLoading) {
+            document.getElementById('otpSubmitBtn').disabled = isLoading;
+            document.getElementById('otpSubmitSpinner').classList.toggle('hidden', !isLoading);
+        }
+
+        function startResendCooldown() {
+            clearInterval(resendCooldownInterval);
+            let remaining = RESEND_COOLDOWN_SECONDS;
+            const btn = document.getElementById('resendBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.textContent = `Resend code (${remaining}s)`;
+            resendCooldownInterval = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(resendCooldownInterval);
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.textContent = 'Resend code';
+                } else {
+                    btn.textContent = `Resend code (${remaining}s)`;
+                }
+            }, 1000);
+        }
+
+        window.handleResendOtp = async function () {
+            if (!pendingOtpEmail) return;
+            hideOtpError();
+            try {
+                const { error } = await window.supabaseClient.auth.resend({ type: 'signup', email: pendingOtpEmail });
+                if (error) throw error;
+                window.showToast('A new code has been sent to your email.', true);
+                startResendCooldown();
+            } catch (err) {
+                showOtpError(err.message || 'Could not resend the code. Please try again.');
+            }
+        };
+
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('otpCode').value.trim();
+            hideOtpError();
+            if (!code) return;
+
+            setOtpLoading(true);
+            try {
+                const { error } = await window.supabaseClient.auth.verifyOtp({
+                    email: pendingOtpEmail,
+                    token: code,
+                    type: 'signup'
+                });
+                if (error) throw error;
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                const msg = (err.message || '').toLowerCase();
+                if (msg.includes('expire')) {
+                    showOtpError('Code expired, request a new one.');
+                } else {
+                    showOtpError('Invalid code, try again.');
+                }
+            } finally {
+                setOtpLoading(false);
+            }
+        });
+
         const urlParams = new URLSearchParams(window.location.search);
         const claimedUsername = urlParams.get('username');
         if (claimedUsername) {
@@ -148,11 +286,11 @@
                 if (error) throw error;
             } catch (err) {
                 console.error('OAuth Error:', err);
-                window.showToast('Gagal terhubung ke Google.');
+                window.showToast('Could not connect to Google. Please try again.');
             }
         };
 
-        // Form Manual Email
+        // Manual email/password form
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
@@ -161,25 +299,47 @@
             setLoading(true);
             try {
                 if (mode === 'signin') {
-                    const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                    window.location.href = 'dashboard.html';
+                    const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+                    const isUnconfirmedError = error && (error.message || '').toLowerCase().includes('not confirmed');
+
+                    if (error && !isUnconfirmedError) throw error;
+
+                    if (isUnconfirmedError || !data.user || !data.user.email_confirmed_at) {
+                        const { error: resendError } = await window.supabaseClient.auth.resend({ type: 'signup', email });
+                        if (resendError) throw resendError;
+                        window.showToast('Please verify your email to continue.', true);
+                        showOtpStep(email);
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
                 } else {
                     const { error } = await window.supabaseClient.auth.signUp({ email, password });
                     if (error) throw error;
-                    window.location.href = 'dashboard.html';
+                    window.showToast('We sent a verification code to your email.', true);
+                    showOtpStep(email);
                 }
             } catch (err) {
-                window.showToast(err.message || 'Gagal login.');
+                window.showToast(err.message || 'Something went wrong. Please try again.');
             } finally {
                 setLoading(false);
             }
         });
 
-        // Redirect jika sudah login
+        // Redirect if already logged in and verified
         (async () => {
             const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (session) window.location.href = 'dashboard.html';
+            if (!session) return;
+
+            if (session.user && !session.user.email_confirmed_at) {
+                try {
+                    await window.supabaseClient.auth.resend({ type: 'signup', email: session.user.email });
+                } catch (err) {
+                    console.error('Resend error:', err);
+                }
+                showOtpStep(session.user.email);
+            } else {
+                window.location.href = 'dashboard.html';
+            }
         })();
     </script>
 </body>
