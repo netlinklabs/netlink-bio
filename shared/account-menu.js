@@ -20,7 +20,7 @@ const ACCOUNT_MENU = {
         { icon: 'shield', label: 'Privacy & Data', href: 'privacy.html' },
         { icon: 'coins', label: 'Local Currency', type: 'currency-select' },
         { icon: 'scan-face', label: 'Biometric Unlock', type: 'biometric-toggle' },
-        { icon: 'settings', label: 'Settings', locked: true },
+        { icon: 'key-round', label: 'Wallet Security', href: 'recovery.html' },
       ],
     },
     {
