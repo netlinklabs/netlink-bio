@@ -610,9 +610,41 @@
         document.getElementById('exportDestAddress').addEventListener('input', validateExportDestination);
 
         // ---- Modal open/close ----
-        window.openExportModal = function () {
+        window.openExportModal = async function () {
             const addr = document.getElementById('exportDestAddress').value.trim();
             if (!isValidAddress(addr)) return;
+
+            // Pre-check POL-for-gas BEFORE opening the modal, so a user who
+            // can't actually afford the network fee never has to type the
+            // 4-character confirmation and re-authenticate only to hit a
+            // generic on-chain failure at the very end.
+            const openBtn = document.getElementById('openExportBtn');
+            const originalBtnHtml = openBtn.innerHTML;
+            openBtn.disabled = true;
+            openBtn.innerHTML = '<span class="spinner"></span> Checking network fee...';
+
+            let feeCheck;
+            try {
+                feeCheck = await estimateExportFee();
+            } catch (err) {
+                console.error('Fee pre-check failed:', err);
+                showToast('Could not check the network fee. Please try again.', true);
+                openBtn.disabled = false;
+                openBtn.innerHTML = originalBtnHtml;
+                return;
+            }
+
+            openBtn.disabled = false;
+            openBtn.innerHTML = originalBtnHtml;
+
+            if (feeCheck.error) {
+                showToast(feeCheck.error, true);
+                return;
+            }
+            if (!feeCheck.hasEnoughPol) {
+                showToast(`You need at least ~${parseFloat(feeCheck.requiredPol).toFixed(3)} POL to pay the network fee. Please top up a small amount of POL first.`, true);
+                return;
+            }
 
             document.getElementById('exportReviewAddress').textContent = addr;
             document.getElementById('exportReviewUsdc').textContent = formatTokenAmount(window.currentBalances.usdc) + ' USDC';
@@ -827,6 +859,51 @@
             return '0xa9059cbb' + toPadded + valueHex;
         }
 
+        // Returns { estimatedFeePol, hasEnoughPol, txs } using the FULL POL
+        // balance as a placeholder for the native-transfer amount (gas cost
+        // barely depends on the value itself, just that a transfer op exists).
+        // Shared by the openExportModal() pre-check and doExecuteExport()'s
+        // pass-1, so the "do you have enough POL for gas" answer is computed
+        // exactly once and can never drift between the two call sites.
+        async function estimateExportFee() {
+            const netBalance = window.currentBalances.net || '0';
+            const usdcBalance = window.currentBalances.usdc || '0';
+            const polBalance = window.currentBalances.pol || '0';
+            const to = document.getElementById('exportDestAddress').value.trim();
+
+            const txs = [];
+            if (parseFloat(usdcBalance) > 0) {
+                const data = encodeErc20Transfer(to, toWei(usdcBalance, TOKEN_CONFIG.USDC.decimals));
+                txs.push({ to: TOKEN_CONFIG.USDC.address, data, value: '0' });
+            }
+            if (parseFloat(netBalance) > 0) {
+                const data = encodeErc20Transfer(to, toWei(netBalance, TOKEN_CONFIG.NET.decimals));
+                txs.push({ to: TOKEN_CONFIG.NET.address, data, value: '0' });
+            }
+            if (parseFloat(polBalance) > 0) {
+                txs.push({ to, value: toWei(polBalance, TOKEN_CONFIG.POL.decimals) });
+            }
+
+            if (txs.length === 0) {
+                return { estimatedFeePol: '0', hasEnoughPol: false, txs: [], error: 'Nothing to export — your wallet balance is zero.' };
+            }
+
+            const resp = await sequenceWaas.feeOptions({ network: 'polygon', transactions: txs });
+            const feeOptions = resp.data?.feeOptions;
+            if (!feeOptions || feeOptions.length === 0) {
+                return { estimatedFeePol: '0', hasEnoughPol: false, txs, error: 'Gas payment options are not available from the relayer right now.' };
+            }
+            const polFee = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC');
+            if (!polFee) {
+                return { estimatedFeePol: '0', hasEnoughPol: false, txs, error: 'POL is required to pay the network fee, and none was quoted. Please try again later.' };
+            }
+            const estimatedFeePol = fromWei(polFee.value || '0', 18);
+            const requiredPol = (parseFloat(estimatedFeePol) + parseFloat(POL_GAS_SAFETY_BUFFER));
+            const hasEnoughPol = parseFloat(polBalance) >= requiredPol;
+
+            return { estimatedFeePol, requiredPol: requiredPol.toString(), hasEnoughPol, txs };
+        }
+
         async function doExecuteExport() {
             window.exportInProgress = true;
             document.getElementById('exportStepAuth').classList.add('hidden');
@@ -839,9 +916,9 @@
                 const usdcBalance = window.currentBalances.usdc || '0';
                 const polBalance = window.currentBalances.pol || '0';
 
-                // Pass 1: build a transaction set using the FULL POL balance
-                // as a placeholder, just to get an accurate fee estimate for
-                // a batch of this shape (gas cost barely depends on the
+                // Build a transaction set using the FULL POL balance as a
+                // placeholder, just to get an accurate fee estimate for a
+                // batch of this shape (gas cost barely depends on the
                 // native-transfer value itself).
                 function buildTransactions(polAmountToSend) {
                     const txs = [];
@@ -859,21 +936,17 @@
                     return txs;
                 }
 
+                // Pass 1: re-run the same POL-for-gas check as the pre-check
+                // in openExportModal() -- defense-in-depth in case conditions
+                // changed while the user was on the re-auth step (gas price
+                // moved, balance changed, etc).
                 statusEl.textContent = 'Estimating network fee...';
-                const estimateTxs = buildTransactions(polBalance);
-                if (estimateTxs.length === 0) {
-                    throw new Error('Nothing to export — your wallet balance is zero.');
+                const feeCheck = await estimateExportFee();
+                if (feeCheck.error) throw new Error(feeCheck.error);
+                if (!feeCheck.hasEnoughPol) {
+                    throw new Error(`You need at least ~${parseFloat(feeCheck.requiredPol).toFixed(3)} POL to pay the network fee. Please top up a small amount of POL and try again.`);
                 }
-                const estimateResp = await sequenceWaas.feeOptions({ network: 'polygon', transactions: estimateTxs });
-                const estimateFeeOptions = estimateResp.data?.feeOptions;
-                if (!estimateFeeOptions || estimateFeeOptions.length === 0) {
-                    throw new Error('Gas payment options are not available from the relayer right now.');
-                }
-                const estimatePolFee = estimateFeeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC');
-                if (!estimatePolFee) {
-                    throw new Error('POL is required to pay the network fee for this transaction, and none was quoted. Please try again later.');
-                }
-                const estimatedFeePol = fromWei(estimatePolFee.value || '0', 18);
+                const estimatedFeePol = feeCheck.estimatedFeePol;
 
                 // Reserve fee + safety buffer, send the rest of POL.
                 const feeToReserve = (parseFloat(estimatedFeePol) + parseFloat(POL_GAS_SAFETY_BUFFER)).toString();
