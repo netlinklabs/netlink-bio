@@ -176,6 +176,9 @@
                     <label class="text-xs font-medium text-secondary block mb-1.5">Current password</label>
                     <input id="currentPasswordInput" type="password" required placeholder="••••••••"
                         class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none">
+                    <p class="text-right mt-1.5">
+                        <button type="button" id="forgotCurrentPasswordBtn" onclick="handleForgotCurrentPassword()" class="text-xs text-blue-500 font-medium hover:underline">Forgot your current password?</button>
+                    </p>
                 </div>
                 <div>
                     <label class="text-xs font-medium text-secondary block mb-1.5">New password</label>
@@ -427,6 +430,46 @@
                 document.getElementById('changePasswordCard').classList.remove('hidden');
             }
         }
+
+        const FORGOT_CURRENT_PASSWORD_COOLDOWN_SECONDS = 30;
+        let forgotCurrentPasswordCooldownInterval = null;
+
+        function startForgotCurrentPasswordCooldown() {
+            clearInterval(forgotCurrentPasswordCooldownInterval);
+            let remaining = FORGOT_CURRENT_PASSWORD_COOLDOWN_SECONDS;
+            const btn = document.getElementById('forgotCurrentPasswordBtn');
+            btn.disabled = true;
+            btn.textContent = `Forgot your current password? (${remaining}s)`;
+            forgotCurrentPasswordCooldownInterval = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(forgotCurrentPasswordCooldownInterval);
+                    btn.disabled = false;
+                    btn.textContent = 'Forgot your current password?';
+                } else {
+                    btn.textContent = `Forgot your current password? (${remaining}s)`;
+                }
+            }, 1000);
+        }
+
+        async function handleForgotCurrentPassword() {
+            const btn = document.getElementById('forgotCurrentPasswordBtn');
+            btn.disabled = true;
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(user.email, {
+                    redirectTo: 'https://netlink-bio.vercel.app/reset-password.html'
+                });
+                if (error) throw error;
+                showToast('A password reset link has been sent to your email.');
+                startForgotCurrentPasswordCooldown();
+            } catch (err) {
+                console.error('Failed to send password reset email:', err);
+                showToast('Could not send the reset link. Please try again.', true);
+                btn.disabled = false;
+            }
+        }
+        window.handleForgotCurrentPassword = handleForgotCurrentPassword;
 
         function showChangePasswordError(message) {
             const el = document.getElementById('changePasswordError');
