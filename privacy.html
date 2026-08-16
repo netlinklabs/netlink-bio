@@ -167,8 +167,8 @@
             </button>
         </div>
 
-        <!-- Change Password (email/password users only) -->
-        <div id="changePasswordCard" class="card rounded-2xl p-4 lg:p-6 mb-4 hidden">
+        <!-- Change Password -->
+        <div id="changePasswordCard" class="card rounded-2xl p-4 lg:p-6 mb-4">
             <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="key-round" class="w-4 h-4 text-blue-500"></i> Change Password</h3>
             <p class="text-xs text-muted mb-4">Update the password you use to sign in to Netlink.</p>
             <form id="changePasswordForm" class="space-y-3">
@@ -292,7 +292,7 @@
                 currentSession = session;
                 document.getElementById('authGate').style.display = 'none';
                 await loadProfileForNav();
-                await Promise.all([checkConsentStatus(), loadDeletionStatus(), setupChangePasswordVisibility()]);
+                await Promise.all([checkConsentStatus(), loadDeletionStatus()]);
                 if (window.lucide) lucide.createIcons();
             } catch (err) {
                 console.error(err);
@@ -453,14 +453,6 @@
         window.exportData = exportData;
 
         // ---------------- Change Password ----------------
-
-        async function setupChangePasswordVisibility() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const isPasswordUser = user?.app_metadata?.provider === 'email';
-            if (isPasswordUser) {
-                document.getElementById('changePasswordCard').classList.remove('hidden');
-            }
-        }
 
         const FORGOT_CURRENT_PASSWORD_COOLDOWN_SECONDS = 30;
         let forgotCurrentPasswordCooldownInterval = null;
