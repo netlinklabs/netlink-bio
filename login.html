@@ -76,6 +76,9 @@
                                 <i id="togglePasswordIcon" data-lucide="eye" class="w-5 h-5"></i>
                             </button>
                         </div>
+                        <p id="forgotPasswordRow" class="text-right mt-1.5">
+                            <button type="button" onclick="openForgotPassword()" class="text-xs tosca font-medium hover:underline">Forgot password?</button>
+                        </p>
                     </div>
                     <button id="submitBtn" type="submit"
                         class="w-full py-3 bg-tosca hover-bg-tosca-dark text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
@@ -122,6 +125,33 @@
                     <button type="button" onclick="backToLogin()" class="text-gray-400 font-medium hover:underline">Use a different email</button>
                 </p>
             </div>
+
+            <div id="forgotView" class="hidden">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-tosca/10 flex items-center justify-center">
+                        <i data-lucide="key-round" class="w-6 h-6 tosca"></i>
+                    </div>
+                    <h2 class="font-poppins text-lg font-bold text-gray-800">Reset your password</h2>
+                    <p class="text-sm text-gray-500 mt-1">Enter your email and we'll send you a reset link.</p>
+                </div>
+
+                <form id="forgotForm" class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 block mb-1.5">Email</label>
+                        <input id="forgotEmail" type="email" required placeholder="you@example.com"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tosca/30 focus:border-tosca transition">
+                    </div>
+                    <button id="forgotSubmitBtn" type="submit"
+                        class="w-full py-3 bg-tosca hover-bg-tosca-dark text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                        <span id="forgotSubmitLabel">Send reset link</span>
+                        <i id="forgotSubmitSpinner" data-lucide="loader-2" class="w-4 h-4 animate-spin hidden"></i>
+                    </button>
+                </form>
+
+                <p class="text-center text-sm text-gray-500 mt-5">
+                    <button type="button" onclick="closeForgotPassword()" class="text-gray-400 font-medium hover:underline">Back to login</button>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -148,6 +178,7 @@
             document.getElementById('tabSignUp').classList.toggle('border-transparent', isSignIn);
             document.getElementById('tabSignUp').classList.toggle('text-gray-400', isSignIn);
 
+            document.getElementById('forgotPasswordRow').classList.toggle('hidden', !isSignIn);
             document.getElementById('submitLabel').textContent = isSignIn ? 'Log in' : 'Create account';
             document.getElementById('switchHint').innerHTML = isSignIn
                 ? `Don't have an account? <button type="button" onclick="switchTab('signup')" class="tosca font-medium hover:underline">Sign up</button>`
@@ -279,6 +310,71 @@
                 }
             } finally {
                 setOtpLoading(false);
+            }
+        });
+
+        // ==========================================
+        // Forgot password panel
+        // ==========================================
+        const FORGOT_RESEND_COOLDOWN_SECONDS = 30;
+        let forgotCooldownInterval = null;
+
+        function openForgotPassword() {
+            const typedEmail = document.getElementById('email').value.trim();
+            document.getElementById('forgotEmail').value = typedEmail;
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('forgotView').classList.remove('hidden');
+        }
+        window.openForgotPassword = openForgotPassword;
+
+        function closeForgotPassword() {
+            document.getElementById('forgotView').classList.add('hidden');
+            document.getElementById('authView').classList.remove('hidden');
+        }
+        window.closeForgotPassword = closeForgotPassword;
+
+        function setForgotLoading(isLoading) {
+            document.getElementById('forgotSubmitSpinner').classList.toggle('hidden', !isLoading);
+        }
+
+        function startForgotCooldown() {
+            clearInterval(forgotCooldownInterval);
+            let remaining = FORGOT_RESEND_COOLDOWN_SECONDS;
+            const btn = document.getElementById('forgotSubmitBtn');
+            const label = document.getElementById('forgotSubmitLabel');
+            btn.disabled = true;
+            label.textContent = `Send reset link (${remaining}s)`;
+            forgotCooldownInterval = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(forgotCooldownInterval);
+                    btn.disabled = false;
+                    label.textContent = 'Send reset link';
+                } else {
+                    label.textContent = `Send reset link (${remaining}s)`;
+                }
+            }, 1000);
+        }
+
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value.trim();
+            if (!email) return;
+
+            document.getElementById('forgotSubmitBtn').disabled = true;
+            setForgotLoading(true);
+            try {
+                const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'https://netlink-bio.vercel.app/reset-password.html'
+                });
+                if (error) throw error;
+                window.showToast('If an account exists for this email, a reset link has been sent.', true);
+                setForgotLoading(false);
+                startForgotCooldown();
+            } catch (err) {
+                window.showToast(err.message || 'Something went wrong. Please try again.');
+                setForgotLoading(false);
+                document.getElementById('forgotSubmitBtn').disabled = false;
             }
         });
 
