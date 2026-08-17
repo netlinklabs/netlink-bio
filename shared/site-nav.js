@@ -116,6 +116,7 @@
                 <a href="privacy-policy.html">Privacy Policy</a>
                 <a href="terms.html">Terms of Service</a>
                 <a href="terms-of-use.html">Terms of Use (Netlink Pay)</a>
+                <a href="${link('username-policy.html')}">Username Policy</a>
                 <a href="cookies.html">Cookie Policy</a>
                 <a href="acceptable-use.html">Acceptable Use Policy</a>
                 <a href="security.html">Security</a>
