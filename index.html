@@ -412,7 +412,7 @@
 
         setStatus('Checking...', 'neutral');
 
-        const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
+        const { data: status, error } = await supabaseClient.rpc('get_slug_status', {
           check_slug: username,
           check_tier: 'basic',
         });
@@ -425,9 +425,12 @@
           return;
         }
 
-        if (isAvailable) {
+        if (status === 'available') {
           setStatus(`netlink.bio/${username} is available!`, 'ok');
           lastCheckedAvailable = true;
+        } else if (status === 'reserved') {
+          setStatus(`netlink.bio/${username} is not available.`, 'bad');
+          lastCheckedAvailable = false;
         } else {
           setStatus(`netlink.bio/${username} is already taken.`, 'bad');
           lastCheckedAvailable = false;
