@@ -215,8 +215,8 @@ export default async function handler(req, res) {
         userId: transfiUserId,
         orderType: 'payin',
         purposeCode: 'investment',
-        successRedirectUrl: `${SITE_URL}/pay2.html?tx=complete`,
-        failureRedirectUrl: `${SITE_URL}/pay2.html?tx=failed`,
+        successRedirectUrl: `${SITE_URL}/pay2?tx=complete`,
+        failureRedirectUrl: `${SITE_URL}/pay2?tx=failed`,
         customerMetaData: {
           customerId: authedUser.id,
           customerEmail: authedUser.email,

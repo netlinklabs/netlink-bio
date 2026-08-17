@@ -622,7 +622,7 @@
                 if (session) {
                     await enterDashboard(session);
                 } else {
-                    window.location.href = 'login.html';
+                    window.location.href = 'login';
                 }
             } else if (event === 'SIGNED_IN' && session) {
                 // Jaga-jaga kalau INITIAL_SESSION belum sempat fire duluan
@@ -645,7 +645,7 @@
         async function handleLogout() {
             if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
             await supabaseClient.auth.signOut();
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         }
 
         function scrollToProfileCard() {
@@ -698,7 +698,7 @@
         }
 
 function openNetlinkPay() {
-    window.location.href = 'https://netlink-bio.vercel.app/pay.html';
+    window.location.href = 'https://netlink-bio.vercel.app/pay';
 }
 window.openNetlinkPay = openNetlinkPay;
         // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
@@ -1114,13 +1114,13 @@ window.openNetlinkPay = openNetlinkPay;
 
             currentLandingPage = data;
             showToast('Landing page created — opening editor...');
-            window.open(`page-builder.html?id=${data.id}`, '_blank');
+            window.open(`page-builder?id=${data.id}`, '_blank');
             await loadLandingPageCard();
         }
 
         function editLandingPage() {
             if (!currentLandingPage) { showToast('No landing page found'); return; }
-            window.open(`page-builder.html?id=${currentLandingPage.id}`, '_blank');
+            window.open(`page-builder?id=${currentLandingPage.id}`, '_blank');
         }
 
         function previewLandingPage() {

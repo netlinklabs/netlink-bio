@@ -91,7 +91,7 @@
                 <div class="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4"><i data-lucide="shield-alert" class="w-6 h-6 text-indigo-600"></i></div>
                 <h3 class="font-bold text-primary text-lg mb-2">We've updated our Privacy Policy</h3>
                 <p class="text-sm mb-1">Version <span id="policyVersionText">1.0</span> includes changes to how we handle your data. Please review and confirm to keep using Netlink.</p>
-                <a href="/privacy-policy.html" class="text-sm text-blue-500 hover:underline inline-block mb-5">Read the full policy →</a>
+                <a href="/privacy-policy" class="text-sm text-blue-500 hover:underline inline-block mb-5">Read the full policy →</a>
                 <div class="flex gap-3">
                     <button onclick="declineConsent()" class="flex-1 py-2.5 border border-subtle text-secondary font-medium rounded-xl transition text-sm hover-surface">Decline</button>
                     <button onclick="agreeConsent()" id="consentAgreeBtn" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition text-sm">I Agree</button>
@@ -287,7 +287,7 @@
             try {
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
                 if (error) throw error;
-                if (!session) { window.location.href = 'login.html'; return; }
+                if (!session) { window.location.href = 'login'; return; }
                 currentUser = session.user;
                 currentSession = session;
                 document.getElementById('authGate').style.display = 'none';

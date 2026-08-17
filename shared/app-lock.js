@@ -377,7 +377,7 @@
       document.getElementById('nlal-logout-btn').addEventListener('click', async () => {
         clearLockSession();
         if (state.supabaseClient) await state.supabaseClient.auth.signOut();
-        window.location.href = 'login.html';
+        window.location.href = 'login';
       });
     }
 

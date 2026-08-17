@@ -8,19 +8,19 @@ const ACCOUNT_MENU = {
     {
       title: 'Profile & Page',
       items: [
-        { icon: 'link', label: 'Links', href: 'dashboard.html#profileCard' },
-        { icon: 'file-text', label: 'CV Builder', href: 'dashboard.html#cvCard' },
-        { icon: 'book-user', label: 'Manage Contact', href: 'contacts.html' },
+        { icon: 'link', label: 'Links', href: 'dashboard#profileCard' },
+        { icon: 'file-text', label: 'CV Builder', href: 'dashboard#cvCard' },
+        { icon: 'book-user', label: 'Manage Contact', href: 'contacts' },
       ],
     },
     {
       title: 'Account',
       items: [
-        { icon: 'fingerprint', label: 'NET ID & Privacy', href: 'identity.html' },
-        { icon: 'shield', label: 'Privacy & Data', href: 'privacy.html' },
+        { icon: 'fingerprint', label: 'NET ID & Privacy', href: 'identity' },
+        { icon: 'shield', label: 'Privacy & Data', href: 'privacy' },
         { icon: 'coins', label: 'Local Currency', type: 'currency-select' },
         { icon: 'scan-face', label: 'Biometric Unlock', type: 'biometric-toggle' },
-        { icon: 'key-round', label: 'Wallet Security', href: 'recovery.html' },
+        { icon: 'key-round', label: 'Wallet Security', href: 'recovery' },
       ],
     },
     {

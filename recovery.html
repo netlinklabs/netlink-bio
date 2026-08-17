@@ -336,7 +336,7 @@
         async function checkAppAuth() {
             const { data: { session }, error } = await supabaseClient.auth.getSession();
             if (error) throw error;
-            if (!session) { window.location.href = 'login.html'; return null; }
+            if (!session) { window.location.href = 'login'; return null; }
             currentUser = session.user;
 
             const { data: profile, error: profileErr } = await supabaseClient
@@ -368,7 +368,7 @@
             const isSignedIn = await sequenceWaas.isSignedIn();
             if (!isSignedIn) {
                 document.getElementById('authGateText').innerHTML =
-                    'Please <a href="pay.html" class="text-blue-500 underline">open Netlink Pay</a> and sign in first, then come back here.';
+                    'Please <a href="pay" class="text-blue-500 underline">open Netlink Pay</a> and sign in first, then come back here.';
                 document.getElementById('authSpinner').classList.add('hidden');
                 return false;
             }

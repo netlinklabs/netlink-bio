@@ -8,27 +8,27 @@
   'use strict';
 
   const path = window.location.pathname;
-  const isIndex = path === '/' || path.endsWith('/') || /\/?index\.html$/.test(path);
-  const HOME = isIndex ? '' : 'index.html';
+  const isIndex = path === '/' || path.endsWith('/') || /\/?index(\.html)?$/.test(path);
+  const HOME = isIndex ? '' : 'index';
 
   // Anchors (#features, #docs, etc.) only exist on index.html.
-  // Real pages (privacy-policy.html, etc.) are left untouched.
+  // Real pages (privacy-policy, etc.) are left untouched.
   function link(href) {
-    if (href.indexOf('http') === 0 || href.indexOf('.html') !== -1) return href;
+    if (href.indexOf('http') === 0 || href.indexOf('#') !== 0) return href;
     return HOME + href;
   }
 
   const LOGO_LIGHT = 'https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png';
-  const LOGIN_URL = 'https://netlink-bio.vercel.app/login.html';
+  const LOGIN_URL = 'https://netlink-bio.vercel.app/login';
   // Temporary: the app isn't live yet, so the primary "Get Started Free" CTA
   // points to the coming-soon page instead of login. "Login" links are unaffected.
-  const APP_URL = 'app.html';
+  const APP_URL = 'app';
 
   const headerHTML = `
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <header class="header" id="site-header-el" role="banner">
       <div class="header-inner">
-        <a href="${isIndex ? '#' : 'index.html'}" class="header-logo" aria-label="Netlink Home">
+        <a href="${isIndex ? '#' : 'index'}" class="header-logo" aria-label="Netlink Home">
           <img src="${LOGO_LIGHT}" alt="Netlink Logo" width="200" height="48">
         </a>
         <nav class="header-nav" role="navigation" aria-label="Main navigation">
@@ -107,19 +107,19 @@
                 <a href="${link('#contact')}">Contact</a>
                 <a href="${link('#partners')}">Partners</a>
                 <a href="${link('#press')}">Press Kit</a>
-                <a href="investor.html">Investor</a>
+                <a href="investor">Investor</a>
               </div>
             </div>
             <div>
               <h4 class="footer-col-title">Legal</h4>
               <div class="footer-links">
-                <a href="privacy-policy.html">Privacy Policy</a>
-                <a href="terms.html">Terms of Service</a>
-                <a href="terms-of-use.html">Terms of Use (Netlink Pay)</a>
-                <a href="${link('username-policy.html')}">Username Policy</a>
-                <a href="cookies.html">Cookie Policy</a>
-                <a href="acceptable-use.html">Acceptable Use Policy</a>
-                <a href="security.html">Security</a>
+                <a href="privacy-policy">Privacy Policy</a>
+                <a href="terms">Terms of Service</a>
+                <a href="terms-of-use">Terms of Use (Netlink Pay)</a>
+                <a href="${link('username-policy')}">Username Policy</a>
+                <a href="cookies">Cookie Policy</a>
+                <a href="acceptable-use">Acceptable Use Policy</a>
+                <a href="security">Security</a>
               </div>
             </div>
           </div>

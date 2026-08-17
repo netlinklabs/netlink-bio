@@ -131,7 +131,7 @@
                 );
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
-                    document.getElementById('termsBackBtn').href = 'pay.html';
+                    document.getElementById('termsBackBtn').href = 'pay';
                     document.getElementById('termsBackBtnText').textContent = "I've Read It — Back to Netlink Pay";
                 }
             } catch (err) {
