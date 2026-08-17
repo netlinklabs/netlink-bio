@@ -18,7 +18,7 @@
     return HOME + href;
   }
 
-  const LOGO_LIGHT = 'https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-darkBG.png';
+  const LOGO_LIGHT = '/assets/netlinkbio-darkBG.png';
   const LOGIN_URL = 'https://netlink-bio.vercel.app/login';
   // Temporary: the app isn't live yet, so the primary "Get Started Free" CTA
   // points to the coming-soon page instead of login. "Login" links are unaffected.

@@ -151,7 +151,7 @@
           <span class="flex items-center gap-1 text-xs font-medium truncate ${tierAccentClass(tierKey)}">${subtitleHtml}</span>
         </span>
       </button>
-      <img src="https://raw.githubusercontent.com/netlinklabs/netlink-pay/refs/heads/main/asset/netlinkpay-icon.png" alt="Netlink Pay" class="w-9 h-9 rounded-[7px] object-cover flex-shrink-0">
+      <img src="/assets/netlinkpay-icon.png" alt="Netlink Pay" class="w-9 h-9 rounded-[7px] object-cover flex-shrink-0">
     `;
     document.getElementById('nlnav-avatar-btn').addEventListener('click', openAccountSheet);
   }
