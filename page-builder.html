@@ -946,7 +946,7 @@ async function initAuth() {
 try {
 const { data: { session }, error } = await supabaseClient.auth.getSession();
 if (error) throw error;
-if (!session) { window.location.href = 'login.html'; return; }
+if (!session) { window.location.href = 'login'; return; }
 currentUser = session.user;
 
 try {

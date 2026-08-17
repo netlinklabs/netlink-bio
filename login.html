@@ -31,7 +31,7 @@
     <div id="toast" class="toast"></div>
 
     <div class="w-full max-w-sm">
-        <a href="index.html" class="flex items-center justify-center mb-8">
+        <a href="index" class="flex items-center justify-center mb-8">
             <img src="https://raw.githubusercontent.com/netlinklabs/netlink-bio/refs/heads/main/assets/netlinkbio-lightBG.png" alt="Netlink.bio" class="h-9">
         </a>
 
@@ -300,7 +300,7 @@
                     type: 'signup'
                 });
                 if (error) throw error;
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard';
             } catch (err) {
                 const msg = (err.message || '').toLowerCase();
                 if (msg.includes('expire')) {
@@ -424,7 +424,7 @@
                         window.showToast('Please verify your email to continue.', true);
                         showOtpStep(email);
                     } else {
-                        window.location.href = 'dashboard.html';
+                        window.location.href = 'dashboard';
                     }
                 } else {
                     const { error } = await window.supabaseClient.auth.signUp({ email, password });
@@ -452,7 +452,7 @@
                 }
                 showOtpStep(session.user.email);
             } else {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard';
             }
         })();
     </script>

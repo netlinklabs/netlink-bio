@@ -56,7 +56,7 @@
 
         <div class="card rounded-2xl p-5 lg:p-7">
             <p>These Terms of Service ("Terms") govern your access to and use of Netlink.bio — including Link in Bio, Digital CV, Business Profile, Verification, and related features (collectively, "the Service") — provided by <strong>PT Netlink Labs Global</strong> ("Netlink", "we", "us"). By creating an account or using the Service, you agree to these Terms.</p>
-            <p>Netlink Pay is a separate wallet feature governed by its own <a href="terms-of-use.html" class="inline-link">Terms of Use (Netlink Pay)</a>, referenced in Section 5 below. Data handling is governed by our <a href="privacy-policy.html" class="inline-link">Privacy Policy</a>.</p>
+            <p>Netlink Pay is a separate wallet feature governed by its own <a href="terms-of-use" class="inline-link">Terms of Use (Netlink Pay)</a>, referenced in Section 5 below. Data handling is governed by our <a href="privacy-policy" class="inline-link">Privacy Policy</a>.</p>
 
             <h2>1. Eligibility & Account</h2>
             <ul>
@@ -77,10 +77,10 @@
             </ul>
 
             <h2>4. Acceptable Use</h2>
-            <p>You agree not to use the Service to publish unlawful, fraudulent, defamatory, or infringing content; impersonate another person or entity; scrape, reverse-engineer, or interfere with the Service; or use the Service in a way that could disable, overburden, or impair it. Full detail is set out in our <a href="acceptable-use.html" class="inline-link">Acceptable Use Policy</a>.</p>
+            <p>You agree not to use the Service to publish unlawful, fraudulent, defamatory, or infringing content; impersonate another person or entity; scrape, reverse-engineer, or interfere with the Service; or use the Service in a way that could disable, overburden, or impair it. Full detail is set out in our <a href="acceptable-use" class="inline-link">Acceptable Use Policy</a>.</p>
 
             <h2>5. Netlink Pay & Netlink Token (NET)</h2>
-            <p>If you create a wallet through Netlink Pay, your use of that feature is governed by the separate <a href="terms-of-use.html" class="inline-link">Terms of Use (Netlink Pay)</a>, which addresses self-custody, wallet risk, and applicable local law on the use of crypto assets.</p>
+            <p>If you create a wallet through Netlink Pay, your use of that feature is governed by the separate <a href="terms-of-use" class="inline-link">Terms of Use (Netlink Pay)</a>, which addresses self-custody, wallet risk, and applicable local law on the use of crypto assets.</p>
             <p>Netlink Token (NET) is a separate digital asset on the Polygon network. Nothing in these Terms, or in any Netlink materials, constitutes an offer, solicitation, or recommendation to buy, sell, or hold NET or any other crypto asset. You are solely responsible for evaluating the risks and legality of acquiring or using NET in your jurisdiction.</p>
 
             <h2>6. Verification (KYC/KYB)</h2>
@@ -135,7 +135,7 @@
                 );
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
-                    document.getElementById('tosBackBtn').href = 'dashboard.html';
+                    document.getElementById('tosBackBtn').href = 'dashboard';
                     document.getElementById('tosBackBtnText').textContent = "I've Read It — Back to Dashboard";
                 }
             } catch (err) {

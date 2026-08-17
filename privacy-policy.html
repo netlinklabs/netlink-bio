@@ -157,7 +157,7 @@
                 );
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
-                    document.getElementById('policyBackBtn').href = 'privacy.html';
+                    document.getElementById('policyBackBtn').href = 'privacy';
                     document.getElementById('policyBackBtnText').textContent = "I've Read It — Back to Privacy Settings";
                 }
             } catch (err) {

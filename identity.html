@@ -247,7 +247,7 @@
             try {
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
                 if (error) throw error;
-                if (!session) { window.location.href = 'login.html'; return; }
+                if (!session) { window.location.href = 'login'; return; }
                 currentUser = session.user;
                 document.getElementById('authGate').style.display = 'none';
                 document.getElementById('accountEmailText').textContent = currentUser.email || '—';

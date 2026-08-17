@@ -15,10 +15,10 @@
 
 (function () {
   const BOTTOM_NAV_ITEMS = [
-    { key: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard', href: 'dashboard.html' },
-    { key: 'pagebuilder', icon: 'layout-template', label: 'Page', href: 'dashboard.html#landingPageCard' },
-    { key: 'pay', icon: 'wallet', label: 'Wallet', href: 'pay.html' },
-    { key: 'activity', icon: 'history', label: 'Activity', href: 'tx.html' },
+    { key: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard', href: 'dashboard' },
+    { key: 'pagebuilder', icon: 'layout-template', label: 'Page', href: 'dashboard#landingPageCard' },
+    { key: 'pay', icon: 'wallet', label: 'Wallet', href: 'pay' },
+    { key: 'activity', icon: 'history', label: 'Activity', href: 'tx' },
     { key: 'account', icon: 'user-round', label: 'Account', href: null }, // opens sheet, not a page
   ];
 
@@ -345,7 +345,7 @@
       if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
       if (typeof state.onLogout === 'function') { await state.onLogout(); return; }
       if (state.supabaseClient) await state.supabaseClient.auth.signOut();
-      window.location.href = 'login.html';
+      window.location.href = 'login';
     });
 
     if (window.lucide) lucide.createIcons();

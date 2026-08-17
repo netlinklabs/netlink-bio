@@ -413,7 +413,7 @@
             <!-- Wallet Address Bar -->
             <div id="deletionPendingBanner" class="deletion-banner hidden">
                 <i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline-block mr-1"></i>
-                Your account is scheduled for deletion. Sending and swapping are disabled until you <a href="privacy.html">cancel the request</a>.
+                Your account is scheduled for deletion. Sending and swapping are disabled until you <a href="privacy">cancel the request</a>.
             </div>
 
             <div class="wallet-bar p-5 mb-4">
@@ -587,7 +587,7 @@
                     <div id="rampBlockedState" class="rounded-xl border border-subtle p-6 text-center" style="height: 520px; display: none; flex-direction: column; align-items: center; justify-content: center;">
                         <i data-lucide="lock" class="w-8 h-8 text-muted mb-3"></i>
                         <p class="text-sm font-medium text-primary mb-1">Buy/Sell temporarily unavailable</p>
-                        <p class="text-xs text-muted max-w-xs">Buying crypto is disabled while your account deletion is pending. <a href="privacy.html" class="text-blue-500 underline">Cancel the request</a> to re-enable it.</p>
+                        <p class="text-xs text-muted max-w-xs">Buying crypto is disabled while your account deletion is pending. <a href="privacy" class="text-blue-500 underline">Cancel the request</a> to re-enable it.</p>
                     </div>
                     <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by TransFi.</p>
                     <p class="text-[10px] text-amber-600 text-center mt-1">Test page — not linked from the main navigation.</p>
@@ -619,7 +619,7 @@
             </div>
 
             <!-- Transaction History moved to its own page: tx.html -->
-            <a href="tx.html" class="card rounded-2xl mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
+            <a href="tx" class="card rounded-2xl mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
                         <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
@@ -805,7 +805,7 @@
             <button class="modal-close" onclick="closeContactPicker()">&times;</button>
             <h3 class="font-semibold text-primary text-lg mb-4">Choose from Contacts</h3>
             <div id="contactPickerList" class="space-y-2 max-h-80 overflow-y-auto"></div>
-            <p id="contactPickerEmpty" class="hidden text-sm text-muted text-center py-8">No saved contacts yet. Add some from <a href="contacts.html" class="text-blue-500 hover:underline">Manage Contact</a>.</p>
+            <p id="contactPickerEmpty" class="hidden text-sm text-muted text-center py-8">No saved contacts yet. Add some from <a href="contacts" class="text-blue-500 hover:underline">Manage Contact</a>.</p>
         </div>
     </div>
 
@@ -936,7 +936,7 @@
             try {
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
                 if (error) throw error;
-                if (!session) { window.location.href = 'login.html'; return; }
+                if (!session) { window.location.href = 'login'; return; }
                 currentUser = session.user;
                 document.getElementById('authGate').style.display = 'none';
                 await loadDeletionGuardStatus();
