@@ -798,6 +798,15 @@ window.openNetlinkPay = openNetlinkPay;
         }
         const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
 
+        // Reserved words: block these regardless of length/tier since they
+        // collide with existing routes/pages (case-insensitive check --
+        // usernames are already lowercased before this list is consulted).
+        const RESERVED_USERNAMES = [
+            'login', 'dashboard', 'pay', 'tx', 'identity', 'contacts', 'privacy',
+            'terms', 'investor', 'recovery', 'page-builder', 'privacy-policy',
+            'terms-of-use', 'username-policy', 'index',
+        ];
+
         // Token guard: setiap pemanggilan checkUsernameLive() atau proses
         // save akan menaikkan angka ini. Kalau hasil RPC pengecekan
         // "pulang" belakangan (setelah proses save/pengecekan yang lebih
@@ -825,6 +834,13 @@ window.openNetlinkPay = openNetlinkPay;
                 status.classList.remove('hidden');
 
                     return;
+            }
+
+            if (RESERVED_USERNAMES.includes(username)) {
+                status.textContent = 'That username is reserved — try another.';
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+                status.classList.remove('hidden');
+                return;
             }
 
             const myTier = currentProfile?.tier || 'basic';
@@ -939,6 +955,13 @@ window.openNetlinkPay = openNetlinkPay;
 
                 if (username.length > 25) {
                     usernameStatus.textContent = 'Maximum 25 characters.';
+                    usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                    usernameStatus.classList.remove('hidden');
+                    return;
+                }
+
+                if (RESERVED_USERNAMES.includes(username)) {
+                    usernameStatus.textContent = 'That username is reserved — try another.';
                     usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
                     usernameStatus.classList.remove('hidden');
                     return;
