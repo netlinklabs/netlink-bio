@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Username Policy - Netlink.bio</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://netlink.bio/username-policy.html">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="shared/site-nav.css">
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        .text-primary { color: #0f172a; }
+        html.dark .text-primary { color: #f8fafc; }
+        .text-muted { color: #64748b; }
+        html.dark .text-muted { color: #94a3b8; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        h2 { font-size: 1.1875rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 2.25rem; margin-bottom: 0.875rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.08); color: inherit; }
+        html.dark h2 { border-bottom-color: rgba(255,255,255,0.08); }
+        h2:first-of-type { margin-top: 0; }
+        h3 { font-size: 1rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: inherit; }
+        p { font-size: 0.9375rem; line-height: 1.75; color: #475569; margin-bottom: 1rem; }
+        p:last-child { margin-bottom: 0; }
+        li { font-size: 0.9375rem; line-height: 1.75; color: #475569; margin-bottom: 0.5rem; }
+        html.dark p, html.dark li { color: #94a3b8; }
+        ul, ol { padding-left: 1.375rem; margin-bottom: 1.25rem; }
+        ul { list-style: disc; }
+        ol { list-style: decimal; }
+        ul:last-child, ol:last-child { margin-bottom: 0; }
+        strong { font-weight: 700; }
+        a.inline-link { color: #2563eb; text-decoration: underline; }
+        .badge { display: inline-block; font-size: 11px; font-weight: 600; color: #64748b; background: rgba(100,116,139,0.12); padding: 3px 10px; border-radius: 999px; }
+        html.dark .badge { color: #94a3b8; background: rgba(148,163,184,0.15); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="site-header"></div>
+
+    <main class="px-4 pt-8 pb-16 lg:px-8 max-w-2xl mx-auto">
+        <div class="flex items-center gap-2 mb-1">
+            <h1 class="text-2xl font-bold text-primary">Username Policy</h1>
+        </div>
+        <div class="flex items-center gap-2 mb-6">
+            <span class="badge">Version 1.0</span>
+            <span class="text-xs text-muted">Effective August 17, 2026</span>
+        </div>
+
+        <div class="card rounded-2xl p-5 lg:p-7">
+            <p>This policy explains how usernames work on Netlink, which names are reserved, and how we handle disputes over a username that may belong to someone else.</p>
+
+            <h2>1. First Come, First Served</h2>
+            <p>Outside of the reserved and disputed cases below, usernames are generally available on a first come, first served basis. We do not pre-screen every username at signup.</p>
+
+            <h2>2. Reserved Usernames</h2>
+            <p>Some usernames cannot be registered by anyone. This includes:</p>
+            <ul>
+                <li><strong>System names</strong> — words used internally by the app for pages and routes (e.g. <em>dashboard</em>, <em>pay</em>, <em>tx</em>)</li>
+                <li><strong>Netlink trademarks</strong> — our own brand and product names (e.g. <em>netlink</em>, <em>netlinkpay</em>)</li>
+                <li><strong>Third-party trademarks</strong> — well-known brand names we proactively block from impersonation</li>
+                <li><strong>Role and authority terms</strong> — words that imply official status (e.g. <em>ceo</em>, <em>official</em>, <em>admin</em>, <em>moderator</em>)</li>
+            </ul>
+            <p>A reserved name is not automatically deleted from this list once used internally — we may build a page under a reserved name later without conflict, since real pages always take priority over profile pages of the same name.</p>
+
+            <h2>3. Impersonation and Trademark Claims</h2>
+            <p>We cannot pre-reserve every public figure, celebrity, or brand name in advance. If a username is already taken and you believe it impersonates you or your brand, or infringes your trademark, you can submit a claim to <a href="mailto:contact@netlink.bio" class="inline-link">contact@netlink.bio</a>.</p>
+            <p>We review claims case by case using two verification paths:</p>
+            <ol>
+                <li><strong>You are the individual or brand owner.</strong> We ask for a government-issued ID (or business registration document for a company) that matches the name being claimed, plus a way to confirm you control the identity in question (e.g. a linked verified social account or official email domain).</li>
+                <li><strong>You represent the individual or brand.</strong> We ask for a signed letter of authorization from the person or company, together with your own ID, so we can verify both the letter and the person granting it.</li>
+            </ol>
+            <p>Submitting a claim does not guarantee the username will be reassigned. We weigh the evidence on both sides, including whether the current holder has a legitimate, unrelated reason to use that name (e.g. it is also their own real name).</p>
+
+            <h2>4. What Happens if a Claim Succeeds</h2>
+            <p>If a claim is approved, we may rename the existing account's username (freeing the disputed name for the verified claimant), suspend the disputed profile pending its own resolution, or take other action appropriate to the situation. We will always attempt to notify the affected account first.</p>
+
+            <h2>5. Reporting Abuse</h2>
+            <p>Impersonation used for fraud, scams, or to deceive others about payments or identity may also violate our Terms of Use and can be reported the same way, even while a trademark claim is pending.</p>
+
+            <h2>6. Changes to This Policy</h2>
+            <p>We may update this policy as Netlink grows. Material changes will be reflected here with an updated effective date.</p>
+
+            <h2>7. Contact</h2>
+            <p>Questions about this policy, or to submit a claim, contact <a href="mailto:contact@netlink.bio" class="inline-link">contact@netlink.bio</a>.</p>
+        </div>
+
+        <p class="text-xs text-muted text-center mt-6 mb-6">© 2026 PT Netlink Labs Global. This document is provided for transparency and does not constitute legal advice.</p>
+
+        <a href="/" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> <span>Back to Home</span>
+        </a>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="shared/site-nav.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
