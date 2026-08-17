@@ -2,7 +2,7 @@
   "name": "Netlink Pay",
   "short_name": "Netlink Pay",
   "description": "Wallet for Netlink Ecosystem",
-  "start_url": "./pay.html",
+  "start_url": "./pay",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",

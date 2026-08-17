@@ -927,6 +927,15 @@ if (len === 2) return 'platinum';
 return 'reserved';
 }
 const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+
+// Reserved words: block these regardless of length/tier since they
+// collide with existing routes/pages (case-insensitive check -- slugs
+// are already lowercased by sanitizeSlug() before this list is consulted).
+const RESERVED_USERNAMES = [
+'login', 'dashboard', 'pay', 'tx', 'identity', 'contacts', 'privacy',
+'terms', 'investor', 'recovery', 'page-builder', 'privacy-policy',
+'terms-of-use', 'username-policy', 'index',
+];
 let myTier = 'silver'; // safe fallback -- Landing Page requires Silver+
 
 // Auth gate + initial data load. page-builder.html is opened from
@@ -995,6 +1004,11 @@ return;
 }
 if (slug.length > 25) {
 status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Maximum 25 characters.';
+status.classList.add('warning');
+return;
+}
+if (RESERVED_USERNAMES.includes(slug)) {
+status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> That username is reserved — try another.';
 status.classList.add('warning');
 return;
 }
@@ -1905,6 +1919,11 @@ slugInput.value = slug;
 
 if (!slug) {
 showUpdateError('Please set a URL slug before publishing.');
+return;
+}
+
+if (RESERVED_USERNAMES.includes(slug)) {
+showUpdateError('That username is reserved — try another.');
 return;
 }
 
