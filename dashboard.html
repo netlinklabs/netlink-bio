@@ -964,6 +964,10 @@ window.openNetlinkPay = openNetlinkPay;
                         usernameStatus.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
                         usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
                         usernameStatus.classList.remove('hidden');
+                    } else if (error.message && error.message.includes('reserved and cannot be used')) {
+                        usernameStatus.textContent = `netlink.bio/${username} is reserved and can't be used.`;
+                        usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
+                        usernameStatus.classList.remove('hidden');
                     } else {
                         showToast('Failed to save');
                     }
