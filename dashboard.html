@@ -830,7 +830,7 @@ window.openNetlinkPay = openNetlinkPay;
             const myTier = currentProfile?.tier || 'basic';
             const requiredTier = requiredTierForLength(username.length);
 
-            const { data: isAvailable, error } = await supabaseClient.rpc('is_slug_available', {
+            const { data: slugStatus, error } = await supabaseClient.rpc('get_slug_status', {
                 check_slug: username,
                 check_tier: myTier,
             });
@@ -846,18 +846,22 @@ window.openNetlinkPay = openNetlinkPay;
                 return;
             }
 
-            if (!isAvailable) {
+            if (slugStatus === 'available') {
+                status.textContent = `netlink.bio/${username} is available!`;
+                status.className = 'mt-1.5 text-xs font-medium text-green-600';
+            } else if (slugStatus === 'reserved') {
+                status.textContent = `netlink.bio/${username} is not available.`;
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
+            } else if (slugStatus === 'too_short') {
                 if (requiredTier === 'reserved') {
                     status.textContent = '1-character usernames are reserved — contact us to request one.';
-                } else if (requiredTier !== myTier && requiredTier !== 'basic') {
-                    status.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
                 } else {
-                    status.textContent = `netlink.bio/${username} is taken.`;
+                    status.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
                 }
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
             } else {
-                status.textContent = `netlink.bio/${username} is available!`;
-                status.className = 'mt-1.5 text-xs font-medium text-green-600';
+                status.textContent = `netlink.bio/${username} is taken.`;
+                status.className = 'mt-1.5 text-xs font-medium text-red-500';
             }
             status.classList.remove('hidden');
         }
