@@ -81,9 +81,11 @@
       #nlnav-overlay.active { opacity: 1; pointer-events: auto; }
       #nlnav-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; max-height: 85vh;
         background: #ffffff; border-radius: 20px 20px 0 0; transform: translateY(100%);
-        transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); overflow-y: auto; }
+        transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
       html.dark #nlnav-sheet { background: #1e293b; }
       #nlnav-sheet.active { transform: translateY(0); }
+      .nlnav-sheet-header { position: sticky; top: 0; z-index: 2; background: inherit; }
+      .nlnav-sheet-body { overflow-y: auto; max-height: calc(85vh - 56px); }
       #nlnav-sheet-handle { width: 36px; height: 4px; border-radius: 99px; background: #e2e8f0;
         margin: 10px auto 4px; }
       html.dark #nlnav-sheet-handle { background: #334155; }
@@ -258,28 +260,32 @@
     `).join('');
 
     sheet.innerHTML = `
-      <div id="nlnav-sheet-handle"></div>
-      <button type="button" id="nlnav-sheet-close" aria-label="Close" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition">
-        <i data-lucide="x" class="w-[18px] h-[18px]"></i>
-      </button>
-      <div class="px-5 pt-2 pb-4 flex items-center gap-3">
-        ${avatarHtml(p, 'w-14 h-14')}
-        <div class="min-w-0">
-          <p class="font-semibold text-slate-900 dark:text-slate-50 truncate">${escapeHtml(p.display_name || p.username || 'Your Account')}</p>
-          <p class="text-xs text-slate-500">@${escapeHtml(p.username || '—')} · ${escapeHtml(tierLabel)} Plan</p>
-          <p class="text-xs text-slate-400 font-mono mt-0.5">${escapeHtml(formatNetId(p.net_id))}</p>
+      <div class="nlnav-sheet-header">
+        <div id="nlnav-sheet-handle"></div>
+        <button type="button" id="nlnav-sheet-close" aria-label="Close" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition">
+          <i data-lucide="x" class="w-[18px] h-[18px]"></i>
+        </button>
+      </div>
+      <div class="nlnav-sheet-body">
+        <div class="px-5 pt-2 pb-4 flex items-center gap-3">
+          ${avatarHtml(p, 'w-14 h-14')}
+          <div class="min-w-0">
+            <p class="font-semibold text-slate-900 dark:text-slate-50 truncate">${escapeHtml(p.display_name || p.username || 'Your Account')}</p>
+            <p class="text-xs text-slate-500">@${escapeHtml(p.username || '—')} · ${escapeHtml(tierLabel)} Plan</p>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">${escapeHtml(formatNetId(p.net_id))}</p>
+          </div>
         </div>
+        ${groupsHtml}
+        <div class="border-t border-slate-100 dark:border-white/5 flex items-center justify-between px-4 py-3">
+          <button type="button" id="nlnav-theme-btn" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <i data-lucide="moon" class="w-4 h-4"></i> <span id="nlnav-theme-label">Dark Mode</span>
+          </button>
+          <button type="button" id="nlnav-logout-btn" class="flex items-center gap-2 text-sm text-red-500 font-medium">
+            <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+          </button>
+        </div>
+        <p class="text-center text-[11px] text-slate-400 py-4">Developed by Netlink Labs</p>
       </div>
-      ${groupsHtml}
-      <div class="border-t border-slate-100 dark:border-white/5 flex items-center justify-between px-4 py-3">
-        <button type="button" id="nlnav-theme-btn" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-          <i data-lucide="moon" class="w-4 h-4"></i> <span id="nlnav-theme-label">Dark Mode</span>
-        </button>
-        <button type="button" id="nlnav-logout-btn" class="flex items-center gap-2 text-sm text-red-500 font-medium">
-          <i data-lucide="log-out" class="w-4 h-4"></i> Logout
-        </button>
-      </div>
-      <p class="text-center text-[11px] text-slate-400 py-4">Developed by Netlink Labs</p>
     `;
 
     // Wire item clicks
