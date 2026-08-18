@@ -89,7 +89,7 @@
         </div>
 
         <!-- Intro -->
-        <div class="card rounded-2xl p-5 mb-4">
+        <div id="introCard" class="card rounded-2xl p-5 mb-4">
             <div class="flex items-start gap-3">
                 <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                     <i data-lucide="shield-check" class="w-5 h-5 text-blue-500"></i>
@@ -389,6 +389,7 @@
                 list.innerHTML += methodRow('at-sign', 'Email', hasEmail, accounts.find(a => (a.type || '').toLowerCase().includes('email'))?.issuer);
 
                 if (hasEmail) {
+                    document.getElementById('introCard').classList.add('hidden');
                     document.getElementById('addEmailCard').classList.add('hidden');
                     document.getElementById('alreadyLinkedCard').classList.remove('hidden');
                 }
