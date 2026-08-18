@@ -1265,6 +1265,45 @@
             waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
         });
 
+        // ---- Wallet session integrity check ----
+        // sequenceWaas is a browser-global session (backed by shared local
+        // secure storage) that can outlive a Supabase login -- e.g. a stale
+        // session left over from a previous account, or a different account
+        // signed in via another tab during this visit. isSignedIn() alone
+        // only means "some session is active," never "signed in as this
+        // account" -- always confirm the session's wallet matches
+        // profiles.wallet_address before trusting it to skip
+        // re-authentication for a wallet-affecting action.
+        async function sessionMatchesCurrentWallet() {
+            const signedIn = await sequenceWaas.isSignedIn();
+            if (!signedIn || !window.currentWalletAddress) {
+                return { valid: false, mismatched: false };
+            }
+            try {
+                const sessionAddress = await sequenceWaas.getAddress();
+                if (sessionAddress && sessionAddress.toLowerCase() === window.currentWalletAddress.toLowerCase()) {
+                    return { valid: true, mismatched: false };
+                }
+                console.error('Sequence WaaS session wallet does not match the logged-in profile\'s wallet -- treating as not signed in.');
+                // Drop the stale session so the next re-auth attempt starts
+                // clean. Safe here: we've already established this session
+                // does NOT belong to the current Supabase account, so it's
+                // not one we want kept alive regardless of outcome.
+                // dropSession() with no args only revokes the
+                // currently-open session (server-side signOutSession + local
+                // secure-store clear) -- it doesn't touch other identities.
+                try {
+                    await sequenceWaas.dropSession();
+                } catch (dropErr) {
+                    console.error('Failed to drop mismatched Sequence WaaS session:', dropErr);
+                }
+                return { valid: false, mismatched: true };
+            } catch (err) {
+                console.error('Failed to verify Sequence WaaS session wallet:', err);
+                return { valid: false, mismatched: false };
+            }
+        }
+
         function renderGoogleConfirmButton() {
             const container = document.getElementById('googleConfirmWrap');
             container.innerHTML = '';
@@ -1862,8 +1901,8 @@
             resetSendConfirmEmail();
             collapseSendConfirmEmail();
 
-            const isSignedIn = await sequenceWaas.isSignedIn();
-            if (isSignedIn) {
+            const sessionCheck = await sessionMatchesCurrentWallet();
+            if (sessionCheck.valid) {
                 document.getElementById('sendConfirmStatus').textContent = 'Review and confirm to send.';
                 const container = document.getElementById('googleConfirmWrap');
                 container.innerHTML = '';
@@ -1874,7 +1913,12 @@
                 confirmSendBtn.addEventListener('click', doExecuteSend);
                 container.appendChild(confirmSendBtn);
             } else {
-                document.getElementById('sendConfirmStatus').textContent = 'Confirm your identity to authorize this transfer.';
+                if (sessionCheck.mismatched) {
+                    document.getElementById('sendConfirmStatus').textContent = 'A different wallet session was detected in this browser. Please confirm your identity again to continue.';
+                    showToast('A different wallet session was detected — please sign in again.');
+                } else {
+                    document.getElementById('sendConfirmStatus').textContent = 'Confirm your identity to authorize this transfer.';
+                }
                 renderGoogleConfirmButton();
             }
         };
