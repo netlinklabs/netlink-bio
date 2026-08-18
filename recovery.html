@@ -551,6 +551,24 @@
             });
         }
 
+        // No signature verification needed here -- sequenceWaas.linkAccount()
+        // below already validates the token is genuine; we're only reading a
+        // field for display purposes, not making an authorization decision
+        // with it. Same pattern as pay.html's decodeGoogleIdTokenEmail().
+        function decodeGoogleIdTokenEmail(idToken) {
+            try {
+                const payloadBase64 = idToken.split('.')[1];
+                const normalized = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+                const payloadJson = decodeURIComponent(
+                    atob(normalized).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+                );
+                return JSON.parse(payloadJson).email || null;
+            } catch (err) {
+                console.error('Failed to decode Google ID token email:', err);
+                return null;
+            }
+        }
+
         async function onGoogleBackupCredential(response) {
             const container = document.getElementById('addGoogleWrap');
             const statusEl = document.getElementById('addGoogleStatus');
@@ -562,6 +580,24 @@
             try {
                 const challenge = await sequenceWaas.initAuth({ idToken: response.credential });
                 await sequenceWaas.linkAccount(challenge.withAnswer());
+
+                // Best-effort: keep Supabase profile in sync for support/reference.
+                // Only write if not already set -- never overwrite an existing value.
+                try {
+                    const googleEmail = decodeGoogleIdTokenEmail(response.credential);
+                    if (googleEmail) {
+                        const { data: existing, error: fetchErr } = await supabaseClient
+                            .from('profiles').select('wallet_google_email').eq('id', currentUser.id).single();
+                        if (fetchErr) throw fetchErr;
+                        if (!existing.wallet_google_email) {
+                            await supabaseClient.from('profiles')
+                                .update({ wallet_google_email: googleEmail })
+                                .eq('id', currentUser.id);
+                        }
+                    }
+                } catch (syncErr) {
+                    console.error('Non-critical: failed to sync wallet_google_email to profile:', syncErr);
+                }
 
                 showToast('Google backup added!');
                 statusEl.classList.add('hidden');
