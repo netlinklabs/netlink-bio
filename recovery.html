@@ -310,6 +310,47 @@
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Records a completed on-chain action into wallet_transactions so
+        // tx.html has an instant, accurate source of truth -- same pattern
+        // as pay.html/pay2.html's recordTransaction().
+        async function recordTransaction(row) {
+            try {
+                const { error } = await supabaseClient.from('wallet_transactions').insert({
+                    owner_id: currentUser.id,
+                    occurred_at: new Date().toISOString(),
+                    status: 'success',
+                    ...row,
+                });
+                if (error) console.error('Failed to record transaction:', error);
+            } catch (err) {
+                console.error('Failed to record transaction:', err);
+            }
+        }
+
+        async function recordTransactionWithGasRetry(row, sequenceReceipt) {
+            const immediateFee = computeGasFeeFromReceipt(sequenceReceipt);
+            await recordTransaction({ ...row, gas_fee: immediateFee });
+        }
+
+        // Prefer gas data already present in the Sequence WaaS receipt (no
+        // extra network call) -- same as pay.html/pay2.html.
+        function computeGasFeeFromReceipt(receipt) {
+            try {
+                if (!receipt || !receipt.gasUsed) return null;
+                const gasPrice = receipt.effectiveGasPrice || receipt.gasPrice;
+                if (!gasPrice) return null;
+                const gasUsed = BigInt(receipt.gasUsed);
+                const feeWei = gasUsed * BigInt(gasPrice);
+                const divisor = 10n ** 18n;
+                const whole = feeWei / divisor;
+                const frac = feeWei % divisor;
+                return `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`;
+            } catch (err) {
+                console.error('Failed to compute gas fee from receipt:', err);
+                return null;
+            }
+        }
+
         const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
         const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
         const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
@@ -1204,6 +1245,30 @@
                 if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
                     console.error('Export transaction reverted:', tx.receipt);
                     throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
+                }
+
+                const txHash = tx.txHash || tx.hash || tx.data?.txHash || tx.receipt?.transactionHash;
+                if (txHash) {
+                    // One row per asset actually moved, sharing the same tx
+                    // hash -- the export is a single batched on-chain
+                    // transaction (up to 3 transfers: USDC, NET, POL).
+                    const sentPol = parseFloat(polToSend) > 0 ? polToSend : '0';
+                    const exportedAssets = [
+                        parseFloat(usdcBalance) > 0 && { token: 'USDC', amount: usdcBalance },
+                        parseFloat(netBalance) > 0 && { token: 'NET', amount: netBalance },
+                        parseFloat(sentPol) > 0 && { token: 'POL', amount: sentPol },
+                    ].filter(Boolean);
+                    for (const asset of exportedAssets) {
+                        recordTransactionWithGasRetry({
+                            hash: txHash,
+                            type: 'export',
+                            token: asset.token,
+                            amount: asset.amount,
+                            counterparty_address: to,
+                        }, tx.receipt);
+                    }
+                } else {
+                    console.warn('Could not determine tx hash — export not recorded:', tx);
                 }
 
                 window.exportInProgress = false;
