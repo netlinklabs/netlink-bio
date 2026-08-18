@@ -116,6 +116,16 @@
             </div>
         </div>
 
+        <!-- Add Google backup -->
+        <div id="addGoogleCard" class="hidden card rounded-2xl p-5 mb-4">
+            <p class="text-sm font-semibold text-primary mb-1">Add Google backup</p>
+            <p class="text-xs text-secondary mb-4">Link your Google account so you can sign in with it too, in addition to email.</p>
+
+            <div id="addGoogleWrap" class="flex items-center justify-center mb-3"></div>
+            <p id="addGoogleStatus" class="text-xs text-secondary text-center hidden"></p>
+            <p id="addGoogleError" class="text-xs text-red-500 mt-2 hidden"></p>
+        </div>
+
         <!-- Add email backup -->
         <div id="addEmailCard" class="card rounded-2xl p-5 mb-4">
             <p class="text-sm font-semibold text-primary mb-1">Add email backup</p>
@@ -294,7 +304,7 @@
     <script src="/shared/account-menu.js?v=3"></script>
     <script src="/shared/nav.js?v=3"></script>
     <script type="module">
-        import { SequenceWaaS, isSentTransactionResponse } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
+        import { SequenceWaaS, AccountAlreadyLinkedError, isSentTransactionResponse } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
 
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -392,6 +402,13 @@
                     document.getElementById('introCard').classList.add('hidden');
                     document.getElementById('addEmailCard').classList.add('hidden');
                     document.getElementById('alreadyLinkedCard').classList.remove('hidden');
+                }
+
+                if (hasGoogle) {
+                    document.getElementById('addGoogleCard').classList.add('hidden');
+                } else {
+                    document.getElementById('addGoogleCard').classList.remove('hidden');
+                    renderAddGoogleButton();
                 }
                 if (window.lucide) lucide.createIcons();
             } catch (err) {
@@ -507,6 +524,61 @@
             document.getElementById('codeStep').classList.add('hidden');
             document.getElementById('emailStep').classList.remove('hidden');
         };
+
+        // ---- Add Google backup ----
+        // A Google credential is already a verified, synchronous proof of
+        // identity (no OTP round-trip like email needs) -- initAuth+linkAccount
+        // still runs, but withAnswer() takes no code, it just finalizes the
+        // challenge the ID token already satisfied.
+        function renderAddGoogleButton() {
+            const container = document.getElementById('addGoogleWrap');
+            container.innerHTML = '';
+            document.getElementById('addGoogleError').classList.add('hidden');
+            if (!window.google) {
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                return;
+            }
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: onGoogleBackupCredential,
+            });
+            google.accounts.id.renderButton(container, {
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'pill',
+                width: 240,
+            });
+        }
+
+        async function onGoogleBackupCredential(response) {
+            const container = document.getElementById('addGoogleWrap');
+            const statusEl = document.getElementById('addGoogleStatus');
+            const errorEl = document.getElementById('addGoogleError');
+            errorEl.classList.add('hidden');
+            container.style.opacity = '0.5';
+            statusEl.textContent = 'Linking your Google account...';
+            statusEl.classList.remove('hidden');
+            try {
+                const challenge = await sequenceWaas.initAuth({ idToken: response.credential });
+                await sequenceWaas.linkAccount(challenge.withAnswer());
+
+                showToast('Google backup added!');
+                statusEl.classList.add('hidden');
+                document.getElementById('addGoogleCard').classList.add('hidden');
+                await renderMethods();
+            } catch (err) {
+                console.error('Google linkAccount failed:', err);
+                statusEl.classList.add('hidden');
+                container.style.opacity = '1';
+                const message = err instanceof AccountAlreadyLinkedError
+                    ? 'This Google account is already linked to another wallet. Sign in with a different Google account to add it as a backup here.'
+                    : 'Could not link your Google account. Please try again.';
+                errorEl.textContent = message;
+                errorEl.classList.remove('hidden');
+                showToast(message, true);
+            }
+        }
 
         // ============================================================
         // ---- Emergency Export: move all assets to an external wallet ----
