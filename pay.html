@@ -1354,7 +1354,7 @@
         // wallet-linking logic applies whether this is a brand-new wallet or
         // a returning user signing back into an existing one (including a
         // wallet whose email was federated later via recovery.html).
-        async function finalizeWalletConnection(walletAddress, recoveryEmail) {
+        async function finalizeWalletConnection(walletAddress, recoveryEmail, isGoogle) {
             // Never overwrite an existing wallet_address — only write if null.
             const { data: existing, error: fetchErr } = await supabaseClient
                 .from('profiles').select('wallet_address').eq('id', currentUser.id).single();
@@ -1365,7 +1365,10 @@
                     .from('profiles').update({ wallet_address: walletAddress }).eq('id', currentUser.id);
                 if (saveErr) throw saveErr;
 
-                if (recoveryEmail) {
+                // wallet_google_email is specifically the Google-federated
+                // recovery email -- only write it when this connection came
+                // from the Google credential flow, not email OTP.
+                if (isGoogle && recoveryEmail) {
                     const { error: emailErr } = await supabaseClient
                         .from('profiles').update({ wallet_google_email: recoveryEmail }).eq('id', currentUser.id);
                     if (emailErr) console.error('Failed to save wallet_google_email:', emailErr);
@@ -1452,7 +1455,7 @@
                 }
 
                 const googleEmail = decodeGoogleIdTokenEmail(idToken);
-                await finalizeWalletConnection(walletAddress, googleEmail);
+                await finalizeWalletConnection(walletAddress, googleEmail, true);
             } catch (err) {
                 console.error('Wallet creation error:', err);
 
@@ -1574,7 +1577,7 @@
                 pendingEmailAuthCode = null;
                 pendingEmailSignInPromise = null;
                 pendingConnectEmail = null;
-                await finalizeWalletConnection(walletAddress, email);
+                await finalizeWalletConnection(walletAddress, email, false);
             } catch (err) {
                 console.error('signIn (email OTP) confirm failed:', err);
 
