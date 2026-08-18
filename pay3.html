@@ -1802,7 +1802,13 @@
             if (isSignedIn) {
                 document.getElementById('sendConfirmStatus').textContent = 'Review and confirm to send.';
                 const container = document.getElementById('googleConfirmWrap');
-                container.innerHTML = '<button id="confirmSendBtn" onclick="doExecuteSend()" class="w-full h-11 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Confirm Send</button>';
+                container.innerHTML = '';
+                const confirmSendBtn = document.createElement('button');
+                confirmSendBtn.id = 'confirmSendBtn';
+                confirmSendBtn.className = 'w-full h-11 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition';
+                confirmSendBtn.textContent = 'Confirm Send';
+                confirmSendBtn.addEventListener('click', doExecuteSend);
+                container.appendChild(confirmSendBtn);
             } else {
                 document.getElementById('sendConfirmStatus').textContent = 'Confirm with Google to authorize this transfer.';
                 renderGoogleConfirmButton();
