@@ -13,6 +13,9 @@ All notable changes to Netlink.bio are documented in this file.
 - `shared/site-nav.js` — the header's "Get Started Free" CTA now points to `app.html` (temporary, until the app is live) instead of `login.html`. The "Login" nav links are unchanged.
 - `pay.html` — USDC card ID display now reads the real `net_id` from Supabase instead of generating a random value on every page load.
 
+### Fixed
+- `pay3.html` — the "Confirm Send" button (shown when a Sequence WaaS session is already active) did nothing when clicked. It was wired via an inline `onclick="doExecuteSend()"` HTML attribute, but `doExecuteSend()` is defined inside a `<script type="module">` and isn't reachable from inline attribute scope. Now built with `document.createElement` and wired via `addEventListener('click', doExecuteSend)` in the same module scope, matching how the rest of the send-confirm flow already worked.
+
 ---
 
 ## Previous Sessions
