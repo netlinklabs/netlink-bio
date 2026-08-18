@@ -37,7 +37,7 @@
         html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
         html.dark .hover-surface:hover { background: rgba(255,255,255,0.05) !important; }
 
-        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 24px 0; }
         html.dark #authGate { background: #0f172a; }
 
         .toast { position: fixed; bottom: 96px; right: 20px; left: 20px; margin: 0 auto; max-width: 320px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; }
@@ -69,9 +69,53 @@
 <body>
 
     <div id="authGate">
-        <div class="flex flex-col items-center gap-3 px-6 text-center">
+        <div id="authLoadingState" class="flex flex-col items-center gap-3 px-6 text-center">
             <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             <p id="authGateText" class="text-sm text-slate-400">Loading...</p>
+        </div>
+
+        <!-- Inline sign-in card, shown in place of the spinner when there's
+             no active/matching Sequence WaaS session -- keeps the person on
+             this page instead of bouncing them out to pay.html. -->
+        <div id="authSignInCard" class="hidden card rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
+            <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
+            </div>
+            <h2 class="text-base font-semibold text-primary mb-1">Sign in to continue</h2>
+            <p id="authSignInExplain" class="text-xs text-secondary mb-5 leading-relaxed"></p>
+
+            <div id="authGoogleStep">
+                <div id="authGoogleWrap" class="flex items-center justify-center mb-3"></div>
+                <button type="button" onclick="expandAuthEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
+                    Use email instead
+                </button>
+            </div>
+
+            <div id="authEmailStep" class="hidden">
+                <label class="text-xs font-medium text-secondary mb-1.5 block text-left">Email address</label>
+                <input id="authEmailInput" type="email" placeholder="you@example.com"
+                    class="w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                <button id="authEmailBtn" onclick="startAuthGateEmail()"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
+                    <span id="authEmailBtnText">Continue with email</span>
+                </button>
+                <button type="button" onclick="collapseAuthEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">
+                    Back to Google
+                </button>
+            </div>
+
+            <div id="authOtpStep" class="hidden">
+                <label class="text-xs font-medium text-secondary block mb-1.5 text-left">Enter the 6-digit code sent to <span id="authOtpEmail" class="text-primary font-medium"></span></label>
+                <input id="authOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+                    class="otp-input w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                <button id="authOtpBtn" onclick="confirmAuthGateEmail()"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
+                    <span id="authOtpBtnText">Confirm</span>
+                </button>
+                <button type="button" onclick="resetAuthGateEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Use a different email</button>
+            </div>
+
+            <p id="authSignInError" class="text-xs text-red-500 mt-3 hidden"></p>
         </div>
     </div>
 
@@ -416,6 +460,8 @@
             setTimeout(() => el.classList.remove('show'), 3200);
         }
         function showAuthError(msg) {
+            document.getElementById('authLoadingState').classList.remove('hidden');
+            document.getElementById('authSignInCard').classList.add('hidden');
             document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
         }
         window.addEventListener('error', (e) => showAuthError(e.message));
@@ -454,19 +500,209 @@
         // ---- Wallet session (Sequence WaaS) ----
         // Must be signed in to sequenceWaas (an active embedded wallet
         // session) to call initAuth/linkAccount. If there's no active
-        // Sequence session in this browser, send the person to sign in
-        // via pay.html first.
+        // Sequence session in this browser, show an inline sign-in card
+        // right here instead of sending the person away to pay.html --
+        // less confusing for non-crypto-native users, and they never leave
+        // this page.
         async function ensureWalletSession() {
             const sessionCheck = await sessionMatchesCurrentWallet();
             if (!sessionCheck.valid) {
-                document.getElementById('authGateText').innerHTML = sessionCheck.mismatched
-                    ? 'A different wallet session was detected in this browser. Please <a href="pay" class="text-blue-500 underline">open Netlink Pay</a> and sign in again for this account.'
-                    : 'Please <a href="pay" class="text-blue-500 underline">open Netlink Pay</a> and sign in first, then come back here.';
-                document.getElementById('authSpinner').classList.add('hidden');
+                showAuthSignInCard(sessionCheck.mismatched);
                 return false;
             }
             return true;
         }
+
+        function showAuthSignInCard(mismatched) {
+            document.getElementById('authLoadingState').classList.add('hidden');
+            document.getElementById('authSignInCard').classList.remove('hidden');
+            document.getElementById('authSignInExplain').textContent = mismatched
+                ? 'A different wallet session was detected in this browser. Sign in again below for this account.'
+                : 'Sign in to your Netlink Pay wallet to manage your account security.';
+            resetAuthGateEmail();
+            collapseAuthEmail();
+            renderAuthGateGoogleButton();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function proceedPastAuthGate() {
+            document.getElementById('authGate').style.display = 'none';
+            await renderMethods();
+            await loadExportBalances();
+            validateExportDestination();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Called after a successful in-page sign-in (Google or email). Must
+        // re-verify the new session actually matches currentWalletAddress --
+        // signing in as the wrong Google/email account is a real possibility
+        // (e.g. multiple Google accounts in the browser) and should surface
+        // a clear inline error rather than silently proceeding.
+        async function completeAuthGateSignIn() {
+            const hasWalletSession = await ensureWalletSession();
+            if (!hasWalletSession) {
+                const errorEl = document.getElementById('authSignInError');
+                errorEl.textContent = "That signed you into a different wallet than this account's. Please try again with the correct account.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            showToast('Signed in!');
+            await proceedPastAuthGate();
+        }
+
+        // ---- Auth gate: Google sign-in ----
+        // Same button-rendering pattern as "Add Google backup" below, but
+        // this one calls sequenceWaas.signIn() (a fresh session), not
+        // initAuth()+linkAccount() (which links a second method to an
+        // already-open session).
+        function renderAuthGateGoogleButton() {
+            const container = document.getElementById('authGoogleWrap');
+            container.style.opacity = '1';
+            container.innerHTML = '';
+            document.getElementById('authSignInError').classList.add('hidden');
+            if (!window.google) {
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                return;
+            }
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: onAuthGateGoogleCredential,
+            });
+            google.accounts.id.renderButton(container, {
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'pill',
+                width: 240,
+            });
+        }
+
+        async function onAuthGateGoogleCredential(response) {
+            const container = document.getElementById('authGoogleWrap');
+            const errorEl = document.getElementById('authSignInError');
+            errorEl.classList.add('hidden');
+            container.style.opacity = '0.5';
+            try {
+                await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                await completeAuthGateSignIn();
+            } catch (err) {
+                console.error('Auth gate Google sign-in failed:', err);
+                container.style.opacity = '1';
+                errorEl.textContent = 'Could not sign in with Google. Please try again.';
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // ---- Auth gate: email OTP sign-in (progressive disclosure) ----
+        // Same sequenceWaas.signIn({ email })+onEmailAuthCodeRequired
+        // pattern as the Emergency Export re-auth flow below (and
+        // pay.html's startEmailWalletConnect()) -- shares the single
+        // pendingEmailAuthCode callback slot, but keeps its own dedicated
+        // pending state so it never collides with the export flow.
+        let pendingAuthGateAuthCode = null;
+        let pendingAuthGateSignInPromise = null;
+
+        window.expandAuthEmail = function () {
+            document.getElementById('authGoogleStep').classList.add('hidden');
+            document.getElementById('authEmailStep').classList.remove('hidden');
+            document.getElementById('authEmailInput').focus();
+        };
+
+        window.collapseAuthEmail = function () {
+            document.getElementById('authEmailStep').classList.add('hidden');
+            document.getElementById('authOtpStep').classList.add('hidden');
+            document.getElementById('authGoogleStep').classList.remove('hidden');
+        };
+
+        window.startAuthGateEmail = async function () {
+            const emailInput = document.getElementById('authEmailInput');
+            const errorEl = document.getElementById('authSignInError');
+            const btn = document.getElementById('authEmailBtn');
+            const btnText = document.getElementById('authEmailBtnText');
+            errorEl.classList.add('hidden');
+
+            const email = emailInput.value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.textContent = 'Enter a valid email address.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                pendingEmailAuthCode = null;
+                pendingAuthGateSignInPromise = sequenceWaas.signIn({ email }, 'Netlink Pay');
+
+                for (let i = 0; i < 30 && !pendingEmailAuthCode; i++) {
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                }
+                if (!pendingEmailAuthCode) {
+                    throw new Error('Did not receive an OTP request from the wallet service.');
+                }
+                pendingAuthGateAuthCode = pendingEmailAuthCode;
+
+                document.getElementById('authOtpEmail').textContent = email;
+                document.getElementById('authEmailStep').classList.add('hidden');
+                document.getElementById('authOtpStep').classList.remove('hidden');
+                document.getElementById('authOtpInput').focus();
+            } catch (err) {
+                console.error('signIn (auth gate email OTP) start failed:', err);
+                errorEl.textContent = 'Could not send code. Please check the email and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Continue with email';
+            }
+        };
+
+        window.confirmAuthGateEmail = async function () {
+            const codeInput = document.getElementById('authOtpInput');
+            const errorEl = document.getElementById('authSignInError');
+            const btn = document.getElementById('authOtpBtn');
+            const btnText = document.getElementById('authOtpBtnText');
+            errorEl.classList.add('hidden');
+
+            const code = codeInput.value.trim();
+            if (!code || code.length < 6) {
+                errorEl.textContent = 'Enter the 6-digit code from your email.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!pendingAuthGateAuthCode || !pendingAuthGateSignInPromise) {
+                errorEl.textContent = 'Your code expired. Please request a new one.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                await pendingAuthGateAuthCode(code);
+                await pendingAuthGateSignInPromise;
+                pendingAuthGateAuthCode = null;
+                pendingAuthGateSignInPromise = null;
+                await completeAuthGateSignIn();
+            } catch (err) {
+                console.error('signIn (auth gate email OTP) confirm failed:', err);
+                errorEl.textContent = "That code didn't work. Please check it and try again.";
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Confirm';
+            }
+        };
+
+        window.resetAuthGateEmail = function () {
+            pendingAuthGateAuthCode = null;
+            pendingAuthGateSignInPromise = null;
+            const emailInput = document.getElementById('authEmailInput');
+            const codeInput = document.getElementById('authOtpInput');
+            if (emailInput) emailInput.value = '';
+            if (codeInput) codeInput.value = '';
+            document.getElementById('authSignInError').classList.add('hidden');
+            document.getElementById('authOtpStep').classList.add('hidden');
+        };
 
         async function renderMethods() {
             const list = document.getElementById('methodsList');
@@ -1297,11 +1533,7 @@
                 const hasWalletSession = await ensureWalletSession();
                 if (!hasWalletSession) return;
 
-                document.getElementById('authGate').style.display = 'none';
-                await renderMethods();
-                await loadExportBalances();
-                validateExportDestination();
-                if (window.lucide) lucide.createIcons();
+                await proceedPastAuthGate();
             } catch (err) {
                 console.error(err);
                 showAuthError(err.message || String(err));
