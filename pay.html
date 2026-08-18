@@ -1627,7 +1627,7 @@
 
         window.openReceiveModal = function () {
             const address = window.currentWalletAddress;
-            if (!address) { showToast('No wallet yet'); return; }
+            if (!address) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
             document.getElementById('receiveAddress').textContent = address;
             document.getElementById('receiveQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(address)}`;
             document.getElementById('receiveModal').classList.add('active');
@@ -1638,7 +1638,7 @@
 
         window.openSendModal = function () {
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); return; }
-            if (!window.currentWalletAddress) { showToast('No wallet yet'); return; }
+            if (!window.currentWalletAddress) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
             document.getElementById('sendStepForm').classList.remove('hidden');
             document.getElementById('sendStepConfirm').classList.add('hidden');
             document.getElementById('sendToAddress').value = '';
