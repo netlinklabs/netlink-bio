@@ -5,16 +5,16 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Added
-- `pay3.html` — experimental copy of `pay2.html` testing skip-relogin on active Sequence WaaS sessions: `goToSendConfirm()` now checks `sequenceWaas.isSignedIn()` before showing the send confirmation step. If the session is already signed in, it skips the Google/OTP re-auth prompt and shows a direct "Confirm Send" button that calls `doExecuteSend()`; if not signed in, it falls back to the existing Google sign-in confirm flow (with email OTP fallback) unchanged. `pay.html` and `pay2.html` are untouched.
 - `app.html` — "coming soon" placeholder page for the main app (dark slate-900 theme with teal/blue gradients matching netlink-token's landing page style): banner with a subtle float/glow animation, "In Development" status badge, Q3 2026 timeline note, a 3-pillar Netlink/Netlink Pay/NET Token grid linking out to docs and the whitepaper, secondary CTAs (Whitepaper, Documentation), and social links (Telegram, X/Twitter, Instagram).
 - **NET ID** — permanent per-user identifier, format `NET` + 10 random digits (e.g. `NET1234567890`), stored plain in `profiles.net_id`, rendered with a cosmetic hyphen grouping (`NET-12345-67890`) via `formatNetId()`. Auto-generated on profile creation via DB trigger (`generate_net_id()`); existing users backfilled. Currently identity-only — no transactional use yet.
 
 ### Changed
 - `shared/site-nav.js` — the header's "Get Started Free" CTA now points to `app.html` (temporary, until the app is live) instead of `login.html`. The "Login" nav links are unchanged.
 - `pay.html` — USDC card ID display now reads the real `net_id` from Supabase instead of generating a random value on every page load.
+- `pay.html` and `pay2.html` — `goToSendConfirm()` now checks `sequenceWaas.isSignedIn()` before showing the send confirmation step. If the Sequence WaaS session is already active, it skips the Google/email-OTP re-auth prompt and shows a direct "Confirm Send" button (built with `document.createElement` + `addEventListener`, not an inline `onclick`) that calls `doExecuteSend()`; if the session is not signed in, the existing Google sign-in confirm flow (with email OTP fallback on `pay.html`) is unchanged. Promoted from the `pay3.html` experiment, which has been removed now that its logic lives in production. `performTransfer()`, `doExecuteSend()`, and the wallet connect/disconnect flow were not touched.
 
-### Fixed
-- `pay3.html` — the "Confirm Send" button (shown when a Sequence WaaS session is already active) did nothing when clicked. It was wired via an inline `onclick="doExecuteSend()"` HTML attribute, but `doExecuteSend()` is defined inside a `<script type="module">` and isn't reachable from inline attribute scope. Now built with `document.createElement` and wired via `addEventListener('click', doExecuteSend)` in the same module scope, matching how the rest of the send-confirm flow already worked.
+### Removed
+- `pay3.html` — experimental page for the skip-relogin Send flow. Its logic has been merged into `pay.html` and `pay2.html`; the standalone experiment is no longer needed.
 
 ---
 

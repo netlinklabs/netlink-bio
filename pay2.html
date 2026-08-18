@@ -1766,7 +1766,7 @@
             el.classList.remove('hidden');
         }
 
-        window.goToSendConfirm = function () {
+        window.goToSendConfirm = async function () {
             const token = document.getElementById('sendTokenSelect').value;
             const to = document.getElementById('sendToAddress').value.trim();
             const amount = document.getElementById('sendAmount').value.trim();
@@ -1795,10 +1795,24 @@
             }
             document.getElementById('confirmAmountLine').textContent = `${amount} ${token}`;
             document.getElementById('confirmToAddress').textContent = to;
-            document.getElementById('sendConfirmStatus').textContent = 'Confirm with Google to authorize this transfer.';
             document.getElementById('sendStepForm').classList.add('hidden');
             document.getElementById('sendStepConfirm').classList.remove('hidden');
-            renderGoogleConfirmButton();
+
+            const isSignedIn = await sequenceWaas.isSignedIn();
+            if (isSignedIn) {
+                document.getElementById('sendConfirmStatus').textContent = 'Review and confirm to send.';
+                const container = document.getElementById('googleConfirmWrap');
+                container.innerHTML = '';
+                const confirmSendBtn = document.createElement('button');
+                confirmSendBtn.id = 'confirmSendBtn';
+                confirmSendBtn.className = 'w-full h-11 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition';
+                confirmSendBtn.textContent = 'Confirm Send';
+                confirmSendBtn.addEventListener('click', doExecuteSend);
+                container.appendChild(confirmSendBtn);
+            } else {
+                document.getElementById('sendConfirmStatus').textContent = 'Confirm with Google to authorize this transfer.';
+                renderGoogleConfirmButton();
+            }
         };
 
         window.backToSendForm = function () {
