@@ -326,6 +326,47 @@
         let pendingChallenge = null;
         let pendingEmail = null;
 
+        // ---- Wallet session integrity check ----
+        // sequenceWaas is a browser-global session (backed by shared local
+        // secure storage) that can outlive a Supabase login -- e.g. a stale
+        // session left over from a previous account, or a different account
+        // signed in via another tab during this visit. isSignedIn() alone
+        // only means "some session is active," never "signed in as this
+        // account" -- always confirm the session's wallet matches
+        // profiles.wallet_address before trusting it for any wallet-
+        // affecting action (linking a backup method, exporting assets).
+        // Must be re-checked at every sensitive action, not just once at
+        // page load, since the session can change mid-visit via another tab.
+        async function sessionMatchesCurrentWallet() {
+            const signedIn = await sequenceWaas.isSignedIn();
+            if (!signedIn || !currentWalletAddress) {
+                return { valid: false, mismatched: false };
+            }
+            try {
+                const sessionAddress = await sequenceWaas.getAddress();
+                if (sessionAddress && sessionAddress.toLowerCase() === currentWalletAddress.toLowerCase()) {
+                    return { valid: true, mismatched: false };
+                }
+                console.error('Sequence WaaS session wallet does not match the logged-in profile\'s wallet -- treating as not signed in.');
+                // Drop the stale session so the next re-auth attempt starts
+                // clean. Safe here: we've already established this session
+                // does NOT belong to the current Supabase account, so it's
+                // not one we want kept alive regardless of outcome.
+                // dropSession() with no args only revokes the
+                // currently-open session (server-side signOutSession + local
+                // secure-store clear) -- it doesn't touch other identities.
+                try {
+                    await sequenceWaas.dropSession();
+                } catch (dropErr) {
+                    console.error('Failed to drop mismatched Sequence WaaS session:', dropErr);
+                }
+                return { valid: false, mismatched: true };
+            } catch (err) {
+                console.error('Failed to verify Sequence WaaS session wallet:', err);
+                return { valid: false, mismatched: false };
+            }
+        }
+
         function showToast(msg, isError) {
             const el = document.getElementById('toast');
             el.textContent = msg;
@@ -375,10 +416,11 @@
         // Sequence session in this browser, send the person to sign in
         // via pay.html first.
         async function ensureWalletSession() {
-            const isSignedIn = await sequenceWaas.isSignedIn();
-            if (!isSignedIn) {
-                document.getElementById('authGateText').innerHTML =
-                    'Please <a href="pay" class="text-blue-500 underline">open Netlink Pay</a> and sign in first, then come back here.';
+            const sessionCheck = await sessionMatchesCurrentWallet();
+            if (!sessionCheck.valid) {
+                document.getElementById('authGateText').innerHTML = sessionCheck.mismatched
+                    ? 'A different wallet session was detected in this browser. Please <a href="pay" class="text-blue-500 underline">open Netlink Pay</a> and sign in again for this account.'
+                    : 'Please <a href="pay" class="text-blue-500 underline">open Netlink Pay</a> and sign in first, then come back here.';
                 document.getElementById('authSpinner').classList.add('hidden');
                 return false;
             }
@@ -387,6 +429,21 @@
 
         async function renderMethods() {
             const list = document.getElementById('methodsList');
+
+            // Re-check every render, not just at page load -- the Sequence
+            // session can change mid-visit via another tab.
+            const sessionCheck = await sessionMatchesCurrentWallet();
+            if (!sessionCheck.valid) {
+                list.innerHTML = sessionCheck.mismatched
+                    ? '<p class="text-xs text-red-500">A different wallet session was detected in this browser. Please sign in again for this account.</p>'
+                    : '<p class="text-xs text-red-500">Could not verify your wallet session. Please sign in again.</p>';
+                document.getElementById('introCard').classList.add('hidden');
+                document.getElementById('addEmailCard').classList.add('hidden');
+                document.getElementById('addGoogleCard').classList.add('hidden');
+                document.getElementById('alreadyLinkedCard').classList.add('hidden');
+                return;
+            }
+
             try {
                 const response = await sequenceWaas.listAccounts();
                 const accounts = response.accounts || [];
@@ -490,6 +547,19 @@
             btn.disabled = true;
             btnText.innerHTML = '<span class="spinner"></span>';
             try {
+                // Re-check right before the call that mutates account
+                // linking -- the session can change mid-visit via another
+                // tab between requesting the code and confirming it.
+                const sessionCheck = await sessionMatchesCurrentWallet();
+                if (!sessionCheck.valid) {
+                    errorEl.textContent = sessionCheck.mismatched
+                        ? 'A different wallet session was detected in this browser. Please sign in again for this account before linking.'
+                        : 'Your wallet session has expired. Please sign in again.';
+                    errorEl.classList.remove('hidden');
+                    await renderMethods();
+                    return;
+                }
+
                 await sequenceWaas.linkAccount(pendingChallenge.withAnswer(code));
 
                 // Best-effort: keep Supabase profile in sync for support/reference.
@@ -578,6 +648,22 @@
             statusEl.textContent = 'Linking your Google account...';
             statusEl.classList.remove('hidden');
             try {
+                // Re-check right before the call that mutates account
+                // linking -- the session can change mid-visit via another
+                // tab, and the Google Sign-In button could have been
+                // rendered before that happened.
+                const sessionCheck = await sessionMatchesCurrentWallet();
+                if (!sessionCheck.valid) {
+                    statusEl.classList.add('hidden');
+                    container.style.opacity = '1';
+                    errorEl.textContent = sessionCheck.mismatched
+                        ? 'A different wallet session was detected in this browser. Please sign in again for this account before linking.'
+                        : 'Your wallet session has expired. Please sign in again.';
+                    errorEl.classList.remove('hidden');
+                    await renderMethods();
+                    return;
+                }
+
                 const challenge = await sequenceWaas.initAuth({ idToken: response.credential });
                 await sequenceWaas.linkAccount(challenge.withAnswer());
 
@@ -722,6 +808,19 @@
         window.openExportModal = async function () {
             const addr = document.getElementById('exportDestAddress').value.trim();
             if (!isValidAddress(addr)) return;
+
+            // Financial-safety gate: never let Emergency Export proceed on a
+            // stale/mismatched Sequence session, even before the re-auth
+            // step. Re-checked again in doExecuteExport() since time passes
+            // (and tabs can change) between opening this modal and actually
+            // sending the transaction.
+            const sessionCheck = await sessionMatchesCurrentWallet();
+            if (!sessionCheck.valid) {
+                showToast(sessionCheck.mismatched
+                    ? 'A different wallet session was detected in this browser. Please sign in again for this account before exporting.'
+                    : 'Your wallet session has expired. Please sign in again.', true);
+                return;
+            }
 
             // Pre-check POL-for-gas BEFORE opening the modal, so a user who
             // can't actually afford the network fee never has to type the
@@ -1020,6 +1119,17 @@
             const statusEl = document.getElementById('exportExecutingStatus');
 
             try {
+                // Financial-safety gate: re-check right before sending any
+                // transaction, even after a fresh re-auth step -- catches
+                // both a session that changed mid-visit via another tab and
+                // a fresh sign-in that resolved to the wrong account/wallet.
+                const sessionCheck = await sessionMatchesCurrentWallet();
+                if (!sessionCheck.valid) {
+                    throw new Error(sessionCheck.mismatched
+                        ? 'A different wallet session was detected in this browser. Please sign in again for this account before exporting.'
+                        : 'Your wallet session has expired. Please sign in again.');
+                }
+
                 const to = document.getElementById('exportDestAddress').value.trim();
                 const netBalance = window.currentBalances.net || '0';
                 const usdcBalance = window.currentBalances.usdc || '0';
