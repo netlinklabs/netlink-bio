@@ -76,7 +76,7 @@ netlink-bio/
 ## Known Gaps / In Progress
 
 See `CHANGELOG.md` for the current, authoritative list — this section intentionally stays short to avoid going stale. As of this writing:
-- Custom domain `netlink.bio` migration pending (site currently live at `netlink-bio.vercel.app`)
+- Custom domain `netlink.bio` migration pending (site currently live at preview domain`netlink-bio.vercel.app`)
 - On-ramp providers mostly pending KYB approval (Transfi furthest along)
 - i18n on `dashboard.html` — paused mid-implementation
 - Account Linking (multiple auth methods → same wallet) not yet built
