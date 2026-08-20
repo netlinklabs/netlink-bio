@@ -9,6 +9,7 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 - Deployment: `netlink-bio.vercel.app` → custom domain `netlink.bio` (pending, migration not yet complete)
 - Stack: vanilla HTML/JS (no bundler), Tailwind CSS via CDN, Vercel serverless functions (`api/`), Supabase (Postgres + RLS + Auth, project `fuewalufgiclrcgszlit`, ap-southeast-2), Sequence WaaS embedded wallets, Polygon PoS, LI.FI swap aggregator
 - Related repo: `netlinklabs/netlink-token` (NET token landing page + docs) — separate repo, don't cross-edit without being told
+- Local dev: no build step, no `npm scripts` defined. Run `vercel dev` to serve pages + `api/` functions locally.
 
 ## Branding rules (strict)
 
@@ -21,6 +22,16 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 - All UI text, error messages, and user-facing strings: **English only** — this applies even if the person instructing you writes in Indonesian.
 - Explanatory code comments can be any language, but shipped text must be English.
 
+## Wallet security (Netlink Pay — pay.html, pay2.html, recovery.html, tx.html)
+
+- Sequence WaaS keeps a browser-global session that persists across different Supabase logins. **Always validate `sessionMatchesCurrentWallet()` using `sequenceWaas.getAddress()` before any wallet action** (send, export, sign) — this closes a session-mismatch vulnerability already fixed once; don't reintroduce it.
+- Sequence Embedded Wallets are smart contract wallets — there is no exportable private key. Recovery goes through the configured Recovery Wallet (Trust Recovery process), not key export.
+- Each social login provider (Google, etc.) creates a **separate wallet address** by default. Don't assume one user = one wallet unless Account Linking has been implemented (it hasn't yet — flag if a task assumes otherwise).
+
+## Navigation
+
+- `page-builder.html` is **permanently excluded** from the shared nav system (`site-nav.js` / `nav.js`). Don't add it back without being explicitly told.
+
 ## Multi-session / multi-assistant codebase — be careful
 
 - This repo is edited across many separate Claude Code sessions (no shared memory between them) and sometimes by other tools/chats.
@@ -32,7 +43,7 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 
 - Before writing/inserting data into any **production Supabase table** (e.g. notifications broadcasts, manual data fixes), stop and show a draft of the change first. Do not execute without explicit approval.
 - Never propose or build an email-change feature — intentionally excluded (account-takeover vector).
-- Presale phases (all 3) were cancelled and refunded — don't reference presale as past traction, and this repo has no presale flows to begin with (that's `netlink-token`).
+- Presale history: Netlink ran 3 presales in the past (all failed, all refunded). No public presale runs during 2026 — token purchase requests go through the Investor & Partnership Inquiry form as a private sale with vesting. Don't reference presale as active or upcoming in any copy; don't build presale UI/flows in this repo (that would live in `netlink-token` if it ever returns, planned earliest 2027).
 
 ## Known in-progress / paused work (don't "helpfully" finish these)
 
