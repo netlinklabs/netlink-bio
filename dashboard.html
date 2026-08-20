@@ -157,6 +157,9 @@
                 <label class="flex items-center gap-2 text-sm text-secondary">
                     <input id="profileShowDonate" type="checkbox" class="rounded" onchange="showDonateDirty = true"> Show Wallet
                 </label>
+                <label class="flex items-center gap-2 text-sm text-secondary">
+                    <input id="profileShowCountry" type="checkbox" class="rounded" onchange="showCountryDirty = true"> Show Country
+                </label>
             </div>
 
             <button id="linkCardSaveBtn" onclick="saveLinkCardSettings()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
@@ -601,6 +604,7 @@
         // state (loaded before identity.html changed it elsewhere) would
         // silently overwrite the other page's change on unrelated saves.
         let showDonateDirty = false;
+        let showCountryDirty = false;
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
 
         // ==========================================
@@ -808,6 +812,8 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('profileShowCv').checked = data.show_cv !== false;
             document.getElementById('profileShowDonate').checked = data.show_donate === true;
             showDonateDirty = false;
+            document.getElementById('profileShowCountry').checked = data.show_country_bio === true;
+            showCountryDirty = false;
 
             document.getElementById('profileDisplayName').value = data.display_name || '';
             document.getElementById('profileEmail').value = data.contact_email || '';
@@ -1064,6 +1070,13 @@ window.openNetlinkPay = openNetlinkPay;
                 // must not silently overwrite a change made there.
                 if (showDonateDirty) {
                     updatePayload.show_donate = document.getElementById('profileShowDonate').checked;
+                }
+                // Only include show_country_bio if the user actually touched this
+                // checkbox this session -- it's also editable from
+                // identity.html, so an untouched (possibly stale) value here
+                // must not silently overwrite a change made there.
+                if (showCountryDirty) {
+                    updatePayload.show_country_bio = document.getElementById('profileShowCountry').checked;
                 }
 
                 const { error } = await supabaseClient.from('profiles').update(updatePayload).eq('id', currentUser.id);
