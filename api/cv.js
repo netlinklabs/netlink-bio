@@ -4,7 +4,7 @@
 // immediately, plus JSON-LD (schema.org/Person with resume-specific fields
 // like jobTitle, alumniOf, worksFor, knowsAbout) for machine-readability.
 
-import { COUNTRY_NAME_BY_CODE } from './_lib/countries.js';
+import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -132,7 +132,9 @@ export default async function handler(req, res) {
   const displayName = profile.display_name || profile.username;
   const title = cv.title || '';
   const city = cv.location || '';
-  const countryName = profile.country_code ? (COUNTRY_NAME_BY_CODE[profile.country_code] || profile.country_code) : '';
+  const countryName = profile.country_code
+    ? `${countryFlag(profile.country_code)} ${COUNTRY_NAME_BY_CODE[profile.country_code] || profile.country_code}`
+    : '';
   const location = [city, countryName].filter(Boolean).join(', ');
   const summary = cv.summary || '';
   const skills = Array.isArray(cv.skills) ? cv.skills : [];
