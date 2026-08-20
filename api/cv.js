@@ -156,7 +156,13 @@ export default async function handler(req, res) {
     ...(title ? { jobTitle: title } : {}),
     ...(summary ? { description: summary } : {}),
     ...(avatar ? { image: avatar } : {}),
-    ...(location ? { address: { '@type': 'PostalAddress', addressLocality: location } } : {}),
+    ...((city || profile.country_code) ? {
+      address: {
+        '@type': 'PostalAddress',
+        ...(city ? { addressLocality: city } : {}),
+        ...(profile.country_code ? { addressCountry: profile.country_code } : {}),
+      }
+    } : {}),
     ...(skills.length ? { knowsAbout: skills } : {}),
     ...(languages.length ? { knowsLanguage: languages.map((l) => l.name).filter(Boolean) } : {}),
     ...(education.length ? { alumniOf: education.map((e) => ({ '@type': 'EducationalOrganization', name: e.school })).filter((e) => e.name) } : {}),

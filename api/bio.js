@@ -186,6 +186,7 @@ export default async function handler(req, res) {
     url: pageUrl,
     ...(bio ? { description: bio } : {}),
     ...(avatar ? { image: avatar } : {}),
+    ...(profile.country_code ? { address: { '@type': 'PostalAddress', addressCountry: profile.country_code } } : {}),
     ...(sameAs.length ? { sameAs } : {}),
   };
 
