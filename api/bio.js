@@ -5,6 +5,8 @@
 // bots that don't execute JavaScript (e.g. GPTBot) still see the full content
 // and structured data, not an empty shell.
 
+import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
+
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
 
@@ -157,6 +159,8 @@ export default async function handler(req, res) {
   }
 
   const displayName = profile.display_name || profile.username;
+  const countryCode = profile.country_code || '';
+  const countryName = countryCode ? (COUNTRY_NAME_BY_CODE[countryCode] || countryCode) : '';
   const bio = (profile.bio || '').slice(0, 500);
   const avatar = profile.avatar_url || '';
   const pageUrl = `https://netlink-bio.vercel.app/${profile.username}`;
@@ -328,7 +332,8 @@ export default async function handler(req, res) {
   .badge-modal-title { font-family:'Poppins',sans-serif; font-size:19px; font-weight:700; margin:0 0 10px; display:flex; align-items:center; gap:8px; }
   .badge-modal-message { font-size:14px; color:#475569; line-height:1.6; margin:0 0 12px; }
   .badge-modal-date { font-size:12px; color:#94a3b8; margin:0; }
-  .handle { text-align:center; color:#64748b; font-size:14px; margin:0 0 14px; }
+  .handle { text-align:center; color:#64748b; font-size:14px; margin:0 0 4px; }
+  .country-row { text-align:center; color:#64748b; font-size:14px; margin:0 0 14px; }
   .contact-row { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
   .contact-icon { width:38px; height:38px; border-radius:50%; background:white; border:1px solid rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
   .contact-icon .brand-svg { width:100%; height:100%; }
@@ -409,6 +414,7 @@ export default async function handler(req, res) {
       : `<div class="avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`}
     <h1 class="name-row">${escapeHtml(displayName)}${badgeDotsHtml(profile)}</h1>
     <p class="handle">@${escapeHtml(profile.username)}</p>
+    ${countryName ? `<p class="country-row">${countryFlag(countryCode)} ${escapeHtml(countryName)}</p>` : ''}
     ${contactIconsHtml}
 
     ${bodyContent || '<p class="empty">This page is still being set up.</p>'}
