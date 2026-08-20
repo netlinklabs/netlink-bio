@@ -150,7 +150,6 @@
             <div class="toggle-row"><span class="toggle-label">Show Public Email</span><input id="toggleEmailBio" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Phone Number</span><input id="togglePhoneBio" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Telegram</span><input id="toggleTelegramBio" type="checkbox" class="toggle-switch-input"></div>
-            <p id="countryCurrentText" class="text-xs text-muted mb-2"></p>
             <div class="toggle-row"><span class="toggle-label">Show Country on Bio Page</span><input id="toggleCountryBio" type="checkbox" class="toggle-switch-input"></div>
 
             <p class="privacy-group-title">CV</p>
@@ -178,7 +177,6 @@
         </div>
     </main>
 
-    <script src="/shared/countries.js?v=1"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
@@ -264,7 +262,7 @@
         async function loadProfile() {
             const { data, error } = await supabaseClient
                 .from('profiles')
-                .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency, wallet_google_email, identity_verification_status, identity_verified_at, business_verification_status, business_verified_at, show_donate, show_email_bio, show_phone_bio, show_telegram_bio, show_email_cv, show_phone_cv, receipt_show_display_name, receipt_wallet_display, net_id_discoverable, country_code, show_country_bio')
+                .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency, wallet_google_email, identity_verification_status, identity_verified_at, business_verification_status, business_verified_at, show_donate, show_email_bio, show_phone_bio, show_telegram_bio, show_email_cv, show_phone_cv, receipt_show_display_name, receipt_wallet_display, net_id_discoverable, show_country_bio')
                 .eq('id', currentUser.id)
                 .single();
 
@@ -318,10 +316,6 @@
             document.getElementById('toggleNetIdDiscoverable').checked = data.net_id_discoverable === true;
 
             document.getElementById('toggleCountryBio').checked = data.show_country_bio === true;
-            const countryEntry = data.country_code ? (window.NETLINK_COUNTRIES || []).find(([c]) => c === data.country_code) : null;
-            document.getElementById('countryCurrentText').textContent = countryEntry
-                ? `Your country: ${window.netlinkCountryFlag(data.country_code)} ${countryEntry[1]} — change it in Dashboard → Edit Profile.`
-                : 'Country not set yet — set it in Dashboard → Edit Profile before publishing.';
 
             if (window.lucide) lucide.createIcons();
         }
