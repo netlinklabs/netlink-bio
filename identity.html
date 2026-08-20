@@ -150,7 +150,7 @@
             <div class="toggle-row"><span class="toggle-label">Show Public Email</span><input id="toggleEmailBio" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Phone Number</span><input id="togglePhoneBio" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Telegram</span><input id="toggleTelegramBio" type="checkbox" class="toggle-switch-input"></div>
-            <div class="toggle-row"><span class="toggle-label">Show Country on Bio Page</span><input id="toggleCountryBio" type="checkbox" class="toggle-switch-input"></div>
+            <div class="toggle-row"><span class="toggle-label">Show Country on Bio Page</span><input id="toggleCountryBio" type="checkbox" class="toggle-switch-input" onchange="showCountryDirty = true"></div>
 
             <p class="privacy-group-title">CV</p>
             <div class="toggle-row"><span class="toggle-label">Show Public Email</span><input id="toggleEmailCv" type="checkbox" class="toggle-switch-input"></div>
@@ -191,6 +191,7 @@
         // (loaded before dashboard.html changed it elsewhere) would silently
         // overwrite the other page's change on unrelated saves.
         let showDonateDirty = false;
+        let showCountryDirty = false;
 
         const TIER_DISPLAY = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
 
@@ -316,6 +317,7 @@
             document.getElementById('toggleNetIdDiscoverable').checked = data.net_id_discoverable === true;
 
             document.getElementById('toggleCountryBio').checked = data.show_country_bio === true;
+            showCountryDirty = false;
 
             if (window.lucide) lucide.createIcons();
         }
@@ -335,7 +337,6 @@
                 receipt_show_display_name: document.getElementById('toggleReceiptName').checked,
                 receipt_wallet_display: document.getElementById('selectReceiptWallet').value,
                 net_id_discoverable: document.getElementById('toggleNetIdDiscoverable').checked,
-                show_country_bio: document.getElementById('toggleCountryBio').checked,
             };
             // Only include show_donate if the user actually touched this
             // toggle this session -- it's also editable from dashboard.html,
@@ -343,6 +344,11 @@
             // overwrite a change made there.
             if (showDonateDirty) {
                 payload.show_donate = document.getElementById('toggleShowDonate').checked;
+            }
+            // Same reasoning for show_country_bio -- also editable from
+            // dashboard.html's "Show Country" checkbox.
+            if (showCountryDirty) {
+                payload.show_country_bio = document.getElementById('toggleCountryBio').checked;
             }
 
             const { error } = await supabaseClient.from('profiles').update(payload).eq('id', currentUser.id);
@@ -352,6 +358,7 @@
 
             if (error) { console.error(error); showToast('Failed to save privacy settings'); return; }
             showDonateDirty = false;
+            showCountryDirty = false;
             showToast('Privacy settings saved!');
         }
 
