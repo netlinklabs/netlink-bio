@@ -278,7 +278,7 @@
         ${groupsHtml}
         <div class="border-t border-slate-100 dark:border-white/5 flex items-center justify-between px-4 py-3">
           <button type="button" id="nlnav-theme-btn" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-            <i data-lucide="moon" class="w-4 h-4"></i> <span id="nlnav-theme-label">Dark Mode</span>
+            <i id="nlnav-theme-icon" data-lucide="moon" class="w-4 h-4"></i> <span id="nlnav-theme-label">Dark Mode</span>
           </button>
           <button type="button" id="nlnav-logout-btn" class="flex items-center gap-2 text-sm text-red-500 font-medium">
             <i data-lucide="log-out" class="w-4 h-4"></i> Logout
@@ -357,28 +357,55 @@
     if (window.lucide) lucide.createIcons();
   }
 
+  const THEME_ORDER = ['light', 'dark', 'system'];
+  const THEME_LABELS = { light: 'Light Mode', dark: 'Dark Mode', system: 'System' };
+  const THEME_ICONS = { light: 'sun', dark: 'moon', system: 'monitor' };
+
+  function getStoredTheme() {
+    const t = localStorage.getItem('theme');
+    return THEME_ORDER.includes(t) ? t : 'system';
+  }
+
+  function resolveTheme(theme) {
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return theme;
+  }
+
   function updateThemeLabel() {
     const labelEl = document.getElementById('nlnav-theme-label');
+    const iconEl = document.getElementById('nlnav-theme-icon');
     if (!labelEl) return;
-    const isDark = document.documentElement.classList.contains('dark');
-    labelEl.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    const theme = getStoredTheme();
+    labelEl.textContent = THEME_LABELS[theme];
+    if (iconEl) {
+      iconEl.setAttribute('data-lucide', THEME_ICONS[theme]);
+      if (window.lucide) lucide.createIcons();
+    }
   }
 
   function toggleTheme() {
-    const isDark = document.documentElement.classList.contains('dark');
-    applyTheme(isDark ? 'light' : 'dark', true);
+    const current = getStoredTheme();
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length];
+    applyTheme(next, true);
     updateThemeLabel();
   }
 
   function applyTheme(theme, save) {
     const html = document.documentElement;
-    if (theme === 'dark') { html.classList.add('dark'); html.classList.remove('light'); }
+    const resolved = resolveTheme(theme);
+    if (resolved === 'dark') { html.classList.add('dark'); html.classList.remove('light'); }
     else { html.classList.remove('dark'); html.classList.add('light'); }
     if (save) localStorage.setItem('theme', theme);
   }
 
   function initTheme() {
-    applyTheme(localStorage.getItem('theme') || 'light', false);
+    applyTheme(getStoredTheme(), false);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener('change', () => {
+      if (getStoredTheme() === 'system') applyTheme('system', false);
+    });
   }
 
   function openAccountSheet() {
