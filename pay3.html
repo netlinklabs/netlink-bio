@@ -1044,7 +1044,15 @@
             btn.textContent = 'Preparing payment...';
 
             try {
-                const res = await fetch(`/api/moonpay-sign-url?walletAddress=${encodeURIComponent(currentWalletAddress)}&baseCurrencyAmount=${encodeURIComponent(amount)}&baseCurrencyCode=idr&defaultCurrencyCode=usdc_polygon&apiKey=pk_test_1RIFYNJJyP1IuDXDd8aLMKVcqodCof`);
+                // TEMPORARY DIAGNOSTIC CHANGE: baseCurrencyCode is "usd" (was
+                // "idr") and defaultCurrencyCode is "eth" (was "usdc_polygon"),
+                // matching MoonPay's official sandbox test example (test-mode
+                // transactions need ETH enabled). This isolates whether the
+                // "Coming soon to your region" error is caused by the specific
+                // IDR + USDC-Polygon currency pair rather than a domain/
+                // signature issue. Revert both to "idr"/"usdc_polygon" once
+                // the test result is in.
+                const res = await fetch(`/api/moonpay-sign-url?walletAddress=${encodeURIComponent(currentWalletAddress)}&baseCurrencyAmount=${encodeURIComponent(amount)}&baseCurrencyCode=usd&defaultCurrencyCode=eth&apiKey=pk_test_1RIFYNJJyP1IuDXDd8aLMKVcqodCof`);
                 const data = await res.json();
                 if (!res.ok || !data.signedUrl) {
                     errorEl.textContent = data.error || 'Could not start payment — please try again.';
