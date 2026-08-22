@@ -1044,7 +1044,7 @@
             btn.textContent = 'Preparing payment...';
 
             try {
-                const res = await fetch(`/api/moonpay-sign-url?walletAddress=${encodeURIComponent(currentWalletAddress)}&baseCurrencyAmount=${encodeURIComponent(amount)}&baseCurrencyCode=idr&defaultCurrencyCode=usdc_polygon&apiKey=PLACEHOLDER_MOONPAY_PUBLISHABLE_KEY`);
+                const res = await fetch(`/api/moonpay-sign-url?walletAddress=${encodeURIComponent(currentWalletAddress)}&baseCurrencyAmount=${encodeURIComponent(amount)}&baseCurrencyCode=idr&defaultCurrencyCode=usdc_polygon&apiKey=pk_test_1RIFYNJJyP1IuDXDd8aLMKVcqodCof`);
                 const data = await res.json();
                 if (!res.ok || !data.signedUrl) {
                     errorEl.textContent = data.error || 'Could not start payment — please try again.';
