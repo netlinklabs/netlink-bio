@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- EXPERIMENTAL FILE - MoonPay sandbox widget test, replaces TransFi widget position from pay2.html for this trial. -->
+<!-- EXPERIMENTAL FILE - MoonPay sandbox widget test, replaces TransFi widget position from pay2.html for this trial. Fetches a signed, IP-matched widget URL from api/moonpay-sign-url.js and loads it in an iframe, instead of calling MoonPayWebSdk.init() client-side with an unsigned URL. -->
 <html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +12,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script defer src="https://static.moonpay.com/web-sdk/v1/moonpay-web-sdk.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -543,7 +542,9 @@
                         </div>
                     </div>
 
-                    <!-- Amount entry, then MoonPay's own overlay takes over for payment -->
+                    <!-- Amount entry; on Continue, a signed widget URL is fetched
+                         from api/moonpay-sign-url.js and loaded into moonpayFrameWrap
+                         below (outside this wrapper, which gets hidden). -->
                     <div id="moonpaySetup" class="space-y-3">
                         <div>
                             <label class="text-xs font-medium text-secondary mb-1 block">Amount (IDR)</label>
@@ -564,6 +565,21 @@
                     </div>
                     <p class="text-[11px] text-muted mt-2 text-center">You may need to complete verification to purchase crypto. Rates and fees are set by MoonPay.</p>
                     <p class="text-[10px] text-amber-600 text-center mt-1">Test page — not linked from the main navigation.</p>
+                </div>
+
+                <!-- Iframe shown once a signed URL comes back -- sits outside
+                     moonpayIdleWrapper so it fully takes over the card. -->
+                <div id="moonpayFrameWrap" class="hidden">
+                    <button type="button" onclick="resetMoonPayWidget()" class="flex items-center gap-1 text-xs text-muted hover:text-primary transition mb-2">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back
+                    </button>
+                    <div class="relative rounded-xl overflow-hidden border border-subtle" style="height: 620px;">
+                        <div id="moonpayLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface z-10">
+                            <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p class="text-xs text-muted">Loading secure payment...</p>
+                        </div>
+                        <iframe id="moonpayFrame" allow="accelerometer; autoplay; camera; gyroscope; payment" width="100%" height="100%" frameborder="0" title="MoonPay" onload="hideMoonPayLoadingOverlay()"></iframe>
+                    </div>
                 </div>
             </div>
 
@@ -910,12 +926,17 @@
                 if (error) { console.error('Failed to check deletion status:', error); return; }
                 window.hasPendingDeletion = !!(data && data.length);
                 document.getElementById('deletionPendingBanner').classList.toggle('hidden', !window.hasPendingDeletion);
-                // MoonPay widget has 2 states: amount-entry (moonpaySetup) and
-                // blocked (rampBlockedState). Deletion-pending forces the
-                // blocked state -- MoonPay's own payment UI runs in an
-                // overlay outside this card, so there's no iframe state to manage here.
+                // MoonPay widget has 3 states: amount-entry (moonpaySetup),
+                // live iframe (moonpayFrameWrap, shown only after a signed
+                // URL is fetched), and blocked (rampBlockedState).
+                // Deletion-pending only ever forces the blocked state -- it
+                // never force-shows the iframe, since that only appears
+                // once we have a real signed URL from startMoonPayWidget().
                 document.getElementById('moonpaySetup').style.display = window.hasPendingDeletion ? 'none' : 'block';
                 document.getElementById('rampBlockedState').style.display = window.hasPendingDeletion ? 'flex' : 'none';
+                if (window.hasPendingDeletion) {
+                    document.getElementById('moonpayFrameWrap').classList.add('hidden');
+                }
             } catch (err) {
                 console.error('Failed to check deletion status:', err);
             }
@@ -984,10 +1005,23 @@
             navigator.clipboard.writeText(currentWalletAddress).then(() => showToast('Address copied!'));
         }
 
-        // MoonPay sandbox flow: unlike TransFi, no order is created on our
-        // server first -- the Web SDK opens its own overlay and handles the
-        // whole payment flow itself once given the wallet address + amount.
-        function startMoonPayWidget() {
+        // MoonPay sandbox flow: the signed widget URL is built and signed
+        // entirely server-side by api/moonpay-sign-url.js (HMAC-SHA256 over
+        // its own fixed query-string layout, including allowedIpAddress --
+        // see that file). MoonPay validates the signature against the exact
+        // query string it receives, byte for byte. The officially documented
+        // Web SDK flow re-signs a URL that the SDK itself constructs
+        // (moonPaySdk.generateUrlForSigning() -> backend signs that ->
+        // moonPaySdk.updateSignature()) -- since our backend instead builds
+        // and signs its own URL independently, handing its allowedIpAddress
+        // and signature back into MoonPayWebSdk.init()'s params would have
+        // the SDK reconstruct a differently-ordered/formatted query string
+        // and silently invalidate the signature. Loading the signed URL
+        // exactly as returned -- in an iframe, instead of the overlay
+        // SDK call -- is the only way to guarantee it validates, so that's
+        // the path taken here. The MoonPay Web SDK script tag is no longer
+        // used for this reason.
+        async function startMoonPayWidget() {
             if (window.hasPendingDeletion) { showToast('Buying crypto is disabled while account deletion is pending'); return; }
             const errorEl = document.getElementById('moonpaySetupError');
             errorEl.classList.add('hidden');
@@ -1004,26 +1038,47 @@
                 errorEl.classList.remove('hidden');
                 return;
             }
-            if (!window.MoonPayWebSdk) {
-                errorEl.textContent = 'MoonPay widget failed to load — please try again.';
-                errorEl.classList.remove('hidden');
-                return;
-            }
 
-            window.MoonPayWebSdk.init({
-                flow: 'buy',
-                environment: 'sandbox',
-                variant: 'overlay',
-                params: {
-                    apiKey: 'PLACEHOLDER_MOONPAY_PUBLISHABLE_KEY',
-                    baseCurrencyCode: 'idr',
-                    baseCurrencyAmount: amount,
-                    defaultCurrencyCode: 'usdc_polygon',
-                    walletAddress: currentWalletAddress,
-                },
-            }).show();
+            const btn = document.getElementById('moonpayStartBtn');
+            btn.disabled = true;
+            btn.textContent = 'Preparing payment...';
+
+            try {
+                const res = await fetch(`/api/moonpay-sign-url?walletAddress=${encodeURIComponent(currentWalletAddress)}&baseCurrencyAmount=${encodeURIComponent(amount)}&baseCurrencyCode=idr&defaultCurrencyCode=usdc_polygon&apiKey=PLACEHOLDER_MOONPAY_PUBLISHABLE_KEY`);
+                const data = await res.json();
+                if (!res.ok || !data.signedUrl) {
+                    errorEl.textContent = data.error || 'Could not start payment — please try again.';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('moonpayLoadingOverlay').classList.remove('hidden');
+                document.getElementById('moonpayFrame').src = data.signedUrl;
+                document.getElementById('moonpayIdleWrapper').classList.add('hidden');
+                document.getElementById('moonpayFrameWrap').classList.remove('hidden');
+            } catch (err) {
+                console.error('Failed to start MoonPay payin:', err);
+                errorEl.textContent = 'Could not start payment — please try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Continue';
+            }
         }
         window.startMoonPayWidget = startMoonPayWidget;
+
+        function hideMoonPayLoadingOverlay() {
+            document.getElementById('moonpayLoadingOverlay')?.classList.add('hidden');
+        }
+        window.hideMoonPayLoadingOverlay = hideMoonPayLoadingOverlay;
+
+        function resetMoonPayWidget() {
+            document.getElementById('moonpayFrameWrap').classList.add('hidden');
+            document.getElementById('moonpayFrame').src = 'about:blank';
+            document.getElementById('moonpayLoadingOverlay').classList.remove('hidden');
+            document.getElementById('moonpayIdleWrapper').classList.remove('hidden');
+        }
+        window.resetMoonPayWidget = resetMoonPayWidget;
 
         function scrollToRamp() {
             document.getElementById('rampSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
