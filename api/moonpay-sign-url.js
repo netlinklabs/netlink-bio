@@ -109,8 +109,25 @@ export default async function handler(req, res) {
       `allowedIpAddress=${encodeURIComponent(allowedIpAddress)}`,
     ].join('&');
 
-    const signature = hmacBase64(MOONPAY_SECRET_KEY, queryString);
-    const signedUrl = `${MOONPAY_WIDGET_BASE}?${queryString}&signature=${encodeURIComponent(signature)}`;
+    // MoonPay's documented signing method signs `new URL(url).search` --
+    // which includes the LEADING '?' -- not the bare query string. Signing
+    // queryString on its own (no '?') produces a signature MoonPay's server
+    // never matches, since it recomputes HMAC over its own `.search` (with
+    // the '?') and compares. Building a real URL and reading `.search` back
+    // (rather than manually prepending '?') guarantees byte-for-byte parity
+    // with what MoonPay itself computes.
+    const widgetUrl = new URL(`${MOONPAY_WIDGET_BASE}?${queryString}`);
+    const signature = hmacBase64(MOONPAY_SECRET_KEY, widgetUrl.search);
+    const signedUrl = `${MOONPAY_WIDGET_BASE}${widgetUrl.search}&signature=${encodeURIComponent(signature)}`;
+
+    // TEMPORARY DEBUG LOGGING -- remove once "Signature check failed" is
+    // confirmed fixed in production. Nothing secret is logged here: no
+    // MOONPAY_SECRET_KEY, no raw client IP (only its canonicalized form),
+    // and allowedIpAddress/signature are one-way HMAC outputs.
+    console.log('[moonpay-sign-url] canonicalIp:', canonicalIp);
+    console.log('[moonpay-sign-url] allowedIpAddress:', allowedIpAddress);
+    console.log('[moonpay-sign-url] signed string (widgetUrl.search):', widgetUrl.search);
+    console.log('[moonpay-sign-url] signedUrl:', signedUrl);
 
     res.status(200).json({ signedUrl });
   } catch (err) {
