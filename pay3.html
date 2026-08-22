@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+<!-- EXPERIMENTAL FILE - MoonPay sandbox widget test, replaces TransFi widget position from pay2.html for this trial. Fetches a signed, IP-matched widget URL from api/moonpay-sign-url.js and loads it in an iframe, instead of calling MoonPayWebSdk.init() client-side with an unsigned URL. -->
 <html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netlink Pay (TransFi Test)</title>
+    <title>Netlink Pay (MoonPay Test)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -528,60 +529,33 @@
                 <p class="text-[10px] text-muted text-center mt-3">Swap rates powered by LI.FI &middot; Polygon network</p>
             </div>
 
-            <!-- TransFi Payin Widget (TEST PAGE — replaces Alchemy Pay ramp for this trial) -->
+            <!-- MoonPay On-Ramp Widget (TEST PAGE — replaces TransFi widget position from pay2.html for this trial) -->
             <div id="rampSection" class="card rounded-2xl p-4 lg:p-6 mb-5">
-                <!-- Everything in this wrapper disappears once payment starts,
-                     so the iframe/success state takes over the whole card
-                     instead of being squeezed in below the header/footer. -->
-                <div id="transfiIdleWrapper">
+                <div id="moonpayIdleWrapper">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
                             <i data-lucide="credit-card" class="w-4 h-4 text-indigo-500"></i>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-primary text-sm">Buy Crypto</h3>
-                            <p class="text-xs text-muted">Powered by TransFi (test)</p>
+                            <h3 class="font-semibold text-primary text-sm">Buy crypto with MoonPay</h3>
+                            <p class="text-xs text-muted">Powered by MoonPay (sandbox)</p>
                         </div>
                     </div>
 
-                    <!-- Amount entry shown before the order is created -->
-                    <div id="transfiSetup" class="space-y-3">
+                    <!-- Amount entry; on Continue, a signed widget URL is fetched
+                         from api/moonpay-sign-url.js and loaded into moonpayFrameWrap
+                         below (outside this wrapper, which gets hidden). -->
+                    <div id="moonpaySetup" class="space-y-3">
                         <div>
                             <label class="text-xs font-medium text-secondary mb-1 block">Amount (IDR)</label>
-                            <input id="transfiAmountInput" type="number" inputmode="decimal" placeholder="e.g. 500000"
+                            <input id="moonpayAmountInput" type="number" inputmode="decimal" placeholder="300000"
                                    class="w-full px-4 py-3 rounded-xl border border-subtle bg-surface text-primary text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                         </div>
 
-                        <!-- Shown only the first time this account buys crypto via
-                             TransFi -- basic KYC-level-0 info TransFi requires to
-                             create a user. Hidden until the server tells us it's
-                             needed, so returning users skip straight to payment. -->
-                        <div id="transfiPersonalDetails" class="hidden space-y-2 p-3 rounded-xl bg-surface border border-subtle">
-                            <p class="text-xs font-medium text-secondary">First-time setup — a few details TransFi requires</p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <input id="transfiFirstName" type="text" placeholder="First name" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                                <input id="transfiLastName" type="text" placeholder="Last name" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <input id="transfiPhoneCode" type="text" placeholder="+62" value="+62" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                                <input id="transfiPhone" type="tel" placeholder="Phone number" class="col-span-2 px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <input id="transfiDob" type="date" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                                <input id="transfiCountry" type="text" placeholder="ID" value="ID" maxlength="2" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm uppercase">
-                            </div>
-                            <input id="transfiStreet" type="text" placeholder="Street address" class="w-full px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                            <div class="grid grid-cols-3 gap-2">
-                                <input id="transfiCity" type="text" placeholder="City" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                                <input id="transfiState" type="text" placeholder="State/Province" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                                <input id="transfiPostal" type="text" placeholder="Postal code" class="px-3 py-2 rounded-lg border border-subtle bg-white dark:bg-dark-card text-primary text-sm">
-                            </div>
-                        </div>
-
-                        <button id="transfiStartBtn" onclick="startTransfiPayin()" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition text-sm">
-                            Continue to Payment
+                        <button id="moonpayStartBtn" onclick="startMoonPayWidget()" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition text-sm">
+                            Continue
                         </button>
-                        <p id="transfiSetupError" class="text-xs text-red-500 text-center hidden"></p>
+                        <p id="moonpaySetupError" class="text-xs text-red-500 text-center hidden"></p>
                     </div>
 
                     <div id="rampBlockedState" class="rounded-xl border border-subtle p-6 text-center" style="height: 520px; display: none; flex-direction: column; align-items: center; justify-content: center;">
@@ -589,32 +563,23 @@
                         <p class="text-sm font-medium text-primary mb-1">Buy/Sell temporarily unavailable</p>
                         <p class="text-xs text-muted max-w-xs">Buying crypto is disabled while your account deletion is pending. <a href="privacy" class="text-blue-500 underline">Cancel the request</a> to re-enable it.</p>
                     </div>
-                    <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by TransFi.</p>
+                    <p class="text-[11px] text-muted mt-2 text-center">You may need to complete verification to purchase crypto. Rates and fees are set by MoonPay.</p>
                     <p class="text-[10px] text-amber-600 text-center mt-1">Test page — not linked from the main navigation.</p>
                 </div>
 
-                <!-- Iframe shown after the order is created -- sits outside
-                     transfiIdleWrapper so it fully takes over the card. -->
-                <div id="rampFrameWrap" class="hidden relative rounded-xl overflow-hidden border border-subtle" style="height: 620px;">
-                    <div id="transfiLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface z-10">
-                        <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p class="text-xs text-muted">Loading secure payment...</p>
-                    </div>
-                    <iframe id="transfiRampFrame" allow="accelerometer; autoplay; camera; gyroscope; payment" width="100%" height="100%" frameborder="0" title="TransFi Payin" onload="hideTransfiLoadingOverlay()"></iframe>
-                </div>
-
-                <!-- Shown once polling confirms the order left 'initiated' --
-                     replaces the iframe entirely so there's no more chance
-                     of seeing the widget's own confusing post-payment page. -->
-                <div id="transfiSuccessState" class="hidden rounded-xl border border-subtle p-6 text-center">
-                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-green-500/10 flex items-center justify-center">
-                        <i data-lucide="check-circle-2" class="w-6 h-6 text-green-500"></i>
-                    </div>
-                    <p class="text-sm font-semibold text-primary mb-1">Payment update received</p>
-                    <p id="transfiSuccessStatus" class="text-xs text-muted mb-4">—</p>
-                    <button onclick="resetTransfiWidget()" class="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition">
-                        Start a new purchase
+                <!-- Iframe shown once a signed URL comes back -- sits outside
+                     moonpayIdleWrapper so it fully takes over the card. -->
+                <div id="moonpayFrameWrap" class="hidden">
+                    <button type="button" onclick="resetMoonPayWidget()" class="flex items-center gap-1 text-xs text-muted hover:text-primary transition mb-2">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back
                     </button>
+                    <div class="relative rounded-xl overflow-hidden border border-subtle" style="height: 620px;">
+                        <div id="moonpayLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface z-10">
+                            <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p class="text-xs text-muted">Loading secure payment...</p>
+                        </div>
+                        <iframe id="moonpayFrame" allow="accelerometer; autoplay; camera; gyroscope; payment" width="100%" height="100%" frameborder="0" title="MoonPay" onload="hideMoonPayLoadingOverlay()"></iframe>
+                    </div>
                 </div>
             </div>
 
@@ -961,16 +926,16 @@
                 if (error) { console.error('Failed to check deletion status:', error); return; }
                 window.hasPendingDeletion = !!(data && data.length);
                 document.getElementById('deletionPendingBanner').classList.toggle('hidden', !window.hasPendingDeletion);
-                // TransFi widget has 3 states: amount-entry (transfiSetup),
-                // live iframe (rampFrameWrap, shown only after an order is
-                // created), and blocked (rampBlockedState). Deletion-pending
-                // only ever forces the blocked state -- it never force-shows
-                // the iframe, since that only appears once we have a real
-                // TRANSFI_PAYMENT_URL from startTransfiPayin().
-                document.getElementById('transfiSetup').style.display = window.hasPendingDeletion ? 'none' : 'block';
+                // MoonPay widget has 3 states: amount-entry (moonpaySetup),
+                // live iframe (moonpayFrameWrap, shown only after a signed
+                // URL is fetched), and blocked (rampBlockedState).
+                // Deletion-pending only ever forces the blocked state -- it
+                // never force-shows the iframe, since that only appears
+                // once we have a real signed URL from startMoonPayWidget().
+                document.getElementById('moonpaySetup').style.display = window.hasPendingDeletion ? 'none' : 'block';
                 document.getElementById('rampBlockedState').style.display = window.hasPendingDeletion ? 'flex' : 'none';
                 if (window.hasPendingDeletion) {
-                    document.getElementById('rampFrameWrap').style.display = 'none';
+                    document.getElementById('moonpayFrameWrap').classList.add('hidden');
                 }
             } catch (err) {
                 console.error('Failed to check deletion status:', err);
@@ -1011,7 +976,6 @@
                 document.getElementById('noWalletState').classList.add('hidden');
                 document.getElementById('walletContent').classList.remove('hidden');
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
-                updateRampIframe(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'No wallet yet';
@@ -1041,38 +1005,28 @@
             navigator.clipboard.writeText(currentWalletAddress).then(() => showToast('Address copied!'));
         }
 
-        // TransFi test flow: unlike Alchemy Pay (which loads an iframe as
-        // soon as the wallet address is known), TransFi needs an order
-        // created via our own server first (api/transfi-create-order), so
-        // this just remembers the address -- the iframe is only populated
-        // once the user picks an amount and clicks "Continue to Payment".
-        function updateRampIframe(address) {
-            window.currentWalletAddress = address;
-        }
-
-        function collectPersonalDetails() {
-            return {
-                firstName: document.getElementById('transfiFirstName').value.trim(),
-                lastName: document.getElementById('transfiLastName').value.trim(),
-                phoneCode: document.getElementById('transfiPhoneCode').value.trim(),
-                phone: document.getElementById('transfiPhone').value.trim(),
-                dob: document.getElementById('transfiDob').value,
-                country: document.getElementById('transfiCountry').value.trim().toUpperCase(),
-                address: {
-                    street: document.getElementById('transfiStreet').value.trim(),
-                    city: document.getElementById('transfiCity').value.trim(),
-                    state: document.getElementById('transfiState').value.trim(),
-                    postalCode: document.getElementById('transfiPostal').value.trim(),
-                },
-            };
-        }
-
-        async function startTransfiPayin() {
+        // MoonPay sandbox flow: the signed widget URL is built and signed
+        // entirely server-side by api/moonpay-sign-url.js (HMAC-SHA256 over
+        // its own fixed query-string layout, including allowedIpAddress --
+        // see that file). MoonPay validates the signature against the exact
+        // query string it receives, byte for byte. The officially documented
+        // Web SDK flow re-signs a URL that the SDK itself constructs
+        // (moonPaySdk.generateUrlForSigning() -> backend signs that ->
+        // moonPaySdk.updateSignature()) -- since our backend instead builds
+        // and signs its own URL independently, handing its allowedIpAddress
+        // and signature back into MoonPayWebSdk.init()'s params would have
+        // the SDK reconstruct a differently-ordered/formatted query string
+        // and silently invalidate the signature. Loading the signed URL
+        // exactly as returned -- in an iframe, instead of the overlay
+        // SDK call -- is the only way to guarantee it validates, so that's
+        // the path taken here. The MoonPay Web SDK script tag is no longer
+        // used for this reason.
+        async function startMoonPayWidget() {
             if (window.hasPendingDeletion) { showToast('Buying crypto is disabled while account deletion is pending'); return; }
-            const errorEl = document.getElementById('transfiSetupError');
+            const errorEl = document.getElementById('moonpaySetupError');
             errorEl.classList.add('hidden');
 
-            const amountRaw = document.getElementById('transfiAmountInput').value.trim();
+            const amountRaw = document.getElementById('moonpayAmountInput').value.trim();
             const amount = Number(amountRaw);
             if (!amountRaw || isNaN(amount) || amount <= 0) {
                 errorEl.textContent = 'Enter a valid amount.';
@@ -1085,147 +1039,46 @@
                 return;
             }
 
-            const personalDetailsSection = document.getElementById('transfiPersonalDetails');
-            const showingPersonalDetails = !personalDetailsSection.classList.contains('hidden');
-
-            const btn = document.getElementById('transfiStartBtn');
+            const btn = document.getElementById('moonpayStartBtn');
             btn.disabled = true;
             btn.textContent = 'Preparing payment...';
 
             try {
-                const { data: sessionData } = await supabaseClient.auth.getSession();
-                const accessToken = sessionData?.session?.access_token;
-                const res = await fetch('/api/transfi-create-order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    body: JSON.stringify({
-                        amount,
-                        fiatTicker: 'IDR',
-                        cryptoTicker: 'USDCPOLYGON',
-                        walletAddress: currentWalletAddress,
-                        personalDetails: showingPersonalDetails ? collectPersonalDetails() : undefined,
-                    }),
-                });
-                const result = await res.json();
-
-                if (res.status === 400 && result.error === 'NEEDS_PERSONAL_DETAILS') {
-                    // First payment ever on this account -- reveal the
-                    // one-time details form and let the user try again.
-                    personalDetailsSection.classList.remove('hidden');
-                    errorEl.textContent = 'Please fill in your details below, then continue.';
+                const res = await fetch(`/api/moonpay-sign-url?walletAddress=${encodeURIComponent(currentWalletAddress)}&baseCurrencyAmount=${encodeURIComponent(amount)}&baseCurrencyCode=idr&defaultCurrencyCode=usdc_polygon&apiKey=pk_test_1RIFYNJJyP1IuDXDd8aLMKVcqodCof`);
+                const data = await res.json();
+                if (!res.ok || !data.signedUrl) {
+                    errorEl.textContent = data.error || 'Could not start payment — please try again.';
                     errorEl.classList.remove('hidden');
                     return;
                 }
-                if (result.error === 'RESTRICTED_ACCESS') {
-                    errorEl.textContent = result.message || 'Additional verification (KYC) is required before this payment can proceed.';
-                    errorEl.classList.remove('hidden');
-                    return;
-                }
-                if (!res.ok || !result.payUrl) {
-                    throw new Error(result.message || result.error || 'Could not start payment');
-                }
 
-                sessionStorage.setItem('netlink:lastTransfiOrderId', result.orderId);
-                document.getElementById('transfiLoadingOverlay').classList.remove('hidden');
-                document.getElementById('transfiRampFrame').src = result.payUrl;
-                document.getElementById('transfiIdleWrapper').classList.add('hidden');
-                document.getElementById('transfiSuccessState').classList.add('hidden');
-                document.getElementById('rampFrameWrap').classList.remove('hidden');
-                document.getElementById('rampFrameWrap').style.display = 'block';
-                startTransfiStatusPolling(result.orderId);
+                document.getElementById('moonpayLoadingOverlay').classList.remove('hidden');
+                document.getElementById('moonpayFrame').src = data.signedUrl;
+                document.getElementById('moonpayIdleWrapper').classList.add('hidden');
+                document.getElementById('moonpayFrameWrap').classList.remove('hidden');
             } catch (err) {
-                console.error('Failed to start TransFi payin:', err);
-                errorEl.textContent = String(err.message || 'Could not start payment — please try again.');
+                console.error('Failed to start MoonPay payin:', err);
+                errorEl.textContent = 'Could not start payment — please try again.';
                 errorEl.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Continue to Payment';
+                btn.textContent = 'Continue';
             }
         }
-        window.startTransfiPayin = startTransfiPayin;
+        window.startMoonPayWidget = startMoonPayWidget;
 
-        // Root cause of the earlier redirect approach not working: TransFi's
-        // successRedirectUrl navigates *inside the iframe*, not the parent
-        // page -- so window.location on this page never changes and never
-        // sees ?tx=complete. Polling sidesteps that entirely: once the
-        // iframe is open, check the order's real status every few seconds
-        // until it leaves 'initiated' or we give up.
-        let transfiPollTimer = null;
-        function startTransfiStatusPolling(orderId) {
-            stopTransfiStatusPolling();
-            let attempts = 0;
-            const maxAttempts = 40; // ~4 minutes at 6s intervals
-            transfiPollTimer = setInterval(async () => {
-                attempts++;
-                if (attempts > maxAttempts) { stopTransfiStatusPolling(); return; }
-                try {
-                    const { data: sessionData } = await supabaseClient.auth.getSession();
-                    const accessToken = sessionData?.session?.access_token;
-                    const res = await fetch('/api/transfi-order-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-                        body: JSON.stringify({ orderId }),
-                    });
-                    const result = await res.json();
-                    if (res.ok && result.status && result.status !== 'initiated') {
-                        stopTransfiStatusPolling();
-                        sessionStorage.removeItem('netlink:lastTransfiOrderId');
-                        showTransfiSuccessState(result.status);
-                        if (window.currentWalletAddress) fetchWalletBalances(window.currentWalletAddress);
-                    }
-                } catch (err) {
-                    console.error('Polling transfi-order-status failed:', err);
-                }
-            }, 6000);
+        function hideMoonPayLoadingOverlay() {
+            document.getElementById('moonpayLoadingOverlay')?.classList.add('hidden');
         }
-        function stopTransfiStatusPolling() {
-            if (transfiPollTimer) { clearInterval(transfiPollTimer); transfiPollTimer = null; }
+        window.hideMoonPayLoadingOverlay = hideMoonPayLoadingOverlay;
+
+        function resetMoonPayWidget() {
+            document.getElementById('moonpayFrameWrap').classList.add('hidden');
+            document.getElementById('moonpayFrame').src = 'about:blank';
+            document.getElementById('moonpayLoadingOverlay').classList.remove('hidden');
+            document.getElementById('moonpayIdleWrapper').classList.remove('hidden');
         }
-
-        function hideTransfiLoadingOverlay() {
-            document.getElementById('transfiLoadingOverlay')?.classList.add('hidden');
-        }
-        window.hideTransfiLoadingOverlay = hideTransfiLoadingOverlay;
-
-        // Friendlier labels for TransFi's raw status strings.
-        const TRANSFI_STATUS_LABELS = {
-            fund_processing: 'Payment is being processed...',
-            fund_settled: 'Payment received — crypto is on its way.',
-            asset_settled: 'Purchase complete — crypto has been sent to your wallet.',
-            failed: 'Payment failed. No funds were charged.',
-            cancelled: 'Payment was cancelled.',
-            expired: 'Payment window expired.',
-        };
-
-        function showTransfiSuccessState(status) {
-            // Swap the iframe out entirely -- this is what avoids the
-            // confusing "our own site inside the widget" moment, since the
-            // iframe (and whatever it's showing) is fully hidden now.
-            document.getElementById('rampFrameWrap').classList.add('hidden');
-            document.getElementById('rampFrameWrap').style.display = 'none';
-            document.getElementById('transfiRampFrame').src = 'about:blank';
-            document.getElementById('transfiSuccessStatus').textContent =
-                TRANSFI_STATUS_LABELS[status] || `Status: ${status}`;
-            document.getElementById('transfiSuccessState').classList.remove('hidden');
-        }
-
-        function resetTransfiWidget() {
-            document.getElementById('transfiSuccessState').classList.add('hidden');
-            document.getElementById('transfiIdleWrapper').classList.remove('hidden');
-            document.getElementById('transfiAmountInput').value = '';
-            document.getElementById('transfiSetupError').classList.add('hidden');
-        }
-        window.resetTransfiWidget = resetTransfiWidget;
-
-        // Resume polling after a reload/navigation if an order was left
-        // pending -- the test flow involves a lot of manual page reloads.
-        (function resumePendingTransfiPoll() {
-            const pendingOrderId = sessionStorage.getItem('netlink:lastTransfiOrderId');
-            if (pendingOrderId) setTimeout(() => startTransfiStatusPolling(pendingOrderId), 1200);
-        })();
+        window.resetMoonPayWidget = resetMoonPayWidget;
 
         function scrollToRamp() {
             document.getElementById('rampSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1370,15 +1223,7 @@
             document.getElementById(id + 'Chevron').classList.toggle('open');
         }
 
-        // Theme toggling itself now lives in the Account sheet (shared/nav.js).
-        // This page still needs to know the current theme on load so it can
-        // pass the right theme= param once a TransFi payment URL is built.
-        function initTheme() {
-            if (currentWalletAddress) updateRampIframe(currentWalletAddress);
-        }
-
         lucide.createIcons();
-        initTheme();
         checkAuth();
     </script>
 
@@ -1559,7 +1404,6 @@
                 document.getElementById('noWalletState').classList.add('hidden');
                 document.getElementById('walletContent').classList.remove('hidden');
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(finalAddress);
-                updateRampIframe(finalAddress);
                 fetchWalletBalances(finalAddress);
                 if (window.lucide) lucide.createIcons();
 
