@@ -86,6 +86,7 @@
                 <a href="${link('#api')}">API</a>
                 <a href="${link('#blog')}">Blog</a>
                 <a href="changelog">Changelog</a>
+                <a href="https://netlinklabs.statuspage.io/" target="_blank" rel="noopener noreferrer">Status</a>
               </div>
             </div>
             <div class="footer-social">
