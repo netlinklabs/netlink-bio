@@ -69,6 +69,7 @@
       .nlal-key.ghost:active { background: transparent; }
       .nlal-msg { font-size: 12.5px; color: #ef4444; min-height: 18px; margin-bottom: 12px; }
       .nlal-links { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+      .nlal-links-row { display: flex; justify-content: center; gap: 20px; }
       .nlal-link-btn { font-size: 13px; color: #3b82f6; font-weight: 500; background: none; border: none; cursor: pointer; }
       .nlal-link-btn.muted { color: #94a3b8; }
       .nlal-biometric-btn { margin: 0 auto 6px; width: 56px; height: 56px; border-radius: 50%;
@@ -322,7 +323,7 @@
 
   // ---------------- Verify flow (unlock) ----------------
 
-  function renderVerifyScreen(overlay, onSuccess, { allowForgot = true } = {}) {
+  function renderVerifyScreen(overlay, onSuccess, { allowForgot = true, allowCancel = false, onCancel = null } = {}) {
     function paint(lockedMsg) {
       const showBiometric = hasRegisteredBiometric();
       overlay.innerHTML = `
@@ -335,7 +336,12 @@
           ${keypadHtml(showBiometric)}
           <div class="nlal-links">
             ${allowForgot ? `<button type="button" id="nlal-forgot-btn" class="nlal-link-btn">Forgot PIN?</button>` : ''}
-            <button type="button" id="nlal-logout-btn" class="nlal-link-btn muted">Log out</button>
+            ${allowCancel
+              ? `<div class="nlal-links-row">
+                   <button type="button" id="nlal-cancel-btn" class="nlal-link-btn muted">Cancel</button>
+                   <button type="button" id="nlal-logout-btn" class="nlal-link-btn muted">Log out</button>
+                 </div>`
+              : `<button type="button" id="nlal-logout-btn" class="nlal-link-btn muted">Log out</button>`}
           </div>
         </div>
       `;
@@ -373,6 +379,9 @@
 
       const forgotBtn = document.getElementById('nlal-forgot-btn');
       if (forgotBtn) forgotBtn.addEventListener('click', renderForgotPinFlow);
+
+      const cancelBtn = document.getElementById('nlal-cancel-btn');
+      if (cancelBtn && onCancel) cancelBtn.addEventListener('click', onCancel);
 
       document.getElementById('nlal-logout-btn').addEventListener('click', async () => {
         clearLockSession();
@@ -521,7 +530,15 @@
         modalOverlay.style.display = 'none';
         modalOverlay.innerHTML = '';
         resolve(true);
-      }, { allowForgot: true });
+      }, {
+        allowForgot: true,
+        allowCancel: true,
+        onCancel: () => {
+          modalOverlay.style.display = 'none';
+          modalOverlay.innerHTML = '';
+          resolve(false);
+        },
+      });
     });
   }
 
