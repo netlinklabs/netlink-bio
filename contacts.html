@@ -189,15 +189,17 @@
         function badgeHtml(row) {
             let html = '';
             const tierEligible = row.tier === 'gold' || row.tier === 'platinum';
-            if (row.is_black_badge) html += `<span class="badge-dot badge-black" title="Netlink Special">&#10003;</span>`;
+            if (row.is_black_badge) {
+                html += `<span class="badge-dot badge-black" title="Netlink Special">&#10003;</span><span class="text-[11px] text-muted">Netlink Special</span>`;
+            }
             if (row.business_verified_at) {
                 html += tierEligible
-                    ? `<span class="badge-dot badge-gold" title="Verified Business">&#10003;</span>`
-                    : `<span class="badge-dot badge-silver" title="Previously Verified">&#10003;</span>`;
+                    ? `<span class="badge-dot badge-gold" title="Verified Business">&#10003;</span><span class="text-[11px] text-muted">Verified Business</span>`
+                    : `<span class="badge-dot badge-silver" title="Previously Verified">&#10003;</span><span class="text-[11px] text-muted">Previously Verified</span>`;
             } else if (row.identity_verified_at) {
                 html += tierEligible
-                    ? `<span class="badge-dot badge-green" title="Verified Profile (KYC)">&#10003;</span>`
-                    : `<span class="badge-dot badge-silver" title="Previously Verified">&#10003;</span>`;
+                    ? `<span class="badge-dot badge-green" title="Verified Profile (KYC)">&#10003;</span><span class="text-[11px] text-muted">Verified Profile (KYC)</span>`
+                    : `<span class="badge-dot badge-silver" title="Previously Verified">&#10003;</span><span class="text-[11px] text-muted">Previously Verified</span>`;
             }
             return html;
         }
