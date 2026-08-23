@@ -582,7 +582,7 @@
         async function confirmDeletionRequest() {
             if (window.NetlinkAppLock) {
                 const unlocked = await NetlinkAppLock.requireAppLock('delete your account');
-                if (!unlocked) return;
+                if (!unlocked) { closeDeletionModal(); return; }
             }
             const btn = document.getElementById('confirmDeletionBtn');
             btn.disabled = true;
