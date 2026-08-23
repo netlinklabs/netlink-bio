@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - Netlink</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://netlink.bio/changelog">
+    <meta name="description" content="What's new in Netlink — product updates, improvements, and fixes.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="shared/site-nav.css">
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        .text-primary { color: #0f172a; }
+        html.dark .text-primary { color: #f8fafc; }
+        .text-secondary { color: #475569; }
+        html.dark .text-secondary { color: #94a3b8; }
+        .text-muted { color: #64748b; }
+        html.dark .text-muted { color: #94a3b8; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); }
+
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+
+        .month-label { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; margin-bottom: 1rem; }
+        html.dark .month-label { color: #94a3b8; }
+
+        .entry { position: relative; padding-left: 1.5rem; margin-bottom: 1.5rem; }
+        .entry::before { content: ''; position: absolute; left: 0; top: 0.4rem; width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
+        .entry:last-child { margin-bottom: 0; }
+
+        .entry-tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; padding: 2px 9px; border-radius: 999px; margin-bottom: 0.5rem; }
+        .tag-new { background: rgba(16,185,129,0.12); color: #059669; }
+        html.dark .tag-new { background: rgba(16,185,129,0.15); color: #34d399; }
+        .tag-improved { background: rgba(59,130,246,0.12); color: #2563eb; }
+        html.dark .tag-improved { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .tag-fixed { background: rgba(245,158,11,0.12); color: #b45309; }
+        html.dark .tag-fixed { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .tag-security { background: rgba(239,68,68,0.12); color: #dc2626; }
+        html.dark .tag-security { background: rgba(239,68,68,0.15); color: #f87171; }
+
+        .entry-title { font-size: 0.9375rem; font-weight: 600; color: inherit; margin-bottom: 0.25rem; }
+        .entry-desc { font-size: 0.875rem; line-height: 1.65; color: #475569; }
+        html.dark .entry-desc { color: #94a3b8; }
+
+        .month-block { padding: 1.5rem; margin-bottom: 1rem; border-radius: 1rem; }
+        .month-block:not(:last-child) { border-bottom: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="site-header"></div>
+
+    <main class="px-4 pt-8 pb-16 lg:px-8 max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold text-primary mb-2">Changelog</h1>
+        <p class="text-sm text-muted mb-8">What's new in Netlink — updates, improvements, and fixes.</p>
+
+        <!-- August 2026 -->
+        <div class="month-block card">
+            <p class="month-label">August 2026</p>
+
+            <div class="entry">
+                <span class="entry-tag tag-security">Security</span>
+                <p class="entry-title">Safer wallet sessions</p>
+                <p class="entry-desc">Added extra checks to make sure every send, backup, and export always uses the correct wallet session — protecting you if you're signed into more than one account on the same device.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-fixed">Fixed</span>
+                <p class="entry-title">Send confirmation button</p>
+                <p class="entry-desc">Fixed an issue where tapping "Confirm Send" quickly more than once could trigger the transaction twice.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-improved">Improved</span>
+                <p class="entry-title">Sign-in recovery flow</p>
+                <p class="entry-desc">If your session ever needs to be refreshed, you can now sign in right where you are — no more being sent to another page and losing your place.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-new">New</span>
+                <p class="entry-title">Emergency Export shows in your history</p>
+                <p class="entry-desc">Assets moved through Emergency Export now appear in your transaction history, just like sends, receives, and swaps.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-new">New</span>
+                <p class="entry-title">NET ID</p>
+                <p class="entry-desc">Every Netlink account now has a permanent NET ID — a simple identifier you can share instead of your full wallet address.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-improved">Improved</span>
+                <p class="entry-title">Country field on your profile</p>
+                <p class="entry-desc">Added a Country field to your profile, shown on your public bio and CV pages.</p>
+            </div>
+        </div>
+
+        <!-- Earlier -->
+        <div class="month-block card">
+            <p class="month-label">Earlier</p>
+
+            <div class="entry">
+                <span class="entry-tag tag-new">New</span>
+                <p class="entry-title">Netlink Pay</p>
+                <p class="entry-desc">Launched the built-in wallet — hold USDC, NET, and POL, send and receive with anyone, and swap tokens directly in the app.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-new">New</span>
+                <p class="entry-title">Verification badges</p>
+                <p class="entry-desc">Introduced Green, Silver, Gold, and Black verification badges shown on your public profile.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-new">New</span>
+                <p class="entry-title">Business landing pages</p>
+                <p class="entry-desc">Added a landing page builder for business profiles — contact channels, gallery, and offerings, all editable from your dashboard.</p>
+            </div>
+
+            <div class="entry">
+                <span class="entry-tag tag-improved">Improved</span>
+                <p class="entry-title">Faster wallet recovery</p>
+                <p class="entry-desc">Added backup sign-in options for your wallet, so losing access to one sign-in method doesn't mean losing access to your funds.</p>
+            </div>
+        </div>
+
+        <p class="text-xs text-muted text-center mt-8">Have feedback or found a bug? Reach us at <a href="mailto:contact@netlink.bio" class="underline">contact@netlink.bio</a>.</p>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="shared/site-nav.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
