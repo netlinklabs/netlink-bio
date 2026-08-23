@@ -111,8 +111,17 @@
 
   function verificationBadge(profile) {
     if (!profile) return null;
-    if (profile.business_verified_at) return { label: 'Verified Business', color: '#f59e0b' };
-    if (profile.identity_verified_at) return { label: 'Verified Profile', color: '#10b981' };
+    const tierEligible = profile.tier === 'gold' || profile.tier === 'platinum';
+    if (profile.business_verified_at) {
+      return tierEligible
+        ? { label: 'Verified Business', color: '#f59e0b' }
+        : { label: 'Previously Verified', color: '#94a3b8' };
+    }
+    if (profile.identity_verified_at) {
+      return tierEligible
+        ? { label: 'Verified Profile (KYC)', color: '#10b981' }
+        : { label: 'Previously Verified', color: '#94a3b8' };
+    }
     return null;
   }
 
