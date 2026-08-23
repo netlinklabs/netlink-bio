@@ -50,9 +50,10 @@
         .badge-green { background: #10b981; }
         .badge-gold { background: #f59e0b; }
         .badge-black { background: #18181b; }
-        .drag-handle { cursor: grab; color: #cbd5e1; padding: 8px; touch-action: none; }
-        .drag-handle:active { cursor: grabbing; }
-        .contact-card.dragging { opacity: 0.4; }
+        .badge-silver { background: #94a3b8; }
+        .reorder-btn { color: #cbd5e1; padding: 6px; display: flex; align-items: center; justify-content: center; border: none; background: none; cursor: pointer; }
+        .reorder-btn:hover:not(:disabled) { color: #0ea5e9; }
+        .reorder-btn:disabled { opacity: 0.25; cursor: default; }
 
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
@@ -83,11 +84,11 @@
                 <i data-lucide="book-user" class="w-6 h-6 text-blue-500"></i>
                 <h2 class="text-xl font-bold text-primary">Manage Contact</h2>
             </div>
-            <button onclick="openAddModal()" class="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full text-sm font-semibold transition"><i data-lucide="plus" class="w-4 h-4"></i> Add Manual</button>
+            <button onclick="openAddModal()" class="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full text-sm font-semibold transition"><i data-lucide="plus" class="w-4 h-4"></i> Add Contact</button>
         </div>
 
         <div id="contactList" class="space-y-3"></div>
-        <p id="emptyState" class="hidden text-center text-sm text-muted py-12">No saved contacts yet. Tap "Add Manual" to add your first one.</p>
+        <p id="emptyState" class="hidden text-center text-sm text-muted py-12">No saved contacts yet. Tap "Add Contact" to add your first one.</p>
     </main>
 
     <!-- Add/Edit Contact Modal -->
@@ -162,7 +163,6 @@
         let addMode = 'netid';
         let netIdCheckToken = 0;
         let netIdResolved = null; // last successfully resolved NET ID preview
-        let draggedId = null;
 
         function showAuthError(msg) { document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg; }
         window.addEventListener('error', (e) => showAuthError(e.message));
@@ -188,9 +188,17 @@
 
         function badgeHtml(row) {
             let html = '';
+            const tierEligible = row.tier === 'gold' || row.tier === 'platinum';
             if (row.is_black_badge) html += `<span class="badge-dot badge-black" title="Netlink Special">&#10003;</span>`;
-            if (row.business_verified_at) html += `<span class="badge-dot badge-gold" title="Verified Business">&#10003;</span>`;
-            else if (row.identity_verified_at) html += `<span class="badge-dot badge-green" title="Verified Profile">&#10003;</span>`;
+            if (row.business_verified_at) {
+                html += tierEligible
+                    ? `<span class="badge-dot badge-gold" title="Verified Business">&#10003;</span>`
+                    : `<span class="badge-dot badge-silver" title="Previously Verified">&#10003;</span>`;
+            } else if (row.identity_verified_at) {
+                html += tierEligible
+                    ? `<span class="badge-dot badge-green" title="Verified Profile (KYC)">&#10003;</span>`
+                    : `<span class="badge-dot badge-silver" title="Previously Verified">&#10003;</span>`;
+            }
             return html;
         }
 
@@ -237,7 +245,7 @@
             if (netIdContactIds.length > 0) {
                 const { data: profilesData, error: profilesError } = await supabaseClient
                     .from('profiles_bio_public')
-                    .select('id, display_name, username, avatar_url, wallet_address, is_black_badge, business_verified_at, identity_verified_at')
+                    .select('id, display_name, username, avatar_url, wallet_address, tier, is_black_badge, business_verified_at, identity_verified_at')
                     .in('id', netIdContactIds);
                 if (profilesError) console.error(profilesError);
                 (profilesData || []).forEach(p => { resolvedMap[p.id] = p; });
@@ -253,7 +261,7 @@
             if (contacts.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
             empty.classList.add('hidden');
 
-            list.innerHTML = contacts.map(c => {
+            list.innerHTML = contacts.map((c, idx) => {
                 const isManual = !!c.manual_address;
                 const displayName = c.nickname || c.resolved?.display_name || c.resolved?.username || 'Unknown';
                 const avatar = c.resolved?.avatar_url;
@@ -263,17 +271,20 @@
                 const badges = isManual
                     ? `<span class="text-[11px] text-muted">External Wallet</span>`
                     : (badgeHtml(c.resolved || {}) || `<span class="text-[11px] text-muted">Unverified</span>`);
+                const isFirst = idx === 0;
+                const isLast = idx === contacts.length - 1;
 
                 return `
-                <div class="contact-card" draggable="true" data-id="${c.id}"
-                     ondragstart="onDragStart(event, '${c.id}')" ondragover="onDragOver(event)" ondrop="onDrop(event, '${c.id}')" ondragend="onDragEnd(event)"
-                     onclick="openEditModal('${c.id}')">
+                <div class="contact-card" data-id="${c.id}" onclick="openEditModal('${c.id}')">
                     ${avatarHtml}
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-semibold text-primary truncate">${escapeHtml(displayName)}</p>
                         <div class="flex items-center gap-1 mt-0.5">${badges}</div>
                     </div>
-                    <span class="drag-handle" onclick="event.stopPropagation()"><i data-lucide="grip-vertical" class="w-4 h-4"></i></span>
+                    <div class="flex flex-col" onclick="event.stopPropagation()">
+                        <button class="reorder-btn" ${isFirst ? 'disabled' : ''} onclick="moveContact('${c.id}', -1)" aria-label="Move up"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+                        <button class="reorder-btn" ${isLast ? 'disabled' : ''} onclick="moveContact('${c.id}', 1)" aria-label="Move down"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+                    </div>
                 </div>`;
             }).join('');
             if (window.lucide) lucide.createIcons();
@@ -285,24 +296,22 @@
             return div.innerHTML;
         }
 
-        // ---- Drag reorder ----
-        function onDragStart(e, id) { draggedId = id; e.currentTarget.classList.add('dragging'); }
-        function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); }
-        function onDragOver(e) { e.preventDefault(); }
-        async function onDrop(e, targetId) {
-            e.preventDefault();
-            if (!draggedId || draggedId === targetId) return;
-            const fromIdx = contacts.findIndex(c => c.id === draggedId);
-            const toIdx = contacts.findIndex(c => c.id === targetId);
-            if (fromIdx === -1 || toIdx === -1) return;
+        // ---- Arrow reorder ----
+        async function moveContact(id, direction) {
+            const fromIdx = contacts.findIndex(c => c.id === id);
+            const toIdx = fromIdx + direction;
+            if (fromIdx === -1 || toIdx < 0 || toIdx >= contacts.length) return;
+
             const [moved] = contacts.splice(fromIdx, 1);
             contacts.splice(toIdx, 0, moved);
             renderContacts();
 
-            const updates = contacts.map((c, idx) => ({ id: c.id, position: idx }));
-            for (const u of updates) {
-                await supabaseClient.from('contacts').update({ position: u.position }).eq('id', u.id);
-            }
+            const a = contacts[fromIdx];
+            const b = contacts[toIdx];
+            await Promise.all([
+                supabaseClient.from('contacts').update({ position: fromIdx }).eq('id', a.id),
+                supabaseClient.from('contacts').update({ position: toIdx }).eq('id', b.id),
+            ]);
         }
 
         // ---- Add Contact modal ----
