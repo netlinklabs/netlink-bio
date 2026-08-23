@@ -718,11 +718,27 @@
 
             <div id="sendStepForm">
                 <label class="text-xs font-medium text-secondary block mb-1.5">Token</label>
-                <select id="sendTokenSelect" onchange="onSendTokenChange()" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-1">
-                    <option value="NET">NET — Netlink Token</option>
-                    <option value="USDC">USDC — USD Coin</option>
-                    <option value="POL">POL — Polygon</option>
-                </select>
+                <input type="hidden" id="sendTokenSelect" value="USDC">
+                <div class="relative mb-1">
+                    <button type="button" id="sendTokenBtn" onclick="toggleSendTokenDropdown()" class="w-full flex items-center justify-between px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary hover-surface transition">
+                        <span class="flex items-center gap-2">
+                            <img id="sendTokenLogo" src="/assets/usdc-logo.png" alt="" class="w-5 h-5 rounded-full">
+                            <span id="sendTokenLabel">USDC — USD Coin</span>
+                        </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
+                    </button>
+                    <div id="sendTokenDropdown" class="hidden absolute z-20 mt-1 w-full bg-surface border border-subtle rounded-lg shadow-lg overflow-hidden">
+                        <button type="button" onclick="selectSendToken('USDC')" class="w-full flex items-center gap-2 px-3 py-2.5 hover-surface text-sm text-primary text-left">
+                            <img src="/assets/usdc-logo.png" alt="" class="w-5 h-5 rounded-full"> USDC — USD Coin
+                        </button>
+                        <button type="button" onclick="selectSendToken('NET')" class="w-full flex items-center gap-2 px-3 py-2.5 hover-surface text-sm text-primary text-left">
+                            <img src="/assets/net-logo.png" alt="" class="w-5 h-5 rounded-full"> NET — Netlink Token
+                        </button>
+                        <button type="button" onclick="selectSendToken('POL')" class="w-full flex items-center gap-2 px-3 py-2.5 hover-surface text-sm text-primary text-left">
+                            <img src="/assets/polygon-logo.png" alt="" class="w-5 h-5 rounded-full"> POL — Polygon
+                        </button>
+                    </div>
+                </div>
                 <p id="sendTokenBalance" class="text-xs text-muted mb-3">Balance: 0.00</p>
 
                 <div id="gasWarning" class="gas-warning hidden mb-3">
@@ -750,10 +766,23 @@
 
             <div id="sendStepConfirm" class="hidden">
                 <div class="bg-surface rounded-xl p-4 mb-4 text-center">
-                    <p class="text-xs text-muted mb-1">You're sending</p>
-                    <p id="confirmAmountLine" class="text-2xl font-bold text-primary mb-2">0.00 NET</p>
-                    <p class="text-xs text-muted mb-1">To</p>
-                    <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
+                    <div id="sendConfirmPending">
+                        <p class="text-xs text-muted mb-1">You're sending</p>
+                        <p id="confirmAmountLine" class="text-2xl font-bold text-primary mb-2">0.00 NET</p>
+                        <p class="text-xs text-muted mb-1">To</p>
+                        <p id="confirmToAddress" class="text-sm font-mono text-secondary break-all"></p>
+                    </div>
+                    <div id="sendConfirmSuccess" class="hidden py-1">
+                        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-green-500 flex items-center justify-center">
+                            <i data-lucide="check" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <p id="confirmSuccessLine" class="text-base font-semibold text-primary">Sent</p>
+                    </div>
+                    <div id="sendProgressWrap" class="hidden mt-3">
+                        <div class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div id="sendProgressBar" class="h-full bg-green-500 rounded-full" style="width:0%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
                 </div>
                 <p id="sendConfirmStatus" class="text-xs text-muted mb-4 text-center">Confirm with Google to authorize this transfer.</p>
                 <div class="flex gap-2">
@@ -1476,7 +1505,12 @@
             document.getElementById('sendToAddress').value = '';
             document.getElementById('sendAmount').value = '';
             document.getElementById('sendFormError').classList.add('hidden');
-            onSendTokenChange();
+            document.getElementById('sendTokenDropdown').classList.add('hidden');
+            document.getElementById('sendConfirmPending').classList.remove('hidden');
+            document.getElementById('sendConfirmSuccess').classList.add('hidden');
+            document.getElementById('sendProgressWrap').classList.add('hidden');
+            document.getElementById('sendProgressBar').style.width = '0%';
+            selectSendToken('USDC');
             document.getElementById('sendModal').classList.add('active');
         };
         window.closeSendModal = function () {
@@ -1631,6 +1665,35 @@
             }
         };
 
+        const SEND_TOKEN_META = {
+            USDC: { logo: '/assets/usdc-logo.png', label: 'USDC — USD Coin' },
+            NET:  { logo: '/assets/net-logo.png',  label: 'NET — Netlink Token' },
+            POL:  { logo: '/assets/polygon-logo.png', label: 'POL — Polygon' },
+        };
+
+        window.toggleSendTokenDropdown = function () {
+            document.getElementById('sendTokenDropdown').classList.toggle('hidden');
+        };
+
+        window.selectSendToken = function (token) {
+            const meta = SEND_TOKEN_META[token];
+            document.getElementById('sendTokenSelect').value = token;
+            document.getElementById('sendTokenLogo').src = meta.logo;
+            document.getElementById('sendTokenLabel').textContent = meta.label;
+            document.getElementById('sendTokenDropdown').classList.add('hidden');
+            onSendTokenChange();
+        };
+
+        // Tutup dropdown token kalau klik di luar area dropdown.
+        document.addEventListener('click', function (e) {
+            const btn = document.getElementById('sendTokenBtn');
+            const dropdown = document.getElementById('sendTokenDropdown');
+            if (!btn || !dropdown || dropdown.classList.contains('hidden')) return;
+            if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
         window.onSendTokenChange = function () {
             const token = document.getElementById('sendTokenSelect').value;
             const balance = getBalanceForToken(token);
@@ -1758,8 +1821,58 @@
             return tx;
         }
 
+        // Mencegah kirim ganda kalau tombol Confirm/Google tertekan lebih
+        // dari sekali saat proses masih berjalan.
+        let sendTxInProgress = false;
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        function setSendConfirmBusy(busy) {
+            const confirmBtn = document.getElementById('confirmSendBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = busy;
+                confirmBtn.style.pointerEvents = busy ? 'none' : '';
+                confirmBtn.style.opacity = busy ? '0.6' : '1';
+            }
+            const googleWrap = document.getElementById('googleConfirmWrap');
+            if (googleWrap) googleWrap.style.pointerEvents = busy ? 'none' : '';
+        }
+
+        // Progress bar hijau merayap sampai 90% selama menunggu, lalu
+        // dilompatkan ke 100% tepat saat transaksi sukses.
+        function startSendProgress() {
+            const wrap = document.getElementById('sendProgressWrap');
+            const bar = document.getElementById('sendProgressBar');
+            wrap.classList.remove('hidden');
+            bar.style.width = '0%';
+            let pct = 0;
+            const timer = setInterval(() => {
+                pct = Math.min(pct + Math.random() * 8 + 2, 90);
+                bar.style.width = pct + '%';
+            }, 350);
+            return timer;
+        }
+
+        function stopSendProgress(timer, complete) {
+            clearInterval(timer);
+            const bar = document.getElementById('sendProgressBar');
+            if (complete) bar.style.width = '100%';
+        }
+
+        async function showSendSuccessState(amount, token) {
+            document.getElementById('sendConfirmPending').classList.add('hidden');
+            document.getElementById('sendConfirmSuccess').classList.remove('hidden');
+            document.getElementById('confirmSuccessLine').textContent = `${amount} ${token} Sent`;
+            document.getElementById('sendConfirmStatus').textContent = 'Transfer complete.';
+            if (window.lucide) lucide.createIcons();
+            await sleep(1100);
+        }
+
         async function doExecuteSend() {
+            if (sendTxInProgress) return;
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); closeSendModal(); return; }
+            sendTxInProgress = true;
+            setSendConfirmBusy(true);
             const token = document.getElementById('sendTokenSelect').value;
             const to = document.getElementById('sendToAddress').value.trim();
             const amount = document.getElementById('sendAmount').value.trim();
@@ -1767,8 +1880,11 @@
             const config = TOKEN_CONFIG[token];
             const valueWei = toWei(amount, config.decimals);
             statusEl.textContent = 'Sending...';
+            const progressTimer = startSendProgress();
             try {
                 const tx = await performTransfer(token, to, valueWei);
+                stopSendProgress(progressTimer, true);
+                await showSendSuccessState(amount, token);
                 showToast(`Sent ${amount} ${token}!`);
                 closeSendModal();
 
@@ -1794,10 +1910,15 @@
                 }, 4500);
             } catch (err) {
                 console.error(err);
+                stopSendProgress(progressTimer, false);
+                document.getElementById('sendProgressWrap').classList.add('hidden');
                 const msg = String(err?.message || err || '');
                 showToast(msg || 'Transaction failed');
                 statusEl.textContent = 'Confirm with Google to authorize this transfer.';
                 document.getElementById('googleConfirmWrap').style.opacity = '1';
+            } finally {
+                sendTxInProgress = false;
+                setSendConfirmBusy(false);
             }
         }
     </script>
