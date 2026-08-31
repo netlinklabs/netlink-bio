@@ -144,8 +144,8 @@ export default async function handler(req, res) {
   const projects = Array.isArray(cv.projects) ? cv.projects : [];
   const certifications = Array.isArray(cv.certifications) ? cv.certifications : [];
   const avatar = profile.avatar_url || '';
-  const pageUrl = `https://netlink-bio.vercel.app/cv/${profile.username}`;
-  const bioUrl = `https://netlink-bio.vercel.app/${profile.username}`;
+  const pageUrl = `https://netlink.bio/cv/${profile.username}`;
+  const bioUrl = `https://netlink.bio/${profile.username}`;
 
   // ---- JSON-LD (schema.org/Person, resume-flavored) ----
   const jsonLd = {
@@ -238,7 +238,7 @@ export default async function handler(req, res) {
 <meta name="description" content="${escapeHtml(summary || `${displayName}'s CV on Netlink.bio`)}">
 <meta property="og:title" content="${escapeHtml(displayName)} — CV">
 <meta property="og:description" content="${escapeHtml(summary)}">
-<meta property="og:image" content="https://netlink-bio.vercel.app/api/og?username=${encodeURIComponent(profile.username)}&type=cv">
+<meta property="og:image" content="https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=cv">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="${pageUrl}">

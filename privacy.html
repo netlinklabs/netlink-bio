@@ -481,7 +481,7 @@
             try {
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(user.email, {
-                    redirectTo: 'https://netlink-bio.vercel.app/reset-password.html'
+                    redirectTo: 'https://netlink.bio/reset-password.html'
                 });
                 if (error) throw error;
                 showToast('A password reset link has been sent to your email.');

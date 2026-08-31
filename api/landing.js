@@ -252,7 +252,7 @@ export default async function handler(req, res) {
   const currency = c.currentCurrency || 'IDR';
   const modules = c.modules || {};
   const titles = BUSINESS_TITLES[c.businessType] || DEFAULT_TITLES;
-  const pageUrl = `https://netlink-bio.vercel.app/page/${page.slug}`;
+  const pageUrl = `https://netlink.bio/page/${page.slug}`;
 
   // ---- Header / logo ----
   const logoInner = c.logoImage
