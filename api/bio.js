@@ -163,7 +163,7 @@ export default async function handler(req, res) {
   const countryName = countryCode ? (COUNTRY_NAME_BY_CODE[countryCode] || countryCode) : '';
   const bio = (profile.bio || '').slice(0, 500);
   const avatar = profile.avatar_url || '';
-  const pageUrl = `https://netlink-bio.vercel.app/${profile.username}`;
+  const pageUrl = `https://netlink.bio/${profile.username}`;
   const walletAddress = profile.wallet_address || '';
   const showCv = profile.show_cv !== false;
   const showDonate = profile.show_donate === true && !!walletAddress;
@@ -288,7 +288,7 @@ export default async function handler(req, res) {
 
 <meta property="og:title" content="${escapeHtml(displayName)} — Netlink.bio">
 <meta property="og:description" content="${escapeHtml(bio)}">
-<meta property="og:image" content="https://netlink-bio.vercel.app/api/og?username=${encodeURIComponent(profile.username)}&type=bio">
+<meta property="og:image" content="https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="${pageUrl}">

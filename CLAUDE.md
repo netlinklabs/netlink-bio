@@ -6,7 +6,7 @@ Context file for Claude Code working in this repo. Read this before making any c
 
 Netlink — digital identity platform (bio link, CV builder, business landing page) with an integrated crypto wallet sub-brand, Netlink Pay.
 
-- Deployment: `netlink-bio.vercel.app` → custom domain `netlink.bio` (pending, migration not yet complete)
+- Deployment: `netlink.bio` (custom domain, live on Vercel with SSL as of 2026-08-31; `netlink-bio.vercel.app` is the old fallback domain)
 - Stack: vanilla HTML/JS (no bundler), Tailwind CSS via CDN, Vercel serverless functions (`api/`), Supabase (Postgres + RLS + Auth, project `fuewalufgiclrcgszlit`, ap-southeast-2), Sequence WaaS embedded wallets, Polygon PoS, LI.FI swap aggregator
 - Related repo: `netlinklabs/netlink-token` (NET token landing page + docs) — separate repo, don't cross-edit without being told
 - Local dev: no build step, no `npm scripts` defined. Run `vercel dev` to serve pages + `api/` functions locally.
@@ -49,7 +49,7 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 
 - i18n on `dashboard.html` is mid-implementation and paused (`data-i18n` attributes added, `en.json`/`id.json`/`i18n.js` drafted, language switcher not done). Don't auto-complete this without being asked — re-check current state first, it may have changed.
 - "Netlink Pay Connect" (embeddable widget) is concept-stage only. Do not build, wire up, or publish anything referencing it unless explicitly instructed.
-- SMTP is currently Gmail-based (temporary). Don't migrate to Resend unless told the `netlink.bio` domain is confirmed live.
+- SMTP is currently Gmail-based (temporary). Domain confirmed live — Resend migration can proceed when ready (still a separate task, not done as part of this).
 
 ## After making changes
 

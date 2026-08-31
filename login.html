@@ -365,7 +365,7 @@
             setForgotLoading(true);
             try {
                 const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://netlink-bio.vercel.app/reset-password.html'
+                    redirectTo: 'https://netlink.bio/reset-password.html'
                 });
                 if (error) throw error;
                 window.showToast('If an account exists for this email, a reset link has been sent.', true);

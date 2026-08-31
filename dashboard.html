@@ -793,7 +793,7 @@
         }
 
 function openNetlinkPay() {
-    window.location.href = 'https://netlink-bio.vercel.app/pay';
+    window.location.href = 'https://netlink.bio/pay';
 }
 window.openNetlinkPay = openNetlinkPay;
         // Retry kecil khusus untuk akun BARU: row di `profiles` dibuat oleh
@@ -1251,7 +1251,7 @@ window.openNetlinkPay = openNetlinkPay;
             if (!currentLandingPage) { showToast('No landing page found'); return; }
             if (!currentLandingPage.slug) { showToast('Set a URL slug in the editor first'); return; }
             if (!currentLandingPage.is_published) { showToast('Publish your page first — tap Update Page in the editor'); return; }
-            window.open(`https://netlink-bio.vercel.app/page/${currentLandingPage.slug}`, '_blank');
+            window.open(`https://netlink.bio/page/${currentLandingPage.slug}`, '_blank');
         }
 
         async function deleteLandingPage() {
@@ -1926,8 +1926,8 @@ window.openNetlinkPay = openNetlinkPay;
                 metadata: {
                     name: 'Netlink.bio',
                     description: 'One link for everything — bio, CV, and crypto wallet in one page.',
-                    url: 'https://netlink-bio.vercel.app',
-                    icons: ['https://netlink-bio.vercel.app/assets/netlinkbio-icon.png'],
+                    url: 'https://netlink.bio',
+                    icons: ['https://netlink.bio/assets/netlinkbio-icon.png'],
                 },
                 showQrModal: true,
                 optionalChains: [POLYGON_CHAIN_ID],
