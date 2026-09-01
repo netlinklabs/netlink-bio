@@ -1,21 +1,15 @@
 // api/wallet-balance.js
-// Proxies PolygonScan API calls server-side so the API key never appears
+// Proxies Alchemy JSON-RPC calls server-side so the API key never appears
 // in client-side code, and so we can combine 3 lookups (POL, NET, USDC)
 // into a single request from the dashboard.
+// Migrated from PolygonScan/Etherscan V2 to Alchemy RPC — see CHANGELOG.
 
-const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
-console.log('[DEBUG] API key present:', !!POLYGONSCAN_API_KEY,
-    'length:', POLYGONSCAN_API_KEY ? POLYGONSCAN_API_KEY.length : 0,
-    'prefix:', POLYGONSCAN_API_KEY ? POLYGONSCAN_API_KEY.slice(0, 4) : 'none',
-    'suffix:', POLYGONSCAN_API_KEY ? POLYGONSCAN_API_KEY.slice(-4) : 'none');
-// PolygonScan's old standalone API (api.polygonscan.com) was fully retired on
-// August 15, 2025. All explorers (Etherscan, PolygonScan, BscScan, etc.) now
-// share one unified endpoint, distinguished by a `chainid` parameter.
-const ETHERSCAN_V2_BASE = 'https://api.etherscan.io/v2/api';
-const POLYGON_CHAIN_ID = 137;
+const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
+const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 
 const NET_CONTRACT = '0x0e893B239094A5c573373d44CF1C7D03576b95cb';
 const USDC_CONTRACT = '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359'; // native USDC (Circle)
+const BALANCE_OF_SELECTOR = '0x70a08231';
 
 function fromWei(rawValue, decimals) {
   if (!rawValue) return '0.00';
@@ -27,11 +21,20 @@ function fromWei(rawValue, decimals) {
   return `${whole}.${fractionStr}`;
 }
 
-async function polygonscanGet(params) {
-  const url = `${ETHERSCAN_V2_BASE}?${new URLSearchParams({ ...params, chainid: POLYGON_CHAIN_ID, apikey: POLYGONSCAN_API_KEY })}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Etherscan V2 request failed: ${res.status}`);
-  return res.json();
+function balanceOfData(address) {
+  return BALANCE_OF_SELECTOR + address.slice(2).toLowerCase().padStart(64, '0');
+}
+
+async function rpcBatchCall(requests) {
+  const res = await fetch(ALCHEMY_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requests),
+  });
+  if (!res.ok) throw new Error(`Alchemy RPC request failed: ${res.status}`);
+  const data = await res.json();
+  if (!Array.isArray(data)) throw new Error('Unexpected non-batch response from Alchemy');
+  return data;
 }
 
 export default async function handler(req, res) {
@@ -41,27 +44,40 @@ export default async function handler(req, res) {
     res.status(400).json({ error: 'Invalid or missing wallet address' });
     return;
   }
-  if (!POLYGONSCAN_API_KEY) {
-    res.status(500).json({ error: 'Server misconfiguration: missing PolygonScan API key' });
+  if (!ALCHEMY_API_KEY) {
+    res.status(500).json({ error: 'Server misconfiguration: missing Alchemy API key' });
     return;
   }
 
   try {
-    const [polRes, netRes, usdcRes] = await Promise.all([
-      polygonscanGet({ module: 'account', action: 'balance', address, tag: 'latest' }),
-      polygonscanGet({ module: 'account', action: 'tokenbalance', contractaddress: NET_CONTRACT, address, tag: 'latest' }),
-      polygonscanGet({ module: 'account', action: 'tokenbalance', contractaddress: USDC_CONTRACT, address, tag: 'latest' }),
+    const responses = await rpcBatchCall([
+      { jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] },
+      { jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: NET_CONTRACT, data: balanceOfData(address) }, 'latest'] },
+      { jsonrpc: '2.0', id: 3, method: 'eth_call', params: [{ to: USDC_CONTRACT, data: balanceOfData(address) }, 'latest'] },
     ]);
+
+    const byId = new Map(responses.map((r) => [r.id, r]));
+    const polRes = byId.get(1);
+    const netRes = byId.get(2);
+    const usdcRes = byId.get(3);
+
+    for (const r of [polRes, netRes, usdcRes]) {
+      if (!r) throw new Error('Missing response in Alchemy batch reply');
+      if (r.error) throw new Error(r.error.message);
+    }
+
+    const polResult = polRes.result;
+    const netResult = netRes.result;
+    const usdcResult = usdcRes.result;
 
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=60');
     res.status(200).json({
-      pol: fromWei(polRes.result, 18),
-      net: fromWei(netRes.result, 18),
-      usdc: fromWei(usdcRes.result, 6),
+      pol: fromWei(polResult, 18),
+      net: fromWei(netResult, 18),
+      usdc: fromWei(usdcResult, 6),
     });
   } catch (err) {
     console.error(err);
-    res.status(502).json({ error: 'Failed to fetch balances from PolygonScan' });
+    res.status(502).json({ error: 'Failed to fetch wallet balances' });
   }
 }
-
