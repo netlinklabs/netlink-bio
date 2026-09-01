@@ -4,6 +4,10 @@
 // into a single request from the dashboard.
 
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
+console.log('[DEBUG] API key present:', !!POLYGONSCAN_API_KEY,
+    'length:', POLYGONSCAN_API_KEY ? POLYGONSCAN_API_KEY.length : 0,
+    'prefix:', POLYGONSCAN_API_KEY ? POLYGONSCAN_API_KEY.slice(0, 4) : 'none',
+    'suffix:', POLYGONSCAN_API_KEY ? POLYGONSCAN_API_KEY.slice(-4) : 'none');
 // PolygonScan's old standalone API (api.polygonscan.com) was fully retired on
 // August 15, 2025. All explorers (Etherscan, PolygonScan, BscScan, etc.) now
 // share one unified endpoint, distinguished by a `chainid` parameter.
