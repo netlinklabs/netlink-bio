@@ -1,14 +1,13 @@
 // api/tx-gas-fee.js
-// Looks up the real gas fee for any transaction hash via PolygonScan's paid
-// API — the same reliable source already used for syncing incoming
-// transactions — instead of guessing from Sequence WaaS's receipt (which
+// Looks up the real gas fee for any transaction hash via Alchemy's Polygon
+// Mainnet JSON-RPC — the same reliable source already used for wallet
+// balances — instead of guessing from Sequence WaaS's receipt (which
 // doesn't seem to include gas data) or a public RPC node that may not have
 // caught up to a very-fresh transaction yet. Works identically for send,
 // receive, and swap.
 
-const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
-const ETHERSCAN_V2_BASE = 'https://api.etherscan.io/v2/api';
-const POLYGON_CHAIN_ID = 137;
+const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
+const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 
 export default async function handler(req, res) {
   const hash = (req.query.hash || '').trim();
@@ -17,21 +16,22 @@ export default async function handler(req, res) {
     res.status(400).json({ error: 'Invalid or missing transaction hash' });
     return;
   }
-  if (!POLYGONSCAN_API_KEY) {
-    res.status(500).json({ error: 'Server misconfiguration: missing PolygonScan API key' });
+  if (!ALCHEMY_API_KEY) {
+    res.status(500).json({ error: 'Server misconfiguration: missing Alchemy API key' });
     return;
   }
 
   try {
-    const url = `${ETHERSCAN_V2_BASE}?${new URLSearchParams({
-      module: 'proxy',
-      action: 'eth_getTransactionReceipt',
-      txhash: hash,
-      chainid: POLYGON_CHAIN_ID,
-      apikey: POLYGONSCAN_API_KEY,
-    })}`;
-
-    const apiRes = await fetch(url);
+    const apiRes = await fetch(ALCHEMY_RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_getTransactionReceipt',
+        params: [hash],
+      }),
+    });
     const data = await apiRes.json();
     const receipt = data.result;
 
@@ -59,6 +59,6 @@ export default async function handler(req, res) {
     res.status(200).json({ gasFee, pending: false });
   } catch (err) {
     console.error(err);
-    res.status(502).json({ error: 'Failed to fetch gas fee from PolygonScan' });
+    res.status(502).json({ error: 'Failed to fetch gas fee' });
   }
 }
