@@ -18,6 +18,10 @@
         }
     </script>
     <style>
+        @keyframes loadingBar {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+        }
         * { font-family: 'Inter', sans-serif; }
         body { background: #f8fafc; color: #1e293b; }
         .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
@@ -439,6 +443,10 @@
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Buy
                     </button>
                 </div>
+                <div id="walletBalanceLoadingBarPay" class="hidden mt-3 h-1 w-full bg-surface rounded-full overflow-hidden">
+                    <div class="h-full w-1/3 bg-blue-500 rounded-full animate-[loadingBar_1.2s_ease-in-out_infinite]"></div>
+                </div>
+                <p id="walletBalanceErrorTextPay" class="hidden mt-3 text-xs text-red-500 text-center"></p>
             </div>
 
             <!-- NET & POL Assets Card -->
@@ -1228,6 +1236,12 @@
         });
 
         async function fetchWalletBalances(address) {
+            const loadingBar = document.getElementById('walletBalanceLoadingBarPay');
+            const errorText = document.getElementById('walletBalanceErrorTextPay');
+
+            loadingBar.classList.remove('hidden');
+            errorText.classList.add('hidden');
+
             try {
                 const url = `/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
                 const data = await fetchWithRetry(url);
@@ -1237,9 +1251,14 @@
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
                 updateLocalCurrencyDisplay(data.usdc);
                 if (window.renderSwapTokens) window.renderSwapTokens();
+                loadingBar.classList.add('hidden');
+                errorText.classList.add('hidden');
             } catch (err) {
                 console.error(err);
-                showToast('Could not fetch wallet balances');
+                loadingBar.classList.add('hidden');
+                errorText.textContent = 'Failed to load, tap to refresh';
+                errorText.classList.remove('hidden');
+                errorText.onclick = () => fetchWalletBalances(address);
             }
         }
 
