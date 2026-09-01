@@ -25,16 +25,16 @@ function balanceOfData(address) {
   return BALANCE_OF_SELECTOR + address.slice(2).toLowerCase().padStart(64, '0');
 }
 
-async function rpcCall(method, params) {
+async function rpcBatchCall(requests) {
   const res = await fetch(ALCHEMY_RPC_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    body: JSON.stringify(requests),
   });
   if (!res.ok) throw new Error(`Alchemy RPC request failed: ${res.status}`);
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.result;
+  if (!Array.isArray(data)) throw new Error('Unexpected non-batch response from Alchemy');
+  return data;
 }
 
 export default async function handler(req, res) {
@@ -50,11 +50,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [polResult, netResult, usdcResult] = await Promise.all([
-      rpcCall('eth_getBalance', [address, 'latest']),
-      rpcCall('eth_call', [{ to: NET_CONTRACT, data: balanceOfData(address) }, 'latest']),
-      rpcCall('eth_call', [{ to: USDC_CONTRACT, data: balanceOfData(address) }, 'latest']),
+    const responses = await rpcBatchCall([
+      { jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] },
+      { jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: NET_CONTRACT, data: balanceOfData(address) }, 'latest'] },
+      { jsonrpc: '2.0', id: 3, method: 'eth_call', params: [{ to: USDC_CONTRACT, data: balanceOfData(address) }, 'latest'] },
     ]);
+
+    const byId = new Map(responses.map((r) => [r.id, r]));
+    const polRes = byId.get(1);
+    const netRes = byId.get(2);
+    const usdcRes = byId.get(3);
+
+    for (const r of [polRes, netRes, usdcRes]) {
+      if (!r) throw new Error('Missing response in Alchemy batch reply');
+      if (r.error) throw new Error(r.error.message);
+    }
+
+    const polResult = polRes.result;
+    const netResult = netRes.result;
+    const usdcResult = usdcRes.result;
 
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=60');
     res.status(200).json({
