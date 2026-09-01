@@ -88,7 +88,7 @@
     <main class="p-4 lg:p-8 max-w-3xl mx-auto">
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-primary">Wallet</h3>
+                <h3 class="font-semibold text-primary">Wallet Balance</h3>
                 <span id="walletStatusLabel" class="text-xs font-medium text-secondary flex items-center gap-1.5 flex-shrink-0">
                     <span id="walletStatusDot" class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
                     <span id="walletStatusText">Status: Not Connected</span>
@@ -1031,7 +1031,7 @@ window.openNetlinkPay = openNetlinkPay;
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        async function fetchWalletBalances(address) {
+        async function fetchWalletBalances(address, isRetry = false) {
             if (!address) {
                 document.getElementById('balanceNet').textContent = '0.00';
                 document.getElementById('balanceUsdc').textContent = '0.00';
@@ -1040,7 +1040,7 @@ window.openNetlinkPay = openNetlinkPay;
             }
 
             try {
-                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}`);
+                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`);
                 if (!res.ok) throw new Error('Failed to fetch balances');
                 const data = await res.json();
 
@@ -1049,7 +1049,11 @@ window.openNetlinkPay = openNetlinkPay;
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
             } catch (err) {
                 console.error(err);
-                showToast('Could not fetch wallet balances');
+                if (!isRetry) {
+                    setTimeout(() => fetchWalletBalances(address, true), 1500);
+                } else {
+                    showToast('Could not fetch wallet balances');
+                }
             }
         }
 
