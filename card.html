@@ -132,13 +132,29 @@
             setTimeout(() => toast.classList.remove('show'), 2500);
         }
 
-        function registerInterest() {
+        function setRegisteredState() {
             const btn = document.getElementById('registerInterestBtn');
-            try {
-                localStorage.setItem('netlinkCardInterestRegistered', 'true');
-            } catch (e) {}
             btn.textContent = "You're on the list";
             btn.disabled = true;
+        }
+
+        async function registerInterest() {
+            const btn = document.getElementById('registerInterestBtn');
+            btn.disabled = true;
+
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ card_interest_at: new Date().toISOString() })
+                .eq('id', currentUser.id)
+                .is('card_interest_at', null);
+
+            if (error) {
+                btn.disabled = false;
+                showToast('Something went wrong. Please try again.');
+                return;
+            }
+
+            setRegisteredState();
             showToast("Thanks! We'll notify you when it launches.");
         }
 
@@ -154,13 +170,6 @@
                 currentUser = session.user;
                 document.getElementById('authGate').style.display = 'none';
                 await loadProfile();
-                try {
-                    if (localStorage.getItem('netlinkCardInterestRegistered') === 'true') {
-                        const btn = document.getElementById('registerInterestBtn');
-                        btn.textContent = "You're on the list";
-                        btn.disabled = true;
-                    }
-                } catch (e) {}
             } catch (err) {
                 console.error(err);
                 showAuthError(err.message || String(err));
@@ -169,7 +178,7 @@
 
         async function loadProfile() {
             const { data, error } = await supabaseClient.from('profiles')
-                .select('username, display_name, avatar_url, tier, net_id, local_currency, business_verified_at, identity_verified_at').eq('id', currentUser.id).single();
+                .select('username, display_name, avatar_url, tier, net_id, local_currency, business_verified_at, identity_verified_at, card_interest_at').eq('id', currentUser.id).single();
             if (error) { console.error(error); return; }
             if (window.NetlinkNav) {
                 NetlinkNav.init({
@@ -178,6 +187,9 @@
                     supabaseClient: supabaseClient,
                     userId: currentUser.id,
                 });
+            }
+            if (data.card_interest_at) {
+                setRegisteredState();
             }
         }
 
