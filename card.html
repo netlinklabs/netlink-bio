@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlink Prepaid Card — Netlink</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: white; padding: 12px 24px; border-radius: 100px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 60; font-size: 14px; font-weight: 500; opacity: 0; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        html.dark .toast { background: #e2e8f0; color: #0f172a; }
+
+        .card-preview-wrap { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 20px; padding: 28px 20px; }
+        .card-preview-wrap img { border-radius: 14px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5); }
+        .soon-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px; background: rgba(59,130,246,0.1); color: #3b82f6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        html.dark .soon-badge { background: rgba(59,130,246,0.15); }
+        .feature-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .feature-row:last-child { border-bottom: none; }
+        html.dark .feature-row { border-color: rgba(255,255,255,0.05); }
+        .feature-icon { width: 36px; height: 36px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        html.dark .feature-icon { background: rgba(37,99,235,0.15); color: #60a5fa; }
+        .btn-primary { background: #0f172a; color: #ffffff; }
+        .btn-primary:hover { background: #1e293b; }
+        .btn-primary:disabled { opacity: 0.6; cursor: default; }
+        html.dark .btn-primary { background: #f8fafc; color: #0f172a; }
+        html.dark .btn-primary:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Thanks! We'll notify you when it launches.</div>
+
+    <main class="px-4 pt-4 pb-8 lg:px-8 max-w-xl mx-auto">
+        <div class="card-preview-wrap mb-5">
+            <img src="/assets/net-card.png" alt="Netlink Prepaid Card preview" class="w-full max-w-xs mx-auto block">
+        </div>
+
+        <div class="text-center mb-6">
+            <span class="soon-badge mb-3"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Coming soon</span>
+            <h2 class="text-2xl font-bold text-primary tracking-tight mt-3">Netlink Prepaid Card</h2>
+            <p class="text-sm text-muted mt-2 leading-relaxed">Netlink Prepaid Card will be launched soon, giving you a simple way to spend your Netlink Pay balance in everyday life. Register your interest and we'll let you know as soon as it's ready.</p>
+        </div>
+
+        <button id="registerInterestBtn" onclick="registerInterest()" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold transition mb-6">Register Interest</button>
+
+        <div class="card rounded-2xl p-5">
+            <h3 class="text-sm font-bold text-primary uppercase tracking-wide mb-1">What's coming</h3>
+            <div>
+                <div class="feature-row">
+                    <div class="feature-icon"><i data-lucide="globe" class="w-4 h-4"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-primary">Spend anywhere</p>
+                        <p class="text-xs text-muted mt-0.5">Use your Netlink Pay balance at merchants worldwide.</p>
+                    </div>
+                </div>
+                <div class="feature-row">
+                    <div class="feature-icon"><i data-lucide="zap" class="w-4 h-4"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-primary">Instant top-up</p>
+                        <p class="text-xs text-muted mt-0.5">Fund your card directly from your wallet in seconds.</p>
+                    </div>
+                </div>
+                <div class="feature-row">
+                    <div class="feature-icon"><i data-lucide="bell" class="w-4 h-4"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-primary">Real-time alerts</p>
+                        <p class="text-xs text-muted mt-0.5">Get notified the moment your card is used.</p>
+                    </div>
+                </div>
+                <div class="feature-row">
+                    <div class="feature-icon"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-primary">Secure by design</p>
+                        <p class="text-xs text-muted mt-0.5">Freeze, unfreeze, and manage limits from the app.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function registerInterest() {
+            const btn = document.getElementById('registerInterestBtn');
+            try {
+                localStorage.setItem('netlinkCardInterestRegistered', 'true');
+            } catch (e) {}
+            btn.textContent = "You're on the list";
+            btn.disabled = true;
+            showToast("Thanks! We'll notify you when it launches.");
+        }
+
+        function showAuthError(msg) {
+            document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
+        }
+
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login'; return; }
+                currentUser = session.user;
+                document.getElementById('authGate').style.display = 'none';
+                await loadProfile();
+                try {
+                    if (localStorage.getItem('netlinkCardInterestRegistered') === 'true') {
+                        const btn = document.getElementById('registerInterestBtn');
+                        btn.textContent = "You're on the list";
+                        btn.disabled = true;
+                    }
+                } catch (e) {}
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        async function loadProfile() {
+            const { data, error } = await supabaseClient.from('profiles')
+                .select('username, display_name, avatar_url, tier, net_id, local_currency, business_verified_at, identity_verified_at').eq('id', currentUser.id).single();
+            if (error) { console.error(error); return; }
+            if (window.NetlinkNav) {
+                NetlinkNav.init({
+                    activePage: 'card',
+                    profile: data,
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                });
+            }
+        }
+
+        lucide.createIcons();
+        checkAuth();
+    </script>
+
+    <script src="/shared/account-menu.js?v=3"></script>
+    <script src="/shared/nav.js?v=3"></script>
+</body>
+</html>
