@@ -40,7 +40,8 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         html.dark .toast { background: #e2e8f0; color: #0f172a; }
 
-        .card-preview-wrap { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 20px; padding: 28px 20px; }
+        .card-preview-wrap { background: #ffffff; border: 1px solid rgba(0,0,0,0.04); border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); }
+        html.dark .card-preview-wrap { background: #151e32; border-color: rgba(255,255,255,0.04); box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2); }
         .card-preview-wrap img { border-radius: 14px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5); }
         .soon-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px; background: rgba(59,130,246,0.1); color: #3b82f6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         html.dark .soon-badge { background: rgba(59,130,246,0.15); }
@@ -74,7 +75,7 @@
         <div class="text-center mb-6">
             <span class="soon-badge mb-3"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Coming soon</span>
             <h2 class="text-2xl font-bold text-primary tracking-tight mt-3">Netlink Prepaid Card</h2>
-            <p class="text-sm text-muted mt-2 leading-relaxed">Netlink Prepaid Card will be launched soon, giving you a simple way to spend your Netlink Pay balance in everyday life. Register your interest and we'll let you know as soon as it's ready.</p>
+            <p class="text-sm text-muted mt-2 leading-relaxed">Your virtual Netlink Prepaid Card will be launched soon, giving you a simple way to spend your Netlink Pay balance in everyday life. Register your interest and we'll let you know as soon as it's ready.</p>
         </div>
 
         <button id="registerInterestBtn" onclick="registerInterest()" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold transition mb-6">Register Interest</button>
