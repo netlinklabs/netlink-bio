@@ -16,7 +16,7 @@
 (function () {
   const BOTTOM_NAV_ITEMS = [
     { key: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard', href: 'dashboard' },
-    { key: 'pagebuilder', icon: 'layout-template', label: 'Page', href: 'dashboard#landingPageCard' },
+    { key: 'card', icon: 'credit-card', label: 'Card', href: 'card' },
     { key: 'pay', icon: 'wallet', label: 'Wallet', href: 'pay' },
     { key: 'activity', icon: 'history', label: 'Activity', href: 'tx' },
     { key: 'account', icon: 'user-round', label: 'Account', href: null }, // opens sheet, not a page
