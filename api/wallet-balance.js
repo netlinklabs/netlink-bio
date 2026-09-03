@@ -12,7 +12,7 @@ const NET_CONTRACT = '0x0e893B239094A5c573373d44CF1C7D03576b95cb';
 const USDC_CONTRACT = '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359'; // native USDC (Circle)
 const BALANCE_OF_SELECTOR = '0x70a08231';
 
-const RPC_TIMEOUT_MS = 6000;
+const RPC_TIMEOUT_MS = 4000; // kept low: Vercel Hobby plan caps function duration at 10s total
 const MAX_ATTEMPTS = 2; // 1 try + 1 retry
 
 function fromWei(rawValue, decimals) {
