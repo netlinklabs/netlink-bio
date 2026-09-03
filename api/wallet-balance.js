@@ -3,6 +3,7 @@
 // in client-side code, and so we can combine 3 lookups (POL, NET, USDC)
 // into a single request from the dashboard.
 // Migrated from PolygonScan/Etherscan V2 to Alchemy RPC — see CHANGELOG.
+// Added: request timeout + 1 retry to avoid 10s hangs on slow/failed RPC calls.
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
@@ -10,6 +11,9 @@ const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_
 const NET_CONTRACT = '0x0e893B239094A5c573373d44CF1C7D03576b95cb';
 const USDC_CONTRACT = '0x3c499c542cEF5E3811e1192ce70d8cc03d5c3359'; // native USDC (Circle)
 const BALANCE_OF_SELECTOR = '0x70a08231';
+
+const RPC_TIMEOUT_MS = 6000;
+const MAX_ATTEMPTS = 2; // 1 try + 1 retry
 
 function fromWei(rawValue, decimals) {
   if (!rawValue) return '0.00';
@@ -25,16 +29,52 @@ function balanceOfData(address) {
   return BALANCE_OF_SELECTOR + address.slice(2).toLowerCase().padStart(64, '0');
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function rpcBatchCall(requests) {
-  const res = await fetch(ALCHEMY_RPC_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requests),
-  });
-  if (!res.ok) throw new Error(`Alchemy RPC request failed: ${res.status}`);
-  const data = await res.json();
-  if (!Array.isArray(data)) throw new Error('Unexpected non-batch response from Alchemy');
-  return data;
+  let lastErr;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetchWithTimeout(
+        ALCHEMY_RPC_URL,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requests),
+        },
+        RPC_TIMEOUT_MS
+      );
+
+      if (!res.ok) throw new Error(`Alchemy RPC request failed: ${res.status}`);
+
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error('Unexpected non-batch response from Alchemy');
+      return data;
+    } catch (err) {
+      lastErr = err;
+      const isTimeout = err.name === 'AbortError';
+      console.error(`rpcBatchCall attempt ${attempt} failed:`, isTimeout ? 'timeout' : err.message);
+
+      if (attempt < MAX_ATTEMPTS) {
+        await sleep(300); // short backoff before retry
+      }
+    }
+  }
+
+  throw lastErr;
 }
 
 export default async function handler(req, res) {
