@@ -19,6 +19,7 @@
         * { font-family: 'Inter', sans-serif; }
         body { background: #f8fafc; color: #1e293b; }
         .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card.reward-card { border-radius: 16px; padding: 18px; border-color: rgba(59,130,246,0.35); }
         .text-primary { color: #0f172a; }
         .text-secondary { color: #475569; }
         .text-muted { color: #64748b; }
@@ -27,6 +28,7 @@
 
         html.dark body { background: #0f172a; color: #e2e8f0; }
         html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .card.reward-card { border-color: rgba(255,255,255,0.05); }
         html.dark .text-primary { color: #f8fafc !important; }
         html.dark .text-secondary { color: #94a3b8 !important; }
         html.dark .text-muted { color: #64748b !important; }
@@ -76,6 +78,18 @@
             net_claim: 'Complete Your Profile',
         };
 
+        const REWARD_TYPE_SUBTITLES = {
+            net_claim: 'Profile reward',
+        };
+
+        function formatRewardSubtitle(type) {
+            return REWARD_TYPE_SUBTITLES[type] || 'Reward';
+        }
+
+        function slugifyId(str) {
+            return String(str).replace(/[^a-zA-Z0-9_-]/g, '-');
+        }
+
         function escapeHtml(str) {
             const div = document.createElement('div');
             div.textContent = str || '';
@@ -100,9 +114,9 @@
 
         function programStatusBadge(program) {
             if (program.is_active) {
-                return { label: 'Active', className: 'bg-green-500/20 text-green-600' };
+                return { label: 'Active', className: 'bg-green-500/10 text-green-600' };
             }
-            return { label: 'Closed', className: 'bg-gray-200 text-gray-600' };
+            return { label: 'Closed', className: 'bg-gray-500/10 text-gray-600' };
         }
 
         function claimStatusBadge(rewardRow) {
@@ -111,25 +125,70 @@
             return { label: 'Pending Review', className: 'bg-amber-500/20 text-amber-600' };
         }
 
+        function toggleRewardDescription(id) {
+            const desc = document.getElementById('reward-desc-' + id);
+            const chevron = document.getElementById('reward-chevron-' + id);
+            const label = document.getElementById('reward-toggle-label-' + id);
+            const isExpanded = desc.style.maxHeight && desc.style.maxHeight !== '0px';
+            if (isExpanded) {
+                desc.style.maxHeight = '0px';
+                chevron.style.transform = 'rotate(0deg)';
+                label.textContent = 'Learn more';
+            } else {
+                desc.style.maxHeight = desc.scrollHeight + 'px';
+                chevron.style.transform = 'rotate(180deg)';
+                label.textContent = 'Show less';
+            }
+        }
+
         function renderRewardCard(program, rewardRow) {
             const statusBadge = programStatusBadge(program);
             const claimBadge = claimStatusBadge(rewardRow);
+            const id = slugifyId(program.reward_type);
             const claimedDetails = (rewardRow && rewardRow.status === 'claimed')
-                ? `<p class="text-xs text-muted mt-2">Claimed on ${escapeHtml(formatDate(rewardRow.claimed_at))}${rewardRow.tx_hash
+                ? `<p class="text-xs text-muted mt-3">Claimed on ${escapeHtml(formatDate(rewardRow.claimed_at))}${rewardRow.tx_hash
                     ? ` · <a href="https://polygonscan.com/tx/${encodeURIComponent(rewardRow.tx_hash)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">View transaction</a>`
                     : ''}</p>`
                 : '';
+            const descriptionBlock = program.description
+                ? `
+                    <div class="border-t border-subtle mt-4 pt-3">
+                        <button type="button" onclick="toggleRewardDescription('${id}')" class="flex items-center gap-1 text-xs font-medium text-blue-500">
+                            <span id="reward-toggle-label-${id}">Learn more</span>
+                            <i data-lucide="chevron-down" id="reward-chevron-${id}" class="w-3.5 h-3.5 transition-transform" style="transform: rotate(0deg);"></i>
+                        </button>
+                        <div id="reward-desc-${id}" class="overflow-hidden transition-all duration-300" style="max-height: 0px;">
+                            <p class="text-xs text-muted pt-2">${escapeHtml(program.description)}</p>
+                        </div>
+                    </div>
+                `
+                : '';
 
             return `
-                <div class="card rounded-2xl p-4">
-                    <div class="flex items-start justify-between gap-3 mb-2">
-                        <h3 class="text-sm font-semibold text-primary">${escapeHtml(formatRewardType(program.reward_type))}</h3>
-                        <span class="text-xs px-2 py-1 rounded shrink-0 ${statusBadge.className}">${escapeHtml(statusBadge.label)}</span>
+                <div class="card reward-card rounded-2xl">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0">
+                                <i data-lucide="${escapeHtml(program.icon || 'gift')}" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-medium text-primary truncate">${escapeHtml(formatRewardType(program.reward_type))}</h3>
+                                <p class="text-xs text-muted">${escapeHtml(formatRewardSubtitle(program.reward_type))}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs px-3 py-1 rounded-full shrink-0 ${statusBadge.className}">${escapeHtml(statusBadge.label)}</span>
                     </div>
-                    <p class="text-sm text-secondary">${escapeHtml(String(program.amount_per_claim))} NET</p>
-                    <div class="flex items-center gap-2 mt-3">
-                        <span class="text-xs px-2 py-1 rounded ${claimBadge.className}">${escapeHtml(claimBadge.label)}</span>
+
+                    <div class="flex items-center justify-between flex-wrap gap-2 mt-4">
+                        <div class="flex items-center gap-2">
+                            <img src="/assets/net-logo.png" alt="NET" class="w-7 h-7 rounded-full">
+                            <span class="text-[28px] font-medium text-primary leading-none">${escapeHtml(String(program.amount_per_claim))}</span>
+                            <span class="text-xs text-muted">NET</span>
+                        </div>
+                        <span class="text-xs px-3 py-1 rounded-full ${claimBadge.className}">${escapeHtml(claimBadge.label)}</span>
                     </div>
+
+                    ${descriptionBlock}
                     ${claimedDetails}
                 </div>
             `;
@@ -159,6 +218,7 @@
             (myRewards || []).forEach(r => { rewardsByType[r.reward_type] = r; });
 
             listEl.innerHTML = programs.map(program => renderRewardCard(program, rewardsByType[program.reward_type])).join('');
+            if (window.lucide) lucide.createIcons();
         }
 
         function showAuthError(msg) {
