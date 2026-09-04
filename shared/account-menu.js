@@ -14,6 +14,12 @@ const ACCOUNT_MENU = {
       ],
     },
     {
+      title: 'Rewards',
+      items: [
+        { icon: 'gift', label: 'Reward', href: 'reward' },
+      ],
+    },
+    {
       title: 'Account',
       items: [
         { icon: 'fingerprint', label: 'NET ID & Privacy', href: 'identity' },
