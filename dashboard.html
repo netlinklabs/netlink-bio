@@ -524,13 +524,17 @@
                 <span id="checkLinkBio" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
                     <i data-lucide="circle" class="w-3 h-3"></i> Create Link Bio
                 </span>
+                <span id="checkCountry" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
+                    <i data-lucide="circle" class="w-3 h-3"></i> Select Country
+                </span>
                 <span id="checkWallet" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                    <i data-lucide="circle" class="w-3 h-3"></i> Input Wallet
+                    <i data-lucide="circle" class="w-3 h-3"></i> Connect Wallet
                 </span>
             </div>
-            <button id="claimNetBtn" disabled onclick="showToast('NET claiming coming soon — smart contract in progress')" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
+            <button id="claimNetBtn" disabled onclick="claimNetReward()" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
                 Claim NET
             </button>
+            <p id="claimStatusText" class="text-xs text-secondary mt-2 hidden"></p>
         </div>
     </main>
 
@@ -1471,9 +1475,13 @@ window.openNetlinkPay = openNetlinkPay;
         function updateProfileCompletion() {
             const hasAvatar = !!currentProfile?.avatar_url;
             const hasLink = currentLinks.length > 0;
+            const hasCountry = !!currentProfile?.country_code;
             const hasWallet = !!currentProfile?.wallet_address;
             const items = [
-                ['checkAvatar', hasAvatar], ['checkLinkBio', hasLink], ['checkWallet', hasWallet],
+                ['checkAvatar', hasAvatar],
+                ['checkLinkBio', hasLink],
+                ['checkCountry', hasCountry],
+                ['checkWallet', hasWallet],
             ];
             let count = 0;
             items.forEach(([id, done]) => {
@@ -1502,6 +1510,63 @@ window.openNetlinkPay = openNetlinkPay;
                 claimBtn.disabled = true;
                 claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
             }
+
+            checkClaimStatus();
+        }
+
+        async function checkClaimStatus() {
+            const claimBtn = document.getElementById('claimNetBtn');
+            const statusText = document.getElementById('claimStatusText');
+
+            const { data: existing } = await supabaseClient
+                .from('rewards')
+                .select('status')
+                .eq('user_id', currentUser.id)
+                .eq('reward_type', 'net_claim')
+                .maybeSingle();
+
+            if (existing) {
+                claimBtn.disabled = true;
+                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
+                claimBtn.textContent = existing.status === 'claimed' ? 'Claimed' : 'Claim Pending Review';
+                statusText.textContent = existing.status === 'claimed'
+                    ? 'Your 20 NET has been sent.'
+                    : 'Your claim is submitted and pending review.';
+                statusText.classList.remove('hidden');
+                claimBtn.onclick = null;
+            }
+        }
+
+        async function claimNetReward() {
+            const claimBtn = document.getElementById('claimNetBtn');
+            const statusText = document.getElementById('claimStatusText');
+            claimBtn.disabled = true;
+            claimBtn.textContent = 'Submitting...';
+
+            const { error } = await supabaseClient
+                .from('rewards')
+                .insert({
+                    user_id: currentUser.id,
+                    reward_type: 'net_claim',
+                    status: 'pending',
+                    amount: 20
+                });
+
+            if (error) {
+                if (error.message.includes('full')) {
+                    showToast('Claim quota is full');
+                } else if (error.message.includes('duplicate') || error.code === '23505') {
+                    showToast('You already claimed this reward');
+                } else {
+                    showToast('Failed to submit claim');
+                }
+                claimBtn.disabled = false;
+                claimBtn.textContent = 'Claim NET';
+                return;
+            }
+
+            showToast('Claim submitted! Pending review.');
+            checkClaimStatus();
         }
 
         function compressImage(file, maxDimension = 512, quality = 0.75) {
