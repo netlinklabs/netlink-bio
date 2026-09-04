@@ -1486,7 +1486,7 @@ window.openNetlinkPay = openNetlinkPay;
             let count = 0;
             items.forEach(([id, done]) => {
                 const el = document.getElementById(id);
-                const icon = el.querySelector('i');
+                const icon = el.querySelector('[data-lucide]');
                 if (done) {
                     count++;
                     el.className = 'text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded flex items-center gap-1';
