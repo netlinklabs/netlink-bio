@@ -1473,7 +1473,7 @@ window.openNetlinkPay = openNetlinkPay;
         }
 
         function updateProfileCompletion() {
-            const hasAvatar = !!currentProfile?.avatar_url;
+            const hasAvatar = !!currentProfile?.avatar_url?.includes('/storage/v1/object/public/avatars/');
             const hasLink = currentLinks.length > 0;
             const hasCountry = !!currentProfile?.country_code;
             const hasWallet = !!currentProfile?.wallet_address;
