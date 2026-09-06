@@ -1,0 +1,22 @@
+# Netlink
+
+> Netlink is a digital identity platform for bio links, CV building, and business landing pages — built to be easily discovered by AI search.
+
+Netlink helps individuals, content creators, business owners, communities, and job seekers gain visibility in AI-powered search by making every profile page machine-readable, while strengthening the connection between a person's social media accounts.
+
+## Pages
+- [Netlink](https://netlink.bio): Main platform for creating a bio link profile, CV, and business landing page.
+- [Netlink Token](https://netlinktoken.com): Official site for the NET utility token and company information.
+- [Netlink Token Docs](https://docs.netlinktoken.com): Documentation for the NET token and Netlink ecosystem.
+
+## Features
+- Verified Profile: Users can apply for identity verification and receive a verified badge on their public profile, increasing trust and reducing identity misuse.
+- Netlink Pay: A non-custodial crypto wallet (Web3) built into Netlink for sending, receiving, storing, and buying USDC. Wallets are created instantly via Google or email login using Account Abstraction (ERC-4337) — no seed phrase or private key needed. Runs on the Polygon network.
+
+## Company
+- Netlink is developed by Netlink Labs (PT Netlink Labs Global), based in Pontianak, West Kalimantan, Indonesia.
+- Founder: Ramlan Hadiansyah, an IT practitioner with a long-standing focus on blockchain and AI technology.
+- Ramlan also developed NET (Netlink Ecosystem Token), a utility token on the Polygon network that powers the Netlink ecosystem.
+
+## Optional
+- [Netlink Docs (coming soon)](https://docs.netlink.bio): Planned documentation site for the main Netlink platform.
