@@ -397,9 +397,9 @@ export default async function handler(req, res) {
 
   /* Donate / Receive Crypto Payment — taller, coin-style icon, USDC accent */
   /* Donate / Receive Crypto Payment — premium gold-on-dark "killer feature" card */
-  .donate-card-wrap { padding:1.5px; border-radius:19px; margin-bottom:12px; background:var(--nl-donate-wrap-bg); }
-  .donate-card { position:relative; overflow:hidden; display:flex; align-items:center; gap:14px; background:var(--nl-donate-bg); border-radius:17.5px; padding:18px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .2s, box-shadow .2s; }
-  .donate-card:hover { transform:translateY(-4px); box-shadow:0 14px 30px rgba(200,200,205,0.3); }
+  .donate-card-wrap { margin-bottom:12px; }
+  .donate-card { position:relative; overflow:hidden; display:flex; align-items:center; gap:14px; background:var(--nl-donate-bg); border-radius:17.5px; padding:18px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .2s, box-shadow .2s; border:1px solid var(--nl-border); }
+  .donate-card:hover { transform:translateY(-2px); border-color:#14b8a6; }
   .donate-shimmer { position:absolute; top:0; left:-60%; width:50%; height:100%; background:linear-gradient(120deg, transparent, rgba(255,255,255,0.15), transparent); transform:skewX(-20deg); animation:shimmer-sweep 3.2s ease-in-out infinite; pointer-events:none; }
   @keyframes shimmer-sweep { 0% { left:-60%; } 55% { left:130%; } 100% { left:130%; } }
   .donate-icon-ring { position:relative; flex-shrink:0; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
