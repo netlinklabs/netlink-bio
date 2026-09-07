@@ -118,6 +118,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/shared/nav.js?v=3"></script>
     <script src="/shared/account-menu.js?v=3"></script>
+    <script src="/shared/app-lock.js?v=3"></script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -186,6 +187,14 @@
                     profile: data,
                     supabaseClient: supabaseClient,
                     userId: currentUser.id,
+                });
+            }
+            if (window.NetlinkAppLock) {
+                NetlinkAppLock.init({
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                    userEmail: currentUser.email,
+                    bgLockMs: 90 * 1000,
                 });
             }
             if (data.card_interest_at) {

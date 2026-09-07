@@ -22,7 +22,6 @@
 // otherwise untouched by logout.
 
 (function () {
-  const BG_LOCK_MS = 2 * 60 * 1000; // 2 minutes
   const SS_UNLOCKED_AT = 'nl_lock_unlocked_at';
   const SS_HIDDEN_AT = 'nl_lock_last_hidden_at';
   const LS_WEBAUTHN_CRED = 'nl_lock_webauthn_cred_id';
@@ -33,6 +32,7 @@
     supabaseClient: null,
     userId: null,
     userEmail: null,
+    bgLockMs: 2 * 60 * 1000,
   };
 
   // ---------------- Styles ----------------
@@ -199,7 +199,7 @@
     const unlockedAt = sessionStorage.getItem(SS_UNLOCKED_AT);
     if (!unlockedAt) return true;
     const hiddenAt = sessionStorage.getItem(SS_HIDDEN_AT);
-    if (hiddenAt && (Date.now() - Number(hiddenAt)) >= BG_LOCK_MS) return true;
+    if (hiddenAt && (Date.now() - Number(hiddenAt)) >= state.bgLockMs) return true;
     return false;
   }
 
@@ -543,15 +543,20 @@
   }
 
   function init(options) {
-    state = { ...state, ...options };
+    state = { ...state, ...options, bgLockMs: options.bgLockMs || (2 * 60 * 1000) };
     injectStyles();
     ensureOverlay();
     wireBackgroundTimer();
     checkAndShowLock();
   }
 
+  function setContext(options) {
+    state = { ...state, ...options };
+  }
+
   window.NetlinkAppLock = {
     init,
+    setContext,
     requireAppLock,
     registerBiometric,
     hasRegisteredBiometric,
