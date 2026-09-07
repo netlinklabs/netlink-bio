@@ -184,19 +184,18 @@
                 </button>
             </div>
 
-            <!-- Choose Template -- placeholder only, not wired up yet. Standard
-                 is the only real template today; the Pro card is a preview of
-                 what's coming so users know a template marketplace is planned. -->
+            <!-- Choose Template -- Standard tile opens a modal to pick Light/Dark
+                 layout for the public bio page. Pro tile stays locked/coming soon. -->
             <div class="mt-4 p-3 bg-surface border border-subtle rounded-xl">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-medium text-secondary flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i> Choose Template</span>
-                    <span class="text-[10px] text-muted uppercase tracking-wide">Coming soon</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="border-2 border-blue-500 rounded-lg p-2 text-center">
-                        <div class="h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded mb-1.5"></div>
+                    <button type="button" onclick="openTemplateModal()" class="border-2 border-blue-500 rounded-lg p-2 text-center">
+                        <div id="templateSwatch" class="h-12 rounded mb-1.5"></div>
                         <span class="text-xs font-medium text-primary">Standard</span>
-                    </div>
+                        <span id="templateSwatchLabel" class="block text-[10px] text-muted"></span>
+                    </button>
                     <div class="border border-subtle rounded-lg p-2 text-center opacity-50 cursor-not-allowed">
                         <div class="h-12 bg-white/50 rounded mb-1.5 flex items-center justify-center"><i data-lucide="lock" class="w-4 h-4 text-muted"></i></div>
                         <span class="text-xs font-medium text-muted">Pro</span>
@@ -301,11 +300,6 @@
                     <span class="text-xs text-muted">Icon shape:</span>
                     <button type="button" onclick="setIconShape('circle')" id="shapeBtnCircle" class="px-3 py-1 rounded-full text-xs font-medium border transition">Circle</button>
                     <button type="button" onclick="setIconShape('rounded')" id="shapeBtnRounded" class="px-3 py-1 rounded-lg text-xs font-medium border transition">Rounded</button>
-                </div>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="text-xs text-muted">Page theme:</span>
-                    <button type="button" onclick="setThemePreset('light')" id="themeBtnLight" class="px-3 py-1 rounded-full text-xs font-medium border transition">Light</button>
-                    <button type="button" onclick="setThemePreset('dark')" id="themeBtnDark" class="px-3 py-1 rounded-full text-xs font-medium border transition">Dark</button>
                 </div>
             </div>
             <div class="p-4 lg:p-6">
@@ -560,6 +554,33 @@
             <div class="flex gap-3">
                 <button onclick="closeDisconnectModal()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
                 <button id="disconnectConfirmBtn" onclick="handleDisconnectConfirm()" disabled class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition opacity-50 cursor-not-allowed">Disconnect</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="templateModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-primary">Choose Layout</h3>
+                <button onclick="closeTemplateModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="selectTemplateTheme('light')" id="templateOptionLight" class="border-2 rounded-xl p-3 text-center transition">
+                    <div class="h-20 rounded-lg mb-2 bg-slate-50 border border-slate-200 flex flex-col items-center justify-center gap-1">
+                        <div class="w-8 h-8 rounded-full bg-slate-200"></div>
+                        <div class="w-16 h-2 rounded bg-slate-200"></div>
+                        <div class="w-12 h-2 rounded bg-slate-100"></div>
+                    </div>
+                    <span class="text-sm font-medium text-primary">Light</span>
+                </button>
+                <button type="button" onclick="selectTemplateTheme('dark')" id="templateOptionDark" class="border-2 rounded-xl p-3 text-center transition">
+                    <div class="h-20 rounded-lg mb-2 bg-slate-900 border border-slate-700 flex flex-col items-center justify-center gap-1">
+                        <div class="w-8 h-8 rounded-full bg-slate-700"></div>
+                        <div class="w-16 h-2 rounded bg-slate-700"></div>
+                        <div class="w-12 h-2 rounded bg-slate-800"></div>
+                    </div>
+                    <span class="text-sm font-medium text-primary">Dark</span>
+                </button>
             </div>
         </div>
     </div>
@@ -879,7 +900,7 @@ window.openNetlinkPay = openNetlinkPay;
             fetchWalletBalances(data.wallet_address);
 
             setIconShapeButtons(data.link_icon_shape || 'circle');
-            setThemeButtons(data.theme_preset || 'light');
+            renderTemplateCard(data.theme_preset || 'light');
             populateCvForm(data.cv_data);
 
             const initialEl = document.getElementById('avatarInitial');
@@ -1745,25 +1766,41 @@ window.openNetlinkPay = openNetlinkPay;
             showToast(`Icon shape set to ${shape === 'rounded' ? 'Rounded' : 'Circle'}`);
         }
 
-        function setThemeButtons(theme) {
-            document.getElementById('themeBtnLight').classList.toggle('bg-blue-500', theme === 'light');
-            document.getElementById('themeBtnLight').classList.toggle('text-white', theme === 'light');
-            document.getElementById('themeBtnLight').classList.toggle('border-blue-500', theme === 'light');
-            document.getElementById('themeBtnDark').classList.toggle('bg-blue-500', theme === 'dark');
-            document.getElementById('themeBtnDark').classList.toggle('text-white', theme === 'dark');
-            document.getElementById('themeBtnDark').classList.toggle('border-blue-500', theme === 'dark');
+        function renderTemplateCard(theme) {
+            const swatch = document.getElementById('templateSwatch');
+            const label = document.getElementById('templateSwatchLabel');
+            if (theme === 'dark') {
+                swatch.className = 'h-12 rounded mb-1.5 bg-slate-900 border border-slate-700';
+                label.textContent = 'Dark';
+            } else {
+                swatch.className = 'h-12 rounded mb-1.5 bg-slate-50 border border-slate-200';
+                label.textContent = 'Light';
+            }
+            document.getElementById('templateOptionLight').classList.toggle('border-blue-500', theme !== 'dark');
+            document.getElementById('templateOptionLight').classList.toggle('border-subtle', theme === 'dark');
+            document.getElementById('templateOptionDark').classList.toggle('border-blue-500', theme === 'dark');
+            document.getElementById('templateOptionDark').classList.toggle('border-subtle', theme !== 'dark');
         }
 
-        async function setThemePreset(theme) {
-            setThemeButtons(theme);
+        function openTemplateModal() {
+            document.getElementById('templateModal').classList.add('active');
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('templateModal').classList.remove('active');
+        }
+
+        async function selectTemplateTheme(theme) {
+            renderTemplateCard(theme);
             if (currentProfile) currentProfile.theme_preset = theme;
             const { error } = await supabaseClient.from('profiles').update({ theme_preset: theme }).eq('id', currentUser.id);
             if (error) {
                 console.error(error);
-                showToast('Failed to save page theme — please try again');
+                showToast('Failed to save layout — please try again');
                 return;
             }
-            showToast(`Page theme set to ${theme === 'dark' ? 'Dark' : 'Light'}`);
+            showToast(`Layout set to ${theme === 'dark' ? 'Dark' : 'Light'}`);
+            closeTemplateModal();
         }
 
         function renderLinks() {
@@ -1923,6 +1960,10 @@ window.openNetlinkPay = openNetlinkPay;
 
         document.getElementById('linkModal').addEventListener('click', function(e) {
             if (e.target === this) closeLinkModal();
+        });
+
+        document.getElementById('templateModal').addEventListener('click', function(e) {
+            if (e.target === this) closeTemplateModal();
         });
 
     document.getElementById('disconnectWalletModal').addEventListener('click', function(e) {
