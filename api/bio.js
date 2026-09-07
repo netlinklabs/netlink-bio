@@ -168,6 +168,7 @@ export default async function handler(req, res) {
   const showCv = profile.show_cv !== false;
   const showDonate = profile.show_donate === true && !!walletAddress;
   const iconShape = profile.link_icon_shape === 'rounded' ? 'rounded' : 'circle';
+  const themePreset = profile.theme_preset === 'dark' ? 'dark' : 'light';
 
   const youtubeUrl = profile.youtube_url || '';
   const youtubeTitle = profile.youtube_title || 'Watch my video';
@@ -300,14 +301,38 @@ export default async function handler(req, res) {
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --nl-bg: #f8fafc;
+    --nl-card: #ffffff;
+    --nl-text: #0f172a;
+    --nl-text-muted: #64748b;
+    --nl-text-muted-2: #475569;
+    --nl-border: rgba(0,0,0,0.08);
+    --nl-placeholder: #e2e8f0;
+    --nl-modal-close-bg: #f1f5f9;
+    --nl-input-bg: #f1f5f9;
+    --nl-share-btn-text: #333;
+  }
+  body.theme-dark {
+    --nl-bg: #0f172a;
+    --nl-card: #1e293b;
+    --nl-text: #f1f5f9;
+    --nl-text-muted: #94a3b8;
+    --nl-text-muted-2: #cbd5e1;
+    --nl-border: rgba(255,255,255,0.08);
+    --nl-placeholder: #334155;
+    --nl-modal-close-bg: #334155;
+    --nl-input-bg: #334155;
+    --nl-share-btn-text: #f1f5f9;
+  }
   * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-  body { margin:0; background:#f8fafc; color:#0f172a; min-height:100vh; }
+  body { margin:0; background:var(--nl-bg); color:var(--nl-text); min-height:100vh; }
   .wrap { max-width: 480px; margin: 0 auto; padding: 20px 20px 48px; }
   .page-topbar { max-width: 480px; margin: 0 auto; padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
   .topbar-logo { display: flex; align-items: center; }
   .topbar-logo img { width: 36px; height: 36px; border-radius: 8px; display: block; }
-  .topbar-share-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: none; cursor: pointer; color: #333; flex-shrink: 0; }
-  .avatar { width:96px; height:96px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; background:#e2e8f0; }
+  .topbar-share-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--nl-card); box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: none; cursor: pointer; color: var(--nl-share-btn-text); flex-shrink: 0; }
+  .avatar { width:96px; height:96px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; background:var(--nl-placeholder); }
   .avatar-fallback { width:96px; height:96px; border-radius:50%; margin:0 auto 16px; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:36px; font-weight:700; }
   h1 { text-align:center; font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 4px; }
   .name-row { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; }
@@ -322,37 +347,37 @@ export default async function handler(req, res) {
   .badge-modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:100; align-items:flex-end; justify-content:center; }
   .badge-modal-overlay.active { display:flex; animation: badge-fade-in 0.2s ease-out; }
   @keyframes badge-fade-in { from { opacity:0; } to { opacity:1; } }
-  .badge-modal-box { position:relative; background:white; width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:14px 24px 36px; box-shadow:0 -10px 30px rgba(0,0,0,0.2); animation: badge-slide-up 0.25s cubic-bezier(0.16,1,0.3,1); }
+  .badge-modal-box { position:relative; background:var(--nl-card); width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:14px 24px 36px; box-shadow:0 -10px 30px rgba(0,0,0,0.2); animation: badge-slide-up 0.25s cubic-bezier(0.16,1,0.3,1); }
   @keyframes badge-slide-up { from { transform:translateY(100%); } to { transform:translateY(0); } }
-  .badge-modal-handle { display:block; width:36px; height:4px; border-radius:99px; background:#e2e8f0; margin:0 auto 20px; }
-  .badge-modal-close { position:absolute; top:16px; right:18px; width:30px; height:30px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .badge-modal-handle { display:block; width:36px; height:4px; border-radius:99px; background:var(--nl-placeholder); margin:0 auto 20px; }
+  .badge-modal-close { position:absolute; top:16px; right:18px; width:30px; height:30px; border-radius:50%; border:none; background:var(--nl-modal-close-bg); color:var(--nl-text-muted); font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .badge-modal-avatar-wrap { position:relative; width:64px; height:64px; margin-bottom:16px; }
-  .badge-modal-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; display:block; background:#e2e8f0; }
+  .badge-modal-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; display:block; background:var(--nl-placeholder); }
   .badge-modal-avatar-fallback { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:24px; font-weight:700; }
   .badge-modal-avatar-check { position:absolute; bottom:-2px; right:-2px; width:24px; height:24px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; box-sizing:content-box; }
   .badge-modal-title { font-family:'Poppins',sans-serif; font-size:19px; font-weight:700; margin:0 0 10px; display:flex; align-items:center; gap:8px; }
-  .badge-modal-message { font-size:14px; color:#475569; line-height:1.6; margin:0 0 12px; }
-  .badge-modal-date { font-size:12px; color:#94a3b8; margin:0; }
-  .handle { text-align:center; color:#64748b; font-size:14px; margin:0 0 4px; }
-  .country-row { text-align:center; color:#64748b; font-size:14px; margin:0 0 14px; }
+  .badge-modal-message { font-size:14px; color:var(--nl-text-muted-2); line-height:1.6; margin:0 0 12px; }
+  .badge-modal-date { font-size:12px; color:var(--nl-text-muted); margin:0; }
+  .handle { text-align:center; color:var(--nl-text-muted); font-size:14px; margin:0 0 4px; }
+  .country-row { text-align:center; color:var(--nl-text-muted); font-size:14px; margin:0 0 14px; }
   .contact-row { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
-  .contact-icon { width:38px; height:38px; border-radius:50%; background:white; border:1px solid rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
+  .contact-icon { width:38px; height:38px; border-radius:50%; background:var(--nl-card); border:1px solid var(--nl-border); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
   .contact-icon .brand-svg { width:100%; height:100%; }
-  .bio { text-align:center; color:#475569; font-size:14px; margin:0 0 20px; line-height:1.5; white-space:pre-wrap; }
-  .youtube-frame { position:relative; display:block; border-radius:16px; overflow:hidden; margin-bottom:12px; box-shadow:0 10px 25px rgba(0,0,0,0.12); border:1px solid rgba(0,0,0,0.06); }
+  .bio { text-align:center; color:var(--nl-text-muted-2); font-size:14px; margin:0 0 20px; line-height:1.5; white-space:pre-wrap; }
+  .youtube-frame { position:relative; display:block; border-radius:16px; overflow:hidden; margin-bottom:12px; box-shadow:0 10px 25px rgba(0,0,0,0.12); border:1px solid var(--nl-border); }
   .youtube-thumb { width:100%; display:block; }
   .youtube-play { position:absolute; top:40%; left:50%; transform:translate(-50%,-50%); width:56px; height:56px; background:rgba(0,0,0,0.55); border-radius:50%; color:white; font-size:20px; display:flex; align-items:center; justify-content:center; }
-  .youtube-caption { display:block; padding:10px 14px; font-size:13px; font-weight:600; background:white; }
-  .link-card { display:flex; align-items:center; gap:12px; background:white; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:14px 16px; margin-bottom:12px; text-decoration:none; color:#0f172a; transition:transform .15s; width:100%; text-align:left; cursor:pointer; font:inherit; }
+  .youtube-caption { display:block; padding:10px 14px; font-size:13px; font-weight:600; background:var(--nl-card); color:var(--nl-text); }
+  .link-card { display:flex; align-items:center; gap:12px; background:var(--nl-card); border:1px solid var(--nl-border); border-radius:16px; padding:14px 16px; margin-bottom:12px; text-decoration:none; color:var(--nl-text); transition:transform .15s; width:100%; text-align:left; cursor:pointer; font:inherit; }
   .link-card:hover { transform:translateY(-2px); border-color:#14b8a6; }
-  .link-icon { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:white; border:1px solid rgba(0,0,0,0.08); padding:8px; }
+  .link-icon { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--nl-card); border:1px solid var(--nl-border); padding:8px; }
   .link-icon.circle { border-radius:50%; }
   .link-icon.rounded { border-radius:10px; }
   .link-icon .brand-svg { width:100%; height:100%; }
   .link-icon .emoji-icon { font-size:18px; }
   .link-text { display:flex; flex-direction:column; min-width:0; }
   .link-title { font-weight:600; font-size:14px; }
-  .link-desc { font-size:12px; color:#64748b; }
+  .link-desc { font-size:12px; color:var(--nl-text-muted); }
 
   /* Donate / Receive Crypto Payment — taller, coin-style icon, USDC accent */
   /* Donate / Receive Crypto Payment — premium gold-on-dark "killer feature" card */
@@ -378,18 +403,18 @@ export default async function handler(req, res) {
   .donate-subtitle { font-size:12px; color:#c9c9ce; font-weight:500; margin-top:3px; }
 
   .footer { text-align:center; margin-top:32px; }
-  .footer a { color:#94a3b8; font-size:12px; text-decoration:none; }
-  .empty { text-align:center; color:#94a3b8; font-size:14px; padding:24px 0; }
+  .footer a { color:var(--nl-text-muted); font-size:12px; text-decoration:none; }
+  .empty { text-align:center; color:var(--nl-text-muted); font-size:14px; padding:24px 0; }
 
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center; padding:20px; }
   .modal-overlay.active { display:flex; }
-  .modal-box { background:white; border-radius:20px; padding:28px 24px; max-width:320px; width:100%; text-align:center; position:relative; }
-  .modal-close { position:absolute; top:12px; right:16px; border:none; background:none; font-size:22px; color:#94a3b8; cursor:pointer; }
+  .modal-box { background:var(--nl-card); color:var(--nl-text); border-radius:20px; padding:28px 24px; max-width:320px; width:100%; text-align:center; position:relative; }
+  .modal-close { position:absolute; top:12px; right:16px; border:none; background:none; font-size:22px; color:var(--nl-text-muted); cursor:pointer; }
   .modal-box h3 { margin:0 0 16px; font-size:16px; }
   .qr-code { width:180px; height:180px; margin:0 auto 16px; border-radius:12px; }
-  .wallet-address { font-size:12px; color:#475569; word-break:break-all; background:#f1f5f9; border-radius:8px; padding:8px 10px; margin-bottom:12px; }
+  .wallet-address { font-size:12px; color:var(--nl-text-muted-2); word-break:break-all; background:var(--nl-input-bg); border-radius:8px; padding:8px 10px; margin-bottom:12px; }
   .copy-btn { width:100%; padding:10px; background:#14b8a6; color:white; border:none; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; margin-bottom:10px; }
-  .wallet-note { font-size:11px; color:#94a3b8; margin:0; }
+  .wallet-note { font-size:11px; color:var(--nl-text-muted); margin:0; }
 
   /* Donate modal gets its own dark glassmorphism treatment */
   .donate-modal-box { background:rgba(24,24,27,0.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.12); color:#f1f1f3; }
@@ -402,7 +427,7 @@ export default async function handler(req, res) {
   .donate-modal-box .wallet-note { color:#a1a1aa; }
 </style>
 </head>
-<body>
+<body class="theme-${themePreset}">
   <header class="page-topbar">
     <a href="https://netlink.bio" class="topbar-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
     <button type="button" class="topbar-share-btn" onclick="shareProfile(event)" title="Share this page">
