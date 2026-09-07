@@ -42,10 +42,10 @@
     const style = document.createElement('style');
     style.id = 'nlal-styles';
     style.textContent = `
-      #nlal-overlay { position: fixed; inset: 0; z-index: 200; background: #ffffff;
+      #nlal-overlay { position: fixed; inset: 0; z-index: 9999; background: #ffffff;
         display: flex; align-items: center; justify-content: center; padding: 24px; }
       html.dark #nlal-overlay { background: #0f172a; }
-      #nlal-modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.5);
+      #nlal-modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5);
         display: flex; align-items: center; justify-content: center; padding: 24px; }
       .nlal-card { width: 100%; max-width: 320px; text-align: center; }
       .nlal-icon-wrap { width: 56px; height: 56px; border-radius: 16px; background: #eff6ff;

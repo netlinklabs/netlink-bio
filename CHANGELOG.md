@@ -5,6 +5,9 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **`shared/app-lock.js`'s PIN/biometric lock screen could render behind a page's own modal** — `#nlal-overlay` (the passive lock screen) and `#nlal-modal-overlay` (`requireAppLock()`'s modal) both used `z-index: 200`, the same value several pages use for their own modals (e.g. `privacy.html`'s `.modal-overlay`, including `#deletionModal`). If a page modal was already open when `requireAppLock()` fired — e.g. clicking "Confirm Deletion" inside `privacy.html`'s `#deletionModal` — stacking order between two elements at the same `z-index` came down to DOM order, so the PIN screen could end up rendered behind the page's modal and be unclickable. Raised both `#nlal-overlay` and `#nlal-modal-overlay` to `z-index: 9999` so App Lock's screen always renders above any page-level modal, regardless of render order. No other file changed.
+
+### Fixed
 - **Correction to the App Lock move (previous entry below): `tx.html`, `card.html`, and `reward.html` should never have had App Lock** — that PR's App Lock rollout was over-scoped to include these 3 pages; they're reverted to their pre-PR state (removed `<script src="/shared/app-lock.js?v=3">` and the `NetlinkAppLock.init({ ..., bgLockMs: 90 * 1000 })` block added after each page's `NetlinkNav.init()`), byte-identical to `main` again. App Lock now runs only on `pay.html`, `recovery.html`, `dashboard.html` (logout's `clearLockSession()` only), and `privacy.html` (`setContext()` only) — not `tx.html`/`card.html`/`reward.html`. Also, `recovery.html`'s `NetlinkAppLock.init()` was passing no `bgLockMs` (defaulting to 2 minutes); it now passes `bgLockMs: 90 * 1000` to match `pay.html`'s wallet-facing timeout. `shared/app-lock.js` (the configurable `bgLockMs` + `setContext()`), `dashboard.html`, `pay.html`, and `privacy.html` are unchanged from the previous entry.
 
 ### Changed
