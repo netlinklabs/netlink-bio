@@ -302,6 +302,11 @@
                     <button type="button" onclick="setIconShape('circle')" id="shapeBtnCircle" class="px-3 py-1 rounded-full text-xs font-medium border transition">Circle</button>
                     <button type="button" onclick="setIconShape('rounded')" id="shapeBtnRounded" class="px-3 py-1 rounded-lg text-xs font-medium border transition">Rounded</button>
                 </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="text-xs text-muted">Page theme:</span>
+                    <button type="button" onclick="setThemePreset('light')" id="themeBtnLight" class="px-3 py-1 rounded-full text-xs font-medium border transition">Light</button>
+                    <button type="button" onclick="setThemePreset('dark')" id="themeBtnDark" class="px-3 py-1 rounded-full text-xs font-medium border transition">Dark</button>
+                </div>
             </div>
             <div class="p-4 lg:p-6">
                 <div id="linkList" class="space-y-3">
@@ -874,6 +879,7 @@ window.openNetlinkPay = openNetlinkPay;
             fetchWalletBalances(data.wallet_address);
 
             setIconShapeButtons(data.link_icon_shape || 'circle');
+            setThemeButtons(data.theme_preset || 'light');
             populateCvForm(data.cv_data);
 
             const initialEl = document.getElementById('avatarInitial');
@@ -1737,6 +1743,27 @@ window.openNetlinkPay = openNetlinkPay;
                 return;
             }
             showToast(`Icon shape set to ${shape === 'rounded' ? 'Rounded' : 'Circle'}`);
+        }
+
+        function setThemeButtons(theme) {
+            document.getElementById('themeBtnLight').classList.toggle('bg-blue-500', theme === 'light');
+            document.getElementById('themeBtnLight').classList.toggle('text-white', theme === 'light');
+            document.getElementById('themeBtnLight').classList.toggle('border-blue-500', theme === 'light');
+            document.getElementById('themeBtnDark').classList.toggle('bg-blue-500', theme === 'dark');
+            document.getElementById('themeBtnDark').classList.toggle('text-white', theme === 'dark');
+            document.getElementById('themeBtnDark').classList.toggle('border-blue-500', theme === 'dark');
+        }
+
+        async function setThemePreset(theme) {
+            setThemeButtons(theme);
+            if (currentProfile) currentProfile.theme_preset = theme;
+            const { error } = await supabaseClient.from('profiles').update({ theme_preset: theme }).eq('id', currentUser.id);
+            if (error) {
+                console.error(error);
+                showToast('Failed to save page theme — please try again');
+                return;
+            }
+            showToast(`Page theme set to ${theme === 'dark' ? 'Dark' : 'Light'}`);
         }
 
         function renderLinks() {
