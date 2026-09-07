@@ -320,17 +320,9 @@
             const { data, error } = await supabaseClient.from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, receipt_show_display_name, receipt_wallet_display, business_verified_at, identity_verified_at').eq('id', currentUser.id).single();
             if (error) { console.error('Failed to load profile:', error); return; }
             currentProfile = data;
-            if (!data.wallet_address) { document.getElementById('noWalletState').classList.remove('hidden'); document.getElementById('txContent').classList.add('hidden'); if (window.lucide) lucide.createIcons(); if (window.NetlinkNav) NetlinkNav.init({ activePage: 'activity', profile: data, supabaseClient: supabaseClient, userId: currentUser.id }); if (window.NetlinkAppLock) { NetlinkAppLock.init({ supabaseClient: supabaseClient, userId: currentUser.id, userEmail: currentUser.email, bgLockMs: 90 * 1000 }); } return; }
+            if (!data.wallet_address) { document.getElementById('noWalletState').classList.remove('hidden'); document.getElementById('txContent').classList.add('hidden'); if (window.lucide) lucide.createIcons(); if (window.NetlinkNav) NetlinkNav.init({ activePage: 'activity', profile: data, supabaseClient: supabaseClient, userId: currentUser.id }); return; }
             document.getElementById('txContent').classList.remove('hidden'); if (window.lucide) lucide.createIcons();
             if (window.NetlinkNav) NetlinkNav.init({ activePage: 'activity', profile: data, supabaseClient: supabaseClient, userId: currentUser.id });
-            if (window.NetlinkAppLock) {
-                NetlinkAppLock.init({
-                    supabaseClient: supabaseClient,
-                    userId: currentUser.id,
-                    userEmail: currentUser.email,
-                    bgLockMs: 90 * 1000,
-                });
-            }
             await syncIncomingTransactions(data.wallet_address); await loadTransactions();
             refreshUnreadBadge();
         }
@@ -785,6 +777,5 @@
 
 <script src="/shared/account-menu.js?v=3"></script>
     <script src="/shared/nav.js?v=3"></script>
-    <script src="/shared/app-lock.js?v=3"></script>
 </body>
 </html>
