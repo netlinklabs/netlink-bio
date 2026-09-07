@@ -314,6 +314,11 @@ export default async function handler(req, res) {
     --nl-share-btn-text: #333;
     --nl-icon-bg: #ffffff;
     --nl-icon-border: rgba(0,0,0,0.08);
+    --nl-donate-bg: linear-gradient(160deg, #ffffff 0%, #f7f7f8 50%, #eeeef0 100%);
+    --nl-donate-title-bg: linear-gradient(90deg, #3a3a3d, #6b6b70, #3a3a3d);
+    --nl-donate-subtitle-color: #6b6b70;
+    --nl-donate-icon-border: rgba(0,0,0,0.08);
+    --nl-donate-badge-bg: #ececed;
   }
   body.theme-dark {
     --nl-bg: #0f172a;
@@ -328,6 +333,11 @@ export default async function handler(req, res) {
     --nl-share-btn-text: #f1f5f9;
     --nl-icon-bg: #f8fafc;
     --nl-icon-border: rgba(0,0,0,0.08);
+    --nl-donate-bg: linear-gradient(160deg, #0d0d0f 0%, #1c1c1e 45%, #2a2a2e 100%);
+    --nl-donate-title-bg: linear-gradient(90deg, #A9A9AE, #F5F5F7, #A9A9AE);
+    --nl-donate-subtitle-color: #c9c9ce;
+    --nl-donate-icon-border: rgba(255,255,255,0.6);
+    --nl-donate-badge-bg: #D6D6DA;
   }
   * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
   body { margin:0; background:var(--nl-bg); color:var(--nl-text); min-height:100vh; }
@@ -386,25 +396,25 @@ export default async function handler(req, res) {
   /* Donate / Receive Crypto Payment — taller, coin-style icon, USDC accent */
   /* Donate / Receive Crypto Payment — premium gold-on-dark "killer feature" card */
   .donate-card-wrap { padding:1.5px; border-radius:19px; margin-bottom:12px; background:linear-gradient(135deg, rgba(200,200,205,0.9), rgba(200,200,205,0.15) 40%, rgba(200,200,205,0.9)); }
-  .donate-card { position:relative; overflow:hidden; display:flex; align-items:center; gap:14px; background:linear-gradient(160deg, #0d0d0f 0%, #1c1c1e 45%, #2a2a2e 100%); border-radius:17.5px; padding:18px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .2s, box-shadow .2s; }
+  .donate-card { position:relative; overflow:hidden; display:flex; align-items:center; gap:14px; background:var(--nl-donate-bg); border-radius:17.5px; padding:18px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .2s, box-shadow .2s; }
   .donate-card:hover { transform:translateY(-4px); box-shadow:0 14px 30px rgba(200,200,205,0.3); }
   .donate-shimmer { position:absolute; top:0; left:-60%; width:50%; height:100%; background:linear-gradient(120deg, transparent, rgba(255,255,255,0.15), transparent); transform:skewX(-20deg); animation:shimmer-sweep 3.2s ease-in-out infinite; pointer-events:none; }
   @keyframes shimmer-sweep { 0% { left:-60%; } 55% { left:130%; } 100% { left:130%; } }
   .donate-icon-ring { position:relative; flex-shrink:0; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
   .donate-icon-ring::before { content:''; position:absolute; inset:0; border-radius:50%; box-shadow:0 0 0 0 rgba(200,200,205,0.5); animation:icon-pulse 2.2s ease-out infinite; }
   @keyframes icon-pulse { 0% { box-shadow:0 0 0 0 rgba(200,200,205,0.45); } 70% { box-shadow:0 0 0 10px rgba(200,200,205,0); } 100% { box-shadow:0 0 0 0 rgba(200,200,205,0); } }
-  .donate-icon { position:relative; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:white; border:1px solid rgba(255,255,255,0.6); overflow:hidden; z-index:1; }
+  .donate-icon { position:relative; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:white; border:1px solid var(--nl-donate-icon-border); overflow:hidden; z-index:1; }
   .donate-icon img { width:100%; height:100%; object-fit:cover; }
   .donate-text { display:flex; flex-direction:column; min-width:0; position:relative; z-index:1; }
   .donate-badges { display:flex; gap:6px; margin-bottom:4px; }
-  .donate-badge { font-size:10px; font-weight:700; color:#0d0d0f; background:#D6D6DA; border-radius:999px; padding:2px 8px; letter-spacing:0.2px; }
+  .donate-badge { font-size:10px; font-weight:700; color:#0d0d0f; background:var(--nl-donate-badge-bg); border-radius:999px; padding:2px 8px; letter-spacing:0.2px; }
   .donate-title {
     font-family:'Poppins',sans-serif; font-weight:600; font-size:15px; letter-spacing:0.3px;
-    background:linear-gradient(90deg, #A9A9AE, #F5F5F7, #A9A9AE); background-size:200% auto; color:transparent;
+    background:var(--nl-donate-title-bg); background-size:200% auto; color:transparent;
     -webkit-background-clip:text; background-clip:text; animation:gold-shine 3s linear infinite;
   }
   @keyframes gold-shine { 0% { background-position:0% center; } 100% { background-position:200% center; } }
-  .donate-subtitle { font-size:12px; color:#c9c9ce; font-weight:500; margin-top:3px; }
+  .donate-subtitle { font-size:12px; color:var(--nl-donate-subtitle-color); font-weight:500; margin-top:3px; }
 
   .footer { text-align:center; margin-top:32px; }
   .footer a { color:var(--nl-text-muted); font-size:12px; text-decoration:none; }
