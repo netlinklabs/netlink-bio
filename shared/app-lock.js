@@ -518,6 +518,7 @@
   }
 
   function requireAppLock(reasonLabel) {
+    injectStyles();
     return new Promise((resolve) => {
       let modalOverlay = document.getElementById('nlal-modal-overlay');
       if (!modalOverlay) {

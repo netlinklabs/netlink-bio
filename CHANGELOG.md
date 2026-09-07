@@ -5,6 +5,9 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **`shared/app-lock.js`'s `requireAppLock()` PIN screen rendered unstyled on pages that only call `setContext()`** — `requireAppLock()` never called `injectStyles()` itself; this went unnoticed because every page that calls `requireAppLock()` used to call `init()` first (which does inject the styles). `privacy.html` now calls `setContext()` instead of `init()` (it never needs the passive lock screen, only `requireAppLock()` for delete-account/cancel-deletion), so its `#nlal-styles` `<style>` tag was never injected — the PIN modal rendered as unstyled plain text stuck at the bottom of the page instead of a centered keypad modal. Added `injectStyles();` as the first line of `requireAppLock()`; it's a no-op if the styles are already present (`injectStyles()` already guards with `if (document.getElementById('nlal-styles')) return;`), so pages that already call `init()` are unaffected. Only `shared/app-lock.js` changed.
+
+### Fixed
 - **`shared/app-lock.js`'s PIN/biometric lock screen could render behind a page's own modal** — `#nlal-overlay` (the passive lock screen) and `#nlal-modal-overlay` (`requireAppLock()`'s modal) both used `z-index: 200`, the same value several pages use for their own modals (e.g. `privacy.html`'s `.modal-overlay`, including `#deletionModal`). If a page modal was already open when `requireAppLock()` fired — e.g. clicking "Confirm Deletion" inside `privacy.html`'s `#deletionModal` — stacking order between two elements at the same `z-index` came down to DOM order, so the PIN screen could end up rendered behind the page's modal and be unclickable. Raised both `#nlal-overlay` and `#nlal-modal-overlay` to `z-index: 9999` so App Lock's screen always renders above any page-level modal, regardless of render order. No other file changed.
 
 ### Fixed
