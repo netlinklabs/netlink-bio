@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`api/bio.js`'s link/contact icon backgrounds now stay light in both themes** — `.link-icon` and `.contact-icon` previously used `background: var(--nl-card)`, which turns dark in `body.theme-dark` (`#1e293b`); several simple-icons brand logos (GitHub, X/Twitter, Threads, Facebook) render as solid black/dark SVGs, so on the dark theme they were nearly invisible against the equally dark icon background. Added a new `--nl-icon-bg`/`--nl-icon-border` variable pair (`#ffffff`/`rgba(0,0,0,0.08)` in `:root`, `#f8fafc`/`rgba(0,0,0,0.08)` in `body.theme-dark` — i.e. always a light neutral regardless of theme) and pointed `.link-icon`/`.contact-icon`'s `background`/`border` at them instead of `--nl-card`/`--nl-border`. Only the icon backdrop changed — link cards, text, and page background still follow the theme as before.
+
 ### Changed
 - **`dashboard.html`'s "Choose Template" card (the one above the "Edit Profile" accordion) is now clickable** — replaced the static "Coming soon" Standard/Pro preview with a working flow: clicking the Standard tile (`openTemplateModal()`) opens a new `templateModal` letting the user pick a Light or Dark layout preview for their public bio page (`selectTemplateTheme()` writes `profiles.theme_preset` and shows a toast, same pattern as the old inline theme toggle). The Standard tile's swatch and label now reflect the saved `theme_preset` via `renderTemplateCard()`, called on profile load in place of the removed `setThemeButtons()`. The redundant "Page theme: Light/Dark" toggle previously in the "Your Links" card header (`themeBtnLight`/`themeBtnDark`) was removed — theme selection now lives only in this modal. The second "Choose Template" card inside the CV editor (near "Personal Details") is untouched and stays a "Coming soon" placeholder.
 

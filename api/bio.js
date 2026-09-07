@@ -312,6 +312,8 @@ export default async function handler(req, res) {
     --nl-modal-close-bg: #f1f5f9;
     --nl-input-bg: #f1f5f9;
     --nl-share-btn-text: #333;
+    --nl-icon-bg: #ffffff;
+    --nl-icon-border: rgba(0,0,0,0.08);
   }
   body.theme-dark {
     --nl-bg: #0f172a;
@@ -324,6 +326,8 @@ export default async function handler(req, res) {
     --nl-modal-close-bg: #334155;
     --nl-input-bg: #334155;
     --nl-share-btn-text: #f1f5f9;
+    --nl-icon-bg: #f8fafc;
+    --nl-icon-border: rgba(0,0,0,0.08);
   }
   * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
   body { margin:0; background:var(--nl-bg); color:var(--nl-text); min-height:100vh; }
@@ -361,7 +365,7 @@ export default async function handler(req, res) {
   .handle { text-align:center; color:var(--nl-text-muted); font-size:14px; margin:0 0 4px; }
   .country-row { text-align:center; color:var(--nl-text-muted); font-size:14px; margin:0 0 14px; }
   .contact-row { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
-  .contact-icon { width:38px; height:38px; border-radius:50%; background:var(--nl-card); border:1px solid var(--nl-border); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
+  .contact-icon { width:38px; height:38px; border-radius:50%; background:var(--nl-icon-bg); border:1px solid var(--nl-icon-border); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
   .contact-icon .brand-svg { width:100%; height:100%; }
   .bio { text-align:center; color:var(--nl-text-muted-2); font-size:14px; margin:0 0 20px; line-height:1.5; white-space:pre-wrap; }
   .youtube-frame { position:relative; display:block; border-radius:16px; overflow:hidden; margin-bottom:12px; box-shadow:0 10px 25px rgba(0,0,0,0.12); border:1px solid var(--nl-border); }
@@ -370,7 +374,7 @@ export default async function handler(req, res) {
   .youtube-caption { display:block; padding:10px 14px; font-size:13px; font-weight:600; background:var(--nl-card); color:var(--nl-text); }
   .link-card { display:flex; align-items:center; gap:12px; background:var(--nl-card); border:1px solid var(--nl-border); border-radius:16px; padding:14px 16px; margin-bottom:12px; text-decoration:none; color:var(--nl-text); transition:transform .15s; width:100%; text-align:left; cursor:pointer; font:inherit; }
   .link-card:hover { transform:translateY(-2px); border-color:#14b8a6; }
-  .link-icon { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--nl-card); border:1px solid var(--nl-border); padding:8px; }
+  .link-icon { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--nl-icon-bg); border:1px solid var(--nl-icon-border); padding:8px; }
   .link-icon.circle { border-radius:50%; }
   .link-icon.rounded { border-radius:10px; }
   .link-icon .brand-svg { width:100%; height:100%; }
