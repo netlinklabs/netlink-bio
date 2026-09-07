@@ -314,11 +314,12 @@ export default async function handler(req, res) {
     --nl-share-btn-text: #333;
     --nl-icon-bg: #ffffff;
     --nl-icon-border: rgba(0,0,0,0.08);
-    --nl-donate-bg: linear-gradient(160deg, #ffffff 0%, #f7f7f8 50%, #eeeef0 100%);
-    --nl-donate-title-bg: linear-gradient(90deg, #3a3a3d, #6b6b70, #3a3a3d);
-    --nl-donate-subtitle-color: #6b6b70;
-    --nl-donate-icon-border: rgba(0,0,0,0.08);
-    --nl-donate-badge-bg: #ececed;
+    --nl-donate-bg: linear-gradient(160deg, #ffffff 0%, #f0faf9 50%, #e3f5f2 100%);
+    --nl-donate-title-bg: linear-gradient(90deg, #0d9488, #2dd4bf, #0d9488);
+    --nl-donate-subtitle-color: #3f7d76;
+    --nl-donate-icon-border: rgba(20,184,166,0.25);
+    --nl-donate-badge-bg: #ccf3ec;
+    --nl-donate-wrap-bg: linear-gradient(135deg, rgba(20,184,166,0.55) 0%, rgba(20,184,166,0.12) 40%, rgba(20,184,166,0.55) 100%);
   }
   body.theme-dark {
     --nl-bg: #0f172a;
@@ -338,6 +339,7 @@ export default async function handler(req, res) {
     --nl-donate-subtitle-color: #c9c9ce;
     --nl-donate-icon-border: rgba(255,255,255,0.6);
     --nl-donate-badge-bg: #D6D6DA;
+    --nl-donate-wrap-bg: linear-gradient(135deg, rgba(200,200,205,0.9), rgba(200,200,205,0.15) 40%, rgba(200,200,205,0.9));
   }
   * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
   body { margin:0; background:var(--nl-bg); color:var(--nl-text); min-height:100vh; }
@@ -395,7 +397,7 @@ export default async function handler(req, res) {
 
   /* Donate / Receive Crypto Payment — taller, coin-style icon, USDC accent */
   /* Donate / Receive Crypto Payment — premium gold-on-dark "killer feature" card */
-  .donate-card-wrap { padding:1.5px; border-radius:19px; margin-bottom:12px; background:linear-gradient(135deg, rgba(200,200,205,0.9), rgba(200,200,205,0.15) 40%, rgba(200,200,205,0.9)); }
+  .donate-card-wrap { padding:1.5px; border-radius:19px; margin-bottom:12px; background:var(--nl-donate-wrap-bg); }
   .donate-card { position:relative; overflow:hidden; display:flex; align-items:center; gap:14px; background:var(--nl-donate-bg); border-radius:17.5px; padding:18px; width:100%; text-align:left; cursor:pointer; font:inherit; transition:transform .2s, box-shadow .2s; }
   .donate-card:hover { transform:translateY(-4px); box-shadow:0 14px 30px rgba(200,200,205,0.3); }
   .donate-shimmer { position:absolute; top:0; left:-60%; width:50%; height:100%; background:linear-gradient(120deg, transparent, rgba(255,255,255,0.15), transparent); transform:skewX(-20deg); animation:shimmer-sweep 3.2s ease-in-out infinite; pointer-events:none; }
