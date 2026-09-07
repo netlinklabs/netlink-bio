@@ -347,6 +347,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/shared/account-menu.js?v=3"></script>
     <script src="/shared/nav.js?v=3"></script>
+    <script src="/shared/app-lock.js?v=3"></script>
     <script type="module">
         import { SequenceWaaS, AccountAlreadyLinkedError, isSentTransactionResponse } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
 
@@ -491,6 +492,15 @@
                     profile: currentProfile,
                     supabaseClient: supabaseClient,
                     userId: currentUser.id,
+                });
+            }
+
+            if (window.NetlinkAppLock) {
+                NetlinkAppLock.init({
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                    userEmail: currentUser.email,
+                    bgLockMs: 90 * 1000,
                 });
             }
 
