@@ -314,12 +314,12 @@ export default async function handler(req, res) {
     --nl-share-btn-text: #333;
     --nl-icon-bg: #ffffff;
     --nl-icon-border: rgba(0,0,0,0.08);
-    --nl-donate-bg: linear-gradient(160deg, #ffffff 0%, #f0faf9 50%, #e3f5f2 100%);
-    --nl-donate-title-bg: linear-gradient(90deg, #0d9488, #2dd4bf, #0d9488);
-    --nl-donate-subtitle-color: #3f7d76;
-    --nl-donate-icon-border: rgba(20,184,166,0.25);
-    --nl-donate-badge-bg: #ccf3ec;
-    --nl-donate-wrap-bg: linear-gradient(135deg, rgba(20,184,166,0.55) 0%, rgba(20,184,166,0.12) 40%, rgba(20,184,166,0.55) 100%);
+    --nl-donate-bg: #ffffff;
+    --nl-donate-title-bg: linear-gradient(90deg, #0f172a, #0f172a);
+    --nl-donate-subtitle-color: #64748b;
+    --nl-donate-icon-border: rgba(0,0,0,0.08);
+    --nl-donate-badge-bg: #f1f5f9;
+    --nl-donate-wrap-bg: rgba(0,0,0,0.08);
   }
   body.theme-dark {
     --nl-bg: #0f172a;
