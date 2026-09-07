@@ -5,6 +5,9 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **`privacy.html`'s header was missing the "Verified Profile (KYC)" badge shown on other pages (dashboard, pay, etc.)** — `shared/nav.js`'s `verificationBadge()` needs `profile.identity_verified_at` (or `business_verified_at`) to render the badge, but `loadProfileForNav()`'s `select()` only fetched `username, display_name, avatar_url, tier, local_currency`, so both fields were always `undefined` on this page. Added `identity_verified_at, business_verified_at` to that `select()`. Only `privacy.html` changed.
+
+### Fixed
 - **`shared/app-lock.js`'s `requireAppLock()` PIN screen rendered unstyled on pages that only call `setContext()`** — `requireAppLock()` never called `injectStyles()` itself; this went unnoticed because every page that calls `requireAppLock()` used to call `init()` first (which does inject the styles). `privacy.html` now calls `setContext()` instead of `init()` (it never needs the passive lock screen, only `requireAppLock()` for delete-account/cancel-deletion), so its `#nlal-styles` `<style>` tag was never injected — the PIN modal rendered as unstyled plain text stuck at the bottom of the page instead of a centered keypad modal. Added `injectStyles();` as the first line of `requireAppLock()`; it's a no-op if the styles are already present (`injectStyles()` already guards with `if (document.getElementById('nlal-styles')) return;`), so pages that already call `init()` are unaffected. Only `shared/app-lock.js` changed.
 
 ### Fixed

@@ -305,7 +305,7 @@
         async function loadProfileForNav() {
             const { data } = await supabaseClient
                 .from('profiles')
-                .select('username, display_name, avatar_url, tier, local_currency')
+                .select('username, display_name, avatar_url, tier, local_currency, identity_verified_at, business_verified_at')
                 .eq('id', currentUser.id)
                 .single();
             if (data && window.NetlinkNav) {
