@@ -473,7 +473,10 @@
                             <p class="text-[11px] text-muted truncate">Polygon Token</p>
                         </div>
                     </div>
-                    <p id="balancePol" class="text-lg font-bold text-primary tracking-tight flex-shrink-0 pl-2">0.00</p>
+                    <div class="flex flex-col items-end flex-shrink-0 pl-2">
+                        <p id="balancePol" class="text-lg font-bold text-primary tracking-tight">0.00</p>
+                        <p id="balancePolLocal" class="text-[11px] text-muted mt-0.5 hidden"></p>
+                    </div>
                 </div>
             </div>
 
@@ -988,6 +991,8 @@
         let currentWalletAddress = '';
         let currentLocalCurrency = 'USD';
         let fxRateCache = { currency: null, rate: null, fetchedAt: 0 };
+        let polPriceCache = { usdPrice: null, fetchedAt: 0 };
+        const POL_PRICE_TTL_MS = 60 * 1000;
         window.currentBalances = { net: '0', usdc: '0', pol: '0' };
 
         function showAuthError(msg) {
@@ -1207,6 +1212,55 @@
             }
         }
 
+        async function fetchPolPriceUsd() {
+            const now = Date.now();
+            if (polPriceCache.usdPrice && (now - polPriceCache.fetchedAt) < POL_PRICE_TTL_MS) {
+                return polPriceCache.usdPrice;
+            }
+            try {
+                const res = await fetch('/api/pol-price');
+                if (!res.ok) throw new Error('pol-price request failed');
+                const json = await res.json();
+                if (!json.pol_usd) throw new Error('no pol_usd in response');
+                polPriceCache = { usdPrice: json.pol_usd, fetchedAt: now };
+                return json.pol_usd;
+            } catch (err) {
+                console.warn('Failed to fetch POL price:', err);
+                return null;
+            }
+        }
+
+        async function updatePolLocalCurrencyDisplay(polAmount) {
+            const el = document.getElementById('balancePolLocal');
+            if (!el) return;
+
+            if (!currentLocalCurrency || currentLocalCurrency === 'USD') {
+                el.classList.add('hidden');
+                return;
+            }
+
+            const [polUsd, fxRate] = await Promise.all([
+                fetchPolPriceUsd(),
+                fetchFxRate(currentLocalCurrency),
+            ]);
+            if (!polUsd || !fxRate) { el.classList.add('hidden'); return; }
+
+            const converted = parseFloat(polAmount) * polUsd * fxRate;
+            let formatted;
+            try {
+                formatted = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currentLocalCurrency,
+                    maximumFractionDigits: converted >= 1000 ? 0 : 2,
+                }).format(converted);
+            } catch (err) {
+                formatted = `${converted.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currentLocalCurrency}`;
+            }
+
+            el.textContent = `≈ ${formatted}`;
+            el.classList.remove('hidden');
+        }
+
         async function updateLocalCurrencyDisplay(usdcAmount) {
             const el = document.getElementById('balanceUsdcLocal');
             if (!el) return;
@@ -1241,6 +1295,7 @@
             currentLocalCurrency = (e.detail?.currency || 'USD').toUpperCase();
             if (window.currentBalances?.usdc !== undefined) {
                 updateLocalCurrencyDisplay(window.currentBalances.usdc);
+                updatePolLocalCurrencyDisplay(window.currentBalances.pol);
             }
         });
 
@@ -1259,6 +1314,7 @@
                 document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
                 document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
                 updateLocalCurrencyDisplay(data.usdc);
+                updatePolLocalCurrencyDisplay(data.pol);
                 if (window.renderSwapTokens) window.renderSwapTokens();
                 loadingBar.classList.add('hidden');
                 errorText.classList.add('hidden');
@@ -1523,6 +1579,8 @@
                 document.getElementById('balancePol').textContent = '0.00';
                 const localEl = document.getElementById('balanceUsdcLocal');
                 if (localEl) localEl.classList.add('hidden');
+                const polLocalEl = document.getElementById('balancePolLocal');
+                if (polLocalEl) polLocalEl.classList.add('hidden');
 
                 updateCardConnectState();
                 updateRampVisibility();
