@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`pay.html`'s POL balance now shows a local-currency conversion, matching the existing USDC pattern** — added `api/pol-price.js`, a serverless proxy to the Alchemy Prices API (reuses the existing `ALCHEMY_API_KEY` env var, no new env var added) that returns POL's USD price server-side so the key never reaches the client. `pay.html` now has `fetchPolPriceUsd()` (60s client-side cache) and `updatePolLocalCurrencyDisplay()`, called alongside the existing `updateLocalCurrencyDisplay()` wherever POL balances are loaded or the local currency changes, and renders into a new `#balancePolLocal` element under the POL row. Also hides `#balancePolLocal` on wallet disconnect, mirroring the existing `#balanceUsdcLocal` reset. `#balancePol`'s id is unchanged.
+
 ### Fixed
 - **`privacy.html`'s header was missing the "Verified Profile (KYC)" badge shown on other pages (dashboard, pay, etc.)** — `shared/nav.js`'s `verificationBadge()` needs `profile.identity_verified_at` (or `business_verified_at`) to render the badge, but `loadProfileForNav()`'s `select()` only fetched `username, display_name, avatar_url, tier, local_currency`, so both fields were always `undefined` on this page. Added `identity_verified_at, business_verified_at` to that `select()`. Only `privacy.html` changed.
 
