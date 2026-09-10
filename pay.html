@@ -352,7 +352,7 @@
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        #onrampWidgetContainer, #rampFrameWrap, #rampSection {
+        #rampFrameWrap, #rampSection {
             overflow-anchor: none;
             scroll-margin-top: 80px;
         }
@@ -554,8 +554,10 @@
                         <p class="text-xs text-muted">Powered by Onramp.Money</p>
                     </div>
                 </div>
-                <div id="rampFrameWrap" class="rounded-xl overflow-hidden border border-subtle" style="height: 520px;">
-                    <div id="onrampWidgetContainer" style="width:100%; height:100%;"></div>
+                <div id="rampFrameWrap" class="rounded-xl overflow-hidden border border-subtle">
+                    <button onclick="openOnrampWidget()" class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="credit-card" class="w-4 h-4"></i> Buy Crypto
+                    </button>
                 </div>
                 <div id="rampBlockedState" class="rounded-xl border border-subtle p-6 text-center" style="height: 520px; display: none; flex-direction: column; align-items: center; justify-content: center;">
                     <i data-lucide="lock" class="w-8 h-8 text-muted mb-3"></i>
@@ -1158,20 +1160,26 @@
             onrampSDK = new window.OnrampWebSDK({
                 appId: ONRAMP_APP_ID,
                 walletAddress: address,
-                containerId: '#onrampWidgetContainer',
                 theme: {
                     default: isDark ? 'darkMode' : 'lightMode',
                     lightMode: { baseColor: '#3b82f6' },
                     darkMode: { baseColor: '#3b82f6' },
                 },
             });
-            onrampSDK.show();
             onrampSDK.on('TX_EVENTS', (event) => {
                 if (event.type === 'ONRAMP_WIDGET_TX_COMPLETED') {
                     showToast('Purchase completed! Your balance will update shortly.');
                     setTimeout(() => fetchWalletBalances(currentWalletAddress), 8000);
                 }
             });
+        }
+
+        // Onramp.Money's own SDK now renders as a full-screen overlay (no
+        // containerId) instead of an embedded iframe, so its internal
+        // focus-triggered auto-scroll no longer drags the page along.
+        function openOnrampWidget() {
+            if (!onrampSDK) { showToast('Please wait, loading...'); return; }
+            onrampSDK.show();
         }
 
         function scrollToRamp() {
