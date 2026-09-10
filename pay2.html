@@ -104,7 +104,15 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@onramp.money/onramp-web-sdk/dist/onramp-web-sdk.umd.js"></script>
+    <script type="module">
+        // The npm package has no UMD/browser bundle, only ESM — so it must
+        // be loaded as a module and attached to window manually, instead of
+        // a plain <script src> tag (that was the cause of "OnrampWebSDK is
+        // not defined").
+        import { OnrampWebSDK } from 'https://cdn.jsdelivr.net/npm/@onramp.money/onramp-web-sdk/+esm';
+        window.OnrampWebSDK = OnrampWebSDK;
+        window.dispatchEvent(new Event('onramp-sdk-ready'));
+    </script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -148,8 +156,15 @@
         }
 
         let onrampSDK = null;
+        let sdkReady = typeof window.OnrampWebSDK !== 'undefined';
+        window.addEventListener('onramp-sdk-ready', () => {
+            sdkReady = true;
+            document.getElementById('buyBtn').disabled = false;
+        });
+        if (!sdkReady) document.getElementById('buyBtn').disabled = true;
 
         document.getElementById('buyBtn').addEventListener('click', () => {
+            if (!sdkReady) { logEvent('err', 'ERROR', 'SDK still loading, wait a second and try again'); return; }
             const walletAddress = document.getElementById('walletAddressInput').value.trim();
             if (!walletAddress) { logEvent('err', 'ERROR', 'No wallet address set'); return; }
 
