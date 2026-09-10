@@ -1383,6 +1383,12 @@
             if (currentWalletAddress) updateOnrampWidget(currentWalletAddress);
         }
 
+        // shared/nav.js's applyTheme() fires this on Dark/Light/System toggle
+        // so the Onramp.Money widget re-inits with the newly active theme.
+        window.addEventListener('netlink-theme-changed', () => {
+            if (currentWalletAddress) updateOnrampWidget(currentWalletAddress);
+        });
+
         lucide.createIcons();
         initTheme();
         checkAuth();

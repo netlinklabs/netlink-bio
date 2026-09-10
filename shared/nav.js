@@ -406,6 +406,7 @@
     const resolved = resolveTheme(theme);
     if (resolved === 'dark') { html.classList.add('dark'); html.classList.remove('light'); }
     else { html.classList.remove('dark'); html.classList.add('light'); }
+    window.dispatchEvent(new CustomEvent('netlink-theme-changed', { detail: { dark: resolved === 'dark' } }));
     if (save) localStorage.setItem('theme', theme);
   }
 
