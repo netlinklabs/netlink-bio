@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<!-- STAGING FILE — Onramp.Money Web SDK integration test. Not linked from
+     nav/dashboard. Purpose: verify appId + wallet address + network/coinCode
+     combo works before wiring the button into pay.html. Delete or fold into
+     pay.html once confirmed working. -->
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlink Pay — Onramp Staging</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+        .log-line { font-family: monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; margin-bottom: 4px; word-break: break-all; }
+        .log-tx { background: rgba(14,165,233,0.1); color: #0284c7; }
+        .log-widget { background: rgba(234,179,8,0.1); color: #a16207; }
+        .log-kyc { background: rgba(168,85,247,0.1); color: #7e22ce; }
+        .log-err { background: rgba(239,68,68,0.1); color: #b91c1c; }
+        html.dark .log-tx { color: #38bdf8; }
+        html.dark .log-widget { color: #facc15; }
+        html.dark .log-kyc { color: #c084fc; }
+        html.dark .log-err { color: #fca5a5; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div id="authGate">
+        <div class="text-center">
+            <div class="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p id="authGateText" class="text-sm text-slate-500">Checking session...</p>
+        </div>
+    </div>
+
+    <div class="max-w-lg mx-auto p-5">
+        <div class="flex items-center gap-2 mb-5">
+            <i data-lucide="flask-conical" class="w-5 h-5 text-amber-500"></i>
+            <h1 class="text-lg font-bold">Onramp.Money — Staging Test</h1>
+        </div>
+
+        <div class="card rounded-2xl p-5 mb-4">
+            <p class="text-xs text-muted mb-4">
+                Not a production page. Tests the Onramp Web SDK widget directly
+                (App ID <span id="appIdDisplay">—</span>) against your connected wallet.
+            </p>
+
+            <label class="block text-xs font-medium mb-1">Wallet address (from your profile)</label>
+            <input id="walletAddressInput" type="text" class="w-full mb-3 px-3 py-2 rounded-lg border border-subtle bg-transparent text-sm font-mono" placeholder="0x...">
+
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Coin</label>
+                    <select id="coinCodeSelect" class="w-full px-3 py-2 rounded-lg border border-subtle bg-transparent text-sm">
+                        <option value="USDC" selected>USDC</option>
+                        <option value="USDT">USDT</option>
+                        <option value="MATIC">MATIC / POL</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Network</label>
+                    <select id="networkSelect" class="w-full px-3 py-2 rounded-lg border border-subtle bg-transparent text-sm">
+                        <option value="polygon" selected>polygon</option>
+                        <option value="matic20">matic20</option>
+                    </select>
+                </div>
+            </div>
+
+            <label class="block text-xs font-medium mb-1">Fiat amount (IDR)</label>
+            <input id="fiatAmountInput" type="number" value="500000" class="w-full mb-3 px-3 py-2 rounded-lg border border-subtle bg-transparent text-sm">
+
+            <label class="flex items-center gap-2 text-xs mb-4">
+                <input id="sandboxToggle" type="checkbox">
+                Use sandbox environment
+            </label>
+
+            <button id="buyBtn" class="w-full py-3 rounded-xl bg-sky-600 text-white font-semibold text-sm hover:bg-sky-700 transition">
+                Open Onramp Widget
+            </button>
+        </div>
+
+        <div class="card rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-xs font-semibold text-muted uppercase">Event Log</h2>
+                <button id="clearLogBtn" class="text-xs text-sky-600">Clear</button>
+            </div>
+            <div id="eventLog" class="max-h-64 overflow-y-auto"></div>
+        </div>
+
+        <div id="onrampContainer" class="mt-4 rounded-2xl overflow-hidden" style="height: 600px; display:none;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@onramp.money/onramp-web-sdk/dist/onramp-web-sdk.umd.js"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // App ID is public and safe on the client. The App Secret Key is
+        // NOT used here — the Web SDK widget only needs appId. Secret Key
+        // stays server-side (Vercel env var) for later webhook/callback
+        // signature verification, once that flow is built.
+        const ONRAMP_APP_ID = 2404167;
+        document.getElementById('appIdDisplay').textContent = ONRAMP_APP_ID;
+
+        let currentUser = null;
+
+        function logEvent(kind, label, data) {
+            const el = document.getElementById('eventLog');
+            const line = document.createElement('div');
+            line.className = 'log-line log-' + kind;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${label}: ${JSON.stringify(data)}`;
+            el.prepend(line);
+        }
+
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login'; return; }
+                currentUser = session.user;
+                document.getElementById('authGate').style.display = 'none';
+                await loadWalletAddress();
+            } catch (err) {
+                document.getElementById('authGateText').textContent = 'Something went wrong: ' + (err.message || err);
+            }
+        }
+
+        async function loadWalletAddress() {
+            const { data, error } = await supabaseClient
+                .from('profiles').select('wallet_address').eq('id', currentUser.id).single();
+            if (error) { console.error(error); return; }
+            document.getElementById('walletAddressInput').value = data?.wallet_address || '';
+        }
+
+        let onrampSDK = null;
+
+        document.getElementById('buyBtn').addEventListener('click', () => {
+            const walletAddress = document.getElementById('walletAddressInput').value.trim();
+            if (!walletAddress) { logEvent('err', 'ERROR', 'No wallet address set'); return; }
+
+            const config = {
+                appId: ONRAMP_APP_ID,
+                walletAddress,
+                coinCode: document.getElementById('coinCodeSelect').value,
+                network: document.getElementById('networkSelect').value,
+                fiatAmount: Number(document.getElementById('fiatAmountInput').value) || undefined,
+                containerId: '#onrampContainer',
+                sandbox: document.getElementById('sandboxToggle').checked,
+            };
+            logEvent('widget', 'INIT_CONFIG', config);
+
+            document.getElementById('onrampContainer').style.display = 'block';
+
+            try {
+                onrampSDK = new OnrampWebSDK(config);
+                onrampSDK.on('TX_EVENTS', (e) => logEvent('tx', e.type, e.data));
+                onrampSDK.on('WIDGET_EVENTS', (e) => logEvent('widget', e.type, e.data));
+                onrampSDK.on('KYC_EVENTS', (e) => logEvent('kyc', e.type, e.data));
+                onrampSDK.show();
+            } catch (err) {
+                logEvent('err', 'INIT_FAILED', err.message || String(err));
+            }
+        });
+
+        document.getElementById('clearLogBtn').addEventListener('click', () => {
+            document.getElementById('eventLog').innerHTML = '';
+        });
+
+        lucide.createIcons();
+        checkAuth();
+    </script>
+</body>
+</html>
