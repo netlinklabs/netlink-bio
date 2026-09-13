@@ -1854,6 +1854,7 @@
             document.getElementById('sendProgressBar').style.width = '0%';
             selectSendToken('USDC');
             document.getElementById('sendModal').classList.add('active');
+            checkGasSponsorship(window.currentWalletAddress); // refresh sponsorship status every time the modal opens
         };
         window.closeSendModal = function () {
             document.getElementById('sendModal').classList.remove('active');
@@ -2063,9 +2064,15 @@
 
         async function checkGasSponsorship(address) {
             try {
+                // Use the same tx shape as a real Send (ERC20 transfer call to the
+                // NET contract, amount 0) instead of a plain native transfer — a
+                // bare value transfer to self is treated differently by the
+                // relayer and can misreport sponsorship status.
+                const netConfig = TOKEN_CONFIG['NET'];
+                const dummyData = encodeErc20Transfer(address, '0');
                 const resp = await sequenceWaas.feeOptions({
                     network: 'polygon',
-                    transactions: [{ to: address, value: '0' }],
+                    transactions: [{ to: netConfig.address, data: dummyData, value: '0' }],
                 });
                 window.isGasSponsored = !resp.data?.feeOptions || resp.data.feeOptions.length === 0;
             } catch (err) {
