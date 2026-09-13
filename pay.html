@@ -2043,20 +2043,26 @@
             document.getElementById('sendTokenBalance').textContent = `Balance: ${parseFloat(balance).toFixed(2)} ${token}`;
             const polBalance = parseFloat(getBalanceForToken('POL'));
             const gasWarning = document.getElementById('gasWarning');
+            const continueBtn = document.getElementById('sendContinueBtn');
 
-            // Continue is never blocked here anymore. A wallet with 0 POL might
-            // still have free gas via Sequence Gas Tank sponsorship — the real
-            // check happens in performTransfer() when the transaction is sent.
             if (window.isGasSponsored) {
+                // Sponsored wallet — always allowed to send, even with 0 POL.
                 gasWarning.innerHTML = 'Your wallet has free gas sponsorship — no POL needed to send.';
                 gasWarning.classList.remove('hidden', 'gas-warning');
                 gasWarning.classList.add('gas-warning-sponsored');
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             } else if (polBalance <= 0) {
+                // Not sponsored and no POL — block Continue like before.
                 gasWarning.innerHTML = 'You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>';
                 gasWarning.classList.remove('hidden', 'gas-warning-sponsored');
                 gasWarning.classList.add('gas-warning');
+                continueBtn.disabled = true;
+                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
             } else {
                 gasWarning.classList.add('hidden');
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         };
 
