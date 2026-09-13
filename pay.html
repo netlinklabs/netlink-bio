@@ -348,6 +348,8 @@
         .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
         .gas-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
         html.dark .gas-warning { background: rgba(252,211,77,0.1); border-color: rgba(252,211,77,0.3); color: #fcd34d; }
+        .gas-warning-sponsored { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
+        html.dark .gas-warning-sponsored { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399; }
 
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -1579,6 +1581,7 @@
             updateRampVisibility();
             updateOnrampWidget(finalAddress);
             fetchWalletBalances(finalAddress);
+            checkGasSponsorship(finalAddress);
             if (window.lucide) lucide.createIcons();
 
             closeCreateWalletModal();
@@ -2039,17 +2042,41 @@
             document.getElementById('sendTokenBalance').textContent = `Balance: ${parseFloat(balance).toFixed(2)} ${token}`;
             const polBalance = parseFloat(getBalanceForToken('POL'));
             const gasWarning = document.getElementById('gasWarning');
-            const continueBtn = document.getElementById('sendContinueBtn');
-            if (polBalance <= 0) {
-                gasWarning.classList.remove('hidden');
-                continueBtn.disabled = true;
-                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Continue is never blocked here anymore. A wallet with 0 POL might
+            // still have free gas via Sequence Gas Tank sponsorship — the real
+            // check happens in performTransfer() when the transaction is sent.
+            if (window.isGasSponsored) {
+                gasWarning.innerHTML = 'Your wallet has free gas sponsorship — no POL needed to send.';
+                gasWarning.classList.remove('hidden', 'gas-warning');
+                gasWarning.classList.add('gas-warning-sponsored');
+            } else if (polBalance <= 0) {
+                gasWarning.innerHTML = 'You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>';
+                gasWarning.classList.remove('hidden', 'gas-warning-sponsored');
+                gasWarning.classList.add('gas-warning');
             } else {
                 gasWarning.classList.add('hidden');
-                continueBtn.disabled = false;
-                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         };
+
+        window.isGasSponsored = null; // null = not checked yet
+
+        async function checkGasSponsorship(address) {
+            try {
+                const resp = await sequenceWaas.feeOptions({
+                    network: 'polygon',
+                    transactions: [{ to: address, value: '0' }],
+                });
+                window.isGasSponsored = !resp.data?.feeOptions || resp.data.feeOptions.length === 0;
+            } catch (err) {
+                console.warn('Could not check gas sponsorship:', err);
+                window.isGasSponsored = false;
+            }
+            const modal = document.getElementById('sendModal');
+            if (document.getElementById('sendTokenSelect') && modal && modal.classList.contains('active')) {
+                onSendTokenChange();
+            }
+        }
 
         window.sequenceWaas = sequenceWaas;
 
@@ -2252,16 +2279,24 @@
             });
             const feeQuote = resp.data?.feeQuote;
             const feeOptions = resp.data?.feeOptions;
+
+            let tx;
             if (!feeOptions || feeOptions.length === 0) {
-                throw new Error('Opsi pembayaran gas tidak tersedia dari relayer saat ini.');
+                // Empty feeOptions = this wallet/contract is sponsored via Sequence
+                // Gas Tank. Send without a fee option so the relayer covers gas.
+                tx = await sequenceWaas.sendTransaction({
+                    network: 'polygon',
+                    transactions: transactions,
+                });
+            } else {
+                const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
+                tx = await sequenceWaas.sendTransaction({
+                    network: 'polygon',
+                    transactions: transactions,
+                    transactionsFeeOption: polFeeOption,
+                    transactionsFeeQuote: feeQuote
+                });
             }
-            const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
-            const tx = await sequenceWaas.sendTransaction({
-                network: 'polygon',
-                transactions: transactions,
-                transactionsFeeOption: polFeeOption,
-                transactionsFeeQuote: feeQuote
-            });
             if (!isSentTransactionResponse(tx)) {
                 console.error('Sequence did not return a sent-transaction response:', tx);
                 throw new Error('Transaction was not sent — please try again.');
@@ -2787,14 +2822,23 @@
         async function executeSwapTx(transaction) {
             const resp = await window.sequenceWaas.feeOptions({ network: 'polygon', transactions: [transaction] });
             const feeOptions = resp.data?.feeOptions;
-            if (!feeOptions || feeOptions.length === 0) throw new Error('No gas fee options available right now.');
-            const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
-            const tx = await window.sequenceWaas.sendTransaction({
-                network: 'polygon',
-                transactions: [transaction],
-                transactionsFeeOption: polFeeOption,
-                transactionsFeeQuote: resp.data?.feeQuote,
-            });
+
+            let tx;
+            if (!feeOptions || feeOptions.length === 0) {
+                // Empty feeOptions = sponsored wallet/contract, send gas-free.
+                tx = await window.sequenceWaas.sendTransaction({
+                    network: 'polygon',
+                    transactions: [transaction],
+                });
+            } else {
+                const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
+                tx = await window.sequenceWaas.sendTransaction({
+                    network: 'polygon',
+                    transactions: [transaction],
+                    transactionsFeeOption: polFeeOption,
+                    transactionsFeeQuote: resp.data?.feeQuote,
+                });
+            }
             if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
                 throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
             }
