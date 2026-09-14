@@ -735,11 +735,21 @@
                 const response = await sequenceWaas.listAccounts();
                 const accounts = response.accounts || [];
 
-                const hasGoogle = accounts.some(a => (a.type || '').toLowerCase().includes('oidc') || (a.issuer || '').toLowerCase().includes('google'));
+                const googleAccounts = accounts.filter(a => (a.type || '').toLowerCase().includes('oidc') || (a.issuer || '').toLowerCase().includes('google'));
+                const hasGoogle = googleAccounts.length > 0;
                 const hasEmail = accounts.some(a => (a.type || '').toLowerCase().includes('email'));
 
+                // Show every linked Google identity, not just whether one exists --
+                // a wallet can end up with more than one Google account linked (e.g.
+                // one used during initial setup/testing, another added later), and
+                // without this the person has no way to tell which account(s) can
+                // open this wallet short of a DB or console lookup.
+                const googleSub = googleAccounts.length > 1
+                    ? googleAccounts.map(a => a.issuer || a.email || 'unknown').join(', ')
+                    : (googleAccounts[0]?.issuer || googleAccounts[0]?.email);
+
                 list.innerHTML = '';
-                list.innerHTML += methodRow('mail', 'Google', hasGoogle);
+                list.innerHTML += methodRow('mail', 'Google', hasGoogle, googleSub);
                 list.innerHTML += methodRow('at-sign', 'Email', hasEmail, accounts.find(a => (a.type || '').toLowerCase().includes('email'))?.issuer);
 
                 if (hasEmail) {
