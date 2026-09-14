@@ -744,9 +744,12 @@
                 // one used during initial setup/testing, another added later), and
                 // without this the person has no way to tell which account(s) can
                 // open this wallet short of a DB or console lookup.
+                // Prefer the actual linked email over the generic OIDC issuer URL --
+                // for Google accounts `issuer` is always "https://accounts.google.com"
+                // (the provider, not the person), while `email` holds the real address.
                 const googleSub = googleAccounts.length > 1
-                    ? googleAccounts.map(a => a.issuer || a.email || 'unknown').join(', ')
-                    : (googleAccounts[0]?.issuer || googleAccounts[0]?.email);
+                    ? googleAccounts.map(a => a.email || a.issuer || 'unknown').join(', ')
+                    : (googleAccounts[0]?.email || googleAccounts[0]?.issuer);
 
                 list.innerHTML = '';
                 list.innerHTML += methodRow('mail', 'Google', hasGoogle, googleSub);
