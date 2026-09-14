@@ -2070,17 +2070,31 @@
 
         async function checkGasSponsorship(address) {
             try {
-                // Use the same tx shape as a real Send (ERC20 transfer call to the
-                // NET contract, amount 0) instead of a plain native transfer — a
-                // bare value transfer to self is treated differently by the
-                // relayer and can misreport sponsorship status.
-                const netConfig = TOKEN_CONFIG['NET'];
-                const dummyData = encodeErc20Transfer(address, '0');
-                const resp = await sequenceWaas.feeOptions({
-                    network: 'polygon',
-                    transactions: [{ to: netConfig.address, data: dummyData, value: '0' }],
-                });
-                window.isGasSponsored = !resp.data?.feeOptions || resp.data.feeOptions.length === 0;
+                // sequenceWaas is a browser-global session that can outlive a
+                // Supabase login (see sessionMatchesCurrentWallet's comment above).
+                // feeOptions() answers for whichever wallet that session belongs
+                // to, NOT for the `address` argument passed in here -- so if the
+                // active Sequence session is stale (left over from a different
+                // account in this browser), feeOptions() would silently answer for
+                // the WRONG wallet and this function could report sponsorship that
+                // doesn't apply to the wallet actually shown on screen. Confirm
+                // the session matches before trusting its answer at all.
+                const sessionCheck = await sessionMatchesCurrentWallet();
+                if (!sessionCheck.valid) {
+                    window.isGasSponsored = false;
+                } else {
+                    // Use the same tx shape as a real Send (ERC20 transfer call to the
+                    // NET contract, amount 0) instead of a plain native transfer — a
+                    // bare value transfer to self is treated differently by the
+                    // relayer and can misreport sponsorship status.
+                    const netConfig = TOKEN_CONFIG['NET'];
+                    const dummyData = encodeErc20Transfer(address, '0');
+                    const resp = await sequenceWaas.feeOptions({
+                        network: 'polygon',
+                        transactions: [{ to: netConfig.address, data: dummyData, value: '0' }],
+                    });
+                    window.isGasSponsored = !resp.data?.feeOptions || resp.data.feeOptions.length === 0;
+                }
             } catch (err) {
                 console.warn('Could not check gas sponsorship:', err);
                 window.isGasSponsored = false;
