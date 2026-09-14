@@ -354,7 +354,7 @@
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        #rampFrameWrap, #rampSection {
+        #rampSection {
             overflow-anchor: none;
             scroll-margin-top: 80px;
         }
@@ -545,7 +545,7 @@
                 <p class="text-[10px] text-muted text-center mt-3">Swap rates powered by LI.FI &middot; Polygon network</p>
             </div>
 
-            <!-- Onramp.Money Ramp Widget -->
+            <!-- Buy Crypto -->
             <div id="rampSection" class="card rounded-2xl p-4 lg:p-6 mb-5">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
@@ -553,27 +553,13 @@
                     </div>
                     <div>
                         <h3 class="font-semibold text-primary text-sm">Buy Crypto</h3>
-                        <p class="text-xs text-muted">Powered by Onramp.Money</p>
                     </div>
                 </div>
-                <div id="rampFrameWrap" class="rounded-xl overflow-hidden border border-subtle">
-                    <button onclick="openOnrampWidget()" class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
-                        <i data-lucide="credit-card" class="w-4 h-4"></i> Buy Crypto
-                    </button>
-                </div>
-                <div id="rampBlockedState" class="rounded-xl border border-subtle p-6 text-center" style="height: 520px; display: none; flex-direction: column; align-items: center; justify-content: center;">
+                <div id="rampBlockedState" class="rounded-xl border border-subtle p-6 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                     <i data-lucide="lock" class="w-8 h-8 text-muted mb-3"></i>
                     <p class="text-sm font-medium text-primary mb-1">Buy/Sell temporarily unavailable</p>
-                    <p class="text-xs text-muted max-w-xs">The Onramp.Money ramp also supports selling crypto to fiat, so it's disabled while your account deletion is pending. <a href="privacy" class="text-blue-500 underline">Cancel the request</a> to re-enable it.</p>
+                    <p class="text-xs text-muted max-w-xs">Buy/Sell is temporarily unavailable while we resolve an issue with our payment partner. Please check back soon.</p>
                 </div>
-                <div id="rampNotConnectedState" class="rounded-xl border border-subtle p-6 text-center" style="height: 520px; display: none; flex-direction: column; align-items: center; justify-content: center;">
-                    <i data-lucide="wallet" class="w-8 h-8 text-muted mb-3"></i>
-                    <p class="text-sm font-medium text-primary mb-1">Connect your wallet to buy crypto</p>
-                    <button onclick="openCreateWalletModal()" class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">
-                        <i data-lucide="wallet" class="w-4 h-4"></i> Connect Wallet
-                    </button>
-                </div>
-                <p class="text-[11px] text-muted mt-2 text-center">You may need to complete KYC to purchase crypto. Rates and fees are set by Onramp.Money.</p>
             </div>
 
             <!-- Transaction History moved to its own page: tx.html -->
@@ -903,24 +889,11 @@
 
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script type="module">
-        import { OnrampWebSDK } from 'https://cdn.jsdelivr.net/npm/@onramp.money/onramp-web-sdk/+esm';
-        window.OnrampWebSDK = OnrampWebSDK;
-        window.dispatchEvent(new Event('onramp-sdk-ready'));
-    </script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         window.supabaseClient = supabaseClient;
-
-        const ONRAMP_APP_ID = 2404167;
-        let onrampSDK = null;
-        let onrampSdkReady = false;
-        window.addEventListener('onramp-sdk-ready', () => {
-            onrampSdkReady = true;
-            if (currentWalletAddress) updateOnrampWidget(currentWalletAddress);
-        });
 
         // Records a completed on-chain action into wallet_transactions so
         // tx.html has an instant, accurate source of truth for anything WE
@@ -1043,8 +1016,7 @@
         // declined the current privacy policy can't keep moving funds
         // during the 45-day grace period, while still being able to view
         // their wallet, export data, and cancel the request from
-        // privacy.html. Receiving funds and the fiat Buy ramp are left
-        // enabled since they don't require a valid current consent.
+        // privacy.html.
         window.hasPendingDeletion = false;
         async function loadDeletionGuardStatus() {
             try {
@@ -1052,36 +1024,9 @@
                 if (error) { console.error('Failed to check deletion status:', error); return; }
                 window.hasPendingDeletion = !!(data && data.length);
                 document.getElementById('deletionPendingBanner').classList.toggle('hidden', !window.hasPendingDeletion);
-                updateRampVisibility();
             } catch (err) {
                 console.error('Failed to check deletion status:', err);
             }
-        }
-
-        // The Buy/Sell ramp has three mutually exclusive states: the live
-        // iframe, blocked (account deletion pending -- the ramp also
-        // supports selling crypto to fiat, so it's gated the same as
-        // Send/Swap), or not-connected (no wallet linked yet).
-        function updateRampVisibility() {
-            const frameWrap = document.getElementById('rampFrameWrap');
-            const blocked = document.getElementById('rampBlockedState');
-            const notConnected = document.getElementById('rampNotConnectedState');
-            if (!frameWrap || !blocked || !notConnected) return;
-
-            if (window.hasPendingDeletion) {
-                frameWrap.style.display = 'none';
-                blocked.style.display = 'flex';
-                notConnected.style.display = 'none';
-            } else if (!currentWalletAddress) {
-                frameWrap.style.display = 'none';
-                blocked.style.display = 'none';
-                notConnected.style.display = 'flex';
-            } else {
-                frameWrap.style.display = 'block';
-                blocked.style.display = 'none';
-                notConnected.style.display = 'none';
-            }
-            if (window.lucide) lucide.createIcons();
         }
 
         function updateCardConnectState() {
@@ -1114,13 +1059,11 @@
             window.currentLocalCurrency = currentLocalCurrency;
             if (currentWalletAddress) {
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
-                updateOnrampWidget(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'Not connected';
             }
             updateCardConnectState();
-            updateRampVisibility();
 
             if (window.lucide) lucide.createIcons();
 
@@ -1151,37 +1094,6 @@
         function copyWalletAddress() {
             if (!currentWalletAddress) { showToast('No wallet connected'); return; }
             navigator.clipboard.writeText(currentWalletAddress).then(() => showToast('Address copied!'));
-        }
-
-        function updateOnrampWidget(address) {
-            if (window.hasPendingDeletion) return;
-            if (!onrampSdkReady) return;
-            if (onrampSDK) onrampSDK.close();
-
-            const isDark = document.documentElement.classList.contains('dark');
-            onrampSDK = new window.OnrampWebSDK({
-                appId: ONRAMP_APP_ID,
-                walletAddress: address,
-                theme: {
-                    default: isDark ? 'darkMode' : 'lightMode',
-                    lightMode: { baseColor: '#3b82f6' },
-                    darkMode: { baseColor: '#3b82f6' },
-                },
-            });
-            onrampSDK.on('TX_EVENTS', (event) => {
-                if (event.type === 'ONRAMP_WIDGET_TX_COMPLETED') {
-                    showToast('Purchase completed! Your balance will update shortly.');
-                    setTimeout(() => fetchWalletBalances(currentWalletAddress), 8000);
-                }
-            });
-        }
-
-        // Onramp.Money's own SDK now renders as a full-screen overlay (no
-        // containerId) instead of an embedded iframe, so its internal
-        // focus-triggered auto-scroll no longer drags the page along.
-        function openOnrampWidget() {
-            if (!onrampSDK) { showToast('Please wait, loading...'); return; }
-            onrampSDK.show();
         }
 
         function scrollToRamp() {
@@ -1389,21 +1301,7 @@
             document.getElementById(id + 'Chevron').classList.toggle('open');
         }
 
-        // Theme toggling itself now lives in the Account sheet (shared/nav.js).
-        // This page still needs to know the current theme on load so it can
-        // pass the right theme to the Onramp.Money ramp widget.
-        function initTheme() {
-            if (currentWalletAddress) updateOnrampWidget(currentWalletAddress);
-        }
-
-        // shared/nav.js's applyTheme() fires this on Dark/Light/System toggle
-        // so the Onramp.Money widget re-inits with the newly active theme.
-        window.addEventListener('netlink-theme-changed', () => {
-            if (currentWalletAddress) updateOnrampWidget(currentWalletAddress);
-        });
-
         lucide.createIcons();
-        initTheme();
         checkAuth();
     </script>
 
@@ -1578,8 +1476,6 @@
 
             document.getElementById('walletAddressDisplay').textContent = truncateAddress(finalAddress);
             updateCardConnectState();
-            updateRampVisibility();
-            updateOnrampWidget(finalAddress);
             fetchWalletBalances(finalAddress);
             checkGasSponsorship(finalAddress);
             if (window.lucide) lucide.createIcons();
@@ -1628,7 +1524,6 @@
                 if (polLocalEl) polLocalEl.classList.add('hidden');
 
                 updateCardConnectState();
-                updateRampVisibility();
                 closeDisconnectWalletModal();
                 showToast('Wallet disconnected');
             } catch (err) {
