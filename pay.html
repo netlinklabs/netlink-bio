@@ -2045,20 +2045,30 @@
             const gasWarning = document.getElementById('gasWarning');
             const continueBtn = document.getElementById('sendContinueBtn');
 
-            if (window.isGasSponsored) {
-                // Sponsored wallet — always allowed to send, even with 0 POL.
+            if (window.isGasSponsored === true) {
+                // Confirmed sponsored — always allowed to send, even with 0 POL.
                 gasWarning.innerHTML = 'Your wallet has free gas sponsorship — no POL needed to send.';
                 gasWarning.classList.remove('hidden', 'gas-warning');
                 gasWarning.classList.add('gas-warning-sponsored');
                 continueBtn.disabled = false;
                 continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else if (polBalance <= 0) {
-                // Not sponsored and no POL — block Continue like before.
+            } else if (window.isGasSponsored === false && polBalance <= 0) {
+                // Confirmed NOT sponsored (mismatched session or a real fee
+                // quote came back) and no POL — block Continue like before.
                 gasWarning.innerHTML = 'You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>';
                 gasWarning.classList.remove('hidden', 'gas-warning-sponsored');
                 gasWarning.classList.add('gas-warning');
                 continueBtn.disabled = true;
                 continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (window.isGasSponsored === null && polBalance <= 0) {
+                // Unknown yet (no active Sequence session established in this
+                // browser tab) — don't block Continue on a guess. The real
+                // sponsorship/fee answer gets resolved when the user
+                // authenticates at the Confirm Send step and performTransfer()
+                // makes its own live feeOptions() call.
+                gasWarning.classList.add('hidden');
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
                 gasWarning.classList.add('hidden');
                 continueBtn.disabled = false;
@@ -2066,7 +2076,7 @@
             }
         };
 
-        window.isGasSponsored = null; // null = not checked yet
+        window.isGasSponsored = null; // null = unknown / not checked yet, true = confirmed sponsored, false = confirmed NOT sponsored (known-mismatched session, or a live feeOptions() call that returned real fee options)
 
         async function checkGasSponsorship(address) {
             try {
@@ -2079,9 +2089,23 @@
                 // the WRONG wallet and this function could report sponsorship that
                 // doesn't apply to the wallet actually shown on screen. Confirm
                 // the session matches before trusting its answer at all.
+                //
+                // Important: sessionCheck.valid can be false for two different
+                // reasons that must NOT be treated the same. A *mismatched*
+                // session (wrong wallet detected) means we can say for certain
+                // this wallet is not sponsored via this stale session. But no
+                // active session at all (e.g. right after a fresh login, or after
+                // a previous mismatch called dropSession()) tells us nothing --
+                // it's not evidence the wallet isn't sponsored, just that we
+                // haven't authenticated yet. Forcing that case to `false` blocks
+                // Continue (per onSendTokenChange) even for a genuinely sponsored
+                // wallet, with no way to reach the Confirm Send step that would
+                // actually establish a session and resolve the real answer.
                 const sessionCheck = await sessionMatchesCurrentWallet();
-                if (!sessionCheck.valid) {
+                if (sessionCheck.mismatched) {
                     window.isGasSponsored = false;
+                } else if (!sessionCheck.valid) {
+                    window.isGasSponsored = null; // unknown -- resolved for real at Confirm Send
                 } else {
                     // Use the same tx shape as a real Send (ERC20 transfer call to the
                     // NET contract, amount 0) instead of a plain native transfer — a
@@ -2097,7 +2121,7 @@
                 }
             } catch (err) {
                 console.warn('Could not check gas sponsorship:', err);
-                window.isGasSponsored = false;
+                window.isGasSponsored = null; // unknown, not a confirmed non-sponsorship
             }
             const modal = document.getElementById('sendModal');
             if (document.getElementById('sendTokenSelect') && modal && modal.classList.contains('active')) {
