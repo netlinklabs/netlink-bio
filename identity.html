@@ -369,5 +369,86 @@
 
     <script src="/shared/account-menu.js?v=3"></script>
 <script src="/shared/nav.js?v=3"></script>
+
+<script type="module">
+    // Best-effort live check: the Wallet Email field above is a Supabase
+    // cache (wallet_google_email), written only when a wallet is first
+    // connected or a backup sign-in is added via recovery.html -- it can be
+    // null or stale for a wallet set up outside those two flows.
+    // recovery.html reads this live from Sequence instead and is always
+    // accurate; this block does the same live check here, silently
+    // upgrading the on-screen text (and backfilling the cache, but only
+    // when it was empty -- never overwriting an existing value) so this
+    // page self-heals without needing a disconnect/reconnect.
+    //
+    // This runs independently of the classic script above (its own
+    // Supabase client instance, no shared state) so load-order between a
+    // classic script and a deferred module script is never a concern.
+    import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
+
+    const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
+    const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';
+
+    const liveCheckSupabase = window.supabase.createClient(
+        'https://fuewalufgiclrcgszlit.supabase.co',
+        'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb'
+    );
+
+    const sequenceWaas = new SequenceWaaS({
+        network: 'polygon',
+        projectAccessKey: SEQUENCE_PROJECT_ACCESS_KEY,
+        waasConfigKey: SEQUENCE_WAAS_CONFIG_KEY,
+    });
+
+    async function liveCheckWalletEmail() {
+        try {
+            const { data: { session } } = await liveCheckSupabase.auth.getSession();
+            if (!session) return;
+
+            const { data: profile, error } = await liveCheckSupabase
+                .from('profiles')
+                .select('wallet_address, wallet_google_email')
+                .eq('id', session.user.id)
+                .single();
+            if (error || !profile?.wallet_address) return;
+
+            // Only trust listAccounts() when the browser's active Sequence
+            // session genuinely belongs to THIS profile's wallet -- same
+            // guard used in pay.html/recovery.html's
+            // sessionMatchesCurrentWallet(), inlined here since this script
+            // has no other dependency on those files.
+            const signedIn = await sequenceWaas.isSignedIn();
+            if (!signedIn) return;
+            const sessionAddress = await sequenceWaas.getAddress();
+            if (!sessionAddress || sessionAddress.toLowerCase() !== profile.wallet_address.toLowerCase()) return;
+
+            const response = await sequenceWaas.listAccounts();
+            const accounts = response.accounts || [];
+            const googleAccounts = accounts.filter(a => (a.type || '').toLowerCase().includes('oidc') || (a.issuer || '').toLowerCase().includes('google'));
+            if (googleAccounts.length === 0) return;
+
+            const liveEmail = googleAccounts.length > 1
+                ? googleAccounts.map(a => a.email || a.issuer || 'unknown').join(', ')
+                : (googleAccounts[0]?.email || googleAccounts[0]?.issuer);
+            if (!liveEmail || liveEmail === profile.wallet_google_email) return;
+
+            const walletEmailEl = document.getElementById('walletEmailText');
+            if (walletEmailEl) walletEmailEl.textContent = liveEmail;
+
+            // Only backfill when the cache was empty -- never silently
+            // overwrite an existing value, matching the convention already
+            // used in recovery.html's Add Google flow.
+            if (!profile.wallet_google_email) {
+                await liveCheckSupabase.from('profiles')
+                    .update({ wallet_google_email: liveEmail })
+                    .eq('id', session.user.id);
+            }
+        } catch (err) {
+            console.warn('Non-critical: live wallet email check failed:', err);
+        }
+    }
+
+    liveCheckWalletEmail();
+</script>
 </body>
 </html>
