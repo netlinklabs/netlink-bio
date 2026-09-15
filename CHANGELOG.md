@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`link-in-bio.html`'s `.highlight-description` text was still capped at `max-width: 440px`, a leftover from when the card sat in a two-column grid** — after the grid was fixed to single-column (previous entry below), the card became full-width but its paragraph stayed pinned to roughly the left third, leaving the rest of the card visually empty. Raised to `max-width: 760px` so the description fills the card proportionally while still keeping a readable line length on very wide screens. `.highlight-title` needed no change (its text is short and has no `max-width`). No other class touched.
+
 ### Changed
 - **`link-in-bio.html`'s "What is a Netlink Bio Page?" card recolored from teal to navy, and its grid no longer reserves a second column.** The `.highlights-grid` `min-width: 768px` rule forcing `grid-template-columns: repeat(2, 1fr)` was removed — this page only has one `.highlight-card` (unlike `index.html`, which has two), so the two-column rule was leaving an empty half-width gap next to the card at tablet/desktop widths; the grid now stays single-column at every size. `.highlight-card.ai-ready`'s background gradient changed from teal-green (`#0D5C5D`/`#0A4A4B`/`#073637`) to a dark navy gradient (`#0F1F3D`/`#0A1830`/`#060F20`), and its `::before` radial-gradient overlay's teal tints (`rgba(45, 212, 214, …)`/`rgba(22, 198, 200, …)`) were swapped for navy/blue (`rgba(59, 91, 219, 0.12)`/`rgba(30, 58, 150, 0.08)`) at the same positions/opacities. The shared `.highlight-card:hover` box-shadow tint was also updated to navy (`rgba(59, 91, 219, 0.20)`) for consistency. The `::after` shimmer effect (white, already neutral) and `.highlight-card.verified` (unused on this page) were left untouched, as were all other sections of the page.
 
