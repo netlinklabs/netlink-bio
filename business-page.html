@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- PAGE-TYPE: public -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!-- SEO Meta Tags -->
+  <title>Netlink — AI-Ready Business Landing Page (Gold Plan)</title>
+  <meta name="description" content="Build a professional business landing page that builds trust, showcases your services, and helps AI and search engines understand what your business offers. Available on Netlink's Gold plan and above.">
+  <meta name="keywords" content="business landing page, business profile page, business page builder, AI-ready business page, Gold plan, KYB business verification">
+  <meta name="author" content="Netlink Labs">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Netlink — AI-Ready Business Landing Page (Gold Plan)">
+  <meta property="og:description" content="Build a professional business landing page that builds trust, showcases your services, and helps AI and search engines understand what your business offers. Available on Netlink's Gold plan and above.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://netlink.bio/business-page">
+  <meta property="og:image" content="https://netlink.bio/assets/netlink-og.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Netlink — AI-Ready Business Landing Page (Gold Plan)">
+  <meta name="twitter:description" content="Build a professional business landing page that builds trust, showcases your services, and helps AI and search engines understand what your business offers. Available on Netlink's Gold plan and above.">
+  <meta name="twitter:image" content="https://netlink.bio/assets/netlink-og.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+  <link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://netlink.bio/#organization",
+        "name": "Netlink",
+        "url": "https://netlink.bio",
+        "logo": "https://netlink.bio/assets/netlinkbio-icon.png",
+        "description": "Create your Link in Bio, Professional CV, Business Page, and Digital Wallet — all connected in one simple profile."
+      },
+      {
+        "@type": "Service",
+        "name": "Netlink Business Landing Page",
+        "serviceType": "Business Landing Page Builder",
+        "provider": { "@id": "https://netlink.bio/#organization" },
+        "description": "Build a professional business landing page that builds trust, showcases your services, and helps AI and search engines understand what your business offers. Available on Netlink's Gold plan and above.",
+        "url": "https://netlink.bio/business-page"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared/site-nav.css">
+
+  <style>
+    /* ============================================
+       PAGE-SPECIFIC STYLES
+       (shared tokens: colors, spacing, header/footer live in shared/site-nav.css)
+       ============================================ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--bg-primary); overflow-x: hidden; }
+    img { max-width: 100%; height: auto; display: block; }
+    a { text-decoration: none; color: inherit; transition: color var(--transition-fast); }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    ul, ol { list-style: none; }
+    input, textarea { font-family: inherit; font-size: inherit; }
+    :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .section-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); text-align: center; margin-bottom: var(--space-3); }
+    .section-subtitle { font-size: 1.125rem; color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto var(--space-8); line-height: 1.6; }
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity var(--transition-slow), transform var(--transition-slow); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .btn-hero { background: linear-gradient(135deg, #16C6C8 0%, #0EA5A7 50%, #0D9488 100%); color: #FFFFFF; box-shadow: 0 4px 20px rgba(22, 198, 200, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset; font-weight: 700; letter-spacing: 0.01em; position: relative; overflow: hidden; }
+    .btn-hero::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 500ms ease; }
+    .btn-hero:hover { background: linear-gradient(135deg, #2DD4D6 0%, #16C6C8 50%, #0EA5A7 100%); box-shadow: 0 6px 28px rgba(22, 198, 200, 0.45), 0 0 0 1px rgba(255,255,255,0.15) inset; transform: translateY(-2px); }
+    .btn-hero:hover::before { left: 100%; }
+    .btn-hero:active { transform: translateY(0); }
+
+    /* HERO */
+    .hero { background: linear-gradient(180deg, var(--dark-bg) 0%, var(--dark-bg-mid) 50%, var(--dark-bg) 100%); padding-top: calc(96px + var(--space-8)); padding-bottom: var(--space-12); overflow: hidden; position: relative; }
+    .hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 900px; height: 700px; background: radial-gradient(ellipse, rgba(22, 198, 200, 0.12) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+    .hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(to bottom, transparent, var(--bg-primary)); pointer-events: none; z-index: 1; }
+    .hero-inner { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 1100px; width: 100%; margin: 0 auto; }
+    .hero-content { max-width: 640px; padding: 0 var(--space-3); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background-color: rgba(22, 198, 200, 0.12); color: var(--color-primary); font-size: 0.8125rem; font-weight: 600; border-radius: 100px; margin-bottom: var(--space-4); border: 1px solid rgba(22, 198, 200, 0.25); }
+    .hero-badge svg { width: 14px; height: 14px; }
+    .hero-title { font-family: var(--font-heading); font-size: clamp(2.25rem, 5.5vw, 3.75rem); font-weight: 800; line-height: 1.1; color: var(--text-on-dark); margin-bottom: var(--space-4); letter-spacing: -0.03em; }
+    .hero-description { font-size: 1.125rem; color: var(--text-on-dark-secondary); margin-bottom: var(--space-5); line-height: 1.7; max-width: 540px; margin-left: auto; margin-right: auto; }
+    .hero-buttons { display: flex; flex-direction: column; gap: var(--space-2); align-items: center; justify-content: center; }
+
+    /* FEATURES */
+    .features-section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
+    .features-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); max-width: 1100px; margin: 0 auto; }
+    .feature-card { background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: var(--space-5); transition: transform var(--transition-base), box-shadow var(--transition-base); position: relative; overflow: hidden; }
+    .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--color-primary), transparent); opacity: 0; transition: opacity var(--transition-base); }
+    .feature-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-badge { display: inline-block; padding: 4px 10px; background-color: rgba(22, 198, 200, 0.1); color: var(--color-primary-dark); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 6px; margin-bottom: var(--space-2); }
+    .feature-icon { width: 56px; height: 56px; margin-bottom: var(--space-3); display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(22, 198, 200, 0.12), rgba(22, 198, 200, 0.04)); border-radius: 16px; }
+    .feature-icon svg { width: 28px; height: 28px; }
+    .feature-title { font-family: var(--font-heading); font-size: 1.125rem; font-weight: 600; margin-bottom: var(--space-1); color: var(--text-primary); }
+    .feature-description { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.6; }
+
+    /* HOW IT WORKS */
+    .how-section { background-color: var(--bg-secondary); padding-top: var(--space-10); padding-bottom: var(--space-10); }
+    .how-timeline { display: flex; flex-direction: column; gap: var(--space-6); max-width: 900px; margin: 0 auto; position: relative; }
+    .how-timeline::before { content: ''; position: absolute; left: 28px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--color-primary), rgba(22, 198, 200, 0.2)); z-index: 0; }
+    .how-step { display: flex; align-items: flex-start; gap: var(--space-4); position: relative; z-index: 1; }
+    .how-step-number { flex-shrink: 0; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); color: white; font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; border-radius: 50%; box-shadow: 0 4px 16px rgba(22, 198, 200, 0.3); }
+    .how-step-content { background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: var(--space-4); flex: 1; box-shadow: var(--shadow-sm); transition: box-shadow var(--transition-base), transform var(--transition-base); }
+    .how-step-content:hover { box-shadow: var(--shadow-md); transform: translateX(4px); }
+    .how-step-title { font-family: var(--font-heading); font-size: 1.125rem; font-weight: 600; margin-bottom: 6px; color: var(--text-primary); }
+    .how-step-description { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.6; }
+
+    /* HIGHLIGHTS — reused for "What is a Netlink Business Page" */
+    .highlights-section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
+    .highlights-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); max-width: 1000px; margin: 0 auto; }
+    .highlight-card { position: relative; border-radius: var(--radius-card); padding: var(--space-6); overflow: hidden; transition: transform var(--transition-base), box-shadow var(--transition-base); color: #fff; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .highlight-card:hover { transform: translateY(-8px); box-shadow: 0 30px 60px rgba(59, 91, 219, 0.20); }
+
+    .highlight-card.ai-ready { background: linear-gradient(145deg, #0F1F3D 0%, #0A1830 40%, #060F20 100%); }
+    .highlight-card.ai-ready::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 0%, rgba(59, 91, 219, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(30, 58, 150, 0.08) 0%, transparent 50%); pointer-events: none; }
+    .highlight-card.ai-ready::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.03) 50%, transparent 60%); transform: rotate(25deg); pointer-events: none; transition: transform 800ms ease; }
+    .highlight-card.ai-ready:hover::after { transform: rotate(25deg) translate(10%, 10%); }
+
+    .highlight-card .card-pattern { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; opacity: 0.4; background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 24px 24px; }
+    .highlight-icon { width: 64px; height: 64px; margin-bottom: var(--space-3); display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 18px; position: relative; z-index: 1; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .highlight-icon svg { width: 32px; height: 32px; stroke: #fff; }
+    .highlight-title { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--space-2); color: #fff; position: relative; z-index: 1; }
+    .highlight-description { font-size: 1.0625rem; color: rgba(255, 255, 255, 0.75); line-height: 1.7; max-width: 760px; position: relative; z-index: 1; }
+
+    /* CTA */
+    .cta-section { padding-top: var(--space-12); padding-bottom: var(--space-12); background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(22, 198, 200, 0.06) 50%, var(--bg-primary) 100%); position: relative; overflow: hidden; }
+    .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(22, 198, 200, 0.08) 0%, transparent 60%); pointer-events: none; }
+    .cta-inner { position: relative; z-index: 1; text-align: center; max-width: 680px; margin: 0 auto; }
+    .cta-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); margin-bottom: var(--space-3); }
+
+    /* RESPONSIVE */
+    @media (min-width: 640px) {
+      .hero-buttons { flex-direction: row; justify-content: center; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 768px) {
+      .hero-inner { padding-top: var(--space-4); }
+    }
+    @media (min-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(4, 1fr); }
+      .how-timeline { flex-direction: row; gap: var(--space-4); }
+      .how-timeline::before { left: 0; right: 0; top: 28px; width: auto; height: 2px; background: linear-gradient(to right, var(--color-primary), rgba(22, 198, 200, 0.2)); }
+      .how-step { flex-direction: column; align-items: center; text-align: center; flex: 1; }
+      .how-step-content { margin-top: var(--space-3); }
+      .how-step-content:hover { transform: translateY(-4px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    /* This page has its own dark .hero (like index.html and link-in-bio.html),
+       so the shared body.has-site-header-offset padding from site-nav.css
+       (meant for non-index pages with no dark hero) is neutralized here. */
+    body.has-site-header-offset { padding-top: 0; }
+    @media (min-width: 768px) {
+      body.has-site-header-offset { padding-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main id="main-content">
+    <section class="hero" id="hero" aria-label="Hero">
+      <div class="container">
+        <div class="hero-inner">
+          <div class="hero-content reveal">
+            <div class="hero-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              Gold Plan Required
+            </div>
+            <h1 class="hero-title">Business Landing Page</h1>
+            <p class="hero-description">Build a professional business page that builds trust, showcases your services, and helps AI and search engines understand what your business offers. Available on Gold plan and above.</p>
+            <div class="hero-buttons">
+              <a href="https://netlink.bio/login" class="btn btn-hero">Get Started</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="highlights-section" id="what-is-netlink-business-page" aria-label="What is a Netlink Business Page">
+      <div class="container">
+        <div class="highlights-grid">
+          <article class="highlight-card ai-ready reveal">
+            <div class="card-pattern" aria-hidden="true"></div>
+            <div class="highlight-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M12 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
+            </div>
+            <h2 class="highlight-title">What is a Netlink Business Page?</h2>
+            <p class="highlight-description">A Netlink Business Page is your public business profile at netlink.bio/page/yourslug — your business name, description, services, gallery, location, hours, and contact details, all in one clean page people and AI can actually read. Fill it in once, then share that single link everywhere. Business Pages are included in the Gold plan and above.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section" id="features" aria-label="Features">
+      <div class="container">
+        <h2 class="section-title reveal">Everything Your Business Page Needs</h2>
+        <p class="section-subtitle reveal">Built to help your business look professional — and be found by both customers and AI.</p>
+        <div class="features-grid">
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </div>
+            <h3 class="feature-title">Any Business Type</h3>
+            <p class="feature-description">Choose from retail, F&amp;B, hospitality, travel, coworking, education, consulting, and more — each with layouts fitted to that industry.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="M12 2 3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/></svg>
+            </div>
+            <h3 class="feature-title">Trust-Building Design</h3>
+            <p class="feature-description">About, Services, Gallery, Location, and Hours sections that help visitors understand and trust your business at a glance.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            </div>
+            <h3 class="feature-title">AI-Ready Structured Data</h3>
+            <p class="feature-description">Every business page is tagged with the correct schema type automatically, so AI assistants and search engines can accurately describe your business.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <h3 class="feature-title">Business Verification</h3>
+            <p class="feature-description">Verify your business through KYB and earn a Verified Business badge to boost customer trust.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-section" id="how-it-works" aria-label="How It Works">
+      <div class="container">
+        <h2 class="section-title reveal">Get Your Business Page Live in Minutes</h2>
+        <p class="section-subtitle reveal">No design skills, no code — just fill in your details and start sharing.</p>
+        <div class="how-timeline">
+          <div class="how-step reveal">
+            <div class="how-step-number" aria-hidden="true">1</div>
+            <div class="how-step-content">
+              <h3 class="how-step-title">Sign up and upgrade to Gold</h3>
+              <p class="how-step-description">Create your Netlink account and upgrade to the Gold plan.</p>
+            </div>
+          </div>
+          <div class="how-step reveal">
+            <div class="how-step-number" aria-hidden="true">2</div>
+            <div class="how-step-content">
+              <h3 class="how-step-title">Pick your business type and fill in your details</h3>
+              <p class="how-step-description">Add your business name, description, services, and more.</p>
+            </div>
+          </div>
+          <div class="how-step reveal">
+            <div class="how-step-number" aria-hidden="true">3</div>
+            <div class="how-step-content">
+              <h3 class="how-step-title">Share your business page link everywhere</h3>
+              <p class="how-step-description">Put it in your social bios, WhatsApp, or printed materials.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" id="get-started" aria-label="Call to Action">
+      <div class="container">
+        <div class="cta-inner reveal">
+          <h2 class="cta-title">Your business, online in minutes.</h2>
+          <a href="https://netlink.bio/login" class="btn btn-hero" style="padding: 16px 36px; font-size: 1rem;">Get Started</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="shared/site-nav.js"></script>
+  <script>
+    (function() {
+      'use strict';
+
+      const revealElements = document.querySelectorAll('.reveal');
+      const revealObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) { if (entry.isIntersecting) { entry.target.classList.add('visible'); } });
+      }, { root: null, rootMargin: '0px 0px -50px 0px', threshold: 0.1 });
+      revealElements.forEach(function(el) { revealObserver.observe(el); });
+
+      document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+        anchor.addEventListener('click', function(e) {
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            e.preventDefault();
+            const headerEl = document.getElementById('site-header-el');
+            const headerHeight = headerEl ? headerEl.offsetHeight : 0;
+            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20;
+            window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
