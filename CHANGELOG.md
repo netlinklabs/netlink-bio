@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`index.html`'s `<head>` now has a JSON-LD structured data block** for SEO. Added `<script type="application/ld+json">` (placed after the Favicon block, before Google Fonts) with a `@graph` of two schema.org types — `Organization` (`name`: "Netlink", `url`: "https://netlink.bio", `logo`: "https://netlink.bio/assets/netlinkbio-icon.png") and `WebApplication` (`name`: "Netlink", `url`: "https://netlink.bio", `applicationCategory`: "BusinessApplication", `operatingSystem`: "Web") — both reusing the page's existing `<meta name="description">` text verbatim, no new copy invented. `WebApplication.offers` is an empty array for now since the Basic/Silver/Gold/Platinum plan pricing isn't final for public display.
+
 ### Removed
 - **`shared/site-nav.js`'s desktop/tablet header no longer shows the "Get Started Free" CTA button.** Removed the `.header-cta` wrapper div (and its `btn btn-primary` link, pointing at the temporary `app` coming-soon page) from `headerHTML`, so desktop/tablet now match mobile, which already dropped this button. "Login" remains in `.header-nav`/mobile nav, unaffected. Also removed the now-unused `.header-cta` display rules from `shared/site-nav.css` (base `display: none` and the `display: block` override at `min-width: 768px`); no other header layout/spacing rules were touched. The `APP_URL` constant in `site-nav.js` is now unused (was only referenced by the removed CTA) — left in place since it's outside this change's scope.
 
