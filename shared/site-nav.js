@@ -38,9 +38,6 @@
           <a href="${link('#docs')}">Documentation</a>
           <a href="${LOGIN_URL}">Login</a>
         </nav>
-        <div class="header-cta">
-          <a href="${APP_URL}" class="btn btn-primary">Get Started Free</a>
-        </div>
         <button class="menu-toggle" id="siteMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="siteMobileNav">
           <span></span><span></span><span></span>
         </button>
