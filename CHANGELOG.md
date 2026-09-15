@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **`index.html`'s hero banner is now smaller on desktop.** Added a `@media (min-width: 1024px)` rule capping `.hero-image-wrapper`'s `max-width` at 820px (down from the base 1000px), scoped to desktop only — mobile/tablet layout is unchanged.
+
 ### Added
 - `pay2.html` — new staging copy of `pay.html`, created as an exact snapshot to preserve the in-progress Onramp.Money Buy/Sell widget work (SDK integration, Buy/Sell toggle, KYC warning) for continued testing while `pay.html`'s widget is disabled (see Removed below). Not linked from any nav, menu, button, or other page — reachable only by typing the URL directly. Any prior content at this path (an older TransFi-era staging file) was overwritten by this copy.
 
