@@ -32,6 +32,26 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 
 - `page-builder.html` is **permanently excluded** from the shared nav system (`site-nav.js` / `nav.js`). Don't add it back without being explicitly told.
 
+## Page type marker (public vs app)
+
+Every HTML file must have `<!-- PAGE-TYPE: public -->` or `<!-- PAGE-TYPE: app -->` as the first line inside `<head>`. Check this marker before assuming a page's category — don't rely on filename or memory.
+
+- `public` = marketing/legal pages, crawlable, meant to be indexed (e.g. index.html, privacy-policy.html)
+- `app` = requires login or is functional/internal (e.g. dashboard.html, pay.html, login.html)
+
+### JSON-LD standard for `public` pages
+
+| Page type | Required schema |
+|---|---|
+| Landing page (index.html) | Organization + WebApplication |
+| Legal pages (privacy-policy, terms, terms-of-use, username-policy, cookies, acceptable-use, security) | Organization + WebPage |
+| changelog.html | Organization + WebPage |
+| investor.html | Organization |
+
+`app` pages do not need JSON-LD.
+
+When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and add JSON-LD per the table above if it's `public`.
+
 ## Multi-session / multi-assistant codebase — be careful
 
 - This repo is edited across many separate Claude Code sessions (no shared memory between them) and sometimes by other tools/chats.
