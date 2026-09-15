@@ -70,7 +70,7 @@
                 <a href="link-in-bio">Link in Bio</a>
                 <a href="digital-cv">Digital CV</a>
                 <a href="business-page">Business Profile</a>
-                <a href="${link('#netlink-pay')}">Netlink Pay</a>
+                <a href="netlink-pay">Netlink Pay</a>
                 <a href="${link('#netlink-token')}">Netlink Token (NET)</a>
                 <a href="${link('#verification')}">Verification</a>
               </div>
