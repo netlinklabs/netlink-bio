@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- **`shared/site-nav.js`'s desktop/tablet header no longer shows the "Get Started Free" CTA button.** Removed the `.header-cta` wrapper div (and its `btn btn-primary` link, pointing at the temporary `app` coming-soon page) from `headerHTML`, so desktop/tablet now match mobile, which already dropped this button. "Login" remains in `.header-nav`/mobile nav, unaffected. Also removed the now-unused `.header-cta` display rules from `shared/site-nav.css` (base `display: none` and the `display: block` override at `min-width: 768px`); no other header layout/spacing rules were touched. The `APP_URL` constant in `site-nav.js` is now unused (was only referenced by the removed CTA) — left in place since it's outside this change's scope.
+
 ### Changed
 - **`index.html`'s hero banner is now smaller on desktop.** Added a `@media (min-width: 1024px)` rule capping `.hero-image-wrapper`'s `max-width` at 820px (down from the base 1000px), scoped to desktop only — mobile/tablet layout is unchanged.
 - **`index.html`'s hero banner now has more side breathing room on tablet.** Added a `@media (min-width: 768px) and (max-width: 1023px)` rule capping `.hero-image-wrapper`'s `max-width` at 620px (e.g. iPad Air at 820px wide), scoped to that range only — the existing desktop (≥1024px) and mobile (<768px) sizing are unchanged.
