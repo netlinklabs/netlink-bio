@@ -71,8 +71,8 @@
                 <a href="digital-cv">Digital CV</a>
                 <a href="business-page">Business Profile</a>
                 <a href="netlink-pay">Netlink Pay</a>
-                <a href="${link('#netlink-token')}">Netlink Token (NET)</a>
-                <a href="${link('#verification')}">Verification</a>
+                <a href="https://netlinktoken.com" target="_blank" rel="noopener noreferrer">Netlink Token (NET)</a>
+                <a href="verification">Verification</a>
               </div>
             </div>
             <div>
