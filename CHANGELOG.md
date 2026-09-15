@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- **`index.html`'s hero `.hero-buttons` no longer shows the "View Documentation" button** (`<a href="#docs" class="btn btn-outline-dark">View Documentation</a>`) — there was no `#docs` section on the page for it to scroll to. Only the "Get Started Free" button remains in `.hero-buttons`. The `.btn-outline-dark` CSS rule was left in place since it's a generic utility class, not specific to this removed button.
+
 ### Added
 - **New `digital-cv.html` public product landing page**, built the same way as `link-in-bio.html` (dark hero, single highlight card, features grid, 3-step "how it works", CTA, `Organization` + `Service` JSON-LD, own `body.has-site-header-offset` override for its dark hero). Content: hero "Professional Digital CV"; highlight card "What is a Netlink Digital CV?" referencing the real public CV URL format `netlink.bio/cv/yourname` (from `api/cv.js`); five feature cards — Easy to Use, Professional Design, AI-Readable, Easy to Share, Profile Verification.
 
