@@ -7,23 +7,23 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
   <!-- SEO Meta Tags -->
-  <title>Netlink — Create Link, Build Identity, Earn.</title>
-  <meta name="description" content="Create your Link in Bio, Professional CV, Business Page, and Digital Wallet — all connected in one simple profile.">
-  <meta name="keywords" content="link in bio, digital identity, professional CV, digital wallet, personal branding, online presence">
+  <title>Netlink — Free AI-Ready Link in Bio Tool</title>
+  <meta name="description" content="Create a free link in bio page that's AI-ready — structured data built in so AI assistants and search engines actually understand your profile. Try Netlink free.">
+  <meta name="keywords" content="link in bio, free link in bio, bio link page, AI-ready profile, link in bio tool, one link for all links">
   <meta name="author" content="Netlink Labs">
   <meta name="robots" content="index, follow">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Netlink — Create Link, Build Identity, Earn.">
-  <meta property="og:description" content="Create your Link in Bio, Professional CV, Business Page, and Digital Wallet — all connected in one simple profile.">
+  <meta property="og:title" content="Netlink — Free AI-Ready Link in Bio Tool">
+  <meta property="og:description" content="Create a free link in bio page that's AI-ready — structured data built in so AI assistants and search engines actually understand your profile. Try Netlink free.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://netlink.bio">
+  <meta property="og:url" content="https://netlink.bio/link-in-bio">
   <meta property="og:image" content="https://netlink.bio/assets/netlink-og.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Netlink — Create Link, Build Identity, Earn.">
-  <meta name="twitter:description" content="Create your Link in Bio, Professional CV, Business Page, and Digital Wallet — all connected in one simple profile.">
+  <meta name="twitter:title" content="Netlink — Free AI-Ready Link in Bio Tool">
+  <meta name="twitter:description" content="Create a free link in bio page that's AI-ready — structured data built in so AI assistants and search engines actually understand your profile. Try Netlink free.">
   <meta name="twitter:image" content="https://netlink.bio/assets/netlink-og.png">
 
   <!-- Favicon -->
@@ -37,19 +37,19 @@
     "@graph": [
       {
         "@type": "Organization",
+        "@id": "https://netlink.bio/#organization",
         "name": "Netlink",
         "url": "https://netlink.bio",
         "logo": "https://netlink.bio/assets/netlinkbio-icon.png",
         "description": "Create your Link in Bio, Professional CV, Business Page, and Digital Wallet — all connected in one simple profile."
       },
       {
-        "@type": "WebApplication",
-        "name": "Netlink",
-        "url": "https://netlink.bio",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
-        "description": "Create your Link in Bio, Professional CV, Business Page, and Digital Wallet — all connected in one simple profile.",
-        "offers": []
+        "@type": "Service",
+        "name": "Netlink Link in Bio",
+        "serviceType": "Link in Bio Page Builder",
+        "provider": { "@id": "https://netlink.bio/#organization" },
+        "description": "Create a free link in bio page that's AI-ready — structured data built in so AI assistants and search engines actually understand your profile. Try Netlink free.",
+        "url": "https://netlink.bio/link-in-bio"
       }
     ]
   }
@@ -63,17 +63,9 @@
 
   <style>
     /* ============================================
-       PAGE-SPECIFIC TOKENS
+       PAGE-SPECIFIC STYLES
        (shared tokens: colors, spacing, header/footer live in shared/site-nav.css)
        ============================================ */
-    :root {
-      --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.10);
-      --shadow-glow: 0 0 80px rgba(22, 198, 200, 0.18);
-      --btn-secondary-bg: #112B45;
-      --btn-secondary-text: #FFFFFF;
-      --z-modal: 2000;
-    }
-
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--bg-primary); overflow-x: hidden; }
@@ -84,7 +76,6 @@
     input, textarea { font-family: inherit; font-size: inherit; }
     :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-    .section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
     .section-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); text-align: center; margin-bottom: var(--space-3); }
     .section-subtitle { font-size: 1.125rem; color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto var(--space-8); line-height: 1.6; }
     .reveal { opacity: 0; transform: translateY(30px); transition: opacity var(--transition-slow), transform var(--transition-slow); }
@@ -96,48 +87,17 @@
     .btn-hero:hover::before { left: 100%; }
     .btn-hero:active { transform: translateY(0); }
 
-    .btn-secondary { background-color: var(--btn-secondary-bg); color: var(--btn-secondary-text); box-shadow: var(--shadow-md); }
-    .btn-secondary:hover { background-color: #1a3d5c; box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-    .btn-secondary:active { transform: translateY(0); }
-    .btn-outline { background-color: transparent; color: var(--text-primary); border: 1.5px solid var(--border-color); box-shadow: var(--shadow-sm); }
-    .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .btn-outline-dark { background-color: transparent; color: var(--text-on-dark); border: 1.5px solid rgba(255, 255, 255, 0.2); box-shadow: none; }
-    .btn-outline-dark:hover { border-color: var(--color-primary); color: var(--color-primary); transform: translateY(-2px); }
-
     /* HERO */
     .hero { background: linear-gradient(180deg, var(--dark-bg) 0%, var(--dark-bg-mid) 50%, var(--dark-bg) 100%); padding-top: calc(96px + var(--space-8)); padding-bottom: var(--space-12); overflow: hidden; position: relative; }
     .hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 900px; height: 700px; background: radial-gradient(ellipse, rgba(22, 198, 200, 0.12) 0%, transparent 65%); pointer-events: none; z-index: 0; }
     .hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(to bottom, transparent, var(--bg-primary)); pointer-events: none; z-index: 1; }
     .hero-inner { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 1100px; width: 100%; margin: 0 auto; }
-    .hero-image-wrapper { position: relative; width: 100%; max-width: 1000px; margin-bottom: var(--space-6); }
-    .hero-image { width: 100%; animation: float 6s ease-in-out infinite; }
-    @media (min-width: 1024px) { .hero-image-wrapper { max-width: 820px; } }
-    @media (min-width: 768px) and (max-width: 1023px) { .hero-image-wrapper { max-width: 620px; } }
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
-    .hero-image-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; background: radial-gradient(ellipse, rgba(22, 198, 200, 0.18) 0%, transparent 70%); z-index: -1; filter: blur(50px); pointer-events: none; }
     .hero-content { max-width: 640px; padding: 0 var(--space-3); }
     .hero-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background-color: rgba(22, 198, 200, 0.12); color: var(--color-primary); font-size: 0.8125rem; font-weight: 600; border-radius: 100px; margin-bottom: var(--space-4); border: 1px solid rgba(22, 198, 200, 0.25); }
     .hero-badge svg { width: 14px; height: 14px; }
     .hero-title { font-family: var(--font-heading); font-size: clamp(2.25rem, 5.5vw, 3.75rem); font-weight: 800; line-height: 1.1; color: var(--text-on-dark); margin-bottom: var(--space-4); letter-spacing: -0.03em; }
     .hero-description { font-size: 1.125rem; color: var(--text-on-dark-secondary); margin-bottom: var(--space-5); line-height: 1.7; max-width: 540px; margin-left: auto; margin-right: auto; }
     .hero-buttons { display: flex; flex-direction: column; gap: var(--space-2); align-items: center; justify-content: center; }
-
-    /* CHECKER */
-    .checker-section { padding-top: var(--space-4); padding-bottom: var(--space-10); }
-    .checker-box { background: linear-gradient(135deg, var(--bg-secondary) 0%, #ffffff 100%); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: var(--space-6) var(--space-4); max-width: 640px; margin: 0 auto; box-shadow: var(--shadow-md); text-align: center; }
-    .checker-title { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--space-4); color: var(--text-primary); }
-    .checker-form { display: flex; flex-direction: column; gap: var(--space-2); max-width: 480px; margin: 0 auto; }
-    .checker-input-wrapper { position: relative; display: flex; align-items: center; }
-    .checker-prefix { position: absolute; left: 16px; font-size: 0.9375rem; font-weight: 500; color: var(--text-secondary); pointer-events: none; }
-    .checker-input { width: 100%; padding: 14px 16px 14px 110px; font-size: 1rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-input); background-color: var(--bg-primary); color: var(--text-primary); transition: border-color var(--transition-fast), box-shadow var(--transition-fast); }
-    .checker-input::placeholder { color: var(--text-secondary); opacity: 0.7; }
-    .checker-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(22, 198, 200, 0.15); outline: none; }
-    .checker-btn { width: 100%; padding: 14px 28px; }
-    .checker-status { min-height: 18px; font-size: 0.8125rem; font-weight: 500; text-align: left; padding-left: 4px; margin-top: -4px; }
-    .checker-status.hidden { display: none; }
-    .checker-status.status-ok { color: #059669; }
-    .checker-status.status-bad { color: #ef4444; }
-    .checker-status.status-neutral { color: var(--text-secondary); }
 
     /* FEATURES */
     .features-section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
@@ -163,7 +123,7 @@
     .how-step-title { font-family: var(--font-heading); font-size: 1.125rem; font-weight: 600; margin-bottom: 6px; color: var(--text-primary); }
     .how-step-description { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.6; }
 
-    /* HIGHLIGHTS — GLOSSY ELEGANT */
+    /* HIGHLIGHTS — reused for "What is a Netlink Bio Page" */
     .highlights-section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
     .highlights-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); max-width: 1000px; margin: 0 auto; }
     .highlight-card { position: relative; border-radius: var(--radius-card); padding: var(--space-6); overflow: hidden; transition: transform var(--transition-base), box-shadow var(--transition-base); color: #fff; border: 1px solid rgba(255, 255, 255, 0.08); }
@@ -173,11 +133,6 @@
     .highlight-card.ai-ready::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 0%, rgba(45, 212, 214, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(22, 198, 200, 0.10) 0%, transparent 50%); pointer-events: none; }
     .highlight-card.ai-ready::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.03) 50%, transparent 60%); transform: rotate(25deg); pointer-events: none; transition: transform 800ms ease; }
     .highlight-card.ai-ready:hover::after { transform: rotate(25deg) translate(10%, 10%); }
-
-    .highlight-card.verified { background: linear-gradient(145deg, #0B6B6C 0%, #085859 40%, #064546 100%); }
-    .highlight-card.verified::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 80% 0%, rgba(45, 212, 214, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 20% 100%, rgba(22, 198, 200, 0.08) 0%, transparent 50%); pointer-events: none; }
-    .highlight-card.verified::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.03) 50%, transparent 60%); transform: rotate(25deg); pointer-events: none; transition: transform 800ms ease; }
-    .highlight-card.verified:hover::after { transform: rotate(25deg) translate(10%, 10%); }
 
     .highlight-card .card-pattern { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; opacity: 0.4; background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 24px 24px; }
     .highlight-icon { width: 64px; height: 64px; margin-bottom: var(--space-3); display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 18px; position: relative; z-index: 1; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
@@ -190,15 +145,10 @@
     .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(22, 198, 200, 0.08) 0%, transparent 60%); pointer-events: none; }
     .cta-inner { position: relative; z-index: 1; text-align: center; max-width: 680px; margin: 0 auto; }
     .cta-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); margin-bottom: var(--space-3); }
-    .cta-text { font-size: 1.125rem; color: var(--text-secondary); margin-bottom: var(--space-5); line-height: 1.7; }
 
     /* RESPONSIVE */
     @media (min-width: 640px) {
       .hero-buttons { flex-direction: row; justify-content: center; }
-      .checker-form { flex-direction: row; flex-wrap: wrap; }
-      .checker-input-wrapper { flex: 1; order: 1; }
-      .checker-btn { width: auto; order: 2; }
-      .checker-status { flex-basis: 100%; order: 3; margin-top: 2px; }
       .features-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (min-width: 768px) {
@@ -226,79 +176,93 @@
     <section class="hero" id="hero" aria-label="Hero">
       <div class="container">
         <div class="hero-inner">
-          <div class="hero-image-wrapper reveal">
-            <div class="hero-image-glow" aria-hidden="true"></div>
-            <img src="/assets/linkbio-banner.svg" alt="Netlink Dashboard Preview" class="hero-image" width="1000" height="680" loading="eager">
-          </div>
           <div class="hero-content reveal">
             <div class="hero-badge">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
               </svg>
-              AI-Ready Digital Identity
+              Free Forever
             </div>
-            <h1 class="hero-title">Create Link, Build Identity, Earn.</h1>
-            <p class="hero-description">One link for your Bio, CV, Business Page, and Wallet — built to help people find you, trust you, and pay you.</p>
+            <h1 class="hero-title">One Link. Every Part of You.</h1>
+            <p class="hero-description">The AI-ready link in bio — built so AI assistants and search engines can find, understand, and recommend your profile, not just humans.</p>
             <div class="hero-buttons">
               <a href="https://netlink.bio/login" class="btn btn-hero">Get Started Free</a>
-              <a href="#docs" class="btn btn-outline-dark">View Documentation</a>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="checker-section" id="checker" aria-label="Username Availability Checker">
+    <section class="highlights-section" id="what-is-netlink-bio" aria-label="What is a Netlink Bio Page">
       <div class="container">
-        <div class="checker-box reveal">
-          <h2 class="checker-title">Check Your Bio Link Availability</h2>
-          <form class="checker-form" onsubmit="event.preventDefault();" aria-label="Username checker form">
-            <div class="checker-input-wrapper">
-              <span class="checker-prefix" aria-hidden="true">netlink.bio/</span>
-              <input type="text" class="checker-input" id="checkerInput" placeholder="Choose your username..." aria-label="Choose your username" autocomplete="off" spellcheck="false" maxlength="25">
+        <div class="highlights-grid">
+          <article class="highlight-card ai-ready reveal">
+            <div class="card-pattern" aria-hidden="true"></div>
+            <div class="highlight-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
             </div>
-            <p class="checker-status hidden" id="checkerStatus" role="status" aria-live="polite"></p>
-            <button type="submit" class="btn btn-primary checker-btn" id="checkerBtn">Check Availability</button>
-          </form>
+            <h2 class="highlight-title">What is a Netlink Bio Page?</h2>
+            <p class="highlight-description">A Netlink Bio page is your public profile at netlink.bio/@username — one place for every important link, with your photo, name, tagline, and a clean list of links people can tap. Set it up once, then share that single link everywhere.</p>
+          </article>
         </div>
       </div>
     </section>
 
     <section class="features-section" id="features" aria-label="Features">
       <div class="container">
-        <h2 class="section-title reveal">Everything You Need in One Platform</h2>
-        <p class="section-subtitle reveal">Powerful tools designed to help you grow your digital presence with confidence.</p>
+        <h2 class="section-title reveal">Everything Your Link in Bio Needs</h2>
+        <p class="section-subtitle reveal">Free tools to help you share every part of yourself in one place — and be found by both people and AI.</p>
         <div class="features-grid">
           <article class="feature-card reveal">
-            <span class="feature-badge">Free</span>
             <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
             </div>
-            <h3 class="feature-title"><a href="link-in-bio">Link in Bio</a></h3>
-            <p class="feature-description">Create a beautiful profile page that brings all your important links together in one place.</p>
-          </article>
-          <article class="feature-card reveal">
-            <span class="feature-badge">Free</span>
-            <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            </div>
-            <h3 class="feature-title">Professional CV</h3>
-            <p class="feature-description">Build a modern, professional resume that helps you attract clients, employers, and new opportunities.</p>
-          </article>
-          <article class="feature-card reveal">
-            <span class="feature-badge">Free</span>
-            <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="7" cy="15" r="1"/></svg>
-            </div>
-            <h3 class="feature-title">Netlink Pay</h3>
-            <p class="feature-description">Send and receive payments instantly with your built-in personal wallet — no crypto experience needed.</p>
+            <h3 class="feature-title">AI-Ready Profile</h3>
+            <p class="feature-description">Structured data built into every profile, so AI tools like ChatGPT and Perplexity can accurately find and describe you — not just search engines.</p>
           </article>
           <article class="feature-card reveal">
             <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             </div>
-            <h3 class="feature-title">Business Landing Page</h3>
-            <p class="feature-description">Create a simple business page that builds trust and explains your products or services.</p>
+            <h3 class="feature-title">Unlimited Link Blocks</h3>
+            <p class="feature-description">Add links to Instagram, TikTok, YouTube, websites, or any URL.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+            </div>
+            <h3 class="feature-title">Custom Branding</h3>
+            <p class="feature-description">Choose your theme, colors, and layout to match your identity.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <h3 class="feature-title">Built-in Contact Card</h3>
+            <p class="feature-description">WhatsApp, email, and phone — all one tap away.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-badge">Coming Soon</span>
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+            </div>
+            <h3 class="feature-title">Click Analytics</h3>
+            <p class="feature-description">Track which links get the most attention.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-badge">Coming Soon</span>
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <h3 class="feature-title">Identity Verification</h3>
+            <p class="feature-description">Verify your identity via Didit KYC and earn a trust badge on your profile.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16C6C8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </div>
+            <h3 class="feature-title">Connects to Everything Else</h3>
+            <p class="feature-description">Your CV, Business Page, and Netlink Pay wallet live under the same profile.</p>
           </article>
         </div>
       </div>
@@ -306,53 +270,30 @@
 
     <section class="how-section" id="how-it-works" aria-label="How It Works">
       <div class="container">
-        <h2 class="section-title reveal">Get Started in 3 Simple Steps</h2>
-        <p class="section-subtitle reveal">From signup to your first payment in minutes. No technical skills required.</p>
+        <h2 class="section-title reveal">Get Your Link in Bio Live in Minutes</h2>
+        <p class="section-subtitle reveal">No design skills, no code — just claim your link and start sharing.</p>
         <div class="how-timeline">
           <div class="how-step reveal">
             <div class="how-step-number" aria-hidden="true">1</div>
             <div class="how-step-content">
-              <h3 class="how-step-title">Choose Your Username</h3>
-              <p class="how-step-description">Find an available username and create your account in seconds.</p>
+              <h3 class="how-step-title">Claim your username at netlink.bio</h3>
+              <p class="how-step-description">Pick a short, memorable username that's uniquely yours.</p>
             </div>
           </div>
           <div class="how-step reveal">
             <div class="how-step-number" aria-hidden="true">2</div>
             <div class="how-step-content">
-              <h3 class="how-step-title">Build Your Profile</h3>
-              <p class="how-step-description">Create your Bio, Professional CV, and Business Page in minutes.</p>
+              <h3 class="how-step-title">Add your links, photo, and bio</h3>
+              <p class="how-step-description">Bring together every important link in one clean profile.</p>
             </div>
           </div>
           <div class="how-step reveal">
             <div class="how-step-number" aria-hidden="true">3</div>
             <div class="how-step-content">
-              <h3 class="how-step-title">Activate Your Wallet</h3>
-              <p class="how-step-description">Get an instant digital wallet ready to receive payments worldwide.</p>
+              <h3 class="how-step-title">Share your one link everywhere</h3>
+              <p class="how-step-description">Put it in your social bios, email signature, and anywhere else people find you.</p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="highlights-section" id="highlights" aria-label="Highlights">
-      <div class="container">
-        <div class="highlights-grid">
-          <article class="highlight-card ai-ready reveal">
-            <div class="card-pattern" aria-hidden="true"></div>
-            <div class="highlight-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="8" y1="9" x2="8" y2="9"/><line x1="16" y1="9" x2="16" y2="9"/></svg>
-            </div>
-            <h3 class="highlight-title">AI Ready</h3>
-            <p class="highlight-description">Every profile, resume, and business page is optimized to be easily discovered and understood by modern AI search engines.</p>
-          </article>
-          <article class="highlight-card verified reveal">
-            <div class="card-pattern" aria-hidden="true"></div>
-            <div class="highlight-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-            <h3 class="highlight-title">Verified Identity</h3>
-            <p class="highlight-description">Boost global client confidence with verifiable profile and business pages backed by KYC/KYB standards.</p>
-          </article>
         </div>
       </div>
     </section>
@@ -360,8 +301,7 @@
     <section class="cta-section" id="get-started" aria-label="Call to Action">
       <div class="container">
         <div class="cta-inner reveal">
-          <h2 class="cta-title">Start Building Your Digital Identity Today</h2>
-          <p class="cta-text">Join thousands of creators, freelancers, professionals, and businesses building their digital presence with Netlink.</p>
+          <h2 class="cta-title">Your one link starts here.</h2>
           <a href="https://netlink.bio/login" class="btn btn-hero" style="padding: 16px 36px; font-size: 1rem;">Get Started Free</a>
         </div>
       </div>
@@ -370,7 +310,6 @@
 
   <div id="site-footer"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="shared/site-nav.js"></script>
   <script>
     (function() {
@@ -396,110 +335,6 @@
           }
         });
       });
-
-      // ---- Bio Link Availability Checker (live) ----
-      const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
-      const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
-      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-      const checkerForm = document.querySelector('.checker-form');
-      const checkerInput = document.getElementById('checkerInput');
-      const checkerBtn = document.getElementById('checkerBtn');
-      const checkerStatus = document.getElementById('checkerStatus');
-
-      // Token guard: hasil RPC yang "pulang" belakangan setelah pengecekan
-      // yang lebih baru dimulai akan diabaikan, agar status di layar tidak
-      // ketimpa hasil basi (pola sama seperti checkUsernameLive di dashboard).
-      let checkToken = 0;
-      let debounceTimer = null;
-      let lastCheckedAvailable = false;
-
-      function setStatus(text, type) {
-        checkerStatus.textContent = text;
-        checkerStatus.className = 'checker-status status-' + type;
-      }
-      function clearStatus() {
-        checkerStatus.textContent = '';
-        checkerStatus.className = 'checker-status hidden';
-      }
-
-      async function runCheck(username) {
-        const myToken = ++checkToken;
-
-        if (!username) { clearStatus(); lastCheckedAvailable = false; return; }
-        if (username.length < 3) {
-          setStatus('Minimum 3 characters.', 'neutral');
-          lastCheckedAvailable = false;
-          return;
-        }
-        if (username.length > 25) {
-          setStatus('Maximum 25 characters.', 'bad');
-          lastCheckedAvailable = false;
-          return;
-        }
-
-        setStatus('Checking...', 'neutral');
-
-        const { data: status, error } = await supabaseClient.rpc('get_slug_status', {
-          check_slug: username,
-          check_tier: 'basic',
-        });
-
-        if (myToken !== checkToken) return; // hasil basi, abaikan
-
-        if (error) {
-          setStatus('Could not check availability. Try again.', 'bad');
-          lastCheckedAvailable = false;
-          return;
-        }
-
-        if (status === 'available') {
-          setStatus(`netlink.bio/${username} is available!`, 'ok');
-          lastCheckedAvailable = true;
-        } else if (status === 'reserved') {
-          setStatus(`netlink.bio/${username} is not available.`, 'bad');
-          lastCheckedAvailable = false;
-        } else {
-          setStatus(`netlink.bio/${username} is already taken.`, 'bad');
-          lastCheckedAvailable = false;
-        }
-      }
-
-      if (checkerForm && checkerInput && checkerBtn && checkerStatus) {
-        checkerInput.addEventListener('input', function() {
-          const username = checkerInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-          checkerInput.value = username;
-          lastCheckedAvailable = false;
-          clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(function() { runCheck(username); }, 400);
-        });
-
-        checkerForm.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          const username = checkerInput.value.trim();
-          if (!username) {
-            checkerInput.style.borderColor = '#ef4444';
-            checkerInput.focus();
-            setTimeout(function() { checkerInput.style.borderColor = ''; }, 2000);
-            return;
-          }
-
-          const originalText = checkerBtn.textContent;
-          checkerBtn.textContent = 'Checking...';
-          checkerBtn.disabled = true;
-          checkerBtn.style.opacity = '0.7';
-
-          await runCheck(username);
-
-          checkerBtn.textContent = originalText;
-          checkerBtn.disabled = false;
-          checkerBtn.style.opacity = '';
-
-          if (lastCheckedAvailable) {
-            window.location.href = 'https://netlink.bio/login?username=' + encodeURIComponent(username);
-          }
-        });
-      }
     })();
   </script>
 </body>
