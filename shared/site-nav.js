@@ -101,9 +101,7 @@
               <h4 class="footer-col-title">Company</h4>
               <div class="footer-links">
                 <a href="about">About</a>
-                <a href="${link('#careers')}">Careers</a>
-                <a href="${link('#contact')}">Contact</a>
-                <a href="${link('#partners')}">Partners</a>
+                <a href="contact">Contact</a>
                 <a href="${link('#press')}">Press Kit</a>
                 <a href="investor">Investor</a>
               </div>
