@@ -68,7 +68,7 @@
               <h4 class="footer-col-title">Product</h4>
               <div class="footer-links">
                 <a href="link-in-bio">Link in Bio</a>
-                <a href="${link('#digital-cv')}">Digital CV</a>
+                <a href="digital-cv">Digital CV</a>
                 <a href="${link('#business-profile')}">Business Profile</a>
                 <a href="${link('#netlink-pay')}">Netlink Pay</a>
                 <a href="${link('#netlink-token')}">Netlink Token (NET)</a>
