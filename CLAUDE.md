@@ -50,6 +50,23 @@ Every HTML file must have `<!-- PAGE-TYPE: public -->` or `<!-- PAGE-TYPE: app -
 
 `app` pages do not need JSON-LD.
 
+### Dark hero pages need a body-offset override
+
+`site-nav.css` gives every non-index page `body.has-site-header-offset { padding-top: 96px/88px }` (white background) to push content below the fixed header — based on the assumption that non-index pages have no dark hero (see the comment in site-nav.css above that rule).
+
+If a new `public` page has its own colored/dark `.hero` section directly under the header (like `index.html` and `link-in-bio.html`), that assumption breaks and a white gap appears between the header and the hero. Fix it in that page's own `<style>`, not in the shared files:
+
+1. Give `.hero` `padding-top: calc(96px + var(--space-8))` (so the hero's own background starts at the very top of the page, same as index.html)
+2. Add this override in the page's own `<style>`:
+   ```css
+   body.has-site-header-offset { padding-top: 0; }
+   @media (min-width: 768px) { body.has-site-header-offset { padding-top: 0; } }
+   ```
+
+Pages WITHOUT a dark hero (privacy-policy.html, terms.html, investor.html, etc.) don't need this — the default body offset already works correctly for them.
+
+Update this note if the shared header-offset mechanism in site-nav.css/site-nav.js ever changes.
+
 When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and add JSON-LD per the table above if it's `public`.
 
 ## Multi-session / multi-assistant codebase — be careful
