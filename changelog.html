@@ -3,7 +3,6 @@
 <head>
     <!-- PAGE-TYPE: public -->
     <meta charset="UTF-8">
-    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Changelog - Netlink</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
@@ -32,20 +31,14 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
         body { background: #f8fafc; color: #1e293b; }
-        html.dark body { background: #0f172a; color: #e2e8f0; }
         .text-primary { color: #0f172a; }
-        html.dark .text-primary { color: #f8fafc; }
         .text-secondary { color: #475569; }
-        html.dark .text-secondary { color: #94a3b8; }
         .text-muted { color: #64748b; }
-        html.dark .text-muted { color: #94a3b8; }
         .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
-        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); }
 
         h1 { font-weight: 800; letter-spacing: -0.02em; }
 
         .month-label { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; margin-bottom: 1rem; }
-        html.dark .month-label { color: #94a3b8; }
 
         .entry { position: relative; padding-left: 1.5rem; margin-bottom: 1.5rem; }
         .entry::before { content: ''; position: absolute; left: 0; top: 0.4rem; width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
@@ -53,17 +46,12 @@
 
         .entry-tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; padding: 2px 9px; border-radius: 999px; margin-bottom: 0.5rem; }
         .tag-new { background: rgba(16,185,129,0.12); color: #059669; }
-        html.dark .tag-new { background: rgba(16,185,129,0.15); color: #34d399; }
         .tag-improved { background: rgba(59,130,246,0.12); color: #2563eb; }
-        html.dark .tag-improved { background: rgba(59,130,246,0.15); color: #60a5fa; }
         .tag-fixed { background: rgba(245,158,11,0.12); color: #b45309; }
-        html.dark .tag-fixed { background: rgba(245,158,11,0.15); color: #fbbf24; }
         .tag-security { background: rgba(239,68,68,0.12); color: #dc2626; }
-        html.dark .tag-security { background: rgba(239,68,68,0.15); color: #f87171; }
 
         .entry-title { font-size: 0.9375rem; font-weight: 600; color: inherit; margin-bottom: 0.25rem; }
         .entry-desc { font-size: 0.875rem; line-height: 1.65; color: #475569; }
-        html.dark .entry-desc { color: #94a3b8; }
 
         .month-block { padding: 1.5rem; margin-bottom: 1rem; border-radius: 1rem; }
         .month-block:not(:last-child) { border-bottom: none; }
