@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- PAGE-TYPE: public -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!-- SEO Meta Tags -->
+  <title>About Netlink — One Trusted Digital Identity</title>
+  <meta name="description" content="Learn about Netlink's mission to give individuals and businesses one trusted digital identity — built to be understood by people and AI alike.">
+  <meta name="keywords" content="about netlink, netlink company, digital identity platform, PT Netlink Labs Global, AI-ready profile">
+  <meta name="author" content="Netlink Labs">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="About Netlink — One Trusted Digital Identity">
+  <meta property="og:description" content="Learn about Netlink's mission to give individuals and businesses one trusted digital identity — built to be understood by people and AI alike.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://netlink.bio/about">
+  <meta property="og:image" content="https://netlink.bio/assets/netlink-og.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="About Netlink — One Trusted Digital Identity">
+  <meta name="twitter:description" content="Learn about Netlink's mission to give individuals and businesses one trusted digital identity — built to be understood by people and AI alike.">
+  <meta name="twitter:image" content="https://netlink.bio/assets/netlink-og.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+  <link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://netlink.bio/#organization",
+        "name": "Netlink",
+        "legalName": "PT Netlink Labs Global",
+        "url": "https://netlink.bio",
+        "logo": "https://netlink.bio/assets/netlinkbio-icon.png",
+        "foundingDate": "2026",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Jl. Karna Sosial No.128, Kelurahan Akcaya",
+          "addressLocality": "Pontianak Selatan",
+          "postalCode": "78121",
+          "addressCountry": "ID"
+        },
+        "email": "contact@netlink.bio",
+        "identifier": "NIB 0308260078406",
+        "description": "Netlink is a modern digital identity platform that helps individuals and businesses create a trusted online presence, showcase their work, connect with opportunities, receive payments, and build an AI-ready profile — all from a single trusted identity.",
+        "sameAs": [
+          "https://twitter.com/netlinkbio",
+          "https://linkedin.com/company/netlinklabs",
+          "https://github.com/netlinklabs",
+          "https://youtube.com/@netlink"
+        ]
+      },
+      {
+        "@type": "AboutPage",
+        "@id": "https://netlink.bio/about",
+        "url": "https://netlink.bio/about",
+        "name": "About Netlink",
+        "isPartOf": { "@id": "https://netlink.bio/#organization" }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared/site-nav.css">
+
+  <style>
+    /* ============================================
+       PAGE-SPECIFIC STYLES
+       (shared tokens: colors, spacing, header/footer live in shared/site-nav.css)
+       ============================================ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--bg-primary); overflow-x: hidden; }
+    img { max-width: 100%; height: auto; display: block; }
+    a { text-decoration: none; color: inherit; transition: color var(--transition-fast); }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    ul, ol { list-style: none; }
+    input, textarea { font-family: inherit; font-size: inherit; }
+    :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .section-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); text-align: center; margin-bottom: var(--space-3); }
+    .section-subtitle { font-size: 1.125rem; color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto var(--space-8); line-height: 1.6; }
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity var(--transition-slow), transform var(--transition-slow); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .btn-hero { background: linear-gradient(135deg, #16C6C8 0%, #0EA5A7 50%, #0D9488 100%); color: #FFFFFF; box-shadow: 0 4px 20px rgba(22, 198, 200, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset; font-weight: 700; letter-spacing: 0.01em; position: relative; overflow: hidden; }
+    .btn-hero::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 500ms ease; }
+    .btn-hero:hover { background: linear-gradient(135deg, #2DD4D6 0%, #16C6C8 50%, #0EA5A7 100%); box-shadow: 0 6px 28px rgba(22, 198, 200, 0.45), 0 0 0 1px rgba(255,255,255,0.15) inset; transform: translateY(-2px); }
+    .btn-hero:hover::before { left: 100%; }
+    .btn-hero:active { transform: translateY(0); }
+
+    /* HERO — narrative page, no badge and no promo CTA (unlike product pages) */
+    .hero { background: linear-gradient(180deg, var(--dark-bg) 0%, var(--dark-bg-mid) 50%, var(--dark-bg) 100%); padding-top: calc(96px + var(--space-8)); padding-bottom: var(--space-10); overflow: hidden; position: relative; }
+    .hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 900px; height: 700px; background: radial-gradient(ellipse, rgba(22, 198, 200, 0.12) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+    .hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(to bottom, transparent, var(--bg-primary)); pointer-events: none; z-index: 1; }
+    .hero-inner { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 1100px; width: 100%; margin: 0 auto; }
+    .hero-content { max-width: 640px; padding: 0 var(--space-3); }
+    .hero-title { font-family: var(--font-heading); font-size: clamp(2.25rem, 5.5vw, 3.75rem); font-weight: 800; line-height: 1.1; color: var(--text-on-dark); margin-bottom: var(--space-4); letter-spacing: -0.03em; }
+    .hero-description { font-size: 1.125rem; color: var(--text-on-dark-secondary); line-height: 1.7; max-width: 560px; margin-left: auto; margin-right: auto; }
+
+    /* NARRATIVE SECTIONS */
+    .narrative-section { padding-top: var(--space-10); padding-bottom: var(--space-10); }
+    .narrative-section.alt-bg { background-color: var(--bg-secondary); }
+    .narrative-body { max-width: 720px; margin: 0 auto; }
+    .narrative-body p { font-size: 1.0625rem; color: var(--text-secondary); line-height: 1.75; margin-bottom: var(--space-4); }
+    .narrative-body p:last-child { margin-bottom: 0; }
+
+    /* WHAT WE DO — lightweight product links, reusing .feature-card without the big icon block */
+    .products-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); max-width: 900px; margin: 0 auto; }
+    .product-link-card { display: block; background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: var(--space-4) var(--space-5); transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base); }
+    .product-link-card:hover { transform: translateX(4px); box-shadow: var(--shadow-md); border-color: var(--color-primary); }
+    .product-link-title { font-family: var(--font-heading); font-size: 1.0625rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .product-link-description { font-size: 0.9375rem; color: var(--text-secondary); }
+
+    /* CTA */
+    .cta-section { padding-top: var(--space-12); padding-bottom: var(--space-12); background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(22, 198, 200, 0.06) 50%, var(--bg-primary) 100%); position: relative; overflow: hidden; }
+    .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(22, 198, 200, 0.08) 0%, transparent 60%); pointer-events: none; }
+    .cta-inner { position: relative; z-index: 1; text-align: center; max-width: 680px; margin: 0 auto; }
+    .cta-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; color: var(--text-primary); margin-bottom: var(--space-3); }
+
+    /* RESPONSIVE */
+    @media (min-width: 768px) {
+      .hero-inner { padding-top: var(--space-4); }
+    }
+    @media (min-width: 640px) {
+      .products-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    /* This page has its own dark .hero (like index.html and link-in-bio.html),
+       so the shared body.has-site-header-offset padding from site-nav.css
+       (meant for non-index pages with no dark hero) is neutralized here. */
+    body.has-site-header-offset { padding-top: 0; }
+    @media (min-width: 768px) {
+      body.has-site-header-offset { padding-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main id="main-content">
+    <section class="hero" id="hero" aria-label="Hero">
+      <div class="container">
+        <div class="hero-inner">
+          <div class="hero-content reveal">
+            <h1 class="hero-title">About Netlink</h1>
+            <p class="hero-description">One trusted identity for everything — built for a world where people and AI both need to find, understand, and trust you online.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="narrative-section" id="mission" aria-label="Our Mission">
+      <div class="container">
+        <h2 class="section-title reveal">Our Mission</h2>
+        <div class="narrative-body reveal">
+          <p>Netlink exists to give individuals and businesses one trusted digital identity — a profile that's easy for people to browse and accurate for AI to read.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="narrative-section alt-bg" id="why-netlink" aria-label="Why Netlink Exists">
+      <div class="container">
+        <h2 class="section-title reveal">Why Netlink Exists</h2>
+        <div class="narrative-body reveal">
+          <p>Search is changing. AI assistants increasingly answer questions directly, without sending a click to a website — and AI agents are starting to compare people, services, and businesses on their own, reading structured data instead of browsing pages one by one. A profile built only for human eyes risks becoming invisible to this shift. Netlink builds every profile — bio, CV, and business page — with structured data from day one, so you're findable and accurately represented whether the reader is a person or an AI agent.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="narrative-section" id="what-we-do" aria-label="What We Do">
+      <div class="container">
+        <h2 class="section-title reveal">What We Do</h2>
+        <p class="section-subtitle reveal">Five connected tools, all built on the same trusted identity.</p>
+        <div class="products-grid">
+          <a href="link-in-bio" class="product-link-card reveal">
+            <div class="product-link-title">Link in Bio</div>
+            <div class="product-link-description">One link for everything you share.</div>
+          </a>
+          <a href="digital-cv" class="product-link-card reveal">
+            <div class="product-link-title">Digital CV</div>
+            <div class="product-link-description">A professional resume that's easy to find.</div>
+          </a>
+          <a href="business-page" class="product-link-card reveal">
+            <div class="product-link-title">Business Landing Page</div>
+            <div class="product-link-description">A trusted page for your business (Gold plan).</div>
+          </a>
+          <a href="netlink-pay" class="product-link-card reveal">
+            <div class="product-link-title">Netlink Pay</div>
+            <div class="product-link-description">A smart wallet built into your profile.</div>
+          </a>
+          <a href="verification" class="product-link-card reveal">
+            <div class="product-link-title">Verification</div>
+            <div class="product-link-description">Identity and business trust badges.</div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="narrative-section alt-bg" id="company" aria-label="Company">
+      <div class="container">
+        <h2 class="section-title reveal">Company</h2>
+        <div class="narrative-body reveal">
+          <p>Netlink is operated by PT Netlink Labs Global, a legally registered company in Indonesia (NIB 0308260078406), headquartered in Pontianak, West Kalimantan.</p>
+          <p>Development began in 2025. PT Netlink Labs Global was legally incorporated in 2026, with Netlink's public launch planned for Q3 2026.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" id="get-started" aria-label="Call to Action">
+      <div class="container">
+        <div class="cta-inner reveal">
+          <h2 class="cta-title">Build your trusted identity.</h2>
+          <a href="https://netlink.bio/login" class="btn btn-hero" style="padding: 16px 36px; font-size: 1rem;">Get Started Free</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="shared/site-nav.js"></script>
+  <script>
+    (function() {
+      'use strict';
+
+      const revealElements = document.querySelectorAll('.reveal');
+      const revealObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) { if (entry.isIntersecting) { entry.target.classList.add('visible'); } });
+      }, { root: null, rootMargin: '0px 0px -50px 0px', threshold: 0.1 });
+      revealElements.forEach(function(el) { revealObserver.observe(el); });
+
+      document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+        anchor.addEventListener('click', function(e) {
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            e.preventDefault();
+            const headerEl = document.getElementById('site-header-el');
+            const headerHeight = headerEl ? headerEl.offsetHeight : 0;
+            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20;
+            window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

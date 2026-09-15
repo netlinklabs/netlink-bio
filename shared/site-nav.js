@@ -100,7 +100,7 @@
             <div>
               <h4 class="footer-col-title">Company</h4>
               <div class="footer-links">
-                <a href="${link('#about')}">About</a>
+                <a href="about">About</a>
                 <a href="${link('#careers')}">Careers</a>
                 <a href="${link('#contact')}">Contact</a>
                 <a href="${link('#partners')}">Partners</a>
