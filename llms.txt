@@ -1,22 +1,43 @@
 # Netlink
 
-> Netlink is a digital identity platform for bio links, CV building, and business landing pages — built to be easily discovered by AI search.
+> Netlink is a digital identity platform — link-in-bio, digital CV, business landing page, and a built-in crypto wallet, all built with AI-readable structured data so profiles are accurately understood by AI assistants, not just displayed to humans.
 
-Netlink helps individuals, content creators, business owners, communities, and job seekers gain visibility in AI-powered search by making every profile page machine-readable, while strengthening the connection between a person's social media accounts.
+Netlink helps individuals, freelancers, business owners, and job seekers gain visibility in AI-powered search and recommendations. Every profile, CV, and business page ships with schema.org structured data (JSON-LD) from day one — designed for a search landscape where AI assistants increasingly answer questions directly instead of listing links.
 
 ## Pages
-- [Netlink](https://netlink.bio): Main platform for creating a bio link profile, CV, and business landing page.
-- [Netlink Token](https://netlinktoken.com): Official site for the NET utility token and company information.
+- [Netlink](https://netlink.bio): Main platform — create your bio link profile, CV, and business landing page.
+- [About Netlink](https://netlink.bio/about): What Netlink is, why it exists, and company information.
+- [Link in Bio](https://netlink.bio/link-in-bio): Free tool to combine all your links into one shareable, AI-readable profile.
+- [Digital CV](https://netlink.bio/digital-cv): Free tool to build a professional, AI-readable resume — public at netlink.bio/cv/yourusername.
+- [Business Landing Page](https://netlink.bio/business-page): Business profile page with industry-specific structured data (Gold plan and above) — public at netlink.bio/page/yourslug.
+- [Netlink Pay](https://netlink.bio/netlink-pay): Free, built-in smart contract wallet for sending and receiving USDC on Polygon.
+- [Verification](https://netlink.bio/verification): Identity Verification (personal profile/CV) and Business Verification / KYB (business page), powered by Didit.
+- [FAQ](https://netlink.bio/faq): 26 questions and answers about Netlink, NET Token, the wallet, and crypto basics — structured with FAQPage schema.
+- [Contact](https://netlink.bio/contact): General inquiries, partnerships, press, and support.
+- [Investor & Partnership Inquiry](https://netlink.bio/investor): Form for investment and partnership inquiries.
+- [Netlink Token](https://netlinktoken.com): Official site for the NET utility token.
 - [Netlink Token Docs](https://docs.netlinktoken.com): Documentation for the NET token and Netlink ecosystem.
 
 ## Features
-- Verified Profile: Users can apply for identity verification and receive a verified badge on their public profile, increasing trust and reducing identity misuse.
-- Netlink Pay: A non-custodial crypto wallet (Web3) built into Netlink for sending, receiving, storing, and buying USDC. Wallets are created instantly via Google or email login using Account Abstraction (ERC-4337) — no seed phrase or private key needed. Runs on the Polygon network.
+- **Link in Bio** (free): One link for everything you share — profile, socials, and content.
+- **Digital CV** (free): Bio, skills, education, work experience, portfolio, and certifications in one AI-readable profile.
+- **Business Landing Page** (Gold plan and above): About, services, gallery, location, hours, and contact — tagged automatically with the correct schema.org type per industry (Store, LodgingBusiness, TravelAgency, ProfessionalService, and more) so AI assistants can accurately describe the business.
+- **Netlink Pay** (free): A smart contract wallet using Account Abstraction (ERC-4337), compatible with EVM networks, built into every profile. Sign in with Google or email — no seed phrase or private key to manage. Runs on Polygon; supports USDC, POL, and NET balances. Account recovery uses a Trust Recovery process via a verified recovery email, not a seed phrase. Gas fee sponsorship for Gold and Platinum plan users is planned but not yet active.
+- **NET ID**: A unique payment identifier (format NET-00000-00000) inside Netlink Pay. Optional to make discoverable, so others can send payments using just the NET ID instead of a full wallet address. Only valid within Netlink Pay — not usable with external wallets.
+- **Verification**: Identity Verification (for personal profile and CV) and Business Verification / KYB (for business pages), both powered by Didit. Verified profiles display a trust badge. Requires an account and is not free.
+- **Structured data by default**: Every public page (profile, CV, business page) ships with schema.org JSON-LD — Organization, Service, Person, LocalBusiness (or the matching business subtype), and FAQPage where relevant — so AI assistants can parse and cite Netlink content accurately.
+
+## Plans
+- **Basic / Silver (Free)**: Access to Link in Bio, Digital CV, and Netlink Pay.
+- **Gold and above**: Adds Business Landing Page and gas fee sponsorship on Netlink Pay (sponsorship not yet active).
+- **Platinum**: Highest tier, includes all Gold features.
 
 ## Company
-- Netlink is developed by Netlink Labs (PT Netlink Labs Global), based in Pontianak, West Kalimantan, Indonesia.
-- Founder: Ramlan Hadiansyah, an IT practitioner with a long-standing focus on blockchain and AI technology.
-- Ramlan also developed NET (Netlink Ecosystem Token), a utility token on the Polygon network that powers the Netlink ecosystem.
+- Netlink is operated by PT Netlink Labs Global, a legally registered company in Indonesia, headquartered in Pontianak, West Kalimantan.
+- Development began in 2025. PT Netlink Labs Global was legally incorporated in 2026, with Netlink's public launch planned for Q3 2026.
+
+## NET Token
+- NET is a separate community utility token on the Polygon network. It is not required to use Netlink's core platform features. See netlinktoken.com for details.
 
 ## Optional
 - [Netlink Docs (coming soon)](https://docs.netlink.bio): Planned documentation site for the main Netlink platform.
