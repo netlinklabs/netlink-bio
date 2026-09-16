@@ -80,6 +80,24 @@ const BUSINESS_TITLES = {
 };
 const DEFAULT_TITLES = { aboutTitle: 'About', servicesTitle: 'Offerings', locationTitle: 'Location', galleryTitle: 'Gallery' };
 
+// Same schema.org @type mapping as page-builder.html's businessTypeSchema
+// (client-side JSON-LD preview while editing) -- copied verbatim so the
+// publicly rendered page matches what the editor already promises via
+// llms.txt/business-page.html ("tagged with the correct schema type
+// automatically"). Keep these two lists in sync if either changes.
+const BUSINESS_TYPE_SCHEMA = {
+  cafe: 'CafeOrCoffeeShop', restaurant: 'Restaurant', bakery: 'Bakery',
+  salon: 'BeautySalon', barbershop: 'HairSalon', yoga: 'ExerciseGym', fitness: 'ExerciseGym',
+  clinic: 'MedicalClinic', property: 'RealEstateAgent', agent: 'RealEstateAgent',
+  umkm: 'Store', florist: 'Florist', hotel: 'LodgingBusiness', travel: 'TravelAgency',
+  event: 'Organization', laundry: 'DryCleaningOrLaundry', repair: 'ProfessionalService',
+  coworking: 'LocalBusiness', workshop: 'EducationalOrganization', consulting: 'ProfessionalService',
+  professional: 'ProfessionalService', nonprofit: 'NGO', web3: 'Organization',
+  creator: 'Person', freelance: 'Person', author: 'Person', educator: 'Person',
+  musician: 'Person', podcaster: 'Person', artist: 'Person', trainer: 'Person', tutor: 'Person',
+  photography: 'ProfessionalService',
+};
+
 const CONTACT_CHANNEL_DEFS = [
   { key: 'whatsapp', label: 'Chat on WhatsApp', icon: 'fa-brands fa-whatsapp' },
   { key: 'telegram', label: 'Message on Telegram', icon: 'fa-brands fa-telegram' },
@@ -450,10 +468,22 @@ ${c.closingText ? `<p style="margin-top: 20px; font-size: 14px; color: #666; lin
 </section>`;
   }
 
-  // ---- JSON-LD (schema.org/LocalBusiness) ----
+  // ---- JSON-LD (schema.org) ----
+  // @type comes from BUSINESS_TYPE_SCHEMA, keyed by the `business_type`
+  // column (not content.businessType) -- falls back to 'LocalBusiness'
+  // for a null/empty/unrecognized type, same as page-builder.html's
+  // `businessTypeSchema[type] || 'LocalBusiness'`.
+  //
+  // Every field actually populated below (name/url/description/image,
+  // all inherited from schema.org/Thing, plus address which Person also
+  // defines directly as PostalAddress|Text) is valid on schema.org/Person
+  // too, so no per-type branching is needed here. openingHoursSpecification
+  // (which would NOT be valid on a Person) is never set in this file at
+  // all -- there's nothing business-only to skip for the Person case.
+  const schemaType = BUSINESS_TYPE_SCHEMA[page.business_type] || 'LocalBusiness';
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
+    '@type': schemaType,
     name: businessName,
     url: pageUrl,
     ...(desc ? { description: desc } : {}),
