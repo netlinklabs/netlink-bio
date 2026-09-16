@@ -90,7 +90,6 @@
                 <a href="https://twitter.com/netlinkbio" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
                 <a href="https://linkedin.com/company/netlinklabs" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                 <a href="https://github.com/netlinklabs" target="_blank" rel="noopener noreferrer">GitHub</a>
-                <a href="https://youtube.com/@netlink" target="_blank" rel="noopener noreferrer">YouTube</a>
               </div>
             </div>
           </div>

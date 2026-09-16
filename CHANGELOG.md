@@ -5,6 +5,7 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Removed
+- **Dropped the YouTube link from the footer Social column (`shared/site-nav.js`) and from `about.html`'s `Organization` JSON-LD `sameAs` array**, keeping both in sync. `nav.js` (the separate app-menu script) was not touched, and no other footer link or JSON-LD field was changed.
 - **`shared/site-nav.js`'s footer "Acceptable Use Policy" link removed from the Legal column.** `acceptable-use.html` doesn't exist anywhere in the repo, so this was already a dead link; only the footer link was removed, no page file to preserve or delete. `nav.js` (the separate app-menu script) was not touched.
 
 ### Added
