@@ -33,12 +33,36 @@ const STATIC_PAGES = [
   '/privacy-policy', '/terms', '/terms-of-use', '/username-policy',
 ];
 
+// PostgREST caps a single request at this many rows by default, and this
+// project has no pgrst.db_max_rows override raising that cap (confirmed
+// against the live project). Past that count a plain fetch would come
+// back silently truncated (PostgREST replies 206, not an error), so every
+// call here pages through with the Range header until a page comes back
+// shorter than PAGE_SIZE (including empty), then returns the full set.
+const PAGE_SIZE = 1000;
+
 async function supabaseGet(path) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-  });
-  if (!res.ok) throw new Error(`Supabase request failed: ${res.status}`);
-  return res.json();
+  const rows = [];
+  let offset = 0;
+
+  while (true) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Range: `${offset}-${offset + PAGE_SIZE - 1}`,
+      },
+    });
+    if (!res.ok) throw new Error(`Supabase request failed: ${res.status}`);
+
+    const page = await res.json();
+    rows.push(...page);
+
+    if (page.length < PAGE_SIZE) break; // last page (empty page included)
+    offset += PAGE_SIZE;
+  }
+
+  return rows;
 }
 
 function escapeXml(str) {
