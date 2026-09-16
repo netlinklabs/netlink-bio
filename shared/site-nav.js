@@ -78,9 +78,6 @@
             <div>
               <h4 class="footer-col-title">Resources</h4>
               <div class="footer-links">
-                <a href="${link('#docs')}">Documentation</a>
-                <a href="${link('#help')}">Help Center</a>
-                <a href="${link('#api')}">API</a>
                 <a href="${link('#blog')}">Blog</a>
                 <a href="changelog">Changelog</a>
                 <a href="https://netlinklabs.statuspage.io/" target="_blank" rel="noopener noreferrer">Status</a>
@@ -102,7 +99,6 @@
               <div class="footer-links">
                 <a href="about">About</a>
                 <a href="contact">Contact</a>
-                <a href="${link('#press')}">Press Kit</a>
                 <a href="investor">Investor</a>
               </div>
             </div>
@@ -113,9 +109,7 @@
                 <a href="terms">Terms of Service</a>
                 <a href="terms-of-use">Terms of Use (Netlink Pay)</a>
                 <a href="${link('username-policy')}">Username Policy</a>
-                <a href="cookies">Cookie Policy</a>
                 <a href="acceptable-use">Acceptable Use Policy</a>
-                <a href="security">Security</a>
               </div>
             </div>
           </div>
