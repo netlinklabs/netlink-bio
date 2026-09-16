@@ -35,13 +35,11 @@ netlink-bio/
 │   ├── cv.js                 # Public CV renderer        (/cv/:username)
 │   ├── landing.js            # Public landing page renderer (/page/:slug)
 │   ├── og.js                  # OG image generation (@vercel/og)
-│   ├── wallet-balance.js      # Wallet balance fetch (Polygon)
-│   ├── wallet-transactions.js # Transaction history fetch
+│   ├── sitemap.js             # Dynamic sitemap.xml (/sitemap.xml)
+│   ├── wallet.js              # Wallet balance/transactions/gas fee proxy (Polygon) — ?action=balance|transactions|gas
 │   ├── lifi-quote.js          # LI.FI swap quote proxy
-│   ├── tx-gas-fee.js          # Gas fee estimation
 │   ├── transfi-create-order.js / transfi-order-status.js / transfi-webhook.js
-│   ├── export-data.js         # User data export (privacy/GDPR-style request)
-│   ├── record-consent.js      # Consent logging
+│   ├── account.js             # User data export + consent logging — ?action=export|consent
 │   └── webhooks/didit.js      # Didit KYC webhook
 ├── shared/                  # Shared JS/CSS used across pages
 │   ├── site-nav.js / site-nav.css   # Shared header/nav

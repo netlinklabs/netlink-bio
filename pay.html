@@ -1257,7 +1257,7 @@
             errorText.classList.add('hidden');
 
             try {
-                const url = `/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`;
+                const url = `/api/wallet?action=balance&address=${encodeURIComponent(address)}&_t=${Date.now()}`;
                 const data = await fetchWithRetry(url);
                 window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
                 document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);

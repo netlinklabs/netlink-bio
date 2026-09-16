@@ -326,7 +326,7 @@
             await syncIncomingTransactions(data.wallet_address); await loadTransactions();
             refreshUnreadBadge();
         }
-        async function syncIncomingTransactions(address) { try { const res = await fetch(`/api/wallet-transactions?address=${encodeURIComponent(address)}&_t=${Date.now()}`); if (!res.ok) return; const data = await res.json(); const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash); if (!incoming.length) return; const { data: existing } = await supabaseClient.from('wallet_transactions').select('hash').eq('owner_id', currentUser.id); const existingHashes = new Set((existing || []).map((r) => r.hash)); const newRows = incoming.filter((t) => !existingHashes.has(t.hash)).map((t) => ({ owner_id: currentUser.id, hash: t.hash, type: 'receive', token: t.token, amount: t.amount, counterparty_address: t.counterparty || null, occurred_at: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString(), status: 'success', gas_fee: t.gasFee || null })); if (newRows.length) { const { error } = await supabaseClient.from('wallet_transactions').insert(newRows); if (error) console.error('Failed to sync incoming transactions:', error); } }
+        async function syncIncomingTransactions(address) { try { const res = await fetch(`/api/wallet?action=transactions&address=${encodeURIComponent(address)}&_t=${Date.now()}`); if (!res.ok) return; const data = await res.json(); const incoming = (data.transactions || []).filter((t) => t.type === 'in' && t.hash); if (!incoming.length) return; const { data: existing } = await supabaseClient.from('wallet_transactions').select('hash').eq('owner_id', currentUser.id); const existingHashes = new Set((existing || []).map((r) => r.hash)); const newRows = incoming.filter((t) => !existingHashes.has(t.hash)).map((t) => ({ owner_id: currentUser.id, hash: t.hash, type: 'receive', token: t.token, amount: t.amount, counterparty_address: t.counterparty || null, occurred_at: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString(), status: 'success', gas_fee: t.gasFee || null })); if (newRows.length) { const { error } = await supabaseClient.from('wallet_transactions').insert(newRows); if (error) console.error('Failed to sync incoming transactions:', error); } }
             catch (err) { console.error('Incoming sync failed:', err); }
         }
         async function loadTransactions() {
@@ -621,7 +621,7 @@
         // so it's instant on every future view.
         async function fetchAndPersistGasFee(tx) {
             try {
-                const res = await fetchWithTimeout(`/api/tx-gas-fee?hash=${encodeURIComponent(tx.hash)}`);
+                const res = await fetchWithTimeout(`/api/wallet?action=gas&hash=${encodeURIComponent(tx.hash)}`);
                 const data = await res.json();
                 if (!res.ok || !data.gasFee) return null;
 

@@ -1062,7 +1062,7 @@
         async function loadExportBalances() {
             if (!currentWalletAddress) return;
             try {
-                const url = `/api/wallet-balance?address=${encodeURIComponent(currentWalletAddress)}&_t=${Date.now()}`;
+                const url = `/api/wallet?action=balance&address=${encodeURIComponent(currentWalletAddress)}&_t=${Date.now()}`;
                 const data = await fetchWithRetry(url);
                 window.currentBalances = { net: data.net || '0', usdc: data.usdc || '0', pol: data.pol || '0' };
                 document.getElementById('exportPreviewUsdc').textContent = formatTokenAmount(data.usdc);
