@@ -47,7 +47,7 @@ const ACCOUNT_MENU = {
 // page-builder.html's Offerings currency selector so the two stay
 // consistent. Once Alchemy Pay KYB is approved, replace this array with a
 // server-fetched list (api/alchemy-fiat-list.js, same proxy pattern as
-// api/wallet-balance.js) instead of hardcoding.
+// api/wallet.js) instead of hardcoding.
 const CURRENCY_OPTIONS = [
   // Popular first (mirrors page-builder.html ordering)
   { code: 'IDR', label: 'IDR — Indonesian Rupiah' },

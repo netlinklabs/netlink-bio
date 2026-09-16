@@ -1081,7 +1081,7 @@ window.openNetlinkPay = openNetlinkPay;
             }
 
             try {
-                const res = await fetch(`/api/wallet-balance?address=${encodeURIComponent(address)}&_t=${Date.now()}`);
+                const res = await fetch(`/api/wallet?action=balance&address=${encodeURIComponent(address)}&_t=${Date.now()}`);
                 if (!res.ok) throw new Error('Failed to fetch balances');
                 const data = await res.json();
 

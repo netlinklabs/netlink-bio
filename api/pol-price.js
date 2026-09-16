@@ -2,7 +2,7 @@
 // Proxies Alchemy Prices API server-side so the API key never appears in
 // client-side code. Returns POL price in USD, used to convert the POL
 // balance shown in pay.html into the user's local currency.
-// Reuses the same ALCHEMY_API_KEY already used by wallet-balance.js.
+// Reuses the same ALCHEMY_API_KEY already used by api/wallet.js.
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_PRICES_URL = `https://api.g.alchemy.com/prices/v1/${ALCHEMY_API_KEY}/tokens/by-symbol?symbols=POL`;

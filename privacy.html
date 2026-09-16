@@ -391,7 +391,7 @@
             btn.disabled = true;
             btn.textContent = 'Saving...';
             try {
-                const res = await fetch('/api/record-consent', {
+                const res = await fetch('/api/account?action=consent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.access_token}` },
                     body: JSON.stringify({ consent_type: 'privacy_policy', version: CURRENT_POLICY_VERSION }),
@@ -427,7 +427,7 @@
             btn.disabled = true;
             btn.innerHTML = 'Preparing export...';
             try {
-                const res = await fetch('/api/export-data', {
+                const res = await fetch('/api/account?action=export', {
                     headers: { Authorization: `Bearer ${currentSession.access_token}` },
                 });
                 if (!res.ok) throw new Error('Export failed');
