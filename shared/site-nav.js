@@ -110,7 +110,6 @@
                 <a href="terms">Terms of Service</a>
                 <a href="terms-of-use">Terms of Use (Netlink Pay)</a>
                 <a href="${link('username-policy')}">Username Policy</a>
-                <a href="acceptable-use">Acceptable Use Policy</a>
               </div>
             </div>
           </div>

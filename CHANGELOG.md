@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- **`shared/site-nav.js`'s footer "Acceptable Use Policy" link removed from the Legal column.** `acceptable-use.html` doesn't exist anywhere in the repo, so this was already a dead link; only the footer link was removed, no page file to preserve or delete. `nav.js` (the separate app-menu script) was not touched.
+
 ### Added
 - **New `faq.html` public page** — structurally different from the product pages: a simple `<h1>`/subtitle hero (no dark background, no badge, no promotional CTA) followed by four FAQ sections (Netlink, NET Token, Wallet, Crypto) using native `<details>`/`<summary>` accordions, so questions stay readable and crawlable without JavaScript while still getting custom accordion styling. Still follows the shared conventions: `<!-- PAGE-TYPE: public -->` marker, header/footer via `shared/site-nav.js`, and the same reveal/smooth-scroll script used on product pages. Since this page has no dark hero, it needs no `body.has-site-header-offset` override — the shared default already applies correctly (per `CLAUDE.md`'s rule on this). Contains 26 questions across the four sections, covering what Netlink/NET Token/Netlink Pay are, AI-discoverability, pricing, and crypto basics (smart contract wallets, Polygon, USDC). **Uses `FAQPage` JSON-LD** (`schema.org`) with one `Question`/`acceptedAnswer` pair per question in a single `mainEntity` array, so AI assistants and search engines can surface individual answers directly — the JSON-LD answer text was verified to match the on-page text exactly (word-for-word diff, 0 mismatches across all 26 entries), since AI/search systems check this correspondence.
 - **`shared/site-nav.js`'s footer "Resources" column gains a new "FAQ" link** (`href="faq"`), added as the first item in that column, before "Blog". No other footer link touched; `nav.js` (the separate app-menu script) was not touched.
