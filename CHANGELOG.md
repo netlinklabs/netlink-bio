@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`shared/site-nav.js`'s footer "Blog" link now points to the external `https://medium.com/@netlinklabs` site** (opens in a new tab via `target="_blank" rel="noopener noreferrer"`), instead of the unresolved `${link('#blog')}` anchor — the blog lives on Medium, outside this repo. No other footer link touched; `nav.js` (the separate app-menu script) was not touched.
+
 ### Removed
 - **`shared/site-nav.js`'s footer dropped six dead/placeholder links across three columns**, none of which had a corresponding page: "Press Kit" from Company; "Documentation", "Help Center", and "API" from Resources; "Cookie Policy" (`cookies`) and "Security" (`security`) from Legal — `cookies.html`, `security.html`, and `acceptable-use.html`'s siblings were checked and don't exist anywhere in the repo, so these were plain dead links, not live pages, despite "Cookie Policy"/"Security" already using page-style hrefs instead of `#anchor`s. No footer section was left empty: Company still has About/Contact/Investor, Resources still has Blog/Changelog/Status, and Legal still has Privacy Policy/Terms of Service/Terms of Use/Username Policy/Acceptable Use Policy. `nav.js` (the separate app-menu script) was not touched.
 - **`index.html`'s hero `.hero-buttons` no longer shows the "View Documentation" button** (`<a href="#docs" class="btn btn-outline-dark">View Documentation</a>`) — there was no `#docs` section on the page for it to scroll to. Only the "Get Started Free" button remains in `.hero-buttons`. The `.btn-outline-dark` CSS rule was left in place since it's a generic utility class, not specific to this removed button.
