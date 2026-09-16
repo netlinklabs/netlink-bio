@@ -78,6 +78,7 @@
             <div>
               <h4 class="footer-col-title">Resources</h4>
               <div class="footer-links">
+                <a href="faq">FAQ</a>
                 <a href="https://medium.com/@netlinklabs" target="_blank" rel="noopener noreferrer">Blog</a>
                 <a href="changelog">Changelog</a>
                 <a href="https://netlinklabs.statuspage.io/" target="_blank" rel="noopener noreferrer">Status</a>
