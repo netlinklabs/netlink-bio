@@ -113,6 +113,18 @@ function iconHtml(iconKey) {
   return `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${iconKey}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg lucide-svg" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji-icon',textContent:'🔗'}))">`;
 }
 
+// A profile "has a real CV" when at least one section actually has content --
+// same check as api/sitemap.js, kept in sync so bio.js only links to a CV
+// URL that would actually resolve to a live, crawlable page.
+function hasRealCvContent(cv) {
+  if (!cv || typeof cv !== 'object') return false;
+  if (typeof cv.summary === 'string' && cv.summary.trim()) return true;
+  if (Array.isArray(cv.experience) && cv.experience.length) return true;
+  if (Array.isArray(cv.skills) && cv.skills.length) return true;
+  if (Array.isArray(cv.education) && cv.education.length) return true;
+  return false;
+}
+
 function extractYouTubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
@@ -176,13 +188,20 @@ export default async function handler(req, res) {
   const showYoutubeThumb = profile.show_youtube_thumbnail !== false;
 
   // ---- JSON-LD (schema.org/Person) ----
+  // @id must be byte-identical to the one api/cv.js emits for the same
+  // username, so both pages resolve to the same Person entity in a graph.
+  const personId = `${pageUrl}#person`;
   const sameAs = [
     ...links.map((l) => l.url),
     ...(profile.contact_telegram ? [`https://t.me/${profile.contact_telegram.replace(/^@/, '')}`] : []),
+    // Same "has a real CV" check as api/sitemap.js -- only link to the CV
+    // when it would actually render as a live, crawlable page.
+    ...(showCv && hasRealCvContent(profile.cv_data) ? [`https://netlink.bio/cv/${profile.username}`] : []),
   ];
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
+    '@id': personId,
     name: displayName,
     url: pageUrl,
     ...(bio ? { description: bio } : {}),

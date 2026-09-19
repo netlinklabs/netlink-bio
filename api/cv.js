@@ -148,9 +148,14 @@ export default async function handler(req, res) {
   const bioUrl = `https://netlink.bio/${profile.username}`;
 
   // ---- JSON-LD (schema.org/Person, resume-flavored) ----
+  // @id must be byte-identical to the one api/bio.js emits for the same
+  // username (bio's pageUrl, not this page's), so both pages resolve to
+  // the same Person entity in a graph.
+  const personId = `${bioUrl}#person`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
+    '@id': personId,
     name: displayName,
     url: pageUrl,
     ...(title ? { jobTitle: title } : {}),
