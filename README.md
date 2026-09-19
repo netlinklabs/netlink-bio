@@ -8,7 +8,7 @@ One profile for everything — bio link, CV builder, business landing page, and 
 
 🟢 Pre-seed, active development — public bio/CV/landing pages and Netlink Pay wallet are live and used by internal testers. Full public launch pending completion of core milestones.
 
-Built as static HTML + Tailwind CSS (CDN), no bundler. Vercel serverless functions handle dynamic/public-facing rendering and blockchain-related endpoints.
+Built as static HTML, no bundler. App pages use a Tailwind 3.4.19 static build (`shared/tailwind.css`, rebuilt via `npm run build:css`); public/marketing pages use hand-written CSS. Vercel serverless functions handle dynamic/public-facing rendering and blockchain-related endpoints.
 
 ## Structure
 
@@ -52,7 +52,7 @@ netlink-bio/
 
 ## Core Stack
 
-- **Frontend:** Vanilla HTML/JS, Tailwind CSS (CDN), Lucide icons
+- **Frontend:** Vanilla HTML/JS, Tailwind 3.4.19 (static build on app pages, `shared/tailwind.css`; CDN still used on a few legal pages), Lucide icons (pinned to `0.460.0` on app pages, see `CLAUDE.md`)
 - **Hosting:** Vercel (static + serverless functions in `api/`)
 - **Backend/DB:** Supabase (PostgreSQL + RLS + Auth)
 - **Wallet:** Sequence WaaS — embedded smart-contract wallets, no exportable private key

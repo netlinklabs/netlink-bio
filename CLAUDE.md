@@ -7,9 +7,9 @@ Context file for Claude Code working in this repo. Read this before making any c
 Netlink — digital identity platform (bio link, CV builder, business landing page) with an integrated crypto wallet sub-brand, Netlink Pay.
 
 - Deployment: `netlink.bio` (custom domain, live on Vercel with SSL as of 2026-08-31; `netlink-bio.vercel.app` is the old fallback domain)
-- Stack: vanilla HTML/JS (no bundler), Tailwind CSS via CDN, Vercel serverless functions (`api/`), Supabase (Postgres + RLS + Auth, project `fuewalufgiclrcgszlit`, ap-southeast-2), Sequence WaaS embedded wallets, Polygon PoS, LI.FI swap aggregator
+- Stack: vanilla HTML/JS (no bundler), Tailwind 3.4.19 static build (`shared/tailwind.css`, rebuilt via `npm run build:css`) on app pages, Vercel serverless functions (`api/`), Supabase (Postgres + RLS + Auth, project `fuewalufgiclrcgszlit`, ap-southeast-2), Sequence WaaS embedded wallets, Polygon PoS, LI.FI swap aggregator
 - Related repo: `netlinklabs/netlink-token` (NET token landing page + docs) — separate repo, don't cross-edit without being told
-- Local dev: no build step, no `npm scripts` defined. Run `vercel dev` to serve pages + `api/` functions locally.
+- Local dev: no bundler/build step for the app itself — run `vercel dev` to serve pages + `api/` functions locally. The one exception is CSS: `npm run build:css` rebuilds `shared/tailwind.css` (see "Tailwind CSS" below).
 
 ## Branding rules (strict)
 
@@ -31,6 +31,15 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 ## Navigation
 
 - `page-builder.html` is **permanently excluded** from the shared nav system (`site-nav.js` / `nav.js`). Don't add it back without being explicitly told.
+
+## Tailwind CSS (static build) — app pages only
+
+App pages (`card.html`, `contacts.html`, `dashboard.html`, `identity.html`, `login.html`, `pay.html`, `pay2.html`, `privacy.html`, `recovery.html`, `reset-password.html`, `reward.html`, `tx.html`) build Tailwind statically instead of loading `cdn.tailwindcss.com` at runtime — that CDN script generates CSS in the browser *after* scanning the DOM, which caused a mobile zoom-out bug on `dashboard.html` (full root cause in `CHANGELOG.md`). Public/marketing pages are unaffected: most use the hand-written `shared/site-nav.css`, and the few legal pages that still load the Tailwind CDN script were deliberately left alone — public pages are out of scope for this static build.
+
+- **Any new Tailwind utility class used on an app page needs a rebuild.** Run `npm run build:css` (wraps `tailwindcss -c tailwind.config.js -i shared/tailwind.src.css -o shared/tailwind.css --minify`) and **commit the resulting `shared/tailwind.css`** in the same change. A class that isn't in the committed, built CSS simply won't render — there's no runtime fallback anymore, unlike the old CDN script.
+- **`tailwind.config.js`'s `content` list must cover every file that injects Tailwind classes into these pages, not just the `.html` files.** `shared/nav.js` and `shared/app-lock.js` build markup with template strings (header, bottom nav, account sheet, app-lock screens) and are already in the list. If you add another shared `.js`/`.html` file that injects Tailwind classes at runtime, add it to `content` too, or its classes get silently purged from the build.
+- After rebuilding, bump the `?v=` query string on every `<link href="/shared/tailwind.css?v=N">` include across the app pages, so browsers/CDN edge caches don't keep serving the stale file — same versioning convention already used on `shared/*.js?v=`.
+- **`lucide` (icons) is pinned to `0.460.0` with `defer` on every app page — never `@latest`.** `@latest` has already dropped several icon names this codebase relies on (see `CHANGELOG.md` for the full list and how it was verified against the published npm package). Before adding a new `data-lucide="..."` name anywhere, or before ever bumping the pinned lucide version, check that every icon name currently in use across the codebase still resolves in the target version's export list — don't assume.
 
 ## Page type marker (public vs app)
 
