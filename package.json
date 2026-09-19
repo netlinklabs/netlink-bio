@@ -1,5 +1,11 @@
 {
   "dependencies": {
     "@vercel/og": "^0.6.3"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i shared/tailwind.src.css -o shared/tailwind.css --minify"
   }
 }
