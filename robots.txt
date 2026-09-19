@@ -1,21 +1,21 @@
 User-agent: *
 Allow: /
 
-Disallow: /login
-Disallow: /dashboard
-Disallow: /pay
-Disallow: /pay2
-Disallow: /pay3
-Disallow: /pay4
-Disallow: /tx
-Disallow: /card
-Disallow: /reward
-Disallow: /identity
-Disallow: /recovery
-Disallow: /reset-password
-Disallow: /page-builder
-Disallow: /privacy
-Disallow: /contacts
+Disallow: /login$
+Disallow: /dashboard$
+Disallow: /pay$
+Disallow: /pay2$
+Disallow: /pay3$
+Disallow: /pay4$
+Disallow: /tx$
+Disallow: /card$
+Disallow: /reward$
+Disallow: /identity$
+Disallow: /recovery$
+Disallow: /reset-password$
+Disallow: /page-builder$
+Disallow: /privacy$
+Disallow: /contacts$
 Disallow: /api/
 
 Sitemap: https://netlink.bio/sitemap.xml
