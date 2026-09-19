@@ -152,8 +152,7 @@ export default async function handler(req, res) {
   // username (bio's pageUrl, not this page's), so both pages resolve to
   // the same Person entity in a graph.
   const personId = `${bioUrl}#person`;
-  const jsonLd = {
-    '@context': 'https://schema.org',
+  const personNode = {
     '@type': 'Person',
     '@id': personId,
     name: displayName,
@@ -173,6 +172,24 @@ export default async function handler(req, res) {
     ...(education.length ? { alumniOf: education.map((e) => ({ '@type': 'EducationalOrganization', name: e.school })).filter((e) => e.name) } : {}),
     ...(experience.length && experience[0].company ? { worksFor: { '@type': 'Organization', name: experience[0].company } } : {}),
     sameAs: [bioUrl],
+  };
+  // ProfilePage wraps the Person as its mainEntity, per Google's Profile
+  // Page structured data guidance -- mainEntity points at the SAME Person
+  // @id as api/bio.js (this page is about the same Person, just via their
+  // CV), while the ProfilePage node itself gets its own #profilepage @id
+  // scoped to this URL. No dateCreated/dateModified: profiles_cv_public
+  // has no updated_at column (see CHANGELOG.md).
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'ProfilePage',
+        '@id': `${pageUrl}#profilepage`,
+        url: pageUrl,
+        mainEntity: { '@id': personId },
+      },
+      personNode,
+    ],
   };
 
   // ---- Section builders ----
