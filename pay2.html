@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <link rel="stylesheet" href="/shared/tailwind.css?v=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.460.0" defer></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         @keyframes loadingBar {
@@ -1396,7 +1396,9 @@
             if (currentWalletAddress) updateOnrampWidget(currentWalletAddress);
         });
 
-        lucide.createIcons();
+        // lucide loads with `defer` now, so wait for DOMContentLoaded (which
+        // always fires after deferred scripts finish) before the first call.
+        document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
         initTheme();
         checkAuth();
     </script>
