@@ -125,6 +125,29 @@ function hasRealCvContent(cv) {
   return false;
 }
 
+// Strips known tracking params (utm_*, igsh/igshid, fbclid, gclid, mc_cid,
+// mc_eid, si, ref) from a URL before it goes into JSON-LD's sameAs, so the
+// same profile doesn't produce a different sameAs value depending on which
+// share flow a visitor's link came from. Only sameAs is cleaned -- the
+// clickable link rendered on the page (linksHtml, built from `links`
+// directly) is left exactly as the user entered it. Functional params
+// (e.g. YouTube's ?v=) aren't in the blacklist, so they pass through
+// untouched. Falls back to the original string if it isn't a parseable URL.
+const SAME_AS_TRACKING_PARAMS = new Set(['igsh', 'igshid', 'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'si', 'ref']);
+function cleanSameAsUrl(url) {
+  try {
+    const parsed = new URL(url);
+    for (const key of [...parsed.searchParams.keys()]) {
+      if (key.toLowerCase().startsWith('utm_') || SAME_AS_TRACKING_PARAMS.has(key.toLowerCase())) {
+        parsed.searchParams.delete(key);
+      }
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 function extractYouTubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
@@ -191,13 +214,14 @@ export default async function handler(req, res) {
   // @id must be byte-identical to the one api/cv.js emits for the same
   // username, so both pages resolve to the same Person entity in a graph.
   const personId = `${pageUrl}#person`;
-  const sameAs = [
+  const sameAsRaw = [
     ...links.map((l) => l.url),
     ...(profile.contact_telegram ? [`https://t.me/${profile.contact_telegram.replace(/^@/, '')}`] : []),
     // Same "has a real CV" check as api/sitemap.js -- only link to the CV
     // when it would actually render as a live, crawlable page.
     ...(showCv && hasRealCvContent(profile.cv_data) ? [`https://netlink.bio/cv/${profile.username}`] : []),
   ];
+  const sameAs = [...new Set(sameAsRaw.map(cleanSameAsUrl))];
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
