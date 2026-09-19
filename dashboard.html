@@ -4,19 +4,14 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <meta charset="UTF-8">
     <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <title>Netlink.bio - Dashboard</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/shared/tailwind.css?v=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: { colors: { dark: { bg: '#0f172a', card: '#1e293b', border: 'rgba(255,255,255,0.05)' } } } }
-        }
-    </script>
+    <script src="https://unpkg.com/lucide@0.460.0" defer></script>
     <style>
+        html, body { max-width: 100%; overflow-x: hidden; }
         @keyframes loadingBar {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(300%); }
@@ -677,7 +672,15 @@
         async function enterDashboard(session) {
             authResolved = true;
             currentUser = session.user;
-            document.getElementById('authGate').style.display = 'none';
+            // Wait a full paint cycle (double rAF) before revealing the page so
+            // the browser has settled layout/style first -- hiding the gate in
+            // the same tick auth resolves can expose a mid-reflow frame on
+            // mobile (see CHANGELOG: dashboard mobile zoom-out fix).
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    document.getElementById('authGate').style.display = 'none';
+                });
+            });
             try {
                 await loadDashboardData();
                 applyPendingUsernameClaim();
@@ -1976,7 +1979,10 @@ window.openNetlinkPay = openNetlinkPay;
     </script>
 
     <script>
-        lucide.createIcons();
+        // lucide loads with `defer` now, so it isn't guaranteed to be ready
+        // yet when this inline script runs during parsing -- wait for
+        // DOMContentLoaded (defer scripts always finish before that fires).
+        document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
 
         // Theme (dark/light) is now controlled from the Account sheet in
         // shared/nav.js -- NetlinkNav.init() applies the saved theme on
