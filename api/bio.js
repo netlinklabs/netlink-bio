@@ -222,8 +222,7 @@ export default async function handler(req, res) {
     ...(showCv && hasRealCvContent(profile.cv_data) ? [`https://netlink.bio/cv/${profile.username}`] : []),
   ];
   const sameAs = [...new Set(sameAsRaw.map(cleanSameAsUrl))];
-  const jsonLd = {
-    '@context': 'https://schema.org',
+  const personNode = {
     '@type': 'Person',
     '@id': personId,
     name: displayName,
@@ -232,6 +231,22 @@ export default async function handler(req, res) {
     ...(avatar ? { image: avatar } : {}),
     ...(profile.country_code ? { address: { '@type': 'PostalAddress', addressCountry: profile.country_code } } : {}),
     ...(sameAs.length ? { sameAs } : {}),
+  };
+  // ProfilePage wraps the Person as its mainEntity, per Google's Profile
+  // Page structured data guidance -- @id-referenced (not duplicated inline)
+  // since both nodes live in the same @graph. No dateCreated/dateModified:
+  // profiles_bio_public has no updated_at column (see CHANGELOG.md).
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'ProfilePage',
+        '@id': `${pageUrl}#profilepage`,
+        url: pageUrl,
+        mainEntity: { '@id': personId },
+      },
+      personNode,
+    ],
   };
 
   // ---- Contact icons row (WhatsApp / Telegram / Email) ----
