@@ -2833,16 +2833,35 @@
         // never window.isGasSponsored, which is Send's.
         async function checkSwapGasStatus() {
             const myCheckId = ++swapGasCheckId;
-            if (swapGasFirstCheckDone) {
+            const isFirstCheck = !swapGasFirstCheckDone;
+            if (!isFirstCheck) {
                 // Not the first check this modal opening (a requote or an
                 // auto-adjust triggered it) — dim the currently-shown
                 // values instead of blanking them while this re-check runs.
                 setGasRowLoading(true);
             }
+            // Caps how long the FIRST check can hold the swipe lock. A slow
+            // Sequence/relayer round trip shouldn't leave swipe stuck on
+            // "Calculating fees…" indefinitely — after 8s, force-resolve to
+            // a neutral "—" and unlock, same as a confirmed null/error
+            // result. The real check below keeps running in the background
+            // regardless and can still correct the display later if it
+            // resolves after this fires (its own completion always clears
+            // this timer first, via clearTimeout(firstCheckTimeoutId) below).
+            let firstCheckTimeoutId = null;
+            if (isFirstCheck) {
+                firstCheckTimeoutId = setTimeout(async () => {
+                    if (myCheckId !== swapGasCheckId || swapGasFirstCheckDone) return;
+                    swapGasFirstCheckDone = true;
+                    renderConfirmGasDetails();
+                    await evaluateGasAmountGuard();
+                }, 8000);
+            }
             if (!swapQuoteData || !swapQuoteData.transactionRequest) {
                 swapGasSponsored = null;
                 swapFeeTokenSymbol = null;
                 swapEstimatedFeeAmountWei = null;
+                clearTimeout(firstCheckTimeoutId);
                 swapGasFirstCheckDone = true;
                 renderConfirmGasDetails();
                 await evaluateGasAmountGuard();
@@ -2855,6 +2874,7 @@
                     swapGasSponsored = null;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
+                    clearTimeout(firstCheckTimeoutId);
                     swapGasFirstCheckDone = true;
                     renderConfirmGasDetails();
                     await evaluateGasAmountGuard();
@@ -2869,6 +2889,7 @@
                     swapGasSponsored = false;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
+                    clearTimeout(firstCheckTimeoutId);
                     swapGasFirstCheckDone = true;
                     renderConfirmGasDetails();
                     await evaluateGasAmountGuard();
@@ -2904,6 +2925,7 @@
                 swapFeeTokenSymbol = null;
                 swapEstimatedFeeAmountWei = null;
             }
+            clearTimeout(firstCheckTimeoutId);
             swapGasFirstCheckDone = true;
             renderConfirmGasDetails();
             await evaluateGasAmountGuard();
