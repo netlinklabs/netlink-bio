@@ -3478,8 +3478,9 @@
                     toAddress: addr,
                     toChainId: TRAILS_POLYGON_CHAIN_ID,
                     toToken: token,
-                    fundOnramp: true, // from the Sequence dashboard's Onramp snippet (not present in the 0.18.6 typings; harmless if ignored)
-                    fundOptions: { fundMethodsList: ['cc-onramp', 'stripe-onramp'], hideUnlistedFundMethods: false },
+                    // Open the card on-ramp (Meld) directly instead of the wallet list (demo: Fund Method = "Onramp (Meld)").
+                    fundMethod: 'onramp',
+                    fundOptions: { fiatCurrency: 'USD', fiatAmount: '25', paymentMethodType: 'CREDIT_DEBIT_CARD' },
                     renderInline: true,
                     theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
                     onCheckoutComplete: () => {
