@@ -490,11 +490,6 @@
                     <p class="text-sm font-semibold text-primary">Swap Tokens</p>
                 </div>
 
-                <!-- Swap-only gas status banner. Separate from #gasWarning (Send) —
-                     swap keeps its own sponsorship read so it never shares state
-                     with window.isGasSponsored. -->
-                <div id="swapGasBanner" class="hidden mb-3"></div>
-
                 <!-- You Pay -->
                 <div class="swap-inner p-4 mb-1 relative z-[2]">
                     <div class="flex items-center justify-between">
@@ -637,6 +632,13 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Swap-only gas status banner. Separate from #gasWarning (Send) —
+                 swap keeps its own sponsorship read so it never shares state
+                 with window.isGasSponsored. Filled in asynchronously by
+                 checkSwapGasStatus() when this modal opens (or requotes) —
+                 starts hidden so it never shows stale info from a previous swap. -->
+            <div id="confirmGasBanner" class="hidden mb-4"></div>
 
             <!-- Swipe to Confirm -->
             <div class="swipe-container" id="swipeContainer">
@@ -2397,10 +2399,10 @@
             document.getElementById('swapToLogo').src = SWAP_TOKENS[swapTo].logo;
             document.getElementById('swapFromBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapFrom)).toFixed(2)}`;
             document.getElementById('swapToBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapTo)).toFixed(2)}`;
-            // Refresh the swap-only gas banner every time balances/tokens
-            // re-render (wallet connect, balance refresh, flip) — mirrors
-            // how Send re-checks checkGasSponsorship() on its own triggers.
-            checkSwapGasStatus();
+            // No gas-status check here — the main swap screen never shows
+            // gas info. checkSwapGasStatus() only runs inside the swap
+            // confirm modal (see openSwapConfirmModal/requoteInModal below),
+            // against the transaction that's actually about to be sent.
         }
         window.renderSwapTokens = renderSwapTokens;
 
@@ -2437,34 +2439,57 @@
             return null;
         }
 
-        function renderSwapGasBanner() {
-            const banner = document.getElementById('swapGasBanner');
+        // Renders into #confirmGasBanner (inside the swap confirm modal
+        // only) — the main swap screen never shows gas info.
+        function renderConfirmGasBanner() {
+            const banner = document.getElementById('confirmGasBanner');
             if (!banner) return;
             if (swapGasSponsored === true) {
-                banner.textContent = 'Gas-free swap — network fees are covered by Netlink.';
-                banner.className = 'gas-warning-sponsored mb-3';
+                banner.textContent = 'Gas fee is free for this swap.';
+                banner.className = 'gas-warning-sponsored mb-4';
             } else if (swapGasSponsored === false) {
                 const feeLabel = swapFeeTokenSymbol ? ` from ${swapFeeTokenSymbol}` : '';
                 banner.textContent = `Gas fee for this swap is deducted${feeLabel}.`;
-                banner.className = 'gas-warning mb-3';
+                banner.className = 'gas-warning mb-4';
             } else {
-                banner.className = 'hidden mb-3';
+                // Unknown yet (not checked, or still resolving) — stay hidden.
+                banner.className = 'hidden mb-4';
+                banner.textContent = '';
                 return;
             }
             banner.classList.remove('hidden');
         }
 
-        // Swap-only sponsorship check. Calls feeOptions() with a swap-shaped
-        // transaction and keeps the answer in the local swapGasSponsored
-        // variable above — never window.isGasSponsored, which is Send's.
+        function resetConfirmGasBanner() {
+            const banner = document.getElementById('confirmGasBanner');
+            if (!banner) return;
+            banner.className = 'hidden mb-4';
+            banner.textContent = '';
+        }
+
+        // Swap-only sponsorship check. Runs only from inside the swap
+        // confirm modal (openSwapConfirmModal/requoteInModal) against the
+        // ACTIVE swapQuoteData's own swap transaction, so the banner
+        // reflects the swap that's actually about to be sent — not a
+        // generic dummy transaction. Async and non-blocking: callers don't
+        // await it, so it never holds up the modal opening or requoting.
+        // Keeps the answer in the local swapGasSponsored variable above —
+        // never window.isGasSponsored, which is Send's.
         async function checkSwapGasStatus() {
+            if (!swapQuoteData || !swapQuoteData.transactionRequest) {
+                swapGasSponsored = null;
+                swapFeeTokenSymbol = null;
+                swapEstimatedFeeAmountWei = null;
+                renderConfirmGasBanner();
+                return;
+            }
             try {
                 const signedIn = window.sequenceWaas ? await window.sequenceWaas.isSignedIn() : false;
                 if (!signedIn || !window.currentWalletAddress) {
                     swapGasSponsored = null;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
-                    renderSwapGasBanner();
+                    renderConfirmGasBanner();
                     return;
                 }
                 const sessionAddress = await window.sequenceWaas.getAddress();
@@ -2475,14 +2500,13 @@
                     swapGasSponsored = false;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
-                    renderSwapGasBanner();
+                    renderConfirmGasBanner();
                     return;
                 }
-                const usdcConfig = SWAP_TOKENS.USDC;
-                const dummyData = encodeSwapErc20Approve(window.currentWalletAddress, '0');
+                const tr = swapQuoteData.transactionRequest;
                 const resp = await window.sequenceWaas.feeOptions({
                     network: 'polygon',
-                    transactions: [{ to: usdcConfig.address, data: dummyData, value: '0' }],
+                    transactions: [{ to: tr.to, data: tr.data, value: tr.value || '0' }],
                 });
                 const feeOptions = resp.data?.feeOptions;
                 if (!feeOptions || feeOptions.length === 0) {
@@ -2501,7 +2525,7 @@
                 swapFeeTokenSymbol = null;
                 swapEstimatedFeeAmountWei = null;
             }
-            renderSwapGasBanner();
+            renderConfirmGasBanner();
         }
 
         // When the fee will be paid in USDC, caps how much USDC can be
@@ -2709,6 +2733,11 @@
                 document.getElementById('confirmToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
                 const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
                 document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
+                // The requoted transaction can differ from the one the gas
+                // banner was last checked against — reset it, then re-check
+                // against the fresh swapQuoteData (async, non-blocking).
+                resetConfirmGasBanner();
+                checkSwapGasStatus();
                 // Restart countdown
                 startCountdown();
             } catch (err) {
@@ -2739,10 +2768,14 @@
             const rate = (parseFloat(toAmount) / parseFloat(amount)).toFixed(6);
             document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
             resetSwipeState();
+            // Start hidden so a previous swap's gas status never flashes up
+            // for this one — checkSwapGasStatus() below fills it back in
+            // once it resolves.
+            resetConfirmGasBanner();
             document.getElementById('swapConfirmModal').classList.add('active');
             // Start countdown when modal opens
             startCountdown();
-            checkSwapGasStatus(); // refresh swap gas status every time this modal opens
+            checkSwapGasStatus(); // async, non-blocking — doesn't hold up the modal opening
             if (window.lucide) lucide.createIcons();
         };
 
@@ -2750,6 +2783,7 @@
             document.getElementById('swapConfirmModal').classList.remove('active');
             resetSwipeState();
             stopCountdown();
+            resetConfirmGasBanner();
         };
 
         function resetSwipeState() {
