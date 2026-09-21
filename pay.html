@@ -633,18 +633,35 @@
                 </div>
             </div>
 
-            <!-- Swap-only gas status banner. Separate from #gasWarning (Send) —
-                 swap keeps its own sponsorship read so it never shares state
-                 with window.isGasSponsored. Filled in asynchronously by
-                 checkSwapGasStatus() when this modal opens (or requotes) —
-                 starts hidden so it never shows stale info from a previous swap. -->
-            <div id="confirmGasBanner" class="hidden mb-4"></div>
+            <!-- Gas cost breakdown. Swap-only — separate from #gasWarning
+                 (Send) and never shares state with window.isGasSponsored.
+                 Filled in asynchronously by checkSwapGasStatus() when this
+                 modal opens (or requotes) — starts hidden so it never shows
+                 stale info from a previous swap. -->
+            <div id="confirmGasDetails" class="hidden bg-surface rounded-xl p-3 mb-4 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-muted">Estimated Gas Fee</span>
+                    <span id="confirmGasFee" class="text-xs font-medium text-primary">—</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-muted">Gas Fee Paid From</span>
+                    <span id="confirmGasPaidFrom" class="text-xs font-medium text-primary">—</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-muted">You Will Receive</span>
+                    <span id="confirmNetReceive" class="text-xs font-semibold text-emerald-500">—</span>
+                </div>
+            </div>
 
-            <!-- USDC-reserve-for-gas guard. Shown/hidden only by
-                 evaluateConfirmUsdcGuard() (called after checkSwapGasStatus()
-                 resolves) — blocks swipe-to-confirm when the typed amount
-                 would leave too little USDC to cover its own gas fee. -->
-            <div id="confirmUsdcWarning" class="hidden text-xs text-red-500 text-center mb-4"></div>
+            <!-- Shown when evaluateGasAmountGuard() auto-adjusts the typed
+                 amount down to leave room for its own gas fee. Persists for
+                 the rest of this modal opening once shown. -->
+            <p id="confirmAdjustedNotice" class="hidden text-[11px] text-muted text-center mb-4">Amount adjusted to leave room for gas.</p>
+
+            <!-- Only shown when the wallet's balance can't cover the gas fee
+                 at all, even after auto-adjusting — the one case
+                 evaluateGasAmountGuard() still blocks instead of adjusting. -->
+            <div id="confirmGasBlockedMsg" class="hidden text-xs text-red-500 text-center mb-4"></div>
 
             <!-- Swipe to Confirm -->
             <div class="swipe-container" id="swipeContainer">
@@ -2034,6 +2051,7 @@
         }
 
         window.sequenceWaas = sequenceWaas;
+        window.isSentTransactionResponse = isSentTransactionResponse;
 
         function showSendError(msg) {
             const el = document.getElementById('sendFormError');
@@ -2382,10 +2400,12 @@
         // null = unknown/not checked yet, true = confirmed sponsored,
         // false = confirmed NOT sponsored (fee paid from POL or USDC).
         let swapGasSponsored = null;
-        let swapFeeTokenSymbol = null; // symbol of the token the fee estimate is in, when not sponsored
-        let swapEstimatedFeeAmountWei = null; // fee estimate in that token's smallest unit, used only to warn/cap USDC-fee swaps
+        let swapFeeTokenSymbol = null; // 'POL' or 'USDC' (MATIC normalized to POL), the token the fee estimate is in, when not sponsored
+        let swapEstimatedFeeAmountWei = null; // fee estimate in that token's smallest unit
         let swapGasCheckId = 0; // bumped on every checkSwapGasStatus() call AND on closeSwapConfirmModal() — lets an in-flight check recognize it's been superseded (modal closed, or a newer check/requote started) and discard its result instead of overwriting fresher state
-        let swapConfirmBlocked = false; // true while the confirm modal's USDC-reserve-for-gas guard is blocking swipe-to-confirm
+        let swapConfirmBlocked = false; // true only when the wallet's balance can't cover its own gas fee at all — the one case the modal still blocks instead of auto-adjusting
+        let swapAutoAdjustCount = 0; // how many times evaluateGasAmountGuard() has auto-adjusted the amount this modal opening — reset in openSwapConfirmModal(), capped at 2 so a drifting fee estimate can't loop forever
+        let swapAmountWasAdjusted = false; // true once this modal opening has auto-adjusted the amount at least once — keeps the "Amount adjusted" notice visible even after the recheck confirms the new amount fits
 
         // Countdown state
         let countdownInterval = null;
@@ -2447,41 +2467,80 @@
             return null;
         }
 
-        // Renders into #confirmGasBanner (inside the swap confirm modal
-        // only) — the main swap screen never shows gas info.
-        function renderConfirmGasBanner() {
-            const banner = document.getElementById('confirmGasBanner');
-            if (!banner) return;
-            if (swapGasSponsored === true) {
-                banner.textContent = 'Gas fee is free for this swap.';
-                banner.className = 'gas-warning-sponsored mb-4';
-            } else if (swapGasSponsored === false) {
-                const feeLabel = swapFeeTokenSymbol ? ` from ${swapFeeTokenSymbol}` : '';
-                banner.textContent = `Gas fee for this swap is deducted${feeLabel}.`;
-                banner.className = 'gas-warning mb-4';
-            } else {
-                // Unknown yet (not checked, or still resolving) — stay hidden.
-                banner.className = 'hidden mb-4';
-                banner.textContent = '';
+        // 'POL'/'USDC' → decimals, normalizing the relayer's occasional
+        // 'MATIC' symbol to 'POL' (this app treats them as the same token).
+        function feeTokenDecimals(symbol) {
+            return symbol === 'USDC' ? SWAP_TOKENS.USDC.decimals : SWAP_TOKENS.POL.decimals;
+        }
+
+        function formatSwapAmountDisplay(amountStr) {
+            return parseFloat(amountStr).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
+        }
+
+        // Point 2 of the gas-details spec: sponsored keeps the full quoted
+        // amount; a fee taken from the DESTINATION token reduces what's
+        // received; a fee taken from the SOURCE token doesn't touch the
+        // destination amount at all (the source side is what gets
+        // auto-adjusted instead — see evaluateGasAmountGuard).
+        function computeNetReceiveAmount() {
+            if (!swapQuoteData) return '0.00';
+            const toDecimals = SWAP_TOKENS[swapTo].decimals;
+            const toAmountReadable = fromSwapWei(swapQuoteData.toAmount, toDecimals);
+            if (swapGasSponsored !== false || swapFeeTokenSymbol !== swapTo || !swapEstimatedFeeAmountWei) {
+                return formatSwapAmountDisplay(toAmountReadable);
+            }
+            const feeHuman = parseFloat(fromSwapWei(swapEstimatedFeeAmountWei, toDecimals));
+            const net = Math.max(0, parseFloat(toAmountReadable) - feeHuman);
+            return formatSwapAmountDisplay(net.toString());
+        }
+
+        // Renders the gas cost breakdown into #confirmGasDetails (inside the
+        // swap confirm modal only) — the main swap screen never shows gas
+        // info. Hidden until checkSwapGasStatus() has actually resolved.
+        function renderConfirmGasDetails() {
+            const block = document.getElementById('confirmGasDetails');
+            if (!block) return;
+            if (swapGasSponsored === null) {
+                block.classList.add('hidden');
                 return;
             }
-            banner.classList.remove('hidden');
+            const feeEl = document.getElementById('confirmGasFee');
+            const paidFromEl = document.getElementById('confirmGasPaidFrom');
+            const receiveEl = document.getElementById('confirmNetReceive');
+            if (swapGasSponsored === true) {
+                feeEl.textContent = 'Free';
+                paidFromEl.textContent = 'Gas Sponsor';
+            } else if (swapFeeTokenSymbol && swapEstimatedFeeAmountWei) {
+                feeEl.textContent = `${fromSwapWei(swapEstimatedFeeAmountWei, feeTokenDecimals(swapFeeTokenSymbol))} ${swapFeeTokenSymbol}`;
+                paidFromEl.textContent = swapFeeTokenSymbol;
+            } else {
+                feeEl.textContent = '—';
+                paidFromEl.textContent = '—';
+            }
+            receiveEl.textContent = `${computeNetReceiveAmount()} ${swapTo}`;
+            block.classList.remove('hidden');
         }
 
-        function resetConfirmGasBanner() {
-            const banner = document.getElementById('confirmGasBanner');
-            if (!banner) return;
-            banner.className = 'hidden mb-4';
-            banner.textContent = '';
+        function resetConfirmGasDetails() {
+            const block = document.getElementById('confirmGasDetails');
+            if (block) block.classList.add('hidden');
         }
 
-        // Shows/hides the modal's red USDC-reserve warning and blocks
-        // swipe-to-confirm while it's shown (both visually — dims + disables
-        // pointer events on the swipe track — and via the swapConfirmBlocked
-        // flag onSwipeStart() checks as a defense-in-depth backstop).
+        function renderAdjustedNotice() {
+            const el = document.getElementById('confirmAdjustedNotice');
+            if (el) el.classList.toggle('hidden', !swapAmountWasAdjusted);
+        }
+
+        // Shows/hides the modal's red "can't cover gas at all" message and
+        // blocks swipe-to-confirm while it's shown (both visually — dims +
+        // disables pointer events on the swipe track — and via the
+        // swapConfirmBlocked flag onSwipeStart() checks as a
+        // defense-in-depth backstop). This is the ONLY condition that
+        // blocks — everything else auto-adjusts instead (see
+        // evaluateGasAmountGuard).
         function setSwapConfirmBlocked(blocked, message) {
             swapConfirmBlocked = blocked;
-            const warningEl = document.getElementById('confirmUsdcWarning');
+            const warningEl = document.getElementById('confirmGasBlockedMsg');
             if (warningEl) {
                 if (blocked) {
                     warningEl.textContent = message;
@@ -2498,26 +2557,64 @@
             }
         }
 
-        // Shared by the modal guard (evaluateConfirmUsdcGuard, below) and
-        // handleSwapAction()'s own pre-flight check: when the fee will be
-        // paid in USDC, is the typed amount + fee + 10% buffer more than
-        // the wallet's USDC balance? Returns a warning message if so, or
-        // null if there's no such constraint (not a USDC-fee swap, no
-        // amount typed, or the balance covers it).
-        function usdcGasReserveWarning() {
-            if (swapFrom !== 'USDC' || swapGasSponsored !== false || swapFeeTokenSymbol !== 'USDC') return null;
-            const amount = parseFloat(document.getElementById('swapFromAmount').value.trim());
-            if (!amount) return null;
-            const maxForFee = getMaxUsdcSwapAmount();
-            if (maxForFee === null || amount <= maxForFee) return null;
-            return `Reserve some USDC for gas — max swappable is ${maxForFee.toFixed(2)} USDC.`;
+        // Generic (POL or USDC) replacement for the old USDC-only
+        // getMaxUsdcSwapAmount(): when the fee is paid in the token being
+        // swapped FROM, returns the max amount of it that can be swapped
+        // while leaving room for the fee (+10% buffer for estimate drift),
+        // floored to 6 decimals. Returns null when there's no such
+        // constraint (sponsored, fee paid in the destination token instead,
+        // or no estimate yet) — the source amount is never limited by a fee
+        // that comes out of the destination token.
+        function getMaxSwapAmountForGas() {
+            if (swapGasSponsored !== false || !swapFeeTokenSymbol || !swapEstimatedFeeAmountWei) return null;
+            if (swapFeeTokenSymbol !== swapFrom) return null;
+            const decimals = SWAP_TOKENS[swapFrom].decimals;
+            const feeHuman = parseFloat(fromSwapWei(swapEstimatedFeeAmountWei, decimals));
+            const balanceHuman = parseFloat(getSwapBalance(swapFrom) || '0');
+            return Math.floor((balanceHuman - feeHuman * 1.1) * 1e6) / 1e6;
         }
 
-        // Called after checkSwapGasStatus() resolves (every exit path) to
-        // apply that same USDC-reserve check to the confirm modal itself.
-        function evaluateConfirmUsdcGuard() {
-            const warning = usdcGasReserveWarning();
-            setSwapConfirmBlocked(!!warning, warning ? `${warning} Close this modal and lower the amount.` : '');
+        // Called after checkSwapGasStatus() resolves (every exit path).
+        // Auto-adjusts the typed amount down (rather than blocking) when
+        // the fee is paid in the token being swapped and the current
+        // amount would leave too little of it to also cover the fee —
+        // then requotes so the modal reflects the corrected amount. Only
+        // blocks outright when the balance can't cover the fee at all,
+        // and only retries the adjust/requote cycle up to 2 times per
+        // modal opening so a drifting fee estimate can't loop forever.
+        async function evaluateGasAmountGuard() {
+            const maxAmount = getMaxSwapAmountForGas();
+            if (maxAmount === null) {
+                setSwapConfirmBlocked(false);
+                renderAdjustedNotice();
+                return;
+            }
+            if (maxAmount <= 0) {
+                setSwapConfirmBlocked(true, 'Not enough balance to cover gas fees.');
+                renderAdjustedNotice();
+                return;
+            }
+            const amountInput = document.getElementById('swapFromAmount');
+            const currentAmount = parseFloat(amountInput.value.trim());
+            if (!currentAmount || currentAmount <= maxAmount) {
+                setSwapConfirmBlocked(false);
+                renderAdjustedNotice();
+                return;
+            }
+            if (swapAutoAdjustCount >= 2) {
+                // Stop retrying to avoid an endless adjust/requote loop —
+                // only a balance that can't cover the fee at all (handled
+                // above) blocks; this just leaves the amount as last set.
+                setSwapConfirmBlocked(false);
+                renderAdjustedNotice();
+                return;
+            }
+            swapAutoAdjustCount++;
+            swapAmountWasAdjusted = true;
+            amountInput.value = String(maxAmount);
+            setSwapConfirmBlocked(false);
+            renderAdjustedNotice();
+            await requoteInModal();
         }
 
         // Builds the exact transaction batch a swap will send — an ERC20
@@ -2564,8 +2661,8 @@
                 swapGasSponsored = null;
                 swapFeeTokenSymbol = null;
                 swapEstimatedFeeAmountWei = null;
-                renderConfirmGasBanner();
-                evaluateConfirmUsdcGuard();
+                renderConfirmGasDetails();
+                await evaluateGasAmountGuard();
                 return;
             }
             try {
@@ -2575,8 +2672,8 @@
                     swapGasSponsored = null;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
-                    renderConfirmGasBanner();
-                    evaluateConfirmUsdcGuard();
+                    renderConfirmGasDetails();
+                    await evaluateGasAmountGuard();
                     return;
                 }
                 const sessionAddress = await window.sequenceWaas.getAddress();
@@ -2588,8 +2685,8 @@
                     swapGasSponsored = false;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
-                    renderConfirmGasBanner();
-                    evaluateConfirmUsdcGuard();
+                    renderConfirmGasDetails();
+                    await evaluateGasAmountGuard();
                     return;
                 }
                 const transactions = await buildSwapTransactions(swapQuoteData, window.currentWalletAddress);
@@ -2607,7 +2704,12 @@
                 } else {
                     swapGasSponsored = false;
                     const picked = pickSwapFeeOption(feeOptions) || feeOptions[0];
-                    swapFeeTokenSymbol = picked?.token?.symbol || null;
+                    // Normalize 'MATIC' to 'POL' right at the source so every
+                    // downstream comparison (getMaxSwapAmountForGas,
+                    // computeNetReceiveAmount, display) can compare directly
+                    // against swapFrom/swapTo without its own alias handling.
+                    const rawSymbol = picked?.token?.symbol || null;
+                    swapFeeTokenSymbol = rawSymbol === 'MATIC' ? 'POL' : rawSymbol;
                     swapEstimatedFeeAmountWei = picked?.value ?? null;
                 }
             } catch (err) {
@@ -2617,24 +2719,8 @@
                 swapFeeTokenSymbol = null;
                 swapEstimatedFeeAmountWei = null;
             }
-            renderConfirmGasBanner();
-            evaluateConfirmUsdcGuard();
-        }
-
-        // When the fee will be paid in USDC, caps how much USDC can be
-        // swapped so enough is left to actually cover that fee. Returns null
-        // when there's no USDC-fee constraint to apply.
-        function getMaxUsdcSwapAmount() {
-            if (swapGasSponsored !== false || swapFeeTokenSymbol !== 'USDC' || !swapEstimatedFeeAmountWei) return null;
-            try {
-                const usdcBalanceWei = BigInt(toSwapWei(String(getSwapBalance('USDC') || '0'), 6));
-                const feeWei = BigInt(swapEstimatedFeeAmountWei);
-                const reserveWei = feeWei + (feeWei / 10n); // +10% buffer for estimate drift
-                if (usdcBalanceWei <= reserveWei) return 0;
-                return parseFloat(fromSwapWei((usdcBalanceWei - reserveWei).toString(), 6));
-            } catch (e) {
-                return null;
-            }
+            renderConfirmGasDetails();
+            await evaluateGasAmountGuard();
         }
 
         window.flipSwapTokens = function () {
@@ -2695,15 +2781,9 @@
                 errorEl.classList.remove('hidden');
                 return;
             }
-            if (swapFrom === 'USDC') {
-                const maxForFee = getMaxUsdcSwapAmount();
-                if (maxForFee !== null && parseFloat(amount) > maxForFee) {
-                    resetSwapQuote();
-                    errorEl.textContent = `Reserve some USDC for gas — max swappable right now is ${maxForFee.toFixed(2)} USDC.`;
-                    errorEl.classList.remove('hidden');
-                    return;
-                }
-            }
+            // No gas-reserve warning here — the confirm modal auto-adjusts
+            // the amount for a source-token gas fee instead of blocking the
+            // main screen (see evaluateGasAmountGuard).
             const btn = document.getElementById('swapActionBtn');
             btn.disabled = true;
             btn.textContent = 'Fetching quote...';
@@ -2822,19 +2902,23 @@
                 if (!res.ok) throw new Error(data.error || 'Quote failed');
                 swapQuoteData = data;
                 const toAmountReadable = fromSwapWei(data.toAmount, SWAP_TOKENS[swapTo].decimals);
-                // Update modal display
+                // Update modal display. #confirmFromAmount is included since
+                // this amount can be the caller's own auto-adjusted value
+                // (evaluateGasAmountGuard), not just a countdown refresh.
+                document.getElementById('confirmFromAmount').textContent = amount;
                 document.getElementById('confirmToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
                 const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
                 document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
                 // The requoted transaction can differ from the one the gas
-                // banner/USDC guard were last checked against — reset both,
-                // then re-check against the fresh swapQuoteData (async,
-                // non-blocking). checkSwapGasStatus() bumps swapGasCheckId
-                // itself, so any in-flight check from before this requote
-                // is discarded when it resolves.
-                resetConfirmGasBanner();
+                // details/guard were last checked against — reset both,
+                // then re-check against the fresh swapQuoteData (awaited so
+                // a chained auto-adjust from evaluateGasAmountGuard settles
+                // before this call returns). checkSwapGasStatus() bumps
+                // swapGasCheckId itself, so any in-flight check from before
+                // this requote is discarded when it resolves.
+                resetConfirmGasDetails();
                 setSwapConfirmBlocked(false);
-                checkSwapGasStatus();
+                await checkSwapGasStatus();
                 // Restart countdown
                 startCountdown();
             } catch (err) {
@@ -2865,11 +2949,15 @@
             const rate = (parseFloat(toAmount) / parseFloat(amount)).toFixed(6);
             document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
             resetSwipeState();
-            // Start hidden/unblocked so a previous swap's gas status or
-            // USDC-reserve warning never flashes up for this one —
-            // checkSwapGasStatus() below fills them back in once it resolves.
-            resetConfirmGasBanner();
+            // Reset all per-opening gas state so a previous swap's details,
+            // block state, or adjust history never leak into this one —
+            // checkSwapGasStatus() below fills the details back in once it
+            // resolves.
+            resetConfirmGasDetails();
             setSwapConfirmBlocked(false);
+            swapAutoAdjustCount = 0;
+            swapAmountWasAdjusted = false;
+            renderAdjustedNotice();
             document.getElementById('swapConfirmModal').classList.add('active');
             // Start countdown when modal opens
             startCountdown();
@@ -2881,10 +2969,12 @@
             document.getElementById('swapConfirmModal').classList.remove('active');
             resetSwipeState();
             stopCountdown();
-            resetConfirmGasBanner();
+            resetConfirmGasDetails();
             setSwapConfirmBlocked(false);
+            swapAmountWasAdjusted = false;
+            renderAdjustedNotice();
             // Invalidate any checkSwapGasStatus() still in flight so a late
-            // result can't resurrect the banner/guard after the modal closed.
+            // result can't resurrect the gas details/guard after the modal closed.
             swapGasCheckId++;
         };
 
@@ -2915,7 +3005,7 @@
 
         function onSwipeStart(e) {
             // Backstop for setSwapConfirmBlocked()'s pointer-events:none —
-            // never let a swipe start while the USDC-reserve guard is up.
+            // never let a swipe start while the balance can't cover gas at all.
             if (swapConfirmBlocked) return;
             e.preventDefault();
             isSwiping = true;
@@ -2991,14 +3081,20 @@
             errorEl.classList.add('hidden');
             btn.disabled = true;
             try {
-                // Same USDC-reserve-for-gas guard the confirm modal shows
-                // (evaluateConfirmUsdcGuard) — re-checked here as the actual
-                // pre-flight, in case state went stale between the modal's
-                // last check and the swipe (e.g. the async check was still
-                // resolving, or a balance/quote changed underneath it).
-                const usdcWarning = usdcGasReserveWarning();
-                if (usdcWarning) {
-                    throw new Error(usdcWarning);
+                // Same gas-reserve guard the confirm modal enforces
+                // (evaluateGasAmountGuard/getMaxSwapAmountForGas) —
+                // re-checked here as the actual pre-flight, in case state
+                // went stale between the modal's last check and the swipe
+                // (e.g. the async check was still resolving, or a
+                // balance/quote changed underneath it). By this point the
+                // modal should already have auto-adjusted the amount to fit,
+                // so this is a backstop, not the primary mechanism.
+                const maxAmount = getMaxSwapAmountForGas();
+                if (maxAmount !== null) {
+                    const currentAmount = parseFloat(document.getElementById('swapFromAmount').value.trim());
+                    if (maxAmount <= 0 || currentAmount > maxAmount) {
+                        throw new Error('Not enough balance to cover gas fees.');
+                    }
                 }
 
                 const amount = document.getElementById('swapFromAmount').value.trim();
@@ -3016,23 +3112,32 @@
 
                 btn.textContent = swapTransactions.length > 1 ? 'Approving & swapping...' : 'Swapping...';
                 const swapTx = await executeSwapTx(swapTransactions);
-                const toAmountDisplayed = document.getElementById('swapToAmount').textContent;
+
+                // Never show a success toast or record a transaction without
+                // a real tx hash — a sent-but-unconfirmed response with no
+                // hash is not a confirmed swap.
+                const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
+                if (!txHash) {
+                    console.error('Swap sent but no tx hash was returned:', swapTx);
+                    throw new Error('Swap was not sent — please try again.');
+                }
+
+                // Read the gross swapped-to amount from the quote that was
+                // actually executed, not the main screen's #swapToAmount
+                // text — which can go stale after an auto-adjusted requote
+                // updates swapQuoteData without touching that element.
+                const toAmountDisplayed = fromSwapWei(swapQuoteData.toAmount, SWAP_TOKENS[swapTo].decimals);
                 showToast(`Swapped ${amount} ${swapFrom} to ${swapTo}!`);
 
                 if (window.recordTransaction) {
-                    const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
-                    if (txHash) {
-                        window.recordTransactionWithGasRetry({
-                            hash: txHash,
-                            type: 'swap',
-                            token: swapFrom,
-                            amount,
-                            to_token: swapTo,
-                            to_amount: toAmountDisplayed,
-                        }, swapTx?.receipt, txHash);
-                    } else {
-                        console.warn('Could not determine swap tx hash — transaction not recorded:', swapTx);
-                    }
+                    window.recordTransactionWithGasRetry({
+                        hash: txHash,
+                        type: 'swap',
+                        token: swapFrom,
+                        amount,
+                        to_token: swapTo,
+                        to_amount: toAmountDisplayed,
+                    }, swapTx?.receipt, txHash);
                 }
 
                 document.getElementById('swapFromAmount').value = '';
@@ -3077,6 +3182,14 @@
                     transactionsFeeOption: feeOption,
                     transactionsFeeQuote: resp.data?.feeQuote,
                 });
+            }
+            // Covers both branches above: a response that isn't actually a
+            // sent-transaction response (e.g. a silently-swallowed error
+            // shaped like success) must never be treated as one — that was
+            // the root cause of a fake "Swapped!" toast with nothing sent.
+            if (!window.isSentTransactionResponse(tx)) {
+                console.error('Sequence did not return a sent-transaction response:', tx);
+                throw new Error('Swap was not sent — please try again.');
             }
             if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
                 throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');
