@@ -490,6 +490,11 @@
                     <p class="text-sm font-semibold text-primary">Swap Tokens</p>
                 </div>
 
+                <!-- Swap-only gas status banner. Separate from #gasWarning (Send) —
+                     swap keeps its own sponsorship read so it never shares state
+                     with window.isGasSponsored. -->
+                <div id="swapGasBanner" class="hidden mb-3"></div>
+
                 <!-- You Pay -->
                 <div class="swap-inner p-4 mb-1 relative z-[2]">
                     <div class="flex items-center justify-between">
@@ -2468,6 +2473,15 @@
         let swapDebounceTimer = null;
         let swapQuoteToken = 0;
 
+        // Swap's own gas-sponsorship read. Deliberately NOT window.isGasSponsored —
+        // that variable belongs to the Send flow (see checkGasSponsorship above,
+        // untouched here) and swap must never read or write it.
+        // null = unknown/not checked yet, true = confirmed sponsored,
+        // false = confirmed NOT sponsored (fee paid from POL or USDC).
+        let swapGasSponsored = null;
+        let swapFeeTokenSymbol = null; // symbol of the token the fee estimate is in, when not sponsored
+        let swapEstimatedFeeAmountWei = null; // fee estimate in that token's smallest unit, used only to warn/cap USDC-fee swaps
+
         // Countdown state
         let countdownInterval = null;
         let countdownRemaining = 30;
@@ -2488,8 +2502,128 @@
             document.getElementById('swapToLogo').src = SWAP_TOKENS[swapTo].logo;
             document.getElementById('swapFromBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapFrom)).toFixed(2)}`;
             document.getElementById('swapToBalance').textContent = `Balance: ${parseFloat(getSwapBalance(swapTo)).toFixed(2)}`;
+            // Refresh the swap-only gas banner every time balances/tokens
+            // re-render (wallet connect, balance refresh, flip) — mirrors
+            // how Send re-checks checkGasSponsorship() on its own triggers.
+            checkSwapGasStatus();
         }
         window.renderSwapTokens = renderSwapTokens;
+
+        // Picks a fee option whose token the wallet can actually afford,
+        // POL/MATIC first then USDC — fixes "endpoint error" swap failures
+        // where feeOptions.find(POL) || feeOptions[0] blindly picked POL (or
+        // whatever came first) even with ~0 POL balance. Returns null if no
+        // option is affordable.
+        function pickSwapFeeOption(feeOptions) {
+            const balances = window.currentBalances || {};
+            const bySymbol = {};
+            (feeOptions || []).forEach(opt => {
+                const sym = opt?.token?.symbol;
+                if (sym && opt.value != null && !bySymbol[sym]) bySymbol[sym] = opt;
+            });
+
+            const isAffordable = (option, humanBalance, decimals) => {
+                if (!option) return false;
+                try {
+                    const feeWei = BigInt(option.value);
+                    const balanceWei = BigInt(toSwapWei(String(humanBalance || '0'), decimals));
+                    return balanceWei >= feeWei;
+                } catch (e) {
+                    return false;
+                }
+            };
+
+            const polOption = bySymbol['POL'] || bySymbol['MATIC'];
+            if (isAffordable(polOption, balances.pol, 18)) return polOption;
+
+            const usdcOption = bySymbol['USDC'];
+            if (isAffordable(usdcOption, balances.usdc, 6)) return usdcOption;
+
+            return null;
+        }
+
+        function renderSwapGasBanner() {
+            const banner = document.getElementById('swapGasBanner');
+            if (!banner) return;
+            if (swapGasSponsored === true) {
+                banner.textContent = 'Gas-free swap — network fees are covered by Netlink.';
+                banner.className = 'gas-warning-sponsored mb-3';
+            } else if (swapGasSponsored === false) {
+                const feeLabel = swapFeeTokenSymbol ? ` from ${swapFeeTokenSymbol}` : '';
+                banner.textContent = `Gas fee for this swap is deducted${feeLabel}.`;
+                banner.className = 'gas-warning mb-3';
+            } else {
+                banner.className = 'hidden mb-3';
+                return;
+            }
+            banner.classList.remove('hidden');
+        }
+
+        // Swap-only sponsorship check. Calls feeOptions() with a swap-shaped
+        // transaction and keeps the answer in the local swapGasSponsored
+        // variable above — never window.isGasSponsored, which is Send's.
+        async function checkSwapGasStatus() {
+            try {
+                const signedIn = window.sequenceWaas ? await window.sequenceWaas.isSignedIn() : false;
+                if (!signedIn || !window.currentWalletAddress) {
+                    swapGasSponsored = null;
+                    swapFeeTokenSymbol = null;
+                    swapEstimatedFeeAmountWei = null;
+                    renderSwapGasBanner();
+                    return;
+                }
+                const sessionAddress = await window.sequenceWaas.getAddress();
+                if (!sessionAddress || sessionAddress.toLowerCase() !== window.currentWalletAddress.toLowerCase()) {
+                    // Same session-mismatch risk documented for Send's
+                    // checkGasSponsorship — don't trust this session's
+                    // feeOptions() answer for a wallet it doesn't belong to.
+                    swapGasSponsored = false;
+                    swapFeeTokenSymbol = null;
+                    swapEstimatedFeeAmountWei = null;
+                    renderSwapGasBanner();
+                    return;
+                }
+                const usdcConfig = SWAP_TOKENS.USDC;
+                const dummyData = encodeSwapErc20Approve(window.currentWalletAddress, '0');
+                const resp = await window.sequenceWaas.feeOptions({
+                    network: 'polygon',
+                    transactions: [{ to: usdcConfig.address, data: dummyData, value: '0' }],
+                });
+                const feeOptions = resp.data?.feeOptions;
+                if (!feeOptions || feeOptions.length === 0) {
+                    swapGasSponsored = true;
+                    swapFeeTokenSymbol = null;
+                    swapEstimatedFeeAmountWei = null;
+                } else {
+                    swapGasSponsored = false;
+                    const picked = pickSwapFeeOption(feeOptions) || feeOptions[0];
+                    swapFeeTokenSymbol = picked?.token?.symbol || null;
+                    swapEstimatedFeeAmountWei = picked?.value ?? null;
+                }
+            } catch (err) {
+                console.warn('Could not check swap gas status:', err);
+                swapGasSponsored = null;
+                swapFeeTokenSymbol = null;
+                swapEstimatedFeeAmountWei = null;
+            }
+            renderSwapGasBanner();
+        }
+
+        // When the fee will be paid in USDC, caps how much USDC can be
+        // swapped so enough is left to actually cover that fee. Returns null
+        // when there's no USDC-fee constraint to apply.
+        function getMaxUsdcSwapAmount() {
+            if (swapGasSponsored !== false || swapFeeTokenSymbol !== 'USDC' || !swapEstimatedFeeAmountWei) return null;
+            try {
+                const usdcBalanceWei = BigInt(toSwapWei(String(getSwapBalance('USDC') || '0'), 6));
+                const feeWei = BigInt(swapEstimatedFeeAmountWei);
+                const reserveWei = feeWei + (feeWei / 10n); // +10% buffer for estimate drift
+                if (usdcBalanceWei <= reserveWei) return 0;
+                return parseFloat(fromSwapWei((usdcBalanceWei - reserveWei).toString(), 6));
+            } catch (e) {
+                return null;
+            }
+        }
 
         window.flipSwapTokens = function () {
             [swapFrom, swapTo] = [swapTo, swapFrom];
@@ -2548,6 +2682,15 @@
                 errorEl.textContent = 'Insufficient balance.';
                 errorEl.classList.remove('hidden');
                 return;
+            }
+            if (swapFrom === 'USDC') {
+                const maxForFee = getMaxUsdcSwapAmount();
+                if (maxForFee !== null && parseFloat(amount) > maxForFee) {
+                    resetSwapQuote();
+                    errorEl.textContent = `Reserve some USDC for gas — max swappable right now is ${maxForFee.toFixed(2)} USDC.`;
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
             }
             const btn = document.getElementById('swapActionBtn');
             btn.disabled = true;
@@ -2704,6 +2847,7 @@
             document.getElementById('swapConfirmModal').classList.add('active');
             // Start countdown when modal opens
             startCountdown();
+            checkSwapGasStatus(); // refresh swap gas status every time this modal opens
             if (window.lucide) lucide.createIcons();
         };
 
@@ -2816,6 +2960,13 @@
                 const amount = document.getElementById('swapFromAmount').value.trim();
                 const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
                 const fromTokenInfo = SWAP_TOKENS[swapFrom];
+                const tr = swapQuoteData.transactionRequest;
+                // Approve (if needed) and swap are batched into ONE
+                // sendTransaction call so they execute atomically and
+                // feeOptions()/feeQuote are resolved for the exact same
+                // batch that actually gets sent — instead of two separate
+                // fee quotes that could drift between the approve and swap.
+                const swapTransactions = [];
                 if (fromTokenInfo.address) {
                     btn.textContent = 'Checking approval...';
                     const allowance = await getSwapAllowance(
@@ -2824,14 +2975,14 @@
                         fromTokenInfo.address
                     );
                     if (allowance < BigInt(fromAmountWei)) {
-                        btn.textContent = 'Approve in wallet...';
                         const approveData = encodeSwapErc20Approve(swapQuoteData.approvalAddress, fromAmountWei);
-                        await executeSwapTx({ to: fromTokenInfo.address, data: approveData, value: '0' });
+                        swapTransactions.push({ to: fromTokenInfo.address, data: approveData, value: '0' });
                     }
                 }
-                btn.textContent = 'Swapping...';
-                const tr = swapQuoteData.transactionRequest;
-                const swapTx = await executeSwapTx({ to: tr.to, data: tr.data, value: tr.value || '0' });
+                swapTransactions.push({ to: tr.to, data: tr.data, value: tr.value || '0' });
+
+                btn.textContent = swapTransactions.length > 1 ? 'Approving & swapping...' : 'Swapping...';
+                const swapTx = await executeSwapTx(swapTransactions);
                 const toAmountDisplayed = document.getElementById('swapToAmount').textContent;
                 showToast(`Swapped ${amount} ${swapFrom} to ${swapTo}!`);
 
@@ -2866,23 +3017,31 @@
                 btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
             }
         };
-        async function executeSwapTx(transaction) {
-            const resp = await window.sequenceWaas.feeOptions({ network: 'polygon', transactions: [transaction] });
+        async function executeSwapTx(transactions) {
+            const resp = await window.sequenceWaas.feeOptions({ network: 'polygon', transactions: transactions });
             const feeOptions = resp.data?.feeOptions;
+            console.log(feeOptions);
 
             let tx;
             if (!feeOptions || feeOptions.length === 0) {
                 // Empty feeOptions = sponsored wallet/contract, send gas-free.
                 tx = await window.sequenceWaas.sendTransaction({
                     network: 'polygon',
-                    transactions: [transaction],
+                    transactions: transactions,
                 });
             } else {
-                const polFeeOption = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || feeOptions[0];
+                // Pick a fee option the wallet can actually afford (POL
+                // first, then USDC) instead of blindly taking POL/first —
+                // that blind pick is what caused "endpoint error" swap
+                // failures on wallets with ~0 POL.
+                const feeOption = pickSwapFeeOption(feeOptions);
+                if (!feeOption) {
+                    throw new Error('Not enough balance to cover gas fees. Top up POL or use a sponsored wallet.');
+                }
                 tx = await window.sequenceWaas.sendTransaction({
                     network: 'polygon',
-                    transactions: [transaction],
-                    transactionsFeeOption: polFeeOption,
+                    transactions: transactions,
+                    transactionsFeeOption: feeOption,
                     transactionsFeeQuote: resp.data?.feeQuote,
                 });
             }
