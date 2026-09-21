@@ -3400,19 +3400,21 @@
     <!-- Trails on-ramp (Sequence / Polygon) -- card -> crypto, delivered to the user's own wallet -->
     <script>
         // Client key is served by /api/trails-config from the TRAILS_API_KEY Vercel env var.
-        // Pinned to 0.18.6. Older builds (<=0.16.x, dist/umd) have no card on-ramp; from 0.17+ the browser build is dist/iife.
-        const TRAILS_CDN_URL = 'https://cdn.jsdelivr.net/npm/0xtrails@0.18.6/dist/iife/trails.min.js';
+        // Self-hosted bundle of 0xtrails@0.18.6 (see trails-build/). The official CDN builds are unusable:
+        // dist/umd is stuck at 0.16.2 (no card on-ramp) and dist/iife (0.17+) throws on load.
+        const TRAILS_SCRIPT_URL = '/shared/netlink-trails.js?v=1';
+        let trailsUnmount = null;
         const TRAILS_POLYGON_CHAIN_ID = 137;
 
         let trailsScriptPromise = null;
 
         function loadTrailsScript() {
-            if (window.TrailsWidget) return Promise.resolve();
+            if (window.NetlinkTrails) return Promise.resolve();
             if (trailsScriptPromise) return trailsScriptPromise;
             trailsScriptPromise = new Promise((resolve, reject) => {
                 const el = document.createElement('script');
-                el.src = TRAILS_CDN_URL;
-                el.onload = () => window.TrailsWidget ? resolve() : reject(new Error('Trails failed to initialise'));
+                el.src = TRAILS_SCRIPT_URL;
+                el.onload = () => window.NetlinkTrails ? resolve() : reject(new Error('Trails failed to initialise'));
                 el.onerror = () => { trailsScriptPromise = null; reject(new Error('Could not load the payment widget')); };
                 document.head.appendChild(el);
             });
@@ -3456,13 +3458,14 @@
                 await loadTrailsScript();
                 const token = document.getElementById('trailsTokenSelect').value;
                 const mount = document.getElementById('trailsMount');
+                if (trailsUnmount) { trailsUnmount(); trailsUnmount = null; }
                 mount.innerHTML = '';
                 document.getElementById('trailsSetup').classList.add('hidden');
                 document.getElementById('trailsWidgetWrap').classList.remove('hidden');
 
                 // fundOptions.fundMethodsList puts the card on-ramp ('cc-onramp' = Meld) and Stripe first.
                 // Other methods stay listed after them; Trails hides any provider not supported in the user's country.
-                window.TrailsWidget.render(mount, {
+                trailsUnmount = window.NetlinkTrails.render(mount, {
                     apiKey,
                     mode: 'fund',
                     toAddress: addr,
@@ -3491,6 +3494,7 @@
         }
 
         function resetTrailsOnramp() {
+            if (trailsUnmount) { trailsUnmount(); trailsUnmount = null; }
             document.getElementById('trailsMount').innerHTML = '';
             document.getElementById('trailsWidgetWrap').classList.add('hidden');
             document.getElementById('trailsSetup').classList.remove('hidden');
