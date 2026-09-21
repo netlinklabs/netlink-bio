@@ -2532,6 +2532,7 @@
         let swapAutoAdjustCount = 0; // how many times evaluateGasAmountGuard() has auto-adjusted the amount this modal opening — reset in openSwapConfirmModal(), capped at 2 so a drifting fee estimate can't loop forever
         let swapAmountWasAdjusted = false; // true once this modal opening has auto-adjusted the amount at least once — keeps the "Amount adjusted" notice visible even after the recheck confirms the new amount fits
         let swapGasFirstCheckDone = false; // true once the FIRST checkSwapGasStatus() result (any outcome — success, null, or error) has arrived for this modal opening. Reset in openSwapConfirmModal(). Gates the initial swipe lock/"Calculating fees…" label and tells renderConfirmGasDetails() whether a null result means "still loading" (keep "Estimating…") or "confirmed no answer" (show "—")
+        let swapRequoteInFlight = false; // true while requoteInModal() is fetching a fresh quote (30s countdown refresh, or an auto-adjust's requote) — locks swipe with an "Updating price…" label so a swipe can't fire against stale quote/transaction data mid-refresh
 
         // Countdown state
         let countdownInterval = null;
@@ -2709,21 +2710,26 @@
         }
 
         // Locks/unlocks swipe-to-confirm and swaps its hint label. Locked
-        // whenever the first gas check for this opening hasn't resolved yet
-        // ("Calculating fees…" — closes the gap where swipe was available
-        // before any guard had run) OR the balance can't cover gas at all
-        // (swapConfirmBlocked, via setSwapConfirmBlocked below).
+        // whenever any of: the first gas check for this opening hasn't
+        // resolved yet ("Calculating fees…" — closes the gap where swipe
+        // was available before any guard had run); the balance can't cover
+        // gas at all (swapConfirmBlocked, via setSwapConfirmBlocked below);
+        // or requoteInModal() is fetching a fresh quote ("Updating
+        // price…" — a swipe mid-refresh would act on stale quote/transaction
+        // data). Label reverts to "Slide to Swap Now" only once neither the
+        // first check nor a requote is still in flight.
         function updateSwipeLockUI() {
             const container = document.getElementById('swipeContainer');
             const hintText = container ? container.querySelector('.swipe-hint-text') : null;
             const calculating = !swapGasFirstCheckDone;
-            const locked = calculating || swapConfirmBlocked;
+            const locked = calculating || swapConfirmBlocked || swapRequoteInFlight;
             if (container) {
                 container.style.opacity = locked ? '0.5' : '';
                 container.style.pointerEvents = locked ? 'none' : '';
             }
             if (hintText) {
-                setTextIfChanged(hintText, calculating ? 'Calculating fees…' : 'Slide to Swap Now');
+                const label = calculating ? 'Calculating fees…' : (swapRequoteInFlight ? 'Updating price…' : 'Slide to Swap Now');
+                setTextIfChanged(hintText, label);
             }
         }
 
@@ -3102,6 +3108,11 @@
             const text = document.getElementById('countdownText');
             if (!address || !amount) return;
             text.textContent = 'Fetching latest price...';
+            // Locks swipe for the duration of this refresh — a swipe mid-
+            // requote could act on a quote/transaction that's about to be
+            // replaced. Always cleared in finally, success or failure.
+            swapRequoteInFlight = true;
+            updateSwipeLockUI();
             try {
                 const fromAmountWei = toSwapWei(amount, SWAP_TOKENS[swapFrom].decimals);
                 const url = `/api/lifi-quote?fromToken=${swapFrom}&toToken=${swapTo}&fromAmount=${fromAmountWei}&fromAddress=${address}`;
@@ -3134,6 +3145,9 @@
                 text.textContent = 'Could not refresh price — please try again';
                 // Restart countdown anyway to retry
                 setTimeout(startCountdown, 2000);
+            } finally {
+                swapRequoteInFlight = false;
+                updateSwipeLockUI();
             }
         }
 
@@ -3222,9 +3236,9 @@
         function onSwipeStart(e) {
             // Backstop for updateSwipeLockUI()'s pointer-events:none —
             // never let a swipe start while the first gas check for this
-            // opening is still running, or while the balance can't cover
-            // gas at all.
-            if (!swapGasFirstCheckDone || swapConfirmBlocked) return;
+            // opening is still running, while the balance can't cover gas
+            // at all, or while a requote is refreshing the quote.
+            if (!swapGasFirstCheckDone || swapConfirmBlocked || swapRequoteInFlight) return;
             e.preventDefault();
             isSwiping = true;
             const thumb = document.getElementById('swipeThumb');
@@ -3292,6 +3306,11 @@
         document.addEventListener('DOMContentLoaded', initSwipeButton);
 
         window.handleSwapAction = async function () {
+            // A requote is actively replacing swapQuoteData/the transaction
+            // it'll build from — never act on it mid-refresh. Swipe is
+            // already locked while this is true (updateSwipeLockUI), this
+            // is the same defense-in-depth backstop as onSwipeStart's.
+            if (swapRequoteInFlight) return;
             if (window.hasPendingDeletion) { showToast('Swapping is disabled while account deletion is pending'); closeSwapConfirmModal(); return; }
             if (!swapQuoteData) return;
             const btn = document.getElementById('swapActionBtn');
