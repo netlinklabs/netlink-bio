@@ -582,12 +582,8 @@
                         <p id="trailsAvailability" class="text-[10px] text-muted text-center mt-2"></p>
                     </div>
 
-                    <div id="trailsWidgetWrap" onclick="if(event.target===this) resetTrailsOnramp()" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.6); align-items:center; justify-content:center; padding:8px;">
-                        <div id="trailsPanel" style="position:relative; width:min(440px,100%); max-height:94vh; overflow-y:auto; overflow-x:hidden; border-radius:20px; padding:8px;">
-                            <button type="button" onclick="resetTrailsOnramp()" aria-label="Close" style="position:absolute; top:6px; right:10px; z-index:2; width:32px; height:32px; border-radius:16px; border:0; background:rgba(100,116,139,0.15); font-size:20px; line-height:1; cursor:pointer;">&times;</button>
-                            <div id="trailsMount" style="min-height:360px; max-width:100%;"></div>
-                        </div>
-                    </div>
+                    <!-- Off-screen host for the Trails <Fund> trigger. Its modal is position:fixed, so it still shows full-screen. -->
+                    <div id="trailsMount" style="position:absolute; left:-9999px; top:0; width:1px; height:1px; overflow:hidden;"></div>
 
                     <p class="text-[10px] text-muted text-center mt-3">Card payments are processed by third-party providers via Trails &middot; Availability depends on your country and card issuer.</p>
                 </div>
@@ -3400,38 +3396,50 @@
         }
     </script>
 
-    <style>
-        /* Keep the Trails widget inside the phone viewport */
-        #trailsMount, #trailsMount > * { max-width: 100% !important; box-sizing: border-box; }
-    </style>
     <!-- Trails on-ramp (Sequence / Polygon) -- card -> crypto, delivered to the user's own wallet -->
     <script>
         // Client key is served by /api/trails-config from the TRAILS_API_KEY Vercel env var.
         // Self-hosted bundle of 0xtrails@0.18.6 (see trails-build/). The official CDN builds are unusable:
         // dist/umd is stuck at 0.16.2 (no card on-ramp) and dist/iife (0.17+) throws on load.
-        const TRAILS_SCRIPT_URL = '/shared/netlink-trails.js?v=1';
+        const TRAILS_SCRIPT_URL = '/shared/netlink-trails.js?v=2';
         let trailsUnmount = null;
-        const TRAILS_POLYGON_CHAIN_ID = 137;
-
-        let trailsScriptPromise = null;
 
         function loadTrailsScript() {
             if (window.NetlinkTrails) return Promise.resolve();
-            if (trailsScriptPromise) return trailsScriptPromise;
-            trailsScriptPromise = new Promise((resolve, reject) => {
+            if (window.__trailsScriptPromise) return window.__trailsScriptPromise;
+            window.__trailsScriptPromise = new Promise((resolve, reject) => {
                 const el = document.createElement('script');
                 el.src = TRAILS_SCRIPT_URL;
                 el.onload = () => window.NetlinkTrails ? resolve() : reject(new Error('Trails failed to initialise'));
-                el.onerror = () => { trailsScriptPromise = null; reject(new Error('Could not load the payment widget')); };
+                el.onerror = () => { window.__trailsScriptPromise = null; reject(new Error('Could not load the payment widget')); };
                 document.head.appendChild(el);
             });
-            return trailsScriptPromise;
+            return window.__trailsScriptPromise;
         }
 
         function setTrailsError(msg) {
             const el = document.getElementById('trailsErrorMsg');
             el.textContent = msg || '';
             el.classList.toggle('hidden', !msg);
+        }
+
+        // Diagnostic: asks Trails which card providers are enabled for a country (same call the widget makes).
+        async function checkTrailsAvailability(apiKey, countryCode) {
+            const el = document.getElementById('trailsAvailability');
+            try {
+                const r = await fetch('https://trails-api.sequence.app/rpc/TrailsOnramp/GetOnrampProviderAvailability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
+                    body: JSON.stringify({ countryCode })
+                });
+                const data = await r.json();
+                const p = data && data.providers ? data.providers : null;
+                if (!p) { el.textContent = ''; return; }
+                const label = { meld: 'Card (Meld)', stripe: 'Card (Stripe)', mesh: 'Exchange', bluvo: 'Exchange (Bluvo)' };
+                el.textContent = countryCode + ' - ' + Object.keys(p).map(k => (label[k] || k) + ': ' + (p[k] && p[k].supported === false ? 'not available' : 'available')).join(' | ');
+            } catch (e) {
+                el.textContent = '';
+            }
         }
 
         async function startTrailsOnramp() {
@@ -3464,77 +3472,41 @@
                 if (!apiKey) throw new Error('Card purchase is not available right now.');
                 checkTrailsAvailability(apiKey, 'ID');
                 await loadTrailsScript();
+
                 const token = document.getElementById('trailsTokenSelect').value;
                 const mount = document.getElementById('trailsMount');
                 if (trailsUnmount) { trailsUnmount(); trailsUnmount = null; }
                 mount.innerHTML = '';
-                openTrailsOverlay();
 
-                // fundOptions.fundMethodsList puts the card on-ramp ('cc-onramp' = Meld) and Stripe first.
-                // Other methods stay listed after them; Trails hides any provider not supported in the user's country.
-                trailsUnmount = window.NetlinkTrails.render(mount, {
+                // Documented <Fund> component (docs.trails.build/sdk/modes/fund): card on-ramp, recipient = user's wallet.
+                trailsUnmount = window.NetlinkTrails.renderFund(mount, {
                     apiKey,
-                    mode: 'fund',
-                    toAddress: addr,
-                    toChainId: TRAILS_POLYGON_CHAIN_ID,
-                    toToken: token,
-                    // Open the card on-ramp (Meld) directly instead of the wallet list (demo: Fund Method = "Onramp (Meld)").
-                    fundMethod: 'onramp',
-                    fundOptions: { fiatCurrency: 'USD', fiatAmount: '25', paymentMethodType: 'CREDIT_DEBIT_CARD' },
-                    renderInline: true,
+                    paymentMethod: 'CREDIT_DEBIT_CARD',
+                    from: { currency: 'USD', amount: 25 },
+                    to: { recipient: addr, token, chain: 'polygon' },
                     theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-                    onCheckoutComplete: () => {
+                    onFundingSuccess: () => {
                         showToast('Purchase complete! Your balance will update shortly.');
                         if (typeof fetchWalletBalances === 'function') setTimeout(() => fetchWalletBalances(addr), 4000);
                     },
-                    onCheckoutError: ({ error } = {}) => {
+                    onFundingError: ({ error } = {}) => {
                         console.error('Trails error:', error);
                         showToast('Purchase failed. Please try again.');
                     }
-                });
+                }, 'trailsFundTrigger', 'Buy with card');
+
+                // Give React a moment to mount the trigger, then open the Trails modal.
+                setTimeout(() => {
+                    const trigger = document.getElementById('trailsFundTrigger');
+                    if (trigger) trigger.click();
+                    else setTrailsError('Could not open the payment window. Please try again.');
+                }, 400);
             } catch (err) {
                 console.error(err);
-                resetTrailsOnramp();
                 setTrailsError(err.message || 'Something went wrong. Please try again.');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Buy with card';
-            }
-        }
-
-        function resetTrailsOnramp() {
-            if (trailsUnmount) { trailsUnmount(); trailsUnmount = null; }
-            document.getElementById('trailsMount').innerHTML = '';
-            document.getElementById('trailsWidgetWrap').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        function openTrailsOverlay() {
-            const dark = document.documentElement.classList.contains('dark');
-            document.getElementById('trailsPanel').style.background = dark ? '#1e293b' : '#ffffff';
-            document.getElementById('trailsWidgetWrap').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // Diagnostic: asks Trails which card providers are enabled for a country (same call the widget makes).
-        async function checkTrailsAvailability(apiKey, countryCode) {
-            const el = document.getElementById('trailsAvailability');
-            try {
-                const r = await fetch('https://trails-api.sequence.app/rpc/TrailsOnramp/GetOnrampProviderAvailability', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
-                    body: JSON.stringify({ countryCode })
-                });
-                const data = await r.json();
-                console.log('[trails] availability', countryCode, data);
-                const p = data && data.providers ? data.providers : null;
-                if (!p) { el.textContent = 'Card availability: unknown'; return; }
-                const label = { meld: 'Card (Meld)', stripe: 'Card (Stripe)', mesh: 'Exchange', bluvo: 'Exchange (Bluvo)' };
-                const parts = Object.keys(p).map(k => (label[k] || k) + ': ' + (p[k] && p[k].supported === false ? 'not available' : 'available'));
-                el.textContent = countryCode + ' - ' + parts.join(' | ');
-            } catch (e) {
-                console.warn('[trails] availability check failed', e);
-                el.textContent = '';
             }
         }
     </script>
