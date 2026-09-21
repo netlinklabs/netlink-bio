@@ -3482,7 +3482,10 @@
                 trailsHandle = window.NetlinkTrails.renderFund(mount, {
                     apiKey,
                     paymentMethod: 'CREDIT_DEBIT_CARD',
-                    from: { currency: 'USD', amount: 25 },
+                    from: { currency: 'USD' },   // no preset amount: the user types their own
+                    hideSwap: true,              // swap needs wallet signing, which this read-only wallet does not offer
+                    // The Trails modal is centered and not scrollable; long content (provider list + fee details) gets cut off at the top.
+                    customCss: '.trails-modal-frame{max-height:96vh;max-height:96dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}',
                     to: { recipient: addr, token, chain: 'polygon' },
                     // Host-owned wallet: the widget uses the Netlink Pay address (read-only) instead of asking to connect a web3 wallet.
                     hostWallet: { address: addr, chainId: 137 },
