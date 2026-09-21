@@ -3401,7 +3401,7 @@
         // Client key is served by /api/trails-config from the TRAILS_API_KEY Vercel env var.
         // Self-hosted bundle of 0xtrails@0.18.6 (see trails-build/). The official CDN builds are unusable:
         // dist/umd is stuck at 0.16.2 (no card on-ramp) and dist/iife (0.17+) throws on load.
-        const TRAILS_SCRIPT_URL = '/shared/netlink-trails.js?v=3';
+        const TRAILS_SCRIPT_URL = '/shared/netlink-trails.js?v=4';
         let trailsHandle = null;
 
         function loadTrailsScript() {
@@ -3484,6 +3484,8 @@
                     paymentMethod: 'CREDIT_DEBIT_CARD',
                     from: { currency: 'USD', amount: 25 },
                     to: { recipient: addr, token, chain: 'polygon' },
+                    // Host-owned wallet: the widget uses the Netlink Pay address (read-only) instead of asking to connect a web3 wallet.
+                    hostWallet: { address: addr, chainId: 137 },
                     theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
                     onFundingSuccess: () => {
                         showToast('Purchase complete! Your balance will update shortly.');
