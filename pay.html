@@ -345,6 +345,22 @@
         .gas-warning-sponsored { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
         html.dark .gas-warning-sponsored { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399; }
 
+        /* === Swap confirm modal — gas details block (swap-only, separate
+           from Send's #gasWarning/.gas-warning above). The block itself is
+           never hidden once the modal is open, so these only affect its
+           text/opacity, never layout height. === */
+        /* Opacity-only (no color) so it composes cleanly with .text-primary,
+           whose dark-mode rule uses !important and would otherwise mask a
+           color-based dim/pulse effect here. */
+        .gas-estimating { animation: gasEstimatePulse 1.4s ease-in-out infinite; }
+        @keyframes gasEstimatePulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.85; } }
+        .gas-value-fading { opacity: 0.5; transition: opacity 0.15s ease; }
+        .confirm-status-slot { min-height: 20px; opacity: 0; transition: opacity 0.15s ease; color: #64748b; }
+        html.dark .confirm-status-slot { color: #94a3b8; }
+        .confirm-status-slot.status-visible { opacity: 1; }
+        .confirm-status-slot.status-warning { color: #ef4444; }
+        html.dark .confirm-status-slot.status-warning { color: #f87171; }
+
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -635,33 +651,37 @@
 
             <!-- Gas cost breakdown. Swap-only — separate from #gasWarning
                  (Send) and never shares state with window.isGasSponsored.
-                 Filled in asynchronously by checkSwapGasStatus() when this
-                 modal opens (or requotes) — starts hidden so it never shows
-                 stale info from a previous swap. -->
-            <div id="confirmGasDetails" class="hidden bg-surface rounded-xl p-3 mb-4 space-y-2">
+                 ALWAYS visible once the modal is open (never hidden or
+                 display:none again) so the modal's height never changes
+                 after it appears. Starts with "Estimating…" placeholders on
+                 the fee/paid-from rows (pulse style via .gas-estimating)
+                 plus the already-known quote amount on "You Will Receive";
+                 checkSwapGasStatus() then updates the text in place —
+                 during a requote/auto-adjust re-check it dims the existing
+                 values (.gas-value-fading) instead of blanking them. -->
+            <div id="confirmGasDetails" class="bg-surface rounded-xl p-3 mb-4 space-y-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-muted">Estimated Gas Fee</span>
-                    <span id="confirmGasFee" class="text-xs font-medium text-primary">—</span>
+                    <span id="confirmGasFee" class="text-xs font-medium text-primary gas-estimating">Estimating…</span>
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-muted">Gas Fee Paid From</span>
-                    <span id="confirmGasPaidFrom" class="text-xs font-medium text-primary">—</span>
+                    <span id="confirmGasPaidFrom" class="text-xs font-medium text-primary gas-estimating">Estimating…</span>
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-muted">You Will Receive</span>
-                    <span id="confirmNetReceive" class="text-xs font-semibold text-emerald-500">—</span>
+                    <span id="confirmNetReceive" class="text-xs font-semibold text-emerald-500">0.00</span>
                 </div>
             </div>
 
-            <!-- Shown when evaluateGasAmountGuard() auto-adjusts the typed
-                 amount down to leave room for its own gas fee. Persists for
-                 the rest of this modal opening once shown. -->
-            <p id="confirmAdjustedNotice" class="hidden text-[11px] text-muted text-center mb-4">Amount adjusted to leave room for gas.</p>
-
-            <!-- Only shown when the wallet's balance can't cover the gas fee
-                 at all, even after auto-adjusting — the one case
-                 evaluateGasAmountGuard() still blocks instead of adjusting. -->
-            <div id="confirmGasBlockedMsg" class="hidden text-xs text-red-500 text-center mb-4"></div>
+            <!-- Single fixed-height status slot shared by the "amount
+                 adjusted" notice and the "can't cover gas at all" message
+                 (setSwapConfirmBlocked()/evaluateGasAmountGuard(), via
+                 refreshStatusSlot()) — never display:none/hidden, so its
+                 space is always reserved; empty state is opacity:0
+                 (.confirm-status-slot's own default), shown via
+                 .status-visible. -->
+            <p id="confirmStatusSlot" class="confirm-status-slot text-[11px] text-center mb-4"></p>
 
             <!-- Swipe to Confirm -->
             <div class="swipe-container" id="swipeContainer">
@@ -2406,6 +2426,7 @@
         let swapConfirmBlocked = false; // true only when the wallet's balance can't cover its own gas fee at all — the one case the modal still blocks instead of auto-adjusting
         let swapAutoAdjustCount = 0; // how many times evaluateGasAmountGuard() has auto-adjusted the amount this modal opening — reset in openSwapConfirmModal(), capped at 2 so a drifting fee estimate can't loop forever
         let swapAmountWasAdjusted = false; // true once this modal opening has auto-adjusted the amount at least once — keeps the "Amount adjusted" notice visible even after the recheck confirms the new amount fits
+        let swapGasFirstCheckDone = false; // true once the FIRST checkSwapGasStatus() result (any outcome — success, null, or error) has arrived for this modal opening. Reset in openSwapConfirmModal(). Gates the initial swipe lock/"Calculating fees…" label and tells renderConfirmGasDetails() whether a null result means "still loading" (keep "Estimating…") or "confirmed no answer" (show "—")
 
         // Countdown state
         let countdownInterval = null;
@@ -2494,67 +2515,122 @@
             return formatSwapAmountDisplay(net.toString());
         }
 
+        // Only writes textContent when it's actually changing — avoids
+        // pointless reflows/flicker on a re-render that lands on the same
+        // value (e.g. two requotes in a row with an identical fee).
+        function setTextIfChanged(el, text) {
+            if (el && el.textContent !== text) el.textContent = text;
+        }
+
+        // Dims (or un-dims) the three gas-detail value cells in place —
+        // used while a requote/auto-adjust re-check is running, so the old
+        // values stay visible (not blanked) until the new ones arrive.
+        function setGasRowLoading(loading) {
+            ['confirmGasFee', 'confirmGasPaidFrom', 'confirmNetReceive'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('gas-value-fading', loading);
+            });
+        }
+
         // Renders the gas cost breakdown into #confirmGasDetails (inside the
         // swap confirm modal only) — the main swap screen never shows gas
-        // info. Hidden until checkSwapGasStatus() has actually resolved.
+        // info. The block itself is never hidden; this only ever changes
+        // text/classes on its three value spans, in place, so the modal's
+        // height stays constant across every check/requote/auto-adjust.
         function renderConfirmGasDetails() {
-            const block = document.getElementById('confirmGasDetails');
-            if (!block) return;
-            if (swapGasSponsored === null) {
-                block.classList.add('hidden');
-                return;
-            }
             const feeEl = document.getElementById('confirmGasFee');
             const paidFromEl = document.getElementById('confirmGasPaidFrom');
             const receiveEl = document.getElementById('confirmNetReceive');
+            if (!feeEl || !paidFromEl || !receiveEl) return;
+            setGasRowLoading(false);
             if (swapGasSponsored === true) {
-                feeEl.textContent = 'Free';
-                paidFromEl.textContent = 'Gas Sponsor';
-            } else if (swapFeeTokenSymbol && swapEstimatedFeeAmountWei) {
-                feeEl.textContent = `${fromSwapWei(swapEstimatedFeeAmountWei, feeTokenDecimals(swapFeeTokenSymbol))} ${swapFeeTokenSymbol}`;
-                paidFromEl.textContent = swapFeeTokenSymbol;
+                feeEl.classList.remove('gas-estimating');
+                paidFromEl.classList.remove('gas-estimating');
+                setTextIfChanged(feeEl, 'Free');
+                setTextIfChanged(paidFromEl, 'Gas Sponsor');
+            } else if (swapGasSponsored === false && swapFeeTokenSymbol && swapEstimatedFeeAmountWei) {
+                feeEl.classList.remove('gas-estimating');
+                paidFromEl.classList.remove('gas-estimating');
+                setTextIfChanged(feeEl, `${fromSwapWei(swapEstimatedFeeAmountWei, feeTokenDecimals(swapFeeTokenSymbol))} ${swapFeeTokenSymbol}`);
+                setTextIfChanged(paidFromEl, swapFeeTokenSymbol);
+            } else if (swapGasFirstCheckDone) {
+                // A confirmed "no answer" (no session, mismatch, or error) —
+                // not still loading — so show a dash, not the pulsing
+                // placeholder, without touching the block's height.
+                feeEl.classList.remove('gas-estimating');
+                paidFromEl.classList.remove('gas-estimating');
+                setTextIfChanged(feeEl, '—');
+                setTextIfChanged(paidFromEl, '—');
             } else {
-                feeEl.textContent = '—';
-                paidFromEl.textContent = '—';
+                // Still waiting on the very first check for this opening.
+                feeEl.classList.add('gas-estimating');
+                paidFromEl.classList.add('gas-estimating');
+                setTextIfChanged(feeEl, 'Estimating…');
+                setTextIfChanged(paidFromEl, 'Estimating…');
             }
-            receiveEl.textContent = `${computeNetReceiveAmount()} ${swapTo}`;
-            block.classList.remove('hidden');
+            // "You Will Receive" always shows a real number (never a text
+            // placeholder) — it's known as soon as a quote exists.
+            setTextIfChanged(receiveEl, `${computeNetReceiveAmount()} ${swapTo}`);
         }
 
-        function resetConfirmGasDetails() {
-            const block = document.getElementById('confirmGasDetails');
-            if (block) block.classList.add('hidden');
-        }
-
-        function renderAdjustedNotice() {
-            const el = document.getElementById('confirmAdjustedNotice');
-            if (el) el.classList.toggle('hidden', !swapAmountWasAdjusted);
-        }
-
-        // Shows/hides the modal's red "can't cover gas at all" message and
-        // blocks swipe-to-confirm while it's shown (both visually — dims +
-        // disables pointer events on the swipe track — and via the
-        // swapConfirmBlocked flag onSwipeStart() checks as a
-        // defense-in-depth backstop). This is the ONLY condition that
-        // blocks — everything else auto-adjusts instead (see
-        // evaluateGasAmountGuard).
-        function setSwapConfirmBlocked(blocked, message) {
-            swapConfirmBlocked = blocked;
-            const warningEl = document.getElementById('confirmGasBlockedMsg');
-            if (warningEl) {
-                if (blocked) {
-                    warningEl.textContent = message;
-                    warningEl.classList.remove('hidden');
-                } else {
-                    warningEl.classList.add('hidden');
-                    warningEl.textContent = '';
-                }
+        // Writes into the one shared #confirmStatusSlot — kind is null
+        // (empty), 'info' (amount-adjusted notice) or 'warning' (blocked
+        // message). The slot keeps its reserved height either way; only
+        // opacity/color change.
+        function setConfirmStatusSlot(kind, message) {
+            const el = document.getElementById('confirmStatusSlot');
+            if (!el) return;
+            if (!kind) {
+                el.classList.remove('status-visible', 'status-warning');
+                setTextIfChanged(el, '');
+                return;
             }
+            el.classList.toggle('status-warning', kind === 'warning');
+            el.classList.add('status-visible');
+            setTextIfChanged(el, message);
+        }
+
+        // Single source of truth for what the status slot shows: the
+        // blocked message wins over the adjusted notice (blocking is the
+        // more urgent state), and it's empty when neither applies.
+        function refreshStatusSlot() {
+            if (swapConfirmBlocked) {
+                setConfirmStatusSlot('warning', 'Not enough balance to cover gas fees.');
+            } else if (swapAmountWasAdjusted) {
+                setConfirmStatusSlot('info', 'Amount adjusted to leave room for gas.');
+            } else {
+                setConfirmStatusSlot(null);
+            }
+        }
+
+        // Locks/unlocks swipe-to-confirm and swaps its hint label. Locked
+        // whenever the first gas check for this opening hasn't resolved yet
+        // ("Calculating fees…" — closes the gap where swipe was available
+        // before any guard had run) OR the balance can't cover gas at all
+        // (swapConfirmBlocked, via setSwapConfirmBlocked below).
+        function updateSwipeLockUI() {
             const container = document.getElementById('swipeContainer');
+            const hintText = container ? container.querySelector('.swipe-hint-text') : null;
+            const calculating = !swapGasFirstCheckDone;
+            const locked = calculating || swapConfirmBlocked;
             if (container) {
-                container.style.opacity = blocked ? '0.5' : '';
-                container.style.pointerEvents = blocked ? 'none' : '';
+                container.style.opacity = locked ? '0.5' : '';
+                container.style.pointerEvents = locked ? 'none' : '';
             }
+            if (hintText) {
+                setTextIfChanged(hintText, calculating ? 'Calculating fees…' : 'Slide to Swap Now');
+            }
+        }
+
+        // Sets whether the wallet's balance can't cover its own gas fee at
+        // all — the ONLY condition that blocks swipe-to-confirm outright
+        // (everything else auto-adjusts instead, see evaluateGasAmountGuard)
+        // — and refreshes both places that depend on it (the swipe
+        // lock/label and the status slot).
+        function setSwapConfirmBlocked(blocked) {
+            swapConfirmBlocked = blocked;
+            updateSwipeLockUI();
+            refreshStatusSlot();
         }
 
         // Generic (POL or USDC) replacement for the old USDC-only
@@ -2586,19 +2662,16 @@
             const maxAmount = getMaxSwapAmountForGas();
             if (maxAmount === null) {
                 setSwapConfirmBlocked(false);
-                renderAdjustedNotice();
                 return;
             }
             if (maxAmount <= 0) {
-                setSwapConfirmBlocked(true, 'Not enough balance to cover gas fees.');
-                renderAdjustedNotice();
+                setSwapConfirmBlocked(true);
                 return;
             }
             const amountInput = document.getElementById('swapFromAmount');
             const currentAmount = parseFloat(amountInput.value.trim());
             if (!currentAmount || currentAmount <= maxAmount) {
                 setSwapConfirmBlocked(false);
-                renderAdjustedNotice();
                 return;
             }
             if (swapAutoAdjustCount >= 2) {
@@ -2606,14 +2679,12 @@
                 // only a balance that can't cover the fee at all (handled
                 // above) blocks; this just leaves the amount as last set.
                 setSwapConfirmBlocked(false);
-                renderAdjustedNotice();
                 return;
             }
             swapAutoAdjustCount++;
             swapAmountWasAdjusted = true;
             amountInput.value = String(maxAmount);
-            setSwapConfirmBlocked(false);
-            renderAdjustedNotice();
+            setSwapConfirmBlocked(false); // unblocked while the requote runs — refreshStatusSlot() (inside) now shows the "adjusted" notice since swapAmountWasAdjusted is true
             await requoteInModal();
         }
 
@@ -2657,10 +2728,36 @@
         // never window.isGasSponsored, which is Send's.
         async function checkSwapGasStatus() {
             const myCheckId = ++swapGasCheckId;
+            const isFirstCheck = !swapGasFirstCheckDone;
+            if (!isFirstCheck) {
+                // Not the first check this modal opening (a requote or an
+                // auto-adjust triggered it) — dim the currently-shown
+                // values instead of blanking them while this re-check runs.
+                setGasRowLoading(true);
+            }
+            // Caps how long the FIRST check can hold the swipe lock. A slow
+            // Sequence/relayer round trip shouldn't leave swipe stuck on
+            // "Calculating fees…" indefinitely — after 8s, force-resolve to
+            // a neutral "—" and unlock, same as a confirmed null/error
+            // result. The real check below keeps running in the background
+            // regardless and can still correct the display later if it
+            // resolves after this fires (its own completion always clears
+            // this timer first, via clearTimeout(firstCheckTimeoutId) below).
+            let firstCheckTimeoutId = null;
+            if (isFirstCheck) {
+                firstCheckTimeoutId = setTimeout(async () => {
+                    if (myCheckId !== swapGasCheckId || swapGasFirstCheckDone) return;
+                    swapGasFirstCheckDone = true;
+                    renderConfirmGasDetails();
+                    await evaluateGasAmountGuard();
+                }, 8000);
+            }
             if (!swapQuoteData || !swapQuoteData.transactionRequest) {
                 swapGasSponsored = null;
                 swapFeeTokenSymbol = null;
                 swapEstimatedFeeAmountWei = null;
+                clearTimeout(firstCheckTimeoutId);
+                swapGasFirstCheckDone = true;
                 renderConfirmGasDetails();
                 await evaluateGasAmountGuard();
                 return;
@@ -2672,6 +2769,8 @@
                     swapGasSponsored = null;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
+                    clearTimeout(firstCheckTimeoutId);
+                    swapGasFirstCheckDone = true;
                     renderConfirmGasDetails();
                     await evaluateGasAmountGuard();
                     return;
@@ -2685,6 +2784,8 @@
                     swapGasSponsored = false;
                     swapFeeTokenSymbol = null;
                     swapEstimatedFeeAmountWei = null;
+                    clearTimeout(firstCheckTimeoutId);
+                    swapGasFirstCheckDone = true;
                     renderConfirmGasDetails();
                     await evaluateGasAmountGuard();
                     return;
@@ -2719,6 +2820,8 @@
                 swapFeeTokenSymbol = null;
                 swapEstimatedFeeAmountWei = null;
             }
+            clearTimeout(firstCheckTimeoutId);
+            swapGasFirstCheckDone = true;
             renderConfirmGasDetails();
             await evaluateGasAmountGuard();
         }
@@ -2909,15 +3012,15 @@
                 document.getElementById('confirmToAmount').textContent = parseFloat(toAmountReadable).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') || '0.00';
                 const rate = (parseFloat(toAmountReadable) / parseFloat(amount)).toFixed(6);
                 document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
-                // The requoted transaction can differ from the one the gas
-                // details/guard were last checked against — reset both,
-                // then re-check against the fresh swapQuoteData (awaited so
-                // a chained auto-adjust from evaluateGasAmountGuard settles
-                // before this call returns). checkSwapGasStatus() bumps
+                // #confirmGasDetails is never hidden/reset here —
+                // checkSwapGasStatus() dims the existing values in place
+                // (setGasRowLoading) while it re-checks against the fresh
+                // swapQuoteData, then updates the text once the new result
+                // arrives, so the modal never shrinks/grows. Awaited so a
+                // chained auto-adjust from evaluateGasAmountGuard settles
+                // before this call returns. checkSwapGasStatus() bumps
                 // swapGasCheckId itself, so any in-flight check from before
                 // this requote is discarded when it resolves.
-                resetConfirmGasDetails();
-                setSwapConfirmBlocked(false);
                 await checkSwapGasStatus();
                 // Restart countdown
                 startCountdown();
@@ -2950,14 +3053,23 @@
             document.getElementById('confirmRate').textContent = `1 ${swapFrom} ≈ ${rate} ${swapTo}`;
             resetSwipeState();
             // Reset all per-opening gas state so a previous swap's details,
-            // block state, or adjust history never leak into this one —
-            // checkSwapGasStatus() below fills the details back in once it
-            // resolves.
-            resetConfirmGasDetails();
-            setSwapConfirmBlocked(false);
+            // block state, or adjust history never leak into this one.
+            // #confirmGasDetails/#confirmStatusSlot are NEVER hidden — the
+            // block shows "Estimating…" (fee/paid-from) plus the
+            // already-known quote amount (You Will Receive) immediately,
+            // so the modal's height is stable from the moment it opens.
+            // checkSwapGasStatus() below fills the real numbers in, in
+            // place, once it resolves.
+            swapGasSponsored = null;
+            swapFeeTokenSymbol = null;
+            swapEstimatedFeeAmountWei = null;
+            swapGasFirstCheckDone = false;
             swapAutoAdjustCount = 0;
             swapAmountWasAdjusted = false;
-            renderAdjustedNotice();
+            swapConfirmBlocked = false;
+            renderConfirmGasDetails();
+            refreshStatusSlot();
+            updateSwipeLockUI(); // locks swipe + shows "Calculating fees…" until the first check resolves
             document.getElementById('swapConfirmModal').classList.add('active');
             // Start countdown when modal opens
             startCountdown();
@@ -2969,12 +3081,11 @@
             document.getElementById('swapConfirmModal').classList.remove('active');
             resetSwipeState();
             stopCountdown();
-            resetConfirmGasDetails();
-            setSwapConfirmBlocked(false);
-            swapAmountWasAdjusted = false;
-            renderAdjustedNotice();
+            // #confirmGasDetails/#confirmStatusSlot are intentionally left
+            // as last rendered — never hidden while the modal is open, and
+            // openSwapConfirmModal() fully resets them on the next open.
             // Invalidate any checkSwapGasStatus() still in flight so a late
-            // result can't resurrect the gas details/guard after the modal closed.
+            // result can't act on state after the modal closed.
             swapGasCheckId++;
         };
 
@@ -3004,9 +3115,11 @@
         }
 
         function onSwipeStart(e) {
-            // Backstop for setSwapConfirmBlocked()'s pointer-events:none —
-            // never let a swipe start while the balance can't cover gas at all.
-            if (swapConfirmBlocked) return;
+            // Backstop for updateSwipeLockUI()'s pointer-events:none —
+            // never let a swipe start while the first gas check for this
+            // opening is still running, or while the balance can't cover
+            // gas at all.
+            if (!swapGasFirstCheckDone || swapConfirmBlocked) return;
             e.preventDefault();
             isSwiping = true;
             const thumb = document.getElementById('swipeThumb');
