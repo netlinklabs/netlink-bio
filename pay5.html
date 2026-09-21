@@ -3401,8 +3401,8 @@
         // Client key is served by /api/trails-config from the TRAILS_API_KEY Vercel env var.
         // Self-hosted bundle of 0xtrails@0.18.6 (see trails-build/). The official CDN builds are unusable:
         // dist/umd is stuck at 0.16.2 (no card on-ramp) and dist/iife (0.17+) throws on load.
-        const TRAILS_SCRIPT_URL = '/shared/netlink-trails.js?v=2';
-        let trailsUnmount = null;
+        const TRAILS_SCRIPT_URL = '/shared/netlink-trails.js?v=3';
+        let trailsHandle = null;
 
         function loadTrailsScript() {
             if (window.NetlinkTrails) return Promise.resolve();
@@ -3475,11 +3475,11 @@
 
                 const token = document.getElementById('trailsTokenSelect').value;
                 const mount = document.getElementById('trailsMount');
-                if (trailsUnmount) { trailsUnmount(); trailsUnmount = null; }
+                if (trailsHandle) { trailsHandle.unmount(); trailsHandle = null; }
                 mount.innerHTML = '';
 
                 // Documented <Fund> component (docs.trails.build/sdk/modes/fund): card on-ramp, recipient = user's wallet.
-                trailsUnmount = window.NetlinkTrails.renderFund(mount, {
+                trailsHandle = window.NetlinkTrails.renderFund(mount, {
                     apiKey,
                     paymentMethod: 'CREDIT_DEBIT_CARD',
                     from: { currency: 'USD', amount: 25 },
@@ -3493,12 +3493,11 @@
                         console.error('Trails error:', error);
                         showToast('Purchase failed. Please try again.');
                     }
-                }, 'trailsFundTrigger', 'Buy with card');
+                });
 
-                // Give React a moment to mount the trigger, then open the Trails modal.
+                // Give React a moment to mount, then open the Trails modal through its ref.
                 setTimeout(() => {
-                    const trigger = document.getElementById('trailsFundTrigger');
-                    if (trigger) trigger.click();
+                    if (trailsHandle && trailsHandle.hasModal()) trailsHandle.open();
                     else setTrailsError('Could not open the payment window. Please try again.');
                 }, 400);
             } catch (err) {
