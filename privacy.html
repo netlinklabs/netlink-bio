@@ -59,7 +59,8 @@
         html.dark .danger-card { border-color: rgba(239,68,68,0.3); }
 
         /* Modal shared styles */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay:not(.hidden) { display: flex; }
         .modal-box { background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 24px; }
         html.dark .modal-box { background: #1e293b; }
         .modal-box p { color: #475569; }
