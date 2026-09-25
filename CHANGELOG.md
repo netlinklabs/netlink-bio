@@ -5,6 +5,9 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **`dashboard.html`: replaced the AI Score explainer sentence with an (i) info icon that opens a modal.** The "Build a complete profile/CV..." subtitle added in the previous entry was removed from both cards (score + colored bar already speak for themselves; the sentence was just visual clutter). A small info icon next to each score (`openAiScoreInfoModal()`) now opens a new `#aiScoreInfoModal` listing the full scoring checklist and weights for both Link in Bio and CV, plus the orange/yellow/green tier legend, for anyone who wants the detail. `data-lucide="info"` confirmed present in the pinned lucide 0.460.0 icon set before use, per this repo's lucide-pinning rule.
+
+### Changed
 - **`dashboard.html`: AI Score polish (follow-up to the previous entry).**
   - Score display changed from a percentage ("AI Score: 72%") to a fraction out of 100 ("AI Score: 72/100") — same underlying 0-100 weighted score, just displayed differently, per feedback that the fraction reads better even though it means the same thing.
   - AI Score block (dot + label + progress bar) moved to sit directly under each card's title, above the descriptive subtitle — was below it before.

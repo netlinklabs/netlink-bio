@@ -138,11 +138,11 @@
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span id="bioAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
                             <span id="bioAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0/100</span>
+                            <button type="button" onclick="openAiScoreInfoModal()" class="text-muted hover:text-secondary transition flex-shrink-0" title="What is AI Score?"><i data-lucide="info" class="w-3.5 h-3.5"></i></button>
                         </div>
                         <div class="progress-bar mt-1" style="height:4px;">
                             <div id="bioAiScoreFill" class="progress-fill" style="width:0%"></div>
                         </div>
-                        <p class="text-sm text-secondary mt-1.5">Build a complete profile. A complete profile is easier for AI to read and recommend.</p>
                     </div>
                 </div>
             </div>
@@ -333,12 +333,12 @@
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span id="cvAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
                             <span id="cvAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0/100</span>
+                            <button type="button" onclick="openAiScoreInfoModal()" class="text-muted hover:text-secondary transition flex-shrink-0" title="What is AI Score?"><i data-lucide="info" class="w-3.5 h-3.5"></i></button>
                         </div>
                         <div class="progress-bar mt-1" style="height:4px;">
                             <div id="cvAiScoreFill" class="progress-fill" style="width:0%"></div>
                         </div>
-                        <p class="text-sm text-secondary mt-1.5">Build a complete CV. A complete CV is easier for AI to read and recommend.</p>
-                        <p id="cvUrlHint" class="text-sm text-secondary mt-0.5">netlink.bio/cv/username</p>
+                        <p id="cvUrlHint" class="text-sm text-secondary mt-1.5">netlink.bio/cv/username</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button onclick="previewCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
@@ -577,6 +577,46 @@
                     </div>
                     <span class="text-sm font-medium text-primary">Dark</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Score info modal -- explains what the score measures and how it's
+         calculated, opened from the (i) icon next to either card's score. -->
+    <div id="aiScoreInfoModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-primary">What is AI Score?</h3>
+                <button onclick="closeAiScoreInfoModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-sm text-secondary mb-4">A 0-100 score for how complete your content is. A more complete profile and CV are easier for AI to read, understand, and recommend.</p>
+
+            <p class="text-sm font-semibold text-primary mb-2">Link in Bio (100 pts)</p>
+            <ul class="text-xs text-secondary space-y-1 mb-4">
+                <li class="flex justify-between"><span>At least 1 link added</span><span class="text-muted">20</span></li>
+                <li class="flex justify-between"><span>Description filled</span><span class="text-muted">20</span></li>
+                <li class="flex justify-between"><span>Display name filled</span><span class="text-muted">15</span></li>
+                <li class="flex justify-between"><span>Video link added</span><span class="text-muted">15</span></li>
+                <li class="flex justify-between"><span>Country selected</span><span class="text-muted">10</span></li>
+                <li class="flex justify-between"><span>A contact method (email/WhatsApp/Telegram)</span><span class="text-muted">10</span></li>
+                <li class="flex justify-between"><span>Profile photo uploaded</span><span class="text-muted">10</span></li>
+            </ul>
+
+            <p class="text-sm font-semibold text-primary mb-2">CV (100 pts)</p>
+            <ul class="text-xs text-secondary space-y-1 mb-4">
+                <li class="flex justify-between"><span>At least 1 work experience</span><span class="text-muted">20</span></li>
+                <li class="flex justify-between"><span>Summary filled</span><span class="text-muted">20</span></li>
+                <li class="flex justify-between"><span>At least 1 education entry</span><span class="text-muted">15</span></li>
+                <li class="flex justify-between"><span>Skills filled</span><span class="text-muted">15</span></li>
+                <li class="flex justify-between"><span>Job title filled</span><span class="text-muted">10</span></li>
+                <li class="flex justify-between"><span>Certifications filled</span><span class="text-muted">10</span></li>
+                <li class="flex justify-between"><span>Location filled</span><span class="text-muted">10</span></li>
+            </ul>
+
+            <div class="flex items-center gap-4 text-xs text-secondary pt-3 border-t border-subtle">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full flex-shrink-0" style="background:#f97316"></span> Below 40</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full flex-shrink-0" style="background:#eab308"></span> 40-69</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full flex-shrink-0" style="background:#22c55e"></span> 70+</span>
             </div>
         </div>
     </div>
@@ -1801,6 +1841,14 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('templateModal').classList.remove('active');
         }
 
+        function openAiScoreInfoModal() {
+            document.getElementById('aiScoreInfoModal').classList.add('active');
+        }
+
+        function closeAiScoreInfoModal() {
+            document.getElementById('aiScoreInfoModal').classList.remove('active');
+        }
+
         async function selectTemplateTheme(theme) {
             renderTemplateCard(theme);
             if (currentProfile) currentProfile.theme_preset = theme;
@@ -1975,6 +2023,10 @@ window.openNetlinkPay = openNetlinkPay;
 
         document.getElementById('templateModal').addEventListener('click', function(e) {
             if (e.target === this) closeTemplateModal();
+        });
+
+        document.getElementById('aiScoreInfoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAiScoreInfoModal();
         });
 
     document.getElementById('disconnectWalletModal').addEventListener('click', function(e) {
