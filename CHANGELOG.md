@@ -5,6 +5,9 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **`dashboard.html`: CV item reorder chevrons moved to the opposite side from the delete button** (Work Experience, Education, Featured Projects, Languages). Previously chevron-up/chevron-down sat right next to the trash icon, both on the right — easy to mis-tap delete while trying to reorder. Now `justify-between` puts the chevrons on the left and delete on the right for Experience/Education/Projects; for Languages (a horizontal row) the chevrons sit at the far left before the inputs, delete stays at the far right. No logic change — `moveCvItem()`/`removeCvItem()`/`cvReorderButtons()` untouched, markup only.
+
+### Changed
 - **`dashboard.html`: CV card Copy/Preview/Share row moved from below "Save CV" to right under the `netlink.bio/cv/<username>` URL hint**, closer to the top of the card — per feedback that it read better next to the URL it acts on rather than at the bottom of the whole form.
 - **`dashboard.html`: added up/down reordering to CV's Work Experience, Education, Featured Projects, and Languages items.** New `cvReorderButtons()` renders the same chevron-up/chevron-down control the Links list already uses (`moveLink()`), disabled at the first/last position; a new `moveCvItem(section, idx, direction)` syncs the section from the DOM first (`syncCvSectionFromDom()`, same as `removeCvItem()` does) then swaps the two array entries and re-renders. `renderCvSection()` now passes each row template the section's total item count (needed to disable the down-chevron on the last item) — existing `removeCvItem()`/`addCvItem()` behavior is unchanged.
 
