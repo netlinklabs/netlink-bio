@@ -152,11 +152,7 @@
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
                             <i data-lucide="link-2" class="w-5 h-5 text-blue-500"></i> Link in Bio
                         </h3>
-                        <p class="text-sm text-secondary">Username, profile, description, video &amp; links — all in one place</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="previewProfileLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
-                        <button onclick="copyProfileLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Copy link"><i data-lucide="copy" class="w-4 h-4 text-secondary"></i></button>
+                        <p class="text-sm text-secondary">Username, profile, description, video &amp; links, all in one place</p>
                     </div>
                 </div>
             </div>
@@ -185,9 +181,17 @@
 
                     <button id="linkCardSaveBtn" onclick="saveLinkCardSettings()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
 
-                    <button onclick="shareProfileLink()" class="w-full mt-2 py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                        <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
-                    </button>
+                    <div class="grid grid-cols-3 gap-2 mt-2">
+                        <button onclick="copyProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                        </button>
+                        <button onclick="previewProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                        </button>
+                        <button onclick="shareProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                        </button>
+                    </div>
 
                     <!-- Choose Template -- compact trigger button, opens #templateModal to pick Light/Dark
                          layout for the public bio page. Was previously an inline 2-tile card (swatch preview
