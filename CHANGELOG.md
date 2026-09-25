@@ -5,6 +5,10 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **`dashboard.html`: CV card Copy/Preview/Share row moved from below "Save CV" to right under the `netlink.bio/cv/<username>` URL hint**, closer to the top of the card — per feedback that it read better next to the URL it acts on rather than at the bottom of the whole form.
+- **`dashboard.html`: added up/down reordering to CV's Work Experience, Education, Featured Projects, and Languages items.** New `cvReorderButtons()` renders the same chevron-up/chevron-down control the Links list already uses (`moveLink()`), disabled at the first/last position; a new `moveCvItem(section, idx, direction)` syncs the section from the DOM first (`syncCvSectionFromDom()`, same as `removeCvItem()` does) then swaps the two array entries and re-renders. `renderCvSection()` now passes each row template the section's total item count (needed to disable the down-chevron on the last item) — existing `removeCvItem()`/`addCvItem()` behavior is unchanged.
+
+### Changed
 - **`dashboard.html`: CV card title shortened from "Create Professional CV (Resume)" to "Professional CV (Resume)"** — "Create" was redundant with the form directly below it.
 - **`dashboard.html`: CV card's Preview/Copy buttons redesigned to match the Link in Bio card exactly.** Moved out of the header's small icon-only buttons into a 3-column row below "Save CV" — Copy, Preview, Share (same order/style as Link in Bio's row). Added a new `shareCvLink()` (mirrors `shareProfileLink()`: `navigator.share()` when available, falls back to copying the link) since the CV card previously had no share action at all.
 

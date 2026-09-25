@@ -339,6 +339,17 @@
                             <div id="cvAiScoreFill" class="progress-fill" style="width:0%"></div>
                         </div>
                         <p id="cvUrlHint" class="text-sm text-secondary mt-1.5">netlink.bio/cv/username</p>
+                        <div class="grid grid-cols-3 gap-2 mt-3">
+                            <button onclick="copyCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                            </button>
+                            <button onclick="previewCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                            </button>
+                            <button onclick="shareCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -443,18 +454,6 @@
                 </div>
 
                 <button id="cvSaveBtn" onclick="saveCv()" class="w-full mt-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save CV</button>
-
-                <div class="grid grid-cols-3 gap-2 mt-2">
-                    <button onclick="copyCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
-                    </button>
-                    <button onclick="previewCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
-                    </button>
-                    <button onclick="shareCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                        <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
-                    </button>
-                </div>
             </div>
         </div>
 
@@ -1374,37 +1373,49 @@ window.openNetlinkPay = openNetlinkPay;
         }
 
         function renderCvLists() {
-            renderCvSection('experience', 'cvExperienceList', (item, idx) => `
+            renderCvSection('experience', 'cvExperienceList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('experience', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <div class="flex justify-end items-center gap-1">
+                        ${cvReorderButtons('experience', idx, total)}
+                        <button type="button" onclick="removeCvItem('experience', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
                     <input class="cv-exp-title w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Job Title" value="${escapeHtml(item.title)}">
                     <input class="cv-exp-company w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Company" value="${escapeHtml(item.company)}">
                     <input class="cv-exp-date w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2021 — Present" value="${escapeHtml(item.date)}">
                     <textarea class="cv-exp-bullets w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="3" placeholder="One achievement per line">${escapeHtml((item.bullets || []).join('\n'))}</textarea>
                 </div>
             `);
-            renderCvSection('education', 'cvEducationList', (item, idx) => `
+            renderCvSection('education', 'cvEducationList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('education', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <div class="flex justify-end items-center gap-1">
+                        ${cvReorderButtons('education', idx, total)}
+                        <button type="button" onclick="removeCvItem('education', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
                     <input class="cv-edu-degree w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Degree" value="${escapeHtml(item.degree)}">
                     <input class="cv-edu-school w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="School" value="${escapeHtml(item.school)}">
                     <input class="cv-edu-year w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2016 — 2018" value="${escapeHtml(item.year)}">
                     <input class="cv-edu-detail w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Detail (optional)" value="${escapeHtml(item.detail)}">
                 </div>
             `);
-            renderCvSection('projects', 'cvProjectsList', (item, idx) => `
+            renderCvSection('projects', 'cvProjectsList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end"><button type="button" onclick="removeCvItem('projects', ${idx})" class="text-red-500 hover:text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                    <div class="flex justify-end items-center gap-1">
+                        ${cvReorderButtons('projects', idx, total)}
+                        <button type="button" onclick="removeCvItem('projects', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
                     <input class="cv-proj-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Project Name" value="${escapeHtml(item.name)}">
                     <textarea class="cv-proj-desc w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="2" placeholder="Short description">${escapeHtml(item.description)}</textarea>
                     <input class="cv-proj-tags w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Tags, comma separated" value="${escapeHtml((item.tags || []).join(', '))}">
                 </div>
             `);
-            renderCvSection('languages', 'cvLanguagesList', (item, idx) => `
+            renderCvSection('languages', 'cvLanguagesList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
                     <input class="cv-lang-name flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Language" value="${escapeHtml(item.name)}">
                     <input class="cv-lang-level flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Level" value="${escapeHtml(item.level)}">
-                    <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 flex-shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        ${cvReorderButtons('languages', idx, total)}
+                        <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
                 </div>
             `);
             lucide.createIcons();
@@ -1430,8 +1441,26 @@ window.openNetlinkPay = openNetlinkPay;
             const list = document.getElementById(listId);
             const items = currentCvData[key] || [];
             list.innerHTML = items.length
-                ? items.map((item, idx) => rowTemplate(item, idx)).join('')
+                ? items.map((item, idx) => rowTemplate(item, idx, items.length)).join('')
                 : `<p class="text-xs text-muted text-center py-3">None added yet.</p>`;
+        }
+
+        // Shared reorder controls (chevron-up/chevron-down) for a CV item row,
+        // same pattern as the Links list's moveLink() buttons.
+        function cvReorderButtons(section, idx, total) {
+            return `
+                <button type="button" onclick="moveCvItem('${section}', ${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="p-1 hover-surface rounded disabled:opacity-30 transition"><i data-lucide="chevron-up" class="w-3.5 h-3.5 text-secondary"></i></button>
+                <button type="button" onclick="moveCvItem('${section}', ${idx}, 1)" ${idx === total - 1 ? 'disabled' : ''} class="p-1 hover-surface rounded disabled:opacity-30 transition"><i data-lucide="chevron-down" class="w-3.5 h-3.5 text-secondary"></i></button>
+            `;
+        }
+
+        function moveCvItem(section, idx, direction) {
+            syncCvSectionFromDom(section);
+            const arr = currentCvData[section];
+            const otherIdx = idx + direction;
+            if (otherIdx < 0 || otherIdx >= arr.length) return;
+            [arr[idx], arr[otherIdx]] = [arr[otherIdx], arr[idx]];
+            renderCvLists();
         }
 
         function addCvItem(section) {
