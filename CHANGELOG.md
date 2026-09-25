@@ -5,6 +5,10 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **`dashboard.html`: CV card title shortened from "Create Professional CV (Resume)" to "Professional CV (Resume)"** — "Create" was redundant with the form directly below it.
+- **`dashboard.html`: CV card's Preview/Copy buttons redesigned to match the Link in Bio card exactly.** Moved out of the header's small icon-only buttons into a 3-column row below "Save CV" — Copy, Preview, Share (same order/style as Link in Bio's row). Added a new `shareCvLink()` (mirrors `shareProfileLink()`: `navigator.share()` when available, falls back to copying the link) since the CV card previously had no share action at all.
+
+### Changed
 - **`dashboard.html`: replaced the AI Score explainer sentence with an (i) info icon that opens a modal.** The "Build a complete profile/CV..." subtitle added in the previous entry was removed from both cards (score + colored bar already speak for themselves; the sentence was just visual clutter). A small info icon next to each score (`openAiScoreInfoModal()`) now opens a new `#aiScoreInfoModal` listing the full scoring checklist and weights for both Link in Bio and CV, plus the orange/yellow/green tier legend, for anyone who wants the detail. `data-lucide="info"` confirmed present in the pinned lucide 0.460.0 icon set before use, per this repo's lucide-pinning rule.
 
 ### Changed
