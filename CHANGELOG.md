@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`changelog.html`: added 3 public-facing entries for this week's dashboard work** — "AI Score for your profile and CV" (New), "Reorder your CV sections" (New), "Share your CV in one tap" (Improved). Placed at the top of the September 2026 block. The other dashboard changes from this batch (Wallet Balance card removal, CV title wording, button repositioning, chevron placement) were left out of the public changelog as internal/cosmetic, not user-facing enough to warrant an entry.
+
 ### Changed
 - **`dashboard.html`: CV item reorder chevrons moved to the opposite side from the delete button** (Work Experience, Education, Featured Projects, Languages). Previously chevron-up/chevron-down sat right next to the trash icon, both on the right — easy to mis-tap delete while trying to reorder. Now `justify-between` puts the chevrons on the left and delete on the right for Experience/Education/Projects; for Languages (a horizontal row) the chevrons sit at the far left before the inputs, delete stays at the far right. No logic change — `moveCvItem()`/`removeCvItem()`/`cvReorderButtons()` untouched, markup only.
 
