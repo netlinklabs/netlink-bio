@@ -85,36 +85,16 @@
 
 
     <main class="p-4 lg:p-8 max-w-3xl mx-auto">
-        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-primary">Wallet Balance</h3>
-                <span id="walletStatusLabel" class="text-xs font-medium text-secondary flex items-center gap-1.5 flex-shrink-0">
-                    <span id="walletStatusDot" class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                    <span id="walletStatusText">Status: Not Connected</span>
-                </span>
-            </div>
-            <div class="grid grid-cols-3 gap-3">
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <img src="/assets/net-logo.png" alt="NET" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balanceNet" class="text-xs font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">NET</p>
-                </div>
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <img src="/assets/usdc-logo.png" alt="USDC" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balanceUsdc" class="text-xs font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">USDC</p>
-                </div>
-                <div class="bg-surface rounded-xl p-3 text-center">
-                    <img src="/assets/polygon-logo.png" alt="Polygon" class="w-9 h-9 mx-auto mb-2 rounded-full">
-                    <p id="balancePol" class="text-xs font-semibold text-primary">0.00</p>
-                    <p class="text-xs text-muted">POL</p>
-                </div>
-            </div>
-            <div id="walletBalanceLoadingBar" class="hidden mt-3 h-1 w-full bg-surface rounded-full overflow-hidden">
-                <div class="h-full w-1/3 bg-blue-500 rounded-full animate-[loadingBar_1.2s_ease-in-out_infinite]"></div>
-            </div>
-            <p id="walletBalanceErrorText" class="hidden mt-3 text-xs text-red-500 text-center"></p>
-            <input id="walletAddressInput" type="hidden" value="">
+        <input id="walletAddressInput" type="hidden" value="">
+
+        <!-- Wallet balance display card removed from the dashboard (2026-09-25) --
+             full wallet balance + connect/disconnect UI already lives on the
+             dedicated Wallet tab (pay.html), so this was a duplicate that only
+             added crypto-first noise ahead of the Link in Bio / CV editors for
+             web2 users. walletAddressInput above is still the real state used
+             by the wallet-connect flow (Sequence WaaS + WalletConnect) and by
+             the "Complete Your Profile" reward checklist below -- only the
+             balance grid, status label and loading/error UI were removed. -->
 
     <!-- Connect Wallet Modal -->
     <div id="connectWalletModal" class="modal">
@@ -153,6 +133,16 @@
                             <i data-lucide="link-2" class="w-5 h-5 text-blue-500"></i> Link in Bio
                         </h3>
                         <p class="text-sm text-secondary">Username, profile, description, video &amp; links, all in one place</p>
+                        <!-- AI Score: how AI-friendly/discoverable this profile is, based on how
+                             complete its content is (not related to "Complete Your Profile" below,
+                             which gates the NET reward claim) -->
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                            <span id="bioAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
+                            <span id="bioAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0%</span>
+                        </div>
+                        <div class="progress-bar mt-1" style="height:4px;">
+                            <div id="bioAiScoreFill" class="progress-fill" style="width:0%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -341,6 +331,13 @@
                             <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Curriculum Vitae
                         </h3>
                         <p id="cvUrlHint" class="text-sm text-secondary">netlink.bio/cv/username</p>
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                            <span id="cvAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
+                            <span id="cvAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0%</span>
+                        </div>
+                        <div class="progress-bar mt-1" style="height:4px;">
+                            <div id="cvAiScoreFill" class="progress-fill" style="width:0%"></div>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <button onclick="previewCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
@@ -903,7 +900,6 @@ window.openNetlinkPay = openNetlinkPay;
 
             document.getElementById('walletAddressInput').value = data.wallet_address || '';
             if (window.renderWalletAddressUI) window.renderWalletAddressUI(data.wallet_address || '', false);
-            fetchWalletBalances(data.wallet_address);
 
             setIconShapeButtons(data.link_icon_shape || 'circle');
             renderTemplateCard(data.theme_preset || 'light');
@@ -1057,57 +1053,14 @@ window.openNetlinkPay = openNetlinkPay;
             try {
                 await loadProfile();
                 updateProfileCompletion();
-                fetchWalletBalances(wallet_address);
             } catch (refreshErr) {
                 console.error('Wallet saved, but UI refresh failed:', refreshErr);
             }
         }
-        function formatTokenAmount(value) {
-            const num = parseFloat(value);
-            if (isNaN(num)) return '0.00';
-            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        async function fetchWalletBalances(address, isRetry = false) {
-            const loadingBar = document.getElementById('walletBalanceLoadingBar');
-            const errorText = document.getElementById('walletBalanceErrorText');
-
-            if (!address) {
-                document.getElementById('balanceNet').textContent = '0.00';
-                document.getElementById('balanceUsdc').textContent = '0.00';
-                document.getElementById('balancePol').textContent = '0.00';
-                loadingBar.classList.add('hidden');
-                errorText.classList.add('hidden');
-                return;
-            }
-
-            if (!isRetry) {
-                loadingBar.classList.remove('hidden');
-                errorText.classList.add('hidden');
-            }
-
-            try {
-                const res = await fetch(`/api/wallet?action=balance&address=${encodeURIComponent(address)}&_t=${Date.now()}`);
-                if (!res.ok) throw new Error('Failed to fetch balances');
-                const data = await res.json();
-
-                document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
-                document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
-                document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
-                loadingBar.classList.add('hidden');
-                errorText.classList.add('hidden');
-            } catch (err) {
-                console.error(err);
-                if (!isRetry) {
-                    setTimeout(() => fetchWalletBalances(address, true), 1500);
-                } else {
-                    loadingBar.classList.add('hidden');
-                    errorText.textContent = 'Failed to load, tap to refresh';
-                    errorText.classList.remove('hidden');
-                    errorText.onclick = () => fetchWalletBalances(address);
-                }
-            }
-        }
+        // formatTokenAmount/fetchWalletBalances were removed (2026-09-25) along
+        // with the dashboard's Wallet Balance display card -- the balance grid
+        // they fed no longer exists here. Full balance display still lives on
+        // the Wallet tab (pay.html), which has its own implementation.
 
         async function saveLinkCardSettings() {
             await withSaving('linkCardSaveBtn', async () => {
@@ -1494,7 +1447,68 @@ window.openNetlinkPay = openNetlinkPay;
                 if (error) { showToast('Failed to save CV'); return; }
                 showToast('CV saved!');
                 currentCvData = payload;
+                calculateCvScore();
             });
+        }
+
+        // AI Score -- separate from the "Complete Your Profile" reward checklist
+        // below. This scores how AI-friendly/discoverable a profile's *content*
+        // is (Link in Bio card and CV card each get their own score), while
+        // "Complete Your Profile" only gates the NET claim reward. Same
+        // .progress-bar/.progress-fill visual pattern, different meaning --
+        // intentionally kept as two separate systems (see CHANGELOG.md).
+        function aiScoreTier(pct) {
+            if (pct < 40) return '#f97316';   // orange
+            if (pct < 70) return '#eab308';   // yellow
+            return '#22c55e';                 // green
+        }
+
+        function renderAiScore(prefix, pct) {
+            const color = aiScoreTier(pct);
+            const label = document.getElementById(prefix + 'AiScoreLabel');
+            const dot = document.getElementById(prefix + 'AiScoreDot');
+            const fill = document.getElementById(prefix + 'AiScoreFill');
+            if (label) label.textContent = `AI Score: ${pct}%`;
+            if (dot) dot.style.background = color;
+            if (fill) { fill.style.width = pct + '%'; fill.style.background = color; }
+        }
+
+        function calculateBioScore() {
+            const val = id => (document.getElementById(id)?.value || '').trim();
+            const items = [
+                [!!val('profileDisplayName'), 15],
+                [val('profileBio').length >= 20, 20],
+                [!!currentProfile?.avatar_url, 10],
+                [!!val('profileCountryCode'), 10],
+                [!!(val('profileEmail') || val('profileWhatsapp') || val('profileTelegram')), 10],
+                [currentLinks.length > 0, 20],
+                [!!val('profileYoutube'), 15],
+            ];
+            const pct = items.reduce((sum, [done, weight]) => sum + (done ? weight : 0), 0);
+            renderAiScore('bio', pct);
+            return pct;
+        }
+
+        function calculateCvScore() {
+            const val = id => (document.getElementById(id)?.value || '').trim();
+            const cv = currentCvData || {};
+            const items = [
+                [!!val('cvTitle'), 10],
+                [val('cvSummary').length >= 20, 20],
+                [(cv.skills || []).length > 0, 15],
+                [(cv.experience || []).length > 0, 20],
+                [(cv.education || []).length > 0, 15],
+                [(cv.certifications || []).length > 0, 10],
+                [!!val('cvLocation'), 10],
+            ];
+            const pct = items.reduce((sum, [done, weight]) => sum + (done ? weight : 0), 0);
+            renderAiScore('cv', pct);
+            return pct;
+        }
+
+        function refreshAiScores() {
+            calculateBioScore();
+            calculateCvScore();
         }
 
         function updateProfileCompletion() {
@@ -1537,6 +1551,7 @@ window.openNetlinkPay = openNetlinkPay;
             }
 
             checkClaimStatus();
+            refreshAiScores();
         }
 
         async function checkClaimStatus() {
@@ -2154,7 +2169,6 @@ window.openNetlinkPay = openNetlinkPay;
                 }
                 document.getElementById('walletAddressInput').value = '';
                 renderWalletAddressUI('', false);
-                fetchWalletBalances('');
                 updateProfileCompletion();
                 showToast('Wallet disconnected');
             } catch (err) {
@@ -2162,7 +2176,6 @@ window.openNetlinkPay = openNetlinkPay;
                 // Even if there's an error, try to update UI
                 document.getElementById('walletAddressInput').value = '';
                 renderWalletAddressUI('', false);
-                fetchWalletBalances('');
                 updateProfileCompletion();
                 showToast('Wallet disconnected');
             }
