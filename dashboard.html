@@ -328,7 +328,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Create Professional CV (Resume)
+                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Professional CV (Resume)
                         </h3>
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span id="cvAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
@@ -339,10 +339,6 @@
                             <div id="cvAiScoreFill" class="progress-fill" style="width:0%"></div>
                         </div>
                         <p id="cvUrlHint" class="text-sm text-secondary mt-1.5">netlink.bio/cv/username</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="previewCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
-                        <button onclick="copyCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Copy link"><i data-lucide="copy" class="w-4 h-4 text-secondary"></i></button>
                     </div>
                 </div>
             </div>
@@ -447,6 +443,18 @@
                 </div>
 
                 <button id="cvSaveBtn" onclick="saveCv()" class="w-full mt-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save CV</button>
+
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    <button onclick="copyCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                    </button>
+                    <button onclick="previewCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                    </button>
+                    <button onclick="shareCvLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1332,6 +1340,17 @@ window.openNetlinkPay = openNetlinkPay;
             const username = getCvUsername();
             if (!username) { showToast('Pick a username first'); return; }
             window.open(`/cv/${username}`, '_blank');
+        }
+
+        function shareCvLink() {
+            const username = getCvUsername();
+            if (!username) { showToast('Pick a username first'); return; }
+            const url = `${window.location.origin}/cv/${username}`;
+            if (navigator.share) {
+                navigator.share({ title: 'My Netlink.bio CV', url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => showToast('Link copied to share!'));
+            }
         }
 
         function populateCvForm(cv) {
