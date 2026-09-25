@@ -132,17 +132,17 @@
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
                             <i data-lucide="link-2" class="w-5 h-5 text-blue-500"></i> Link in Bio
                         </h3>
-                        <p class="text-sm text-secondary">Username, profile, description, video &amp; links, all in one place</p>
                         <!-- AI Score: how AI-friendly/discoverable this profile is, based on how
                              complete its content is (not related to "Complete Your Profile" below,
                              which gates the NET reward claim) -->
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span id="bioAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
-                            <span id="bioAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0%</span>
+                            <span id="bioAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0/100</span>
                         </div>
                         <div class="progress-bar mt-1" style="height:4px;">
                             <div id="bioAiScoreFill" class="progress-fill" style="width:0%"></div>
                         </div>
+                        <p class="text-sm text-secondary mt-1.5">Build a complete profile. A complete profile is easier for AI to read and recommend.</p>
                     </div>
                 </div>
             </div>
@@ -328,16 +328,17 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Curriculum Vitae
+                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Create Professional CV (Resume)
                         </h3>
-                        <p id="cvUrlHint" class="text-sm text-secondary">netlink.bio/cv/username</p>
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span id="cvAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
-                            <span id="cvAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0%</span>
+                            <span id="cvAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0/100</span>
                         </div>
                         <div class="progress-bar mt-1" style="height:4px;">
                             <div id="cvAiScoreFill" class="progress-fill" style="width:0%"></div>
                         </div>
+                        <p class="text-sm text-secondary mt-1.5">Build a complete CV. A complete CV is easier for AI to read and recommend.</p>
+                        <p id="cvUrlHint" class="text-sm text-secondary mt-0.5">netlink.bio/cv/username</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button onclick="previewCvLink()" class="p-2 hover-surface border border-subtle rounded-lg transition" title="Preview"><i data-lucide="eye" class="w-4 h-4 text-secondary"></i></button>
@@ -1468,7 +1469,7 @@ window.openNetlinkPay = openNetlinkPay;
             const label = document.getElementById(prefix + 'AiScoreLabel');
             const dot = document.getElementById(prefix + 'AiScoreDot');
             const fill = document.getElementById(prefix + 'AiScoreFill');
-            if (label) label.textContent = `AI Score: ${pct}%`;
+            if (label) label.textContent = `AI Score: ${pct}/100`;
             if (dot) dot.style.background = color;
             if (fill) { fill.style.width = pct + '%'; fill.style.background = color; }
         }
