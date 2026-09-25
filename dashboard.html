@@ -1375,8 +1375,8 @@ window.openNetlinkPay = openNetlinkPay;
         function renderCvLists() {
             renderCvSection('experience', 'cvExperienceList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end items-center gap-1">
-                        ${cvReorderButtons('experience', idx, total)}
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-1">${cvReorderButtons('experience', idx, total)}</div>
                         <button type="button" onclick="removeCvItem('experience', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                     </div>
                     <input class="cv-exp-title w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Job Title" value="${escapeHtml(item.title)}">
@@ -1387,8 +1387,8 @@ window.openNetlinkPay = openNetlinkPay;
             `);
             renderCvSection('education', 'cvEducationList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end items-center gap-1">
-                        ${cvReorderButtons('education', idx, total)}
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-1">${cvReorderButtons('education', idx, total)}</div>
                         <button type="button" onclick="removeCvItem('education', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                     </div>
                     <input class="cv-edu-degree w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Degree" value="${escapeHtml(item.degree)}">
@@ -1399,8 +1399,8 @@ window.openNetlinkPay = openNetlinkPay;
             `);
             renderCvSection('projects', 'cvProjectsList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}">
-                    <div class="flex justify-end items-center gap-1">
-                        ${cvReorderButtons('projects', idx, total)}
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-1">${cvReorderButtons('projects', idx, total)}</div>
                         <button type="button" onclick="removeCvItem('projects', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                     </div>
                     <input class="cv-proj-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Project Name" value="${escapeHtml(item.name)}">
@@ -1410,12 +1410,10 @@ window.openNetlinkPay = openNetlinkPay;
             `);
             renderCvSection('languages', 'cvLanguagesList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
+                    <div class="flex items-center gap-1 flex-shrink-0">${cvReorderButtons('languages', idx, total)}</div>
                     <input class="cv-lang-name flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Language" value="${escapeHtml(item.name)}">
                     <input class="cv-lang-level flex-1 min-w-0 px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Level" value="${escapeHtml(item.level)}">
-                    <div class="flex items-center gap-1 flex-shrink-0">
-                        ${cvReorderButtons('languages', idx, total)}
-                        <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                    </div>
+                    <button type="button" onclick="removeCvItem('languages', ${idx})" class="text-red-500 hover:text-red-600 p-1 flex-shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                 </div>
             `);
             lucide.createIcons();
