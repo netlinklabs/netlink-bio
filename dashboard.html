@@ -189,24 +189,20 @@
                         <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
                     </button>
 
-                    <!-- Choose Template -- Standard tile opens a modal to pick Light/Dark
-                         layout for the public bio page. Pro tile stays locked/coming soon. -->
-                    <div class="mt-4 p-3 bg-surface border border-subtle rounded-xl">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-secondary flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i> Choose Template</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" onclick="openTemplateModal()" class="border-2 border-blue-500 rounded-lg p-2 text-center">
-                                <div id="templateSwatch" class="h-12 rounded mb-1.5"></div>
-                                <span class="text-xs font-medium text-primary">Standard</span>
-                                <span id="templateSwatchLabel" class="block text-[10px] text-muted"></span>
-                            </button>
-                            <div class="border border-subtle rounded-lg p-2 text-center opacity-50 cursor-not-allowed">
-                                <div class="h-12 bg-white/50 rounded mb-1.5 flex items-center justify-center"><i data-lucide="lock" class="w-4 h-4 text-muted"></i></div>
-                                <span class="text-xs font-medium text-muted">Pro</span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Choose Template -- compact trigger button, opens #templateModal to pick Light/Dark
+                         layout for the public bio page. Was previously an inline 2-tile card (swatch preview
+                         + locked "Pro" tile) that took up a lot of vertical space and read as one confusing
+                         "Standard Dark" template name instead of "Standard tier, currently set to Dark" --
+                         collapsed into a single row so it's unambiguous and takes less room. Where the Pro
+                         tier's own template picker ends up (this same modal vs. a separate gallery for
+                         Gold+ users) is still undecided -- not addressed here. -->
+                    <button type="button" onclick="openTemplateModal()" class="mt-4 w-full flex items-center justify-between p-3 bg-surface hover-surface border border-subtle rounded-xl transition">
+                        <span class="text-sm font-medium text-secondary flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i> Choose Template</span>
+                        <span class="flex items-center gap-1.5 text-secondary">
+                            <span id="templateSwatchLabel" class="text-xs font-medium text-primary"></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </span>
+                    </button>
                 </div>
 
                 <!-- Edit Profile -->
@@ -1783,13 +1779,10 @@ window.openNetlinkPay = openNetlinkPay;
         }
 
         function renderTemplateCard(theme) {
-            const swatch = document.getElementById('templateSwatch');
             const label = document.getElementById('templateSwatchLabel');
             if (theme === 'dark') {
-                swatch.className = 'h-12 rounded mb-1.5 bg-slate-900 border border-slate-700';
                 label.textContent = 'Dark';
             } else {
-                swatch.className = 'h-12 rounded mb-1.5 bg-slate-50 border border-slate-200';
                 label.textContent = 'Light';
             }
             document.getElementById('templateOptionLight').classList.toggle('border-blue-500', theme !== 'dark');
