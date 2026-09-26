@@ -5,6 +5,7 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **`plans.html`: Silver and Gold cards now each have their own Monthly/Annual billing toggle** (pill-style tabs above the price, matching `.billing-toggle`/`.billing-tab` styling). Clicking a tab swaps that card's price (`.price-amount`/`.price-suffix`), the billing note below it, and highlights the active tab — vanilla JS, no dependency, scoped per-card so Silver and Gold toggle independently. Annual tab shows a "-17%" save badge (Silver: $30/yr, save $6; Gold: $60/yr, save $12 — both work out to 2 months free vs. paying monthly for 12).
 - **`plans.html`: updated Silver/Gold pricing to match the original pitch deck figures** ($2.4 → $3/month Silver, $4.8 → $6/month Gold; annual notes now read "$30/year"/"$60/year") and **removed the mandatory-KYC gate from Gold**. KYC verification is now a separate $2.5 one-time add-on, available from any tier (Basic, Silver, or Gold) rather than bundled into or required for Gold — called out in a new `.addon-note` block below the pricing grid instead of as a Gold-only list item.
 
 ### Added
