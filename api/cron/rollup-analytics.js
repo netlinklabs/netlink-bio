@@ -8,14 +8,22 @@
 //
 // Auth: Vercel Cron sends `Authorization: Bearer $CRON_SECRET` automatically
 // when the CRON_SECRET env var is set on the project -- this rejects any
-// other caller. Set CRON_SECRET in Vercel's project env vars.
+// other caller. Fails closed: if CRON_SECRET isn't configured, every call is
+// rejected (an earlier version skipped the check in that case, which left
+// the endpoint open to anyone). CRON_SECRET is set in Vercel's production
+// env vars (2026-09-27).
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export default async function handler(req, res) {
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && req.headers.authorization !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    console.error('rollup-analytics: CRON_SECRET is not set, refusing to run.');
+    res.status(503).json({ error: 'CRON_SECRET is not configured' });
+    return;
+  }
+  if (req.headers.authorization !== `Bearer ${cronSecret}`) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }

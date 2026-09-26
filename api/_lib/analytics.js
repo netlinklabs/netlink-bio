@@ -14,10 +14,12 @@ import { verifyWebBotAuth } from './web-bot-auth.js';
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Stable per-deployment salt so visitor_hash can't be reversed back to a
-// real IP/user-agent pair just by knowing the hash. Falls back to a fixed
-// string if the env var isn't set yet, so tracking still works (just less
-// hardened) rather than silently no-op-ing.
+// Secret salt so visitor_hash can't be reversed back to a real IP/user-agent
+// pair (with a known salt, the whole IPv4 space can be brute-forced).
+// ANALYTICS_HASH_SALT is set in Vercel's production env vars (2026-09-27);
+// changing it resets unique-visitor dedup. The fixed fallback is public in
+// this repo, so it offers no protection -- it only keeps tracking working
+// in an environment where the variable is missing.
 const HASH_SALT = process.env.ANALYTICS_HASH_SALT || 'netlink-analytics-default-salt';
 
 // Builds a short, irreversible per-visitor id from IP + User-Agent, used
