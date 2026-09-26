@@ -7,6 +7,7 @@
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
 import { escapeHtml, notFoundPage } from './_lib/html.js';
+import { isDemoProfile } from './_lib/demo-profiles.js';
 import { recordEvent } from './_lib/analytics.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
@@ -339,8 +340,11 @@ export default async function handler(req, res) {
 <meta property="og:type" content="profile">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-
-<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+${isDemoProfile(profile.username)
+  // Demo/mockup profile (api/_lib/demo-profiles.js): keep it out of search
+  // indexes and don't describe it to crawlers/AI as a real Person.
+  ? '<meta name="robots" content="noindex, nofollow">'
+  : `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`}
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 <style>

@@ -24,6 +24,8 @@
 //
 // Same security note as api/landing.js: never select id/user_id.
 
+import { isDemoProfile } from './_lib/demo-profiles.js';
+
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
 
@@ -110,7 +112,7 @@ export default async function handler(req, res) {
 
   if (bioResult.status === 'fulfilled') {
     for (const profile of bioResult.value) {
-      if (!profile.username) continue;
+      if (!profile.username || isDemoProfile(profile.username)) continue;
       entries.push(urlEntry(`https://netlink.bio/${profile.username}`));
     }
   } else {
@@ -119,7 +121,7 @@ export default async function handler(req, res) {
 
   if (cvResult.status === 'fulfilled') {
     for (const profile of cvResult.value) {
-      if (!profile.username || !hasRealCvContent(profile.cv_data)) continue;
+      if (!profile.username || isDemoProfile(profile.username) || !hasRealCvContent(profile.cv_data)) continue;
       entries.push(urlEntry(`https://netlink.bio/cv/${profile.username}`));
     }
   } else {
