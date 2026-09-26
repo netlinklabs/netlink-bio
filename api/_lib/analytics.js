@@ -9,6 +9,7 @@
 import { createHash } from 'crypto';
 import { waitUntil } from '@vercel/functions';
 import { detectAiBot, detectAiApp } from './ai-bots.js';
+import { verifyWebBotAuth } from './web-bot-auth.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -79,11 +80,18 @@ async function insertEvent({ userId, eventType, linkId = null, referrer = null, 
   const appSource = detectAiApp(req.headers['user-agent']);
   const source = normalizeReferrer(referrer) || normalizeUtmSource(utm) || appSource;
 
-  // Tag known AI bot User-Agents (see api/_lib/ai-bots.js) so this event is
-  // counted as an "AI Read" instead of a human view/click. Only applied to
-  // page views -- a bot fetching static HTML doesn't run the page's JS, so
-  // it can never trigger a click event in the first place.
-  const aiBot = eventType.startsWith('view_') ? detectAiBot(req.headers['user-agent']) : null;
+  // Tag AI reads so they're counted separately instead of as human views.
+  // A valid Web Bot Auth signature (api/_lib/web-bot-auth.js) wins: it's
+  // cryptographic proof, and it's the only way to recognize agentic
+  // browsers whose User-Agent looks like plain Chrome. Otherwise fall back
+  // to the self-declared User-Agent match in ai-bots.js. Only page views
+  // are tagged: crawlers fetching static HTML never run the click beacon.
+  // (A signed agentic browser could run it; its clicks currently still
+  // count as ordinary clicks.) This runs inside waitUntil(), so the key
+  // directory fetch never delays the page response.
+  const aiBot = eventType.startsWith('view_')
+    ? (await verifyWebBotAuth(req)) || detectAiBot(req.headers['user-agent'])
+    : null;
 
   // TEMPORARY (remove once the current wave of unrecognized AI agents is
   // cataloged into api/_lib/ai-bots.js): log the user-agent of page views
