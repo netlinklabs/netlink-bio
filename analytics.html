@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 <title>Netlink.bio - Analytics</title>
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-<link rel="stylesheet" href="/shared/tailwind.css?v=4">
+<link rel="stylesheet" href="/shared/tailwind.css?v=5">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@0.460.0" defer></script>
 <style>
@@ -129,6 +129,31 @@
           <p class="text-xs text-muted mt-3 leading-relaxed">"Direct or apps" includes typed links and most visits from apps like WhatsApp, Telegram, and AI assistants, which usually don't share where the visitor came from.</p>
         </div>
       </div>
+    </div>
+
+    <div id="aiReadsCard" class="card rounded-2xl p-4 lg:p-6 mb-4">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+          <i data-lucide="bot" class="w-5 h-5 text-blue-500"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-primary">AI Visibility</h3>
+          <p class="text-sm text-secondary">How often AI is reading your profile</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="bg-surface border border-subtle rounded-xl p-4">
+          <p class="text-xs text-muted mb-1">AI Assistant Visits</p>
+          <p id="tileAiAssistant" class="stat-tile-value text-primary">0</p>
+        </div>
+        <div class="bg-surface border border-subtle rounded-xl p-4">
+          <p class="text-xs text-muted mb-1">AI Crawler Reads</p>
+          <p id="tileAiCrawler" class="stat-tile-value text-secondary">0</p>
+        </div>
+      </div>
+      <div id="aiBotsList"></div>
+      <p id="aiBotsEmpty" class="text-sm text-muted text-center py-4 hidden">No AI activity recorded yet.</p>
+      <p class="text-xs text-muted mt-3 leading-relaxed">"AI Assistant Visits" means someone asked ChatGPT, Claude, Perplexity, or a similar assistant about you and it opened your page in response. "AI Crawler Reads" are background visits used to build AI training data or search indexes, they show AI activity but don't mean a real person saw your page, and can vary a lot week to week.</p>
     </div>
 
     <div id="landingCard" class="card rounded-2xl p-4 lg:p-6 mb-4 hidden">
@@ -271,7 +296,7 @@
 
       const { data: rows, error: summaryError } = await supabaseClient
         .from('analytics_daily_summary')
-        .select('date, views_bio, views_cv, views_landing, clicks_total, clicks_landing, unique_visitors, top_referrers')
+        .select('date, views_bio, views_cv, views_landing, clicks_total, clicks_landing, unique_visitors, top_referrers, ai_crawler_reads, ai_assistant_reads, top_ai_bots')
         .eq('user_id', currentUser.id)
         .order('date', { ascending: true });
       if (summaryError) throw summaryError;
@@ -313,12 +338,15 @@
       // Landing Page tiles follow the selected period too (Gold only).
       document.getElementById('tileLandingViews').textContent = sum('views_landing').toLocaleString();
       document.getElementById('tileLandingClicks').textContent = sum('clicks_landing').toLocaleString();
+      document.getElementById('tileAiAssistant').textContent = sum('ai_assistant_reads').toLocaleString();
+      document.getElementById('tileAiCrawler').textContent = sum('ai_crawler_reads').toLocaleString();
 
       // A one-day "trend" is a single point, so hide the chart for Today.
       document.getElementById('trendCard').classList.toggle('hidden', currentPeriod === 'today');
 
       renderTrendChart(rows);
       renderReferrers(rows);
+      renderAiBots(rows);
 
       if (window.lucide) lucide.createIcons();
     }
@@ -462,6 +490,36 @@
         <div class="referrer-row">
           <span class="text-secondary truncate">${badge}${escapeHtml(name)}</span>
           <span class="text-primary font-semibold">${count.toLocaleString()}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function renderAiBots(rows) {
+      const merged = {};
+      rows.forEach((r) => {
+        (r.top_ai_bots || []).forEach((entry) => {
+          const key = entry.name;
+          if (!merged[key]) merged[key] = { name: entry.name, category: entry.category, count: 0 };
+          merged[key].count += entry.count;
+        });
+      });
+      const sorted = Object.values(merged).sort((a, b) => b.count - a.count).slice(0, 6);
+      const list = document.getElementById('aiBotsList');
+      const emptyMsg = document.getElementById('aiBotsEmpty');
+      if (!sorted.length) {
+        list.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+      emptyMsg.classList.add('hidden');
+      list.innerHTML = sorted.map((bot) => {
+        const badge = bot.category === 'assistant'
+          ? '<span class="text-xs text-blue-500 font-medium">Assistant</span>'
+          : '<span class="text-xs text-muted">Crawler</span>';
+        return `
+        <div class="referrer-row">
+          <span class="text-secondary truncate">${escapeHtml(bot.name)} ${badge}</span>
+          <span class="text-primary font-semibold">${bot.count.toLocaleString()}</span>
         </div>`;
       }).join('');
     }
