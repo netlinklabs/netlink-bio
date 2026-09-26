@@ -6,25 +6,26 @@
 const ACCOUNT_MENU = {
   groups: [
     {
-      title: 'Profile & Page',
+      title: 'Account',
       items: [
-        { icon: 'book-user', label: 'Manage Contact', href: 'contacts' },
+        { icon: 'palette', label: 'Theme', type: 'theme-select' },
+        { icon: 'fingerprint', label: 'Account & Identity', href: 'identity' },
+        { icon: 'shield', label: 'Privacy & Data', href: 'privacy' },
+      ],
+    },
+    {
+      title: 'Wallet',
+      items: [
+        { icon: 'coins', label: 'Local Currency', type: 'currency-select' },
+        { icon: 'book-user', label: 'Wallet Contact', href: 'contacts' },
+        { icon: 'scan-face', label: 'Biometric Unlock', type: 'biometric-toggle' },
+        { icon: 'key-round', label: 'Wallet Security', href: 'recovery' },
       ],
     },
     {
       title: 'Rewards',
       items: [
         { icon: 'gift', label: 'Reward', href: 'reward' },
-      ],
-    },
-    {
-      title: 'Account',
-      items: [
-        { icon: 'fingerprint', label: 'Account & Identity', href: 'identity' },
-        { icon: 'shield', label: 'Privacy & Data', href: 'privacy' },
-        { icon: 'coins', label: 'Local Currency', type: 'currency-select' },
-        { icon: 'scan-face', label: 'Biometric Unlock', type: 'biometric-toggle' },
-        { icon: 'key-round', label: 'Wallet Security', href: 'recovery' },
       ],
     },
   ],

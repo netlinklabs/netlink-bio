@@ -214,6 +214,35 @@
       `;
     }
 
+    if (item.type === 'theme-select') {
+      const current = getStoredTheme();
+      const options = [
+        { key: 'light', label: 'Light', icon: 'sun' },
+        { key: 'dark', label: 'Dark', icon: 'moon' },
+        { key: 'system', label: 'System', icon: 'monitor' },
+      ];
+      return `
+        <div class="px-4 py-3">
+          <p class="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 mb-2.5">
+            <i data-lucide="${item.icon}" class="w-4 h-4 text-slate-400"></i> ${escapeHtml(item.label)}
+          </p>
+          <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-white/5">
+            ${options.map((opt) => `
+              <button type="button" data-theme-option="${opt.key}"
+                class="nlnav-theme-option flex flex-col items-center justify-center gap-1 py-2 rounded-lg text-xs font-medium transition ${
+                  current === opt.key
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400'
+                }">
+                <i data-lucide="${opt.icon}" class="w-4 h-4"></i>
+                ${opt.label}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
     if (item.type === 'biometric-toggle') {
       // Hide entirely on devices/browsers without WebAuthn support -- no
       // point showing a toggle that can never work.
@@ -285,11 +314,8 @@
           </div>
         </div>
         ${groupsHtml}
-        <div class="border-t border-slate-100 dark:border-white/5 flex items-center justify-between px-4 py-3">
-          <button type="button" id="nlnav-theme-btn" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-            <i id="nlnav-theme-icon" data-lucide="moon" class="w-4 h-4"></i> <span id="nlnav-theme-label">Dark Mode</span>
-          </button>
-          <button type="button" id="nlnav-logout-btn" class="flex items-center gap-2 text-sm text-red-500 font-medium">
+        <div class="border-t border-slate-100 dark:border-white/5 px-4 py-3">
+          <button type="button" id="nlnav-logout-btn" class="w-full flex items-center justify-center gap-2 text-sm text-red-500 font-medium py-2">
             <i data-lucide="log-out" class="w-4 h-4"></i> Logout
           </button>
         </div>
@@ -346,12 +372,19 @@
       });
     }
 
+    // Theme segmented control -- pick a theme directly (no more cycling
+    // through a single button), then re-render so the active segment
+    // updates immediately.
+    sheet.querySelectorAll('[data-theme-option]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        applyTheme(btn.dataset.themeOption, true);
+        renderAccountSheet();
+        if (window.lucide) lucide.createIcons();
+      });
+    });
+
     // Close button
     document.getElementById('nlnav-sheet-close').addEventListener('click', closeAccountSheet);
-
-    // Theme toggle
-    document.getElementById('nlnav-theme-btn').addEventListener('click', toggleTheme);
-    updateThemeLabel();
 
     // Logout — clear the app-lock "already unlocked this session" marker
     // BEFORE signing out, otherwise logging back in within the same tab
@@ -367,8 +400,6 @@
   }
 
   const THEME_ORDER = ['light', 'dark', 'system'];
-  const THEME_LABELS = { light: 'Light Mode', dark: 'Dark Mode', system: 'System' };
-  const THEME_ICONS = { light: 'sun', dark: 'moon', system: 'monitor' };
 
   function getStoredTheme() {
     const t = localStorage.getItem('theme');
@@ -380,25 +411,6 @@
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     return theme;
-  }
-
-  function updateThemeLabel() {
-    const labelEl = document.getElementById('nlnav-theme-label');
-    const iconEl = document.getElementById('nlnav-theme-icon');
-    if (!labelEl) return;
-    const theme = getStoredTheme();
-    labelEl.textContent = THEME_LABELS[theme];
-    if (iconEl) {
-      iconEl.setAttribute('data-lucide', THEME_ICONS[theme]);
-      if (window.lucide) lucide.createIcons();
-    }
-  }
-
-  function toggleTheme() {
-    const current = getStoredTheme();
-    const next = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length];
-    applyTheme(next, true);
-    updateThemeLabel();
   }
 
   function applyTheme(theme, save) {
