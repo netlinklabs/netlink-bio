@@ -5,6 +5,8 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **`plans.html`: removed every em dash ("—") from user-facing text** (title, meta description, draft banner, subtitle, billing-tab notes, KYC add-on note, footnote), rephrasing with commas/periods instead so the grammar still reads naturally. Left untouched in HTML/CSS comments since those aren't user-facing.
+- **`CLAUDE.md`: added a new rule under "Language"** — no em dash in any UI text, error message, or other user-facing string going forward (code comments are exempt). Applies repo-wide, not just to this page.
 - **`plans.html`: full visual redesign of the tier cards per feedback from the live preview.** Each card now has its own top badge and matching border/box-shadow color instead of a single generic border + one "Most complete" badge on Gold only: Basic gets a thin near-black border (`#1a1a1a`) with a "Free Forever" badge, Silver a metallic-silver border (`#9CA3AF`) with a "Favourite" badge, Gold a metallic-gold border (`#D4AF37`) with a "Professional" badge (replacing "Most complete"). Removed the redundant "Forever free" note line under Basic's price (the new badge already says it). All three `.plan-cta` elements are now real `<button>` elements with tier-colored styling (dark/silver-gradient/gold-gradient) and explicit copy — "Get Started Free" (Basic), "Checkout Silver", "Checkout Gold" — instead of a static grey "Current default"/"Draft pricing" label. The KYC add-on block also gets its own outlined button ("Order KYC Verification"). No checkout logic wired up yet — buttons are visual only, this is still the internal draft page.
 
 ### Fixed
