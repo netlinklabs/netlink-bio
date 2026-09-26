@@ -45,6 +45,7 @@ export default async function handler(req, res) {
   const slug = String(body.slug || '').toLowerCase().trim();
   const linkId = body.linkId ? String(body.linkId) : null;
   const referrer = typeof body.referrer === 'string' ? body.referrer : (req.headers.referer || '');
+  const utmSource = typeof body.utmSource === 'string' ? body.utmSource : null;
 
   if (!username && !slug) {
     res.status(400).json({ error: 'Missing username or slug' });
@@ -79,7 +80,7 @@ export default async function handler(req, res) {
 
     // Registered via waitUntil() inside recordEvent, so the 204 goes out
     // immediately and the insert finishes in the background.
-    recordEvent({ userId, eventType, linkId: validLinkId, referrer, req });
+    recordEvent({ userId, eventType, linkId: validLinkId, referrer, utmSource, req });
     res.status(204).end();
   } catch (err) {
     console.error(err);

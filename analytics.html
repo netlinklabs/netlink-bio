@@ -126,6 +126,7 @@
           <h3 class="text-sm font-semibold text-primary mb-2">Top Sources</h3>
           <div id="referrersList"></div>
           <p id="referrersEmpty" class="text-sm text-muted text-center py-6 hidden">No traffic sources recorded yet.</p>
+          <p class="text-xs text-muted mt-3 leading-relaxed">"Direct or apps" includes typed links and most visits from apps like WhatsApp, Telegram, and AI assistants, which usually don't share where the visitor came from.</p>
         </div>
       </div>
     </div>
@@ -423,7 +424,13 @@
       'tiktok.com': { name: 'TikTok', ai: false },
       't.co': { name: 'X (Twitter)', ai: false },
       'x.com': { name: 'X (Twitter)', ai: false },
-      'Direct': { name: 'Direct', ai: false },
+      // "Direct" is stored when there's no referrer and no utm_source. That
+      // includes typed URLs, but also most clicks from apps (WhatsApp,
+      // Telegram, and AI assistants like the ChatGPT app), which open links
+      // without a referrer. Label it honestly so it isn't read as "typed in".
+      'Direct': { name: 'Direct or apps', ai: false },
+      'chatgpt': { name: 'ChatGPT', ai: true },
+      'perplexity': { name: 'Perplexity', ai: true },
     };
 
     function referrerDisplay(hostname) {
