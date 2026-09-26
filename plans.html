@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- PAGE-TYPE: public -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!-- Internal reference page — not linked in nav yet, kept out of search until final -->
+  <title>Netlink — Plans (Draft)</title>
+  <meta name="description" content="Netlink membership plans — internal reference draft.">
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+  <link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared/site-nav.css">
+
+  <style>
+    :root { --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.10); }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--bg-primary); }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    .draft-banner { background: #FEF3C7; color: #92400E; text-align: center; padding: 10px 16px; font-size: 0.875rem; font-weight: 600; border-bottom: 1px solid #FDE68A; }
+
+    .plans-section { padding-top: var(--space-10); padding-bottom: var(--space-12); }
+    .plans-header { text-align: center; max-width: 640px; margin: 0 auto var(--space-8); }
+    .plans-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-3); }
+    .plans-subtitle { font-size: 1.0625rem; color: var(--text-secondary); line-height: 1.6; }
+
+    .plans-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); max-width: 1000px; margin: 0 auto; }
+    .plan-card { background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: var(--space-6); display: flex; flex-direction: column; position: relative; }
+    .plan-card.featured { border: 2px solid var(--color-primary); box-shadow: 0 12px 40px rgba(22, 198, 200, 0.15); }
+    .plan-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--color-primary); color: #fff; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 4px 12px; border-radius: 100px; }
+
+    .plan-name { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-2); }
+    .plan-price { font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 2px; }
+    .plan-price span { font-size: 0.9375rem; font-weight: 500; color: var(--text-secondary); }
+    .plan-note { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-4); min-height: 18px; }
+
+    .plan-features { list-style: none; margin-bottom: var(--space-5); flex: 1; }
+    .plan-features li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.9375rem; color: var(--text-primary); padding: 7px 0; border-bottom: 1px dashed var(--border-color); }
+    .plan-features li:last-child { border-bottom: none; }
+    .plan-features li.disabled { color: var(--text-secondary); opacity: 0.55; }
+    .plan-features svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
+    .plan-features .icon-yes { stroke: var(--color-primary); }
+    .plan-features .icon-no { stroke: var(--text-secondary); }
+
+    .plan-cta { text-align: center; padding: 12px; border-radius: var(--radius-input); font-weight: 600; font-size: 0.9375rem; background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+
+    .plans-footnote { max-width: 700px; margin: var(--space-8) auto 0; text-align: center; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.7; }
+
+    @media (min-width: 768px) {
+      .plans-grid { grid-template-columns: repeat(3, 1fr); align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="draft-banner">Internal draft — feature reference only. Not linked in navigation, not final until all features ship.</div>
+
+  <div id="site-header"></div>
+
+  <main id="main-content">
+    <section class="plans-section">
+      <div class="container">
+        <div class="plans-header">
+          <h1 class="plans-title">Netlink Plans</h1>
+          <p class="plans-subtitle">Membership tiers for Link in Bio, Professional CV, Landing Page, and Netlink Pay wallet. Billed in USDC — crypto payment only for now.</p>
+        </div>
+
+        <div class="plans-grid">
+          <!-- BASIC -->
+          <article class="plan-card">
+            <h2 class="plan-name">Basic</h2>
+            <p class="plan-price">Free</p>
+            <p class="plan-note">Forever free</p>
+            <ul class="plan-features">
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 20 links in Bio</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 2 template choices</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Professional CV</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Netlink Pay wallet</li>
+              <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Click analytics</li>
+              <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Landing Page</li>
+            </ul>
+            <div class="plan-cta">Current default</div>
+          </article>
+
+          <!-- SILVER -->
+          <article class="plan-card">
+            <h2 class="plan-name">Silver</h2>
+            <p class="plan-price">$2.4 <span>/ month</span></p>
+            <p class="plan-note">2 months free on annual billing</p>
+            <ul class="plan-features">
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 30 links in Bio</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Template Gallery (Silver)</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Professional CV</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Netlink Pay wallet</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Click analytics</li>
+              <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Landing Page</li>
+            </ul>
+            <div class="plan-cta">Draft pricing</div>
+          </article>
+
+          <!-- GOLD -->
+          <article class="plan-card featured">
+            <span class="plan-badge">Most complete</span>
+            <h2 class="plan-name">Gold</h2>
+            <p class="plan-price">$4.8 <span>/ month</span></p>
+            <p class="plan-note">2 months free on annual billing · KYC required to activate</p>
+            <ul class="plan-features">
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 50 links in Bio</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Template Gallery (Gold)</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Professional CV</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Landing Page</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Netlink Pay wallet</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Click analytics</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Hide footer link (toggle in settings)</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> KYC verification badge</li>
+            </ul>
+            <div class="plan-cta">Draft pricing</div>
+          </article>
+        </div>
+
+        <p class="plans-footnote">
+          This page is a working reference for tier scoping — not a public pricing page. Platinum tier is paused for a future release. Payments accepted in USDC only until a fiat payment processor is integrated.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="shared/site-nav.js"></script>
+</body>
+</html>

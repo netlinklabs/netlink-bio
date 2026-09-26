@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **New `plans.html`** — internal draft reference for membership tiers (Basic/Silver/Gold), listing links limit, template gallery access, Click Analytics (Silver+), Landing Page + Hide Footer Link toggle + mandatory KYC (Gold). Deliberately not linked anywhere in `site-nav.js`/nav — reachable only by direct URL — and marked `<meta name="robots" content="noindex, nofollow">` plus a visible amber "internal draft" banner, since pricing/feature gating isn't implemented in code yet (no `analytics`/`kyc_required` fields, `LINK_LIMITS` in `dashboard.html` still has a `platinum` entry not reflected here — Platinum is intentionally omitted from this page pending a future re-release). `<!-- PAGE-TYPE: public -->`, uses `shared/site-nav.css`/`shared/site-nav.js` like other marketing pages, no JSON-LD (not part of the CLAUDE.md required-schema table, and not meant to be indexed).
+
 ### Changed
 - **`shared/account-menu.js` / `shared/nav.js`: reorganized the Account sheet into "Account" and a new "Wallet" group, and replaced the single-button theme cycler with a 3-way segmented control.**
   - Removed the "Profile & Page" group title entirely — its one remaining item moves into the new group below.
