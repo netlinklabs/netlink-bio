@@ -5,6 +5,9 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **`analytics.html`: the AI Visibility card no longer shows a flat "0 / 0" for a profile with no AI history yet.** A bare zero read as broken rather than as an ordinary quiet period, especially for a newer profile. It's now checked against the account's full history (not just the selected period): with zero AI visits ever, the card shows a reassuring "No AI activity detected yet" message explaining this is normal and crawlers can take days to weeks to show up; once there's been at least one AI visit ever, the usual period-based tiles and per-bot list are shown (where a 0 for e.g. "Today" is expected and unremarkable). Rebuilt `shared/tailwind.css` and bumped `tailwind.css?v=5` to `?v=6` on every app page.
+
+### Changed
 - **TEMPORARY: re-added the `[ua-probe]` log in `api/_lib/analytics.js`, now scoped to unrecognized page views only** (no referrer AND no known AI bot match). Testing against a live profile showed visits from Manus AI arriving untagged, and there's no way to tell an unrecognized AI agent apart from a human app-open (WhatsApp/Telegram etc. also arrive with no referrer) without seeing the actual user-agent. Remove once the current wave of agents is cataloged into `api/_lib/ai-bots.js`.
 
 ### Added

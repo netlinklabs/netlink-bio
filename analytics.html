@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 <title>Netlink.bio - Analytics</title>
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-<link rel="stylesheet" href="/shared/tailwind.css?v=5">
+<link rel="stylesheet" href="/shared/tailwind.css?v=6">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@0.460.0" defer></script>
 <style>
@@ -141,19 +141,27 @@
           <p class="text-sm text-secondary">How often AI is reading your profile</p>
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div class="bg-surface border border-subtle rounded-xl p-4">
-          <p class="text-xs text-muted mb-1">AI Assistant Visits</p>
-          <p id="tileAiAssistant" class="stat-tile-value text-primary">0</p>
-        </div>
-        <div class="bg-surface border border-subtle rounded-xl p-4">
-          <p class="text-xs text-muted mb-1">AI Crawler Reads</p>
-          <p id="tileAiCrawler" class="stat-tile-value text-secondary">0</p>
-        </div>
+      <div id="aiReadsWaiting" class="hidden text-center py-6 px-2">
+        <i data-lucide="radar" class="w-6 h-6 text-blue-500 mx-auto mb-2"></i>
+        <p class="text-sm font-medium text-primary">No AI activity detected yet</p>
+        <p class="text-xs text-secondary mt-1 max-w-sm mx-auto">This is normal for a newer or recently updated profile. AI crawlers and assistants typically start reading public pages within days to a few weeks after they're indexed by search engines.</p>
       </div>
-      <div id="aiBotsList"></div>
-      <p id="aiBotsEmpty" class="text-sm text-muted text-center py-4 hidden">No AI activity recorded yet.</p>
-      <p class="text-xs text-muted mt-3 leading-relaxed">"AI Assistant Visits" means someone asked ChatGPT, Claude, Perplexity, or a similar assistant about you and it opened your page in response. "AI Crawler Reads" are background visits used to build AI training data or search indexes, they show AI activity but don't mean a real person saw your page, and can vary a lot week to week.</p>
+
+      <div id="aiReadsData" class="hidden">
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div class="bg-surface border border-subtle rounded-xl p-4">
+            <p class="text-xs text-muted mb-1">AI Assistant Visits</p>
+            <p id="tileAiAssistant" class="stat-tile-value text-primary">0</p>
+          </div>
+          <div class="bg-surface border border-subtle rounded-xl p-4">
+            <p class="text-xs text-muted mb-1">AI Crawler Reads</p>
+            <p id="tileAiCrawler" class="stat-tile-value text-secondary">0</p>
+          </div>
+        </div>
+        <div id="aiBotsList"></div>
+        <p id="aiBotsEmpty" class="text-sm text-muted text-center py-4 hidden">No AI activity recorded yet for this period.</p>
+        <p class="text-xs text-muted mt-3 leading-relaxed">"AI Assistant Visits" means someone asked ChatGPT, Claude, Perplexity, or a similar assistant about you and it opened your page in response. "AI Crawler Reads" are background visits used to build AI training data or search indexes, they show AI activity but don't mean a real person saw your page, and can vary a lot week to week.</p>
+      </div>
     </div>
 
     <div id="landingCard" class="card rounded-2xl p-4 lg:p-6 mb-4 hidden">
@@ -340,6 +348,16 @@
       document.getElementById('tileLandingClicks').textContent = sum('clicks_landing').toLocaleString();
       document.getElementById('tileAiAssistant').textContent = sum('ai_assistant_reads').toLocaleString();
       document.getElementById('tileAiCrawler').textContent = sum('ai_crawler_reads').toLocaleString();
+
+      // Checked against the full history (not just the selected period): a
+      // profile that has never once had an AI visit gets a reassuring
+      // "still waiting" message instead of a flat "0 / 0", which reads as
+      // broken rather than as an ordinary quiet period. Once there's been
+      // at least one AI visit ever, the period-based tiles above are shown
+      // as normal (a 0 for "Today" or "7D" is expected and fine there).
+      const everHadAiActivity = summaryRows.some((r) => (r.ai_crawler_reads || 0) > 0 || (r.ai_assistant_reads || 0) > 0);
+      document.getElementById('aiReadsWaiting').classList.toggle('hidden', everHadAiActivity);
+      document.getElementById('aiReadsData').classList.toggle('hidden', !everHadAiActivity);
 
       // A one-day "trend" is a single point, so hide the chart for Today.
       document.getElementById('trendCard').classList.toggle('hidden', currentPeriod === 'today');
