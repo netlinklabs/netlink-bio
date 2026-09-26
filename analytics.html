@@ -45,6 +45,11 @@
   .stats-blur-content.blurred { filter: blur(8px); user-select: none; pointer-events: none; }
   .stats-unlock-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 20px; z-index: 5; background: rgba(241,245,249,0.85); border-radius: 16px; }
   html.dark .stats-unlock-overlay { background: rgba(15,23,42,0.82); }
+  /* This page's <style> loads after shared/tailwind.css, so the
+     `display: flex` above would otherwise beat Tailwind's `.hidden`
+     (same specificity, later wins) and keep the overlay visible for
+     Silver/Gold too. */
+  .stats-unlock-overlay.hidden { display: none; }
 
   .referrer-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; }
   html.dark .referrer-row { border-color: rgba(255,255,255,0.05); }
