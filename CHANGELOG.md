@@ -4,6 +4,17 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`analytics.html`: "AI readiness" checklist in the AI Visibility card, for every tier.** Six checks of what the public profile actually sends to AI, each mirroring the exact rule in `api/bio.js` and the `profiles_bio_public` view, so a field that's filled in but hidden counts as not done: bio written (20+ characters, the same minimum as the dashboard's AI Score), name and photo, linked accounts (an active link, or a Telegram contact that's shown; these become JSON-LD `sameAs`), CV on the profile (`show_cv` plus the same "has a real CV" rule as `bio.js`/`sitemap.js`), verified (identity or business), and country shown (`country_code` plus `show_country_bio`). Undone items get a short reason and a button to the right place (`dashboard#profileCard`, `dashboard#cvCard`, or `identity`), with "Show" instead of "Add" when the data exists but is hidden. It shows as "N of 6 done" with a progress bar (deliberately not a weighted 0-100 score, to stay distinct from the dashboard's AI Score) and collapses to one "All done" line when complete. A fixed "Handled by Netlink" line covers the site-level parts (robots.txt, sitemap, structured data). Footnote: these help AI understand the profile and don't guarantee visits. Inspired by third-party checkers such as aicrawlercheck.com, which score configuration (what AI *can* read) rather than traffic. The links-count query failing only hides this section, never the rest of the page.
+- **`dashboard.html`: `#profileCard` / `#cvCard` deep links** scroll to that card once the dashboard data has loaded (the browser's own anchor jump lands too high, because the cards above grow as content fills in).
+
+### Changed
+- `analytics.html`: the "No AI activity detected yet" empty state is now a compact one-line banner, so the readiness checklist sits right below it.
+
+### Fixed
+- **`analytics.html`: Lucide icons could stay blank** if the data rendered before the deferred `lucide` script had loaded (fast Supabase response, slow unpkg), since every `createIcons()` call then no-oped. Added a final `createIcons()` on `DOMContentLoaded`, which always runs after deferred scripts. Found while testing the checklist in headless Chromium.
+- Rebuilt `shared/tailwind.css` and bumped `tailwind.css?v=6` to `?v=7` on every app page.
+
 ### Security
 - **`api/cron/rollup-analytics.js` now fails closed.** It only checked the `Authorization` header when `CRON_SECRET` was set, and `CRON_SECRET` had never been set, so anyone could call the endpoint (low impact, since the rollup is idempotent, but still open). It now returns 503 if `CRON_SECRET` is missing and 401 on a wrong token.
 - **Set `CRON_SECRET` and `ANALYTICS_HASH_SALT` in Vercel production env vars** (both `sensitive`, random 32-byte values, 2026-09-27). `ANALYTICS_HASH_SALT` was unset, so `visitor_hash` used the fallback salt that's public in this repo, and with a known salt the hash can be reversed to an IP by brute force. That undercut the "pseudonymous" wording in privacy policy v1.4. Changed while analytics has only one day of data; unique-visitor dedup for 2026-09-26 (UTC) may double-count visitors seen both before and after the switch.

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 <title>Netlink.bio - Analytics</title>
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-<link rel="stylesheet" href="/shared/tailwind.css?v=6">
+<link rel="stylesheet" href="/shared/tailwind.css?v=7">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@0.460.0" defer></script>
 <style>
@@ -141,10 +141,9 @@
           <p class="text-sm text-secondary">How often AI is reading your profile</p>
         </div>
       </div>
-      <div id="aiReadsWaiting" class="hidden text-center py-6 px-2">
-        <i data-lucide="radar" class="w-6 h-6 text-blue-500 mx-auto mb-2"></i>
-        <p class="text-sm font-medium text-primary">No AI activity detected yet</p>
-        <p class="text-xs text-secondary mt-1 max-w-sm mx-auto">This is normal for a newer or recently updated profile. AI crawlers and assistants typically start reading public pages within days to a few weeks after they're indexed by search engines.</p>
+      <div id="aiReadsWaiting" class="hidden flex items-start gap-3 p-3 bg-surface border border-subtle rounded-xl">
+        <i data-lucide="radar" class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5"></i>
+        <p class="text-sm text-secondary"><span class="font-medium text-primary">No AI activity detected yet.</span> For a newer profile this usually takes a few days to a few weeks, once search engines have indexed it.</p>
       </div>
 
       <div id="aiReadsData" class="hidden">
@@ -161,6 +160,29 @@
         <div id="aiBotsList"></div>
         <p id="aiBotsEmpty" class="text-sm text-muted text-center py-4 hidden">No AI activity recorded yet for this period.</p>
         <p class="text-xs text-muted mt-3 leading-relaxed">"AI Assistant Visits" means someone asked ChatGPT, Claude, Perplexity, or a similar assistant about you and it opened your page in response. "AI Crawler Reads" are background visits used to build AI training data or search indexes, they show AI activity but don't mean a real person saw your page, and can vary a lot week to week.</p>
+      </div>
+
+      <!-- AI readiness: what AI actually receives from the public profile.
+           Each check mirrors the exact rule api/bio.js and the
+           profiles_bio_public view use (e.g. a country that's set but not
+           shown isn't sent to AI, so it counts as not done). Deliberately
+           not a weighted score like the dashboard's AI Score. Filled by
+           renderAiReadiness(); hidden if its data can't be loaded. -->
+      <div id="aiReadiness" class="hidden border-t border-subtle pt-4 mt-4">
+        <div class="flex items-baseline justify-between mb-1.5">
+          <p class="text-sm font-semibold text-primary">AI readiness</p>
+          <p id="aiReadinessCount" class="text-xs text-secondary"></p>
+        </div>
+        <div class="h-1.5 bg-surface rounded-full overflow-hidden mb-3">
+          <div id="aiReadinessFill" class="h-full bg-blue-500 rounded-full" style="width:0%"></div>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-secondary p-2.5 border border-subtle rounded-xl mb-1">
+          <i data-lucide="shield-check" class="w-4 h-4 text-green-500 flex-shrink-0"></i>
+          <span>Handled by Netlink: open to major AI crawlers, listed in the sitemap, and structured data included.</span>
+        </div>
+        <div id="aiReadinessList"></div>
+        <p id="aiReadinessAllDone" class="hidden text-sm text-secondary py-2">All done. AI gets a complete picture of your public profile.</p>
+        <p class="text-xs text-muted mt-2">These help AI understand your public profile. They don't guarantee AI visits.</p>
       </div>
     </div>
 
@@ -282,7 +304,7 @@
     async function loadProfileAndData() {
       const { data: profile, error } = await supabaseClient
         .from('profiles')
-        .select('id, username, display_name, avatar_url, tier, net_id, local_currency, business_verified_at, identity_verified_at, is_black_badge')
+        .select('id, username, display_name, avatar_url, tier, net_id, local_currency, business_verified_at, identity_verified_at, is_black_badge, bio, show_cv, cv_data, country_code, show_country_bio, contact_telegram, show_telegram_bio')
         .eq('id', currentUser.id)
         .single();
       if (error) throw error;
@@ -331,7 +353,117 @@
         document.getElementById('landingNoPage').classList.toggle('hidden', hasLandingPage);
       }
 
+      // AI readiness is about the profile itself, not the selected period,
+      // so it's rendered once here. A failure only hides that section --
+      // it must never take the rest of the analytics page down with it.
+      try {
+        const { count: activeLinkCount, error: linksError } = await supabaseClient
+          .from('links')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id)
+          .eq('is_active', true);
+        if (linksError) throw linksError;
+        renderAiReadiness(profile, activeLinkCount || 0);
+      } catch (err) {
+        console.error('AI readiness unavailable:', err);
+      }
+
       selectPeriod(30);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Same "has a real CV" rule as api/bio.js and api/sitemap.js (keep in
+    // sync): the CV page is only linked from the profile's structured data,
+    // and only listed in the sitemap, when this is true.
+    function hasRealCvContent(cv) {
+      if (!cv || typeof cv !== 'object') return false;
+      if (typeof cv.summary === 'string' && cv.summary.trim()) return true;
+      if (Array.isArray(cv.experience) && cv.experience.length) return true;
+      if (Array.isArray(cv.skills) && cv.skills.length) return true;
+      if (Array.isArray(cv.education) && cv.education.length) return true;
+      return false;
+    }
+
+    // Each check matches what the public profile actually sends to AI
+    // (api/bio.js JSON-LD plus the profiles_bio_public view's show_* gates),
+    // so a field that's filled in but hidden counts as not done.
+    function aiReadinessItems(p, activeLinkCount) {
+      const cvFilled = hasRealCvContent(p.cv_data);
+      const cvShown = p.show_cv !== false;
+      const countryShown = !!p.country_code && p.show_country_bio === true;
+      return [
+        {
+          done: (p.bio || '').trim().length >= 20, // same minimum as the dashboard's AI Score
+          doneLabel: 'Bio written',
+          label: 'Write a short bio',
+          hint: 'AI uses it to summarize who you are',
+          action: 'Add', href: 'dashboard#profileCard',
+        },
+        {
+          done: !!(p.display_name || '').trim() && !!p.avatar_url,
+          doneLabel: 'Name and photo added',
+          label: 'Add your name and photo',
+          hint: 'Your basic identity for AI and visitors',
+          action: 'Add', href: 'dashboard#profileCard',
+        },
+        {
+          done: activeLinkCount > 0 || (!!p.contact_telegram && p.show_telegram_bio === true),
+          doneLabel: 'Linked to your other accounts',
+          label: 'Link your other accounts',
+          hint: 'Helps AI confirm it\'s you on LinkedIn and other sites',
+          action: 'Add', href: 'dashboard#profileCard',
+        },
+        {
+          done: cvFilled && cvShown,
+          doneLabel: 'CV on your profile',
+          label: cvFilled ? 'Show your CV on your profile' : 'Fill in your CV',
+          hint: cvFilled ? 'Your CV is filled in but hidden' : 'Gives AI your experience and skills',
+          action: cvFilled ? 'Show' : 'Add', href: cvFilled ? 'dashboard#profileCard' : 'dashboard#cvCard',
+        },
+        {
+          done: !!(p.identity_verified_at || p.business_verified_at),
+          doneLabel: 'Verified profile',
+          label: 'Get verified',
+          hint: 'A badge that shows the profile is really you',
+          action: 'Verify', href: 'identity',
+        },
+        {
+          done: countryShown,
+          doneLabel: 'Country on your profile',
+          label: p.country_code ? 'Show your country on your profile' : 'Add your country',
+          hint: p.country_code ? 'Your country is set but hidden' : 'Helps AI answer location questions',
+          action: p.country_code ? 'Show' : 'Add', href: 'dashboard#profileCard',
+        },
+      ];
+    }
+
+    function renderAiReadiness(profile, activeLinkCount) {
+      const items = aiReadinessItems(profile, activeLinkCount);
+      const doneCount = items.filter((i) => i.done).length;
+      const allDone = doneCount === items.length;
+
+      document.getElementById('aiReadinessCount').textContent = `${doneCount} of ${items.length} done`;
+      document.getElementById('aiReadinessFill').style.width = `${Math.round((doneCount / items.length) * 100)}%`;
+      document.getElementById('aiReadinessAllDone').classList.toggle('hidden', !allDone);
+
+      // Once everything's done, the list collapses to the single "All done" line.
+      document.getElementById('aiReadinessList').innerHTML = allDone ? '' : items.map((item) => item.done
+        ? `
+        <div class="flex items-center gap-3 py-2 border-b border-subtle last:border-b-0">
+          <i data-lucide="circle-check" class="w-[18px] h-[18px] text-green-500 flex-shrink-0"></i>
+          <span class="text-sm text-primary">${escapeHtml(item.doneLabel)}</span>
+        </div>`
+        : `
+        <div class="flex items-center gap-3 py-2 border-b border-subtle last:border-b-0">
+          <i data-lucide="circle" class="w-[18px] h-[18px] text-muted flex-shrink-0"></i>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-primary">${escapeHtml(item.label)}</p>
+            <p class="text-xs text-secondary">${escapeHtml(item.hint)}</p>
+          </div>
+          <a href="${item.href}" class="text-xs font-medium px-3 py-1.5 rounded-lg border border-subtle text-primary hover:bg-surface transition flex-shrink-0">${escapeHtml(item.action)}</a>
+        </div>`).join('');
+
+      document.getElementById('aiReadiness').classList.remove('hidden');
       if (window.lucide) lucide.createIcons();
     }
 
@@ -553,6 +685,11 @@
     }
 
     if (window.lucide) lucide.createIcons();
+    // lucide loads with `defer`, so it can arrive after the data has already
+    // rendered (a fast Supabase response, a slow unpkg). Every createIcons()
+    // call above then no-ops and the icons stay blank. DOMContentLoaded fires
+    // after all deferred scripts have run, so this pass always sees lucide.
+    document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
   </script>
   <script src="/shared/account-menu.js"></script>
   <script src="/shared/nav.js"></script>
