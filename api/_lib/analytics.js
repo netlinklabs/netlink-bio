@@ -8,7 +8,7 @@
 
 import { createHash } from 'crypto';
 import { waitUntil } from '@vercel/functions';
-import { detectAiBot } from './ai-bots.js';
+import { detectAiBot, detectAiApp } from './ai-bots.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -73,7 +73,11 @@ async function insertEvent({ userId, eventType, linkId = null, referrer = null, 
   // original query string through the rewrite); clicks pass it explicitly
   // from the page, since the click beacon's own URL has none.
   const utm = utmSource ?? req.query?.utm_source ?? null;
-  const source = normalizeReferrer(referrer) || normalizeUtmSource(utm);
+  // Last fallback: an AI app's in-app browser token in the User-Agent (see
+  // detectAiApp in ai-bots.js). Applies to clicks too -- the click beacon
+  // is sent from the same WebView, so it carries the same User-Agent.
+  const appSource = detectAiApp(req.headers['user-agent']);
+  const source = normalizeReferrer(referrer) || normalizeUtmSource(utm) || appSource;
 
   // Tag known AI bot User-Agents (see api/_lib/ai-bots.js) so this event is
   // counted as an "AI Read" instead of a human view/click. Only applied to
@@ -87,7 +91,7 @@ async function insertEvent({ userId, eventType, linkId = null, referrer = null, 
   // tell a real unrecognized AI agent (e.g. Manus) apart from a human app
   // open (WhatsApp/Telegram/etc. also arrive with no referrer). Vercel
   // runtime logs only, never stored in the database, no IP logged.
-  if (!referrer && !aiBot && eventType.startsWith('view_')) {
+  if (!referrer && !aiBot && !appSource && eventType.startsWith('view_')) {
     console.log(`[ua-probe] ${eventType} utm_source="${String(utm ?? '').slice(0, 100)}" ua="${String(req.headers['user-agent'] || '').slice(0, 300)}"`);
   }
 

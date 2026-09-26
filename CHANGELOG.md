@@ -4,6 +4,12 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Analytics: visits opened inside an AI app's in-app browser are credited to that app.** Some AI apps open links in their own WebView and add an app token to the User-Agent (verified: the Kimi app sends `... Mobile Safari/537.36 Kimi/3.1.3`). These are real people, not bots, but WebViews send no referrer, so they were counted as "Direct or apps". New `detectAiApp()` in `api/_lib/ai-bots.js` maps a known token to the app's web domain (`kimi.com`), used as the source only when there's no referrer and no `utm_source`. It applies to clicks too, since the click beacon comes from the same WebView. `analytics.html` shows it as "Kimi" in Top Sources. Only apps with a token seen in a real request are listed; apps that open links in plain Chrome (e.g. the ChatGPT Android app) send no token and still show as "Direct or apps". The `[ua-probe]` log now also skips these recognized app visits.
+
+### Changed
+- **`analytics.html`: AI sources in Top Sources get a small blue "AI" text label after the name instead of the 🤖 emoji.**
+
 ### Changed
 - **`analytics.html`: the AI Visibility card no longer shows a flat "0 / 0" for a profile with no AI history yet.** A bare zero read as broken rather than as an ordinary quiet period, especially for a newer profile. It's now checked against the account's full history (not just the selected period): with zero AI visits ever, the card shows a reassuring "No AI activity detected yet" message explaining this is normal and crawlers can take days to weeks to show up; once there's been at least one AI visit ever, the usual period-based tiles and per-bot list are shown (where a 0 for e.g. "Today" is expected and unremarkable). Rebuilt `shared/tailwind.css` and bumped `tailwind.css?v=5` to `?v=6` on every app page.
 

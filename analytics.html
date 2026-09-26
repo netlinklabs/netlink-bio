@@ -441,8 +441,8 @@
     // toggles the html.dark class without a page reload).
     new MutationObserver(() => renderFromSummary()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-    // Hostname -> friendly display name. `ai: true` entries get the 🤖
-    // badge in Top Sources -- Netlink is positioned as AI-friendly, so
+    // Hostname -> friendly display name. `ai: true` entries get a small "AI"
+    // label in Top Sources -- Netlink is positioned as AI-friendly, so
     // traffic arriving from an AI assistant's answer is worth calling out
     // rather than showing as a bare domain. Unrecognized hostnames still
     // render fine (falls back to the raw hostname further down), so a new
@@ -462,6 +462,10 @@
       'x.ai': { name: 'Grok', ai: true },
       'meta.ai': { name: 'Meta AI', ai: true },
       'deepseek.com': { name: 'DeepSeek', ai: true },
+      // Also stored for visits opened inside the Kimi app's in-app browser
+      // (see detectAiApp in api/_lib/ai-bots.js).
+      'kimi.com': { name: 'Kimi', ai: true },
+      'kimi.moonshot.cn': { name: 'Kimi', ai: true },
       'google.com': { name: 'Google Search', ai: false },
       'instagram.com': { name: 'Instagram', ai: false },
       'facebook.com': { name: 'Facebook', ai: false },
@@ -503,10 +507,10 @@
       emptyMsg.classList.add('hidden');
       list.innerHTML = sorted.map(([referrer, count]) => {
         const { name, ai } = referrerDisplay(referrer);
-        const badge = ai ? '<span title="AI assistant" class="mr-1">\u{1F916}</span>' : '';
+        const badge = ai ? '<span title="AI assistant" class="ml-1 text-xs text-blue-500 font-medium">AI</span>' : '';
         return `
         <div class="referrer-row">
-          <span class="text-secondary truncate">${badge}${escapeHtml(name)}</span>
+          <span class="text-secondary truncate">${escapeHtml(name)}${badge}</span>
           <span class="text-primary font-semibold">${count.toLocaleString()}</span>
         </div>`;
       }).join('');
