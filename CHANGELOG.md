@@ -5,6 +5,10 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Added
+- **`404.html`: new branded 404 page for any path that doesn't match a route/rewrite** (typo'd URL, deleted/moved page, etc.) — previously these fell through to Vercel's default unstyled 404. Dark hero gradient matching `index.html`'s tokens (`#16C6C8` teal accent, Poppins/Inter), logo, and two CTAs (homepage, contact).
+- **`api/_lib/html.js`: new shared `escapeHtml()` + `notFoundPage()` helpers**, consolidating 3 near-identical copies that had drifted apart across `api/bio.js`, `api/cv.js`, and `api/landing.js` (each had its own `notFoundPage()` with plain unstyled `sans-serif` markup, and `landing.js`'s `escapeHtml()` alone also escaped `'`). All three routes now call the shared `notFoundPage({ title, heading, message, ctaHref, ctaText })`, styled to match the new `404.html`, instead of maintaining their own copy. No change to when each route 404s (missing username/slug still resolves to `res.status(404)`), only to what the response body looks like.
+
+### Added
 - **`changelog.html`: added 3 public-facing entries for this week's dashboard work** — "AI Score for your profile and CV" (New), "Reorder your CV sections" (New), "Share your CV in one tap" (Improved). Placed at the top of the September 2026 block. The other dashboard changes from this batch (Wallet Balance card removal, CV title wording, button repositioning, chevron placement) were left out of the public changelog as internal/cosmetic, not user-facing enough to warrant an entry.
 
 ### Changed

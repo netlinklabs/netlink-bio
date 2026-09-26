@@ -9,17 +9,10 @@
 // a base-table query (not a public view like profiles_bio_public), so we
 // deliberately never select `id` or `user_id` to avoid exposing them.
 
+import { escapeHtml, notFoundPage } from './_lib/html.js';
+
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
-
-function escapeHtml(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 async function supabaseGet(path) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -27,18 +20,6 @@ async function supabaseGet(path) {
   });
   if (!res.ok) throw new Error(`Supabase request failed: ${res.status}`);
   return res.json();
-}
-
-function notFoundPage(slug) {
-  return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<title>Page not found — Netlink.bio</title>
-<meta name="robots" content="noindex">
-<style>body{font-family:sans-serif;text-align:center;padding:80px 20px;color:#334155}</style>
-</head><body>
-<h1>No page found for "${escapeHtml(slug)}"</h1>
-<p><a href="/">Create your own free page &rarr;</a></p>
-</body></html>`;
 }
 
 // Per-business-type default section labels, matching page-builder.html's
@@ -250,7 +231,11 @@ export default async function handler(req, res) {
       `landing_pages?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true&select=slug,title,business_type,content,updated_at`
     );
     if (!rows.length) {
-      res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage(slug));
+      res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
+        title: 'Page not found',
+        heading: `No page found for "${escapeHtml(slug)}"`,
+        message: 'This page doesn’t exist or may have been unpublished.',
+      }));
       return;
     }
     page = rows[0];

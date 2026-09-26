@@ -5,18 +5,10 @@
 // like jobTitle, alumniOf, worksFor, knowsAbout) for machine-readability.
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
+import { escapeHtml, notFoundPage } from './_lib/html.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 // ---- Verification badges (Green/Gold/Silver/Black) ----
 // Identical logic to api/bio.js -- color is computed live from stored
@@ -98,18 +90,6 @@ async function supabaseGet(path) {
   return res.json();
 }
 
-function notFoundPage(username) {
-  return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<title>CV not found — Netlink.bio</title>
-<meta name="robots" content="noindex">
-<style>body{font-family:sans-serif;text-align:center;padding:80px 20px;color:#334155}</style>
-</head><body>
-<h1>No CV found for @${escapeHtml(username)}</h1>
-<p><a href="/">Create your own free page &rarr;</a></p>
-</body></html>`;
-}
-
 export default async function handler(req, res) {
   const username = (req.query.username || '').toLowerCase().trim();
   if (!username) { res.status(400).send('Missing username'); return; }
@@ -118,7 +98,11 @@ export default async function handler(req, res) {
   try {
     const profiles = await supabaseGet(`profiles_cv_public?username=eq.${encodeURIComponent(username)}&select=*`);
     if (!profiles.length) {
-      res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage(username));
+      res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
+        title: 'CV not found',
+        heading: `No CV found for @${escapeHtml(username)}`,
+        message: 'This CV doesn’t exist or may have been removed.',
+      }));
       return;
     }
     profile = profiles[0];

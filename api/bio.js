@@ -6,6 +6,7 @@
 // and structured data, not an empty shell.
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
+import { escapeHtml, notFoundPage } from './_lib/html.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -19,15 +20,6 @@ const BRAND_SLUGS = {
   github: 'github', behance: 'behance', dribbble: 'dribbble', medium: 'medium',
   reddit: 'reddit', paypal: 'paypal', patreon: 'patreon', vimeo: 'vimeo', netflix: 'netflix',
 };
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 // ---- Verification badges (Green/Gold/Silver/Black) ----
 // Color is computed live from stored facts + current tier, never stored
@@ -162,18 +154,6 @@ async function supabaseGet(path) {
   return res.json();
 }
 
-function notFoundPage(username) {
-  return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<title>Profile not found — Netlink.bio</title>
-<meta name="robots" content="noindex">
-<style>body{font-family:sans-serif;text-align:center;padding:80px 20px;color:#334155}</style>
-</head><body>
-<h1>@${escapeHtml(username)} isn't on Netlink.bio</h1>
-<p><a href="/">Create your own free page &rarr;</a></p>
-</body></html>`;
-}
-
 export default async function handler(req, res) {
   const username = (req.query.username || '').toLowerCase().trim();
   if (!username) { res.status(400).send('Missing username'); return; }
@@ -182,7 +162,11 @@ export default async function handler(req, res) {
   try {
     const profiles = await supabaseGet(`profiles_bio_public?username=eq.${encodeURIComponent(username)}&select=*`);
     if (!profiles.length) {
-      res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage(username));
+      res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
+        title: 'Profile not found',
+        heading: `@${escapeHtml(username)} isn't on Netlink.bio`,
+        message: 'This profile doesn’t exist or may have been removed.',
+      }));
       return;
     }
     profile = profiles[0];
