@@ -27,6 +27,22 @@ export function visitorHash(req) {
   return createHash('sha256').update(`${ip}|${ua}|${HASH_SALT}`).digest('hex').slice(0, 24);
 }
 
+// Normalizes a referrer down to its hostname (e.g.
+// "https://chat.openai.com/c/abc123?x=1" -> "chat.openai.com") before it's
+// stored. Grouping by full URL would split traffic from the same source
+// into many one-count rows (every AI chat conversation has a different
+// path) -- analytics.html's Top Sources list needs the hostname to group
+// on, and does the "friendly name" lookup (ChatGPT, Claude, etc.) itself.
+function normalizeReferrer(referrer) {
+  if (!referrer) return null;
+  try {
+    const host = new URL(referrer).hostname.replace(/^www\./, '');
+    return host || null;
+  } catch {
+    return null;
+  }
+}
+
 // Fire-and-forget insert -- callers should not await this in a way that
 // blocks the response (or should await it after res.send has already been
 // called), and must never let a failure here break the page render.
@@ -48,7 +64,7 @@ export async function recordEvent({ userId, eventType, linkId = null, referrer =
         user_id: userId,
         event_type: eventType,
         link_id: linkId,
-        referrer: (referrer || '').slice(0, 500) || null,
+        referrer: normalizeReferrer(referrer),
         visitor_hash: visitorHash(req),
       }),
     });

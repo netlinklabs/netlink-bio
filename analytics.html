@@ -352,6 +352,44 @@
     // toggles the html.dark class without a page reload).
     new MutationObserver(() => renderFromSummary()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
+    // Hostname -> friendly display name. `ai: true` entries get the 🤖
+    // badge in Top Sources -- Netlink is positioned as AI-friendly, so
+    // traffic arriving from an AI assistant's answer is worth calling out
+    // rather than showing as a bare domain. Unrecognized hostnames still
+    // render fine (falls back to the raw hostname further down), so a new
+    // AI tool that isn't in this list yet never gets miscategorized or
+    // dropped -- it just shows its plain domain until added here.
+    const REFERRER_NAMES = {
+      'chatgpt.com': { name: 'ChatGPT', ai: true },
+      'chat.openai.com': { name: 'ChatGPT', ai: true },
+      'claude.ai': { name: 'Claude', ai: true },
+      'perplexity.ai': { name: 'Perplexity', ai: true },
+      'gemini.google.com': { name: 'Gemini', ai: true },
+      'copilot.microsoft.com': { name: 'Copilot', ai: true },
+      'poe.com': { name: 'Poe', ai: true },
+      'you.com': { name: 'You.com', ai: true },
+      'character.ai': { name: 'Character.AI', ai: true },
+      'grok.com': { name: 'Grok', ai: true },
+      'x.ai': { name: 'Grok', ai: true },
+      'meta.ai': { name: 'Meta AI', ai: true },
+      'deepseek.com': { name: 'DeepSeek', ai: true },
+      'google.com': { name: 'Google Search', ai: false },
+      'instagram.com': { name: 'Instagram', ai: false },
+      'facebook.com': { name: 'Facebook', ai: false },
+      'l.instagram.com': { name: 'Instagram', ai: false },
+      'linkedin.com': { name: 'LinkedIn', ai: false },
+      'tiktok.com': { name: 'TikTok', ai: false },
+      't.co': { name: 'X (Twitter)', ai: false },
+      'x.com': { name: 'X (Twitter)', ai: false },
+      'Direct': { name: 'Direct', ai: false },
+    };
+
+    function referrerDisplay(hostname) {
+      const known = REFERRER_NAMES[hostname];
+      if (known) return known;
+      return { name: hostname, ai: false };
+    }
+
     function renderReferrers(rows) {
       const merged = {};
       rows.forEach((r) => {
@@ -368,11 +406,15 @@
         return;
       }
       emptyMsg.classList.add('hidden');
-      list.innerHTML = sorted.map(([referrer, count]) => `
+      list.innerHTML = sorted.map(([referrer, count]) => {
+        const { name, ai } = referrerDisplay(referrer);
+        const badge = ai ? '<span title="AI assistant" class="mr-1">\u{1F916}</span>' : '';
+        return `
         <div class="referrer-row">
-          <span class="text-secondary truncate">${escapeHtml(referrer)}</span>
+          <span class="text-secondary truncate">${badge}${escapeHtml(name)}</span>
           <span class="text-primary font-semibold">${count.toLocaleString()}</span>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
 
     function escapeHtml(str) {
