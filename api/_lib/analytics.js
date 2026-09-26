@@ -81,6 +81,16 @@ async function insertEvent({ userId, eventType, linkId = null, referrer = null, 
   // it can never trigger a click event in the first place.
   const aiBot = eventType.startsWith('view_') ? detectAiBot(req.headers['user-agent']) : null;
 
+  // TEMPORARY (remove once the current wave of unrecognized AI agents is
+  // cataloged into api/_lib/ai-bots.js): log the user-agent of page views
+  // that arrive with no referrer AND don't match a known AI bot, so we can
+  // tell a real unrecognized AI agent (e.g. Manus) apart from a human app
+  // open (WhatsApp/Telegram/etc. also arrive with no referrer). Vercel
+  // runtime logs only, never stored in the database, no IP logged.
+  if (!referrer && !aiBot && eventType.startsWith('view_')) {
+    console.log(`[ua-probe] ${eventType} utm_source="${String(utm ?? '').slice(0, 100)}" ua="${String(req.headers['user-agent'] || '').slice(0, 300)}"`);
+  }
+
   if (!SERVICE_ROLE_KEY) {
     console.error('recordEvent: SUPABASE_SERVICE_ROLE_KEY is not set, skipping.');
     return;
