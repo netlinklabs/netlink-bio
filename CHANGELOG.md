@@ -5,6 +5,8 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Analytics events were never recorded (`analytics_events` stayed empty in production).** `api/bio.js`, `api/cv.js`, `api/landing.js`, and `api/track-event.js` called `await recordEvent(...)` *after* sending the response, but Vercel can suspend a function as soon as the response is sent, so the insert never ran. There was no error log either, because the code simply never executed. `recordEvent()` in `api/_lib/analytics.js` now registers the insert with `waitUntil()` from the new `@vercel/functions` dependency, and all four callers call it (without `await`) *before* sending the response. The response still isn't delayed by the DB write.
+- **`analytics.html`: with no data, the trend chart left an empty 220px box above the "No data yet" message.** The empty state now hides the chart's wrapper div (`#trendChartWrap`) instead of only the `<canvas>`.
 - **`analytics.html`: the "upgrade to unlock" overlay showed for every tier, including Silver and Gold.** The page's own `.stats-unlock-overlay { display: flex }` rule loads after `shared/tailwind.css`, so it beat Tailwind's `.hidden { display: none }` (same specificity, later rule wins). The tier check itself was correct (Silver/Gold stats were never blurred), but the semi-transparent overlay still sat on top of them. Added `.stats-unlock-overlay.hidden { display: none; }`. Verified in headless Chromium: before the fix the overlay computed to `flex` with `.hidden` present; after, `none` for Silver/Gold and `flex` for Basic.
 
 ### Added

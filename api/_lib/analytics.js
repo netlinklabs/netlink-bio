@@ -7,6 +7,7 @@
 // This keeps the raw event log off the public PostgREST surface entirely.
 
 import { createHash } from 'crypto';
+import { waitUntil } from '@vercel/functions';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -43,10 +44,16 @@ function normalizeReferrer(referrer) {
   }
 }
 
-// Fire-and-forget insert -- callers should not await this in a way that
-// blocks the response (or should await it after res.send has already been
-// called), and must never let a failure here break the page render.
-export async function recordEvent({ userId, eventType, linkId = null, referrer = null, req }) {
+// Fire-and-forget: registers the insert with Vercel's waitUntil() so it
+// runs in the background without delaying the response. Call it BEFORE
+// sending the response and don't await it. (An earlier version awaited it
+// after res.send(), but Vercel can suspend the function as soon as the
+// response is sent, so the insert never ran and nothing was logged.)
+export function recordEvent(args) {
+  waitUntil(insertEvent(args));
+}
+
+async function insertEvent({ userId, eventType, linkId = null, referrer = null, req }) {
   if (!SERVICE_ROLE_KEY) {
     console.error('recordEvent: SUPABASE_SERVICE_ROLE_KEY is not set, skipping.');
     return;
