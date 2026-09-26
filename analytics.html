@@ -110,7 +110,7 @@
 
         <div class="card rounded-2xl p-4 lg:p-6 mb-4">
           <h3 class="text-sm font-semibold text-primary mb-3">Views &amp; Clicks Trend</h3>
-          <div style="position:relative; height:220px;">
+          <div id="trendChartWrap" style="position:relative; height:220px;">
             <canvas id="trendChart"></canvas>
           </div>
           <p id="trendEmpty" class="text-sm text-muted text-center py-10 hidden">No data yet for this period.</p>
@@ -312,12 +312,12 @@
       const canvas = document.getElementById('trendChart');
       const emptyMsg = document.getElementById('trendEmpty');
       if (!rows.length) {
-        canvas.classList.add('hidden');
+        document.getElementById('trendChartWrap').classList.add('hidden');
         emptyMsg.classList.remove('hidden');
         if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
         return;
       }
-      canvas.classList.remove('hidden');
+      document.getElementById('trendChartWrap').classList.remove('hidden');
       emptyMsg.classList.add('hidden');
 
       const isDark = document.documentElement.classList.contains('dark');

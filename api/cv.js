@@ -412,9 +412,9 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 </body>
 </html>`;
 
+  recordEvent({ userId: profile.id, eventType: 'view_cv', referrer: req.headers.referer || '', req });
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=120');
   res.status(200).send(html);
-
-  await recordEvent({ userId: profile.id, eventType: 'view_cv', referrer: req.headers.referer || '', req });
 }

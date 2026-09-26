@@ -565,11 +565,11 @@ export default async function handler(req, res) {
 </body>
 </html>`;
 
+  // Registered via waitUntil() inside recordEvent -- runs in the background,
+  // doesn't delay the response.
+  recordEvent({ userId: profile.id, eventType: 'view_bio', referrer: req.headers.referer || '', req });
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=120');
   res.status(200).send(html);
-
-  // Recorded after the response is sent so it never adds latency to the
-  // page load; the function invocation stays alive until this resolves.
-  await recordEvent({ userId: profile.id, eventType: 'view_bio', referrer: req.headers.referer || '', req });
 }

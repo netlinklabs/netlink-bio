@@ -77,11 +77,10 @@ export default async function handler(req, res) {
       if (owned.length) validLinkId = linkId;
     }
 
-    // Respond first, record after -- the beacon caller doesn't wait for a
-    // meaningful body, and there's nothing further to compute from the DB
-    // write's result.
+    // Registered via waitUntil() inside recordEvent, so the 204 goes out
+    // immediately and the insert finishes in the background.
+    recordEvent({ userId, eventType, linkId: validLinkId, referrer, req });
     res.status(204).end();
-    await recordEvent({ userId, eventType, linkId: validLinkId, referrer, req });
   } catch (err) {
     console.error(err);
     if (!res.headersSent) res.status(204).end();

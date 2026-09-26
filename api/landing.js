@@ -584,9 +584,9 @@ function copyWeChatId(id) {
 </body>
 </html>`;
 
+  recordEvent({ userId: page.user_id, eventType: 'view_landing', referrer: req.headers.referer || '', req });
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=120');
   res.status(200).send(html);
-
-  await recordEvent({ userId: page.user_id, eventType: 'view_landing', referrer: req.headers.referer || '', req });
 }
