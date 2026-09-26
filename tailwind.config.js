@@ -8,6 +8,7 @@
 // include so browsers/CDN edge caches pick up the new file (see CHANGELOG.md).
 module.exports = {
   content: [
+    './analytics.html',
     './card.html',
     './contacts.html',
     './dashboard.html',

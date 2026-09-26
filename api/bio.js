@@ -7,6 +7,7 @@
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
 import { escapeHtml, notFoundPage } from './_lib/html.js';
+import { recordEvent } from './_lib/analytics.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -253,14 +254,14 @@ export default async function handler(req, res) {
   if (youtubeUrl) {
     if (showYoutubeThumb && youtubeId) {
       youtubeHtml = `
-      <a class="youtube-frame" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">
+      <a class="youtube-frame" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener" onclick="trackClick(null)">
         <img src="https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg" alt="${escapeHtml(youtubeTitle)}" class="youtube-thumb">
         <span class="youtube-play">&#9658;</span>
         <span class="youtube-caption">${escapeHtml(youtubeTitle)}</span>
       </a>`;
     } else {
       youtubeHtml = `
-      <a href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener" class="link-card">
+      <a href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(null)">
         <span class="link-icon ${iconShape}">${iconHtml('youtube')}</span>
         <span class="link-text"><span class="link-title">${escapeHtml(youtubeTitle)}</span></span>
       </a>`;
@@ -269,7 +270,7 @@ export default async function handler(req, res) {
 
   // ---- Links list ----
   const linksHtml = links.map((l) => `
-      <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" class="link-card">
+      <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(${JSON.stringify(l.id)})">
         <span class="link-icon ${iconShape}">${iconHtml(l.icon)}</span>
         <span class="link-text">
           <span class="link-title">${escapeHtml(l.title)}</span>
@@ -279,7 +280,7 @@ export default async function handler(req, res) {
 
   // ---- CV card ----
   const cvHtml = showCv ? `
-      <a href="/cv/${profile.username}" target="_blank" rel="noopener" class="link-card cv-card">
+      <a href="/cv/${profile.username}" target="_blank" rel="noopener" class="link-card cv-card" onclick="trackClick(null)">
         <span class="link-icon ${iconShape}"><span class="emoji-icon">📄</span></span>
         <span class="link-text"><span class="link-title">View my Professional CV</span></span>
       </a>` : '';
@@ -513,6 +514,18 @@ export default async function handler(req, res) {
   ${badgeModalsHtml(profile)}
 
   <script>
+    // Fire-and-forget click tracking (Silver+ Click Analytics). sendBeacon
+    // doesn't block the outbound navigation the <a> click is about to do;
+    // fetch(..., {keepalive:true}) is the fallback for older browsers.
+    function trackClick(linkId) {
+      const payload = JSON.stringify({ username: ${JSON.stringify(profile.username)}, linkId, referrer: document.referrer });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch('/api/track-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+      }
+    }
+
     function shareProfile(event) {
       const shareData = { title: ${JSON.stringify(displayName)}, url: ${JSON.stringify(pageUrl)} };
       if (navigator.share) {
@@ -555,4 +568,8 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=120');
   res.status(200).send(html);
+
+  // Recorded after the response is sent so it never adds latency to the
+  // page load; the function invocation stays alive until this resolves.
+  await recordEvent({ userId: profile.id, eventType: 'view_bio', referrer: req.headers.referer || '', req });
 }

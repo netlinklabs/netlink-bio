@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<!-- PAGE-TYPE: app -->
+<meta charset="UTF-8">
+<script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+<title>Netlink.bio - Analytics</title>
+<link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+<link rel="stylesheet" href="/shared/tailwind.css?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0" defer></script>
+<style>
+  html, body { max-width: 100%; overflow-x: hidden; }
+  * { font-family: 'Inter', sans-serif; }
+  body { background: #f8fafc; color: #1e293b; }
+  .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .text-primary { color: #0f172a; }
+  .text-secondary { color: #475569; }
+  .text-muted { color: #64748b; }
+  .bg-surface { background: #f1f5f9; }
+  .border-subtle { border-color: rgba(0,0,0,0.06); }
+  #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+  html.dark #authGate { background: #0f172a; }
+
+  html.dark body { background: #0f172a; color: #e2e8f0; }
+  html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+  html.dark .text-primary { color: #f8fafc !important; }
+  html.dark .text-secondary { color: #94a3b8 !important; }
+  html.dark .text-muted { color: #64748b !important; }
+  html.dark .bg-surface { background: #0f172a !important; }
+  html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+
+  .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
+  .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
+  .period-btn { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid rgba(0,0,0,0.08); color: #475569; background: #fff; cursor: pointer; transition: all 0.15s; }
+  .period-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  html.dark .period-btn { border-color: rgba(255,255,255,0.08); background: #1e293b; color: #94a3b8; }
+  html.dark .period-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+  .stat-tile-value { font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 700; line-height: 1.1; }
+
+  .stats-blur-wrap { position: relative; }
+  .stats-blur-content.blurred { filter: blur(8px); user-select: none; pointer-events: none; }
+  .stats-unlock-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 20px; z-index: 5; background: rgba(241,245,249,0.85); border-radius: 16px; }
+  html.dark .stats-unlock-overlay { background: rgba(15,23,42,0.82); }
+
+  .referrer-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; }
+  html.dark .referrer-row { border-color: rgba(255,255,255,0.05); }
+  .referrer-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body class="min-h-screen">
+  <div id="authGate">
+    <div class="flex flex-col items-center gap-3 px-6 text-center">
+      <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <p id="authGateText" class="text-sm text-slate-400">Loading your analytics...</p>
+      <p id="authGateError" class="text-xs text-red-500 font-mono break-all hidden max-w-sm"></p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Saved successfully!</div>
+
+  <main class="p-4 lg:p-8 max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-1">
+      <h1 class="text-xl font-bold text-primary">Analytics</h1>
+    </div>
+    <p class="text-sm text-secondary mb-4">Views, clicks, and traffic sources for your profile.</p>
+
+    <div class="flex flex-wrap gap-2 mb-5">
+      <button type="button" class="period-btn" data-days="7" onclick="selectPeriod(7)">7 Days</button>
+      <button type="button" class="period-btn" data-days="30" onclick="selectPeriod(30)">30 Days</button>
+      <button type="button" class="period-btn" data-days="90" onclick="selectPeriod(90)">90 Days</button>
+      <button type="button" class="period-btn" data-days="all" onclick="selectPeriod('all')">All Time</button>
+    </div>
+
+    <div id="statsBlurWrap" class="stats-blur-wrap">
+      <div id="statsUnlockOverlay" class="stats-unlock-overlay hidden">
+        <i data-lucide="lock" class="w-6 h-6 text-muted"></i>
+        <p class="text-sm font-medium text-primary">Your stats are ready, upgrade to unlock them</p>
+        <p class="text-xs text-secondary max-w-xs">Click Analytics is available from the Silver plan and up.</p>
+        <button onclick="showToast('Contact us to upgrade your plan')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Upgrade Plan</button>
+      </div>
+
+      <div id="statsBlurContent" class="stats-blur-content">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <div class="card rounded-2xl p-4">
+            <p class="text-xs text-muted mb-1">Bio Views</p>
+            <p id="tileBioViews" class="stat-tile-value text-primary">0</p>
+          </div>
+          <div class="card rounded-2xl p-4">
+            <p class="text-xs text-muted mb-1">CV Views</p>
+            <p id="tileCvViews" class="stat-tile-value text-primary">0</p>
+          </div>
+          <div class="card rounded-2xl p-4">
+            <p class="text-xs text-muted mb-1">Link Clicks</p>
+            <p id="tileClicks" class="stat-tile-value text-primary">0</p>
+          </div>
+          <div class="card rounded-2xl p-4">
+            <p class="text-xs text-muted mb-1">Unique Visitors</p>
+            <p id="tileUniqueVisitors" class="stat-tile-value text-primary">0</p>
+          </div>
+        </div>
+
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+          <h3 class="text-sm font-semibold text-primary mb-3">Views &amp; Clicks Trend</h3>
+          <div style="position:relative; height:220px;">
+            <canvas id="trendChart"></canvas>
+          </div>
+          <p id="trendEmpty" class="text-sm text-muted text-center py-10 hidden">No data yet for this period.</p>
+        </div>
+
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+          <h3 class="text-sm font-semibold text-primary mb-2">Top Sources</h3>
+          <div id="referrersList"></div>
+          <p id="referrersEmpty" class="text-sm text-muted text-center py-6 hidden">No traffic sources recorded yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="landingCard" class="card rounded-2xl p-4 lg:p-6 mb-4 hidden">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+          <i data-lucide="globe" class="w-5 h-5 text-purple-500"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-primary">Landing Page</h3>
+          <p class="text-sm text-secondary">Available on the Gold plan</p>
+        </div>
+      </div>
+      <div id="landingNoPage" class="hidden p-4 bg-surface border border-subtle rounded-xl text-center">
+        <p class="text-sm text-secondary">You haven't created a landing page yet.</p>
+      </div>
+      <div id="landingStats" class="hidden grid grid-cols-2 gap-3">
+        <div class="bg-surface border border-subtle rounded-xl p-4">
+          <p class="text-xs text-muted mb-1">Landing Page Views</p>
+          <p id="tileLandingViews" class="stat-tile-value text-primary">0</p>
+        </div>
+        <div class="bg-surface border border-subtle rounded-xl p-4">
+          <p class="text-xs text-muted mb-1">Landing Page Clicks</p>
+          <p id="tileLandingClicks" class="stat-tile-value text-primary">0</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script>
+    function showAuthError(msg) {
+      document.getElementById('authSpinner').classList.add('hidden');
+      document.getElementById('authGateText').textContent = 'Something went wrong:';
+      const errEl = document.getElementById('authGateError');
+      errEl.textContent = msg;
+      errEl.classList.remove('hidden');
+    }
+    window.addEventListener('error', (e) => showAuthError(e.message));
+    window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+    const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+    let currentProfile = null;
+    let currentPeriod = 30; // 7 | 30 | 90 | 'all'
+    let trendChartInstance = null;
+    let summaryRows = []; // full history, fetched once, filtered client-side per period
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    let authResolved = false;
+    async function enterPage(session) {
+      authResolved = true;
+      currentUser = session.user;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { document.getElementById('authGate').style.display = 'none'; });
+      });
+      try {
+        await loadProfileAndData();
+      } catch (err) {
+        console.error(err);
+        showAuthError(err.message || String(err));
+      }
+    }
+
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (authResolved) return;
+      if (event === 'INITIAL_SESSION') {
+        if (session) await enterPage(session);
+        else window.location.href = 'login';
+      } else if (event === 'SIGNED_IN' && session) {
+        await enterPage(session);
+      }
+    });
+
+    async function handleLogout() {
+      if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
+      await supabaseClient.auth.signOut();
+      window.location.href = 'login';
+    }
+
+    function selectPeriod(days) {
+      currentPeriod = days;
+      document.querySelectorAll('.period-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.days === String(days));
+      });
+      renderFromSummary();
+    }
+
+    function isoDate(d) { return d.toISOString().slice(0, 10); }
+
+    function filteredRows() {
+      if (currentPeriod === 'all') return summaryRows;
+      const cutoff = new Date();
+      cutoff.setUTCDate(cutoff.getUTCDate() - (currentPeriod - 1));
+      const cutoffStr = isoDate(cutoff);
+      return summaryRows.filter((r) => r.date >= cutoffStr);
+    }
+
+    async function loadProfileAndData() {
+      const { data: profile, error } = await supabaseClient
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, tier, net_id, local_currency, business_verified_at, identity_verified_at, is_black_badge')
+        .eq('id', currentUser.id)
+        .single();
+      if (error) throw error;
+      currentProfile = profile;
+
+      if (window.NetlinkNav) {
+        NetlinkNav.init({
+          activePage: null,
+          profile: currentProfile,
+          supabaseClient: supabaseClient,
+          userId: currentUser.id,
+          onLogout: handleLogout,
+        });
+      }
+
+      const isBasic = (profile.tier || 'basic') === 'basic';
+      document.getElementById('statsUnlockOverlay').classList.toggle('hidden', !isBasic);
+      document.getElementById('statsBlurContent').classList.toggle('blurred', isBasic);
+
+      const { data: rows, error: summaryError } = await supabaseClient
+        .from('analytics_daily_summary')
+        .select('date, views_bio, views_cv, views_landing, clicks_total, clicks_landing, unique_visitors, top_referrers')
+        .eq('user_id', currentUser.id)
+        .order('date', { ascending: true });
+      if (summaryError) throw summaryError;
+      summaryRows = rows || [];
+
+      selectPeriod(30);
+
+      if ((profile.tier || 'basic') === 'gold') {
+        document.getElementById('landingCard').classList.remove('hidden');
+        const { data: landingPage } = await supabaseClient
+          .from('landing_pages')
+          .select('id')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+        if (landingPage) {
+          document.getElementById('landingStats').classList.remove('hidden');
+          const landingViews = summaryRows.reduce((sum, r) => sum + (r.views_landing || 0), 0);
+          const landingClicks = summaryRows.reduce((sum, r) => sum + (r.clicks_landing || 0), 0);
+          document.getElementById('tileLandingViews').textContent = landingViews.toLocaleString();
+          document.getElementById('tileLandingClicks').textContent = landingClicks.toLocaleString();
+        } else {
+          document.getElementById('landingNoPage').classList.remove('hidden');
+        }
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderFromSummary() {
+      const rows = filteredRows();
+
+      const sum = (key) => rows.reduce((total, r) => total + (r[key] || 0), 0);
+      document.getElementById('tileBioViews').textContent = sum('views_bio').toLocaleString();
+      document.getElementById('tileCvViews').textContent = sum('views_cv').toLocaleString();
+      document.getElementById('tileClicks').textContent = sum('clicks_total').toLocaleString();
+      document.getElementById('tileUniqueVisitors').textContent = sum('unique_visitors').toLocaleString();
+
+      renderTrendChart(rows);
+      renderReferrers(rows);
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // ---- Trend chart (Chart.js) ----
+    // Two-series line: Views (bio+cv) and Clicks, in the dataviz skill's
+    // validated categorical order -- slot 1 (blue) then slot 2 (orange),
+    // the fixed adjacent pair that clears the CVD/contrast gates in both
+    // light and dark mode (see references/palette.md).
+    const CHART_COLORS = {
+      light: { views: '#2a78d6', clicks: '#eb6834', grid: '#e1e0d9', text: '#52514e' },
+      dark: { views: '#3987e5', clicks: '#d95926', grid: '#2c2c2a', text: '#c3c2b7' },
+    };
+
+    function renderTrendChart(rows) {
+      const canvas = document.getElementById('trendChart');
+      const emptyMsg = document.getElementById('trendEmpty');
+      if (!rows.length) {
+        canvas.classList.add('hidden');
+        emptyMsg.classList.remove('hidden');
+        if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+        return;
+      }
+      canvas.classList.remove('hidden');
+      emptyMsg.classList.add('hidden');
+
+      const isDark = document.documentElement.classList.contains('dark');
+      const colors = isDark ? CHART_COLORS.dark : CHART_COLORS.light;
+
+      const labels = rows.map((r) => r.date.slice(5)); // MM-DD
+      const viewsData = rows.map((r) => (r.views_bio || 0) + (r.views_cv || 0));
+      const clicksData = rows.map((r) => r.clicks_total || 0);
+
+      if (trendChartInstance) trendChartInstance.destroy();
+      trendChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Views', data: viewsData, borderColor: colors.views, backgroundColor: colors.views, borderWidth: 2, pointRadius: rows.length > 40 ? 0 : 3, tension: 0.25 },
+            { label: 'Clicks', data: clicksData, borderColor: colors.clicks, backgroundColor: colors.clicks, borderWidth: 2, pointRadius: rows.length > 40 ? 0 : 3, tension: 0.25 },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { color: colors.text, usePointStyle: true, boxWidth: 8 } },
+            tooltip: { mode: 'index', intersect: false },
+          },
+          scales: {
+            x: { grid: { color: colors.grid }, ticks: { color: colors.text, maxRotation: 0, autoSkip: true } },
+            y: { beginAtZero: true, grid: { color: colors.grid }, ticks: { color: colors.text, precision: 0 } },
+          },
+        },
+      });
+    }
+
+    // Rebuild the chart if the viewer toggles light/dark mid-session (nav.js
+    // toggles the html.dark class without a page reload).
+    new MutationObserver(() => renderFromSummary()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    // Hostname -> friendly display name. `ai: true` entries get the 🤖
+    // badge in Top Sources -- Netlink is positioned as AI-friendly, so
+    // traffic arriving from an AI assistant's answer is worth calling out
+    // rather than showing as a bare domain. Unrecognized hostnames still
+    // render fine (falls back to the raw hostname further down), so a new
+    // AI tool that isn't in this list yet never gets miscategorized or
+    // dropped -- it just shows its plain domain until added here.
+    const REFERRER_NAMES = {
+      'chatgpt.com': { name: 'ChatGPT', ai: true },
+      'chat.openai.com': { name: 'ChatGPT', ai: true },
+      'claude.ai': { name: 'Claude', ai: true },
+      'perplexity.ai': { name: 'Perplexity', ai: true },
+      'gemini.google.com': { name: 'Gemini', ai: true },
+      'copilot.microsoft.com': { name: 'Copilot', ai: true },
+      'poe.com': { name: 'Poe', ai: true },
+      'you.com': { name: 'You.com', ai: true },
+      'character.ai': { name: 'Character.AI', ai: true },
+      'grok.com': { name: 'Grok', ai: true },
+      'x.ai': { name: 'Grok', ai: true },
+      'meta.ai': { name: 'Meta AI', ai: true },
+      'deepseek.com': { name: 'DeepSeek', ai: true },
+      'google.com': { name: 'Google Search', ai: false },
+      'instagram.com': { name: 'Instagram', ai: false },
+      'facebook.com': { name: 'Facebook', ai: false },
+      'l.instagram.com': { name: 'Instagram', ai: false },
+      'linkedin.com': { name: 'LinkedIn', ai: false },
+      'tiktok.com': { name: 'TikTok', ai: false },
+      't.co': { name: 'X (Twitter)', ai: false },
+      'x.com': { name: 'X (Twitter)', ai: false },
+      'Direct': { name: 'Direct', ai: false },
+    };
+
+    function referrerDisplay(hostname) {
+      const known = REFERRER_NAMES[hostname];
+      if (known) return known;
+      return { name: hostname, ai: false };
+    }
+
+    function renderReferrers(rows) {
+      const merged = {};
+      rows.forEach((r) => {
+        (r.top_referrers || []).forEach((entry) => {
+          merged[entry.referrer] = (merged[entry.referrer] || 0) + entry.count;
+        });
+      });
+      const sorted = Object.entries(merged).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      const list = document.getElementById('referrersList');
+      const emptyMsg = document.getElementById('referrersEmpty');
+      if (!sorted.length) {
+        list.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+      emptyMsg.classList.add('hidden');
+      list.innerHTML = sorted.map(([referrer, count]) => {
+        const { name, ai } = referrerDisplay(referrer);
+        const badge = ai ? '<span title="AI assistant" class="mr-1">\u{1F916}</span>' : '';
+        return `
+        <div class="referrer-row">
+          <span class="text-secondary truncate">${badge}${escapeHtml(name)}</span>
+          <span class="text-primary font-semibold">${count.toLocaleString()}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    if (window.lucide) lucide.createIcons();
+  </script>
+  <script src="/shared/account-menu.js"></script>
+  <script src="/shared/nav.js"></script>
+  <script src="/shared/app-lock.js?v=3"></script>
+</body>
+</html>
