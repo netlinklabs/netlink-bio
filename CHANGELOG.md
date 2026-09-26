@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **`plans.html`: updated Silver/Gold pricing to match the original pitch deck figures** ($2.4 → $3/month Silver, $4.8 → $6/month Gold; annual notes now read "$30/year"/"$60/year") and **removed the mandatory-KYC gate from Gold**. KYC verification is now a separate $2.5 one-time add-on, available from any tier (Basic, Silver, or Gold) rather than bundled into or required for Gold — called out in a new `.addon-note` block below the pricing grid instead of as a Gold-only list item.
+
 ### Added
 - **New `plans.html`** — internal draft reference for membership tiers (Basic/Silver/Gold), listing links limit, template gallery access, Click Analytics (Silver+), Landing Page + Hide Footer Link toggle + mandatory KYC (Gold). Deliberately not linked anywhere in `site-nav.js`/nav — reachable only by direct URL — and marked `<meta name="robots" content="noindex, nofollow">` plus a visible amber "internal draft" banner, since pricing/feature gating isn't implemented in code yet (no `analytics`/`kyc_required` fields, `LINK_LIMITS` in `dashboard.html` still has a `platinum` entry not reflected here — Platinum is intentionally omitted from this page pending a future re-release). `<!-- PAGE-TYPE: public -->`, uses `shared/site-nav.css`/`shared/site-nav.js` like other marketing pages, no JSON-LD (not part of the CLAUDE.md required-schema table, and not meant to be indexed).
 

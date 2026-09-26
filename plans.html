@@ -56,7 +56,10 @@
 
     .plan-cta { text-align: center; padding: 12px; border-radius: var(--radius-input); font-weight: 600; font-size: 0.9375rem; background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
 
-    .plans-footnote { max-width: 700px; margin: var(--space-8) auto 0; text-align: center; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.7; }
+    .addon-note { max-width: 640px; margin: var(--space-6) auto 0; text-align: center; font-size: 0.9375rem; color: var(--text-primary); background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: var(--space-4); line-height: 1.6; }
+    .addon-note strong { color: var(--text-primary); }
+
+    .plans-footnote { max-width: 700px; margin: var(--space-6) auto 0; text-align: center; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.7; }
 
     @media (min-width: 768px) {
       .plans-grid { grid-template-columns: repeat(3, 1fr); align-items: stretch; }
@@ -96,8 +99,8 @@
           <!-- SILVER -->
           <article class="plan-card">
             <h2 class="plan-name">Silver</h2>
-            <p class="plan-price">$2.4 <span>/ month</span></p>
-            <p class="plan-note">2 months free on annual billing</p>
+            <p class="plan-price">$3 <span>/ month</span></p>
+            <p class="plan-note">$30/year — 2 months free on annual billing</p>
             <ul class="plan-features">
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 30 links in Bio</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Template Gallery (Silver)</li>
@@ -113,8 +116,8 @@
           <article class="plan-card featured">
             <span class="plan-badge">Most complete</span>
             <h2 class="plan-name">Gold</h2>
-            <p class="plan-price">$4.8 <span>/ month</span></p>
-            <p class="plan-note">2 months free on annual billing · KYC required to activate</p>
+            <p class="plan-price">$6 <span>/ month</span></p>
+            <p class="plan-note">$60/year — 2 months free on annual billing</p>
             <ul class="plan-features">
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 50 links in Bio</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Template Gallery (Gold)</li>
@@ -123,10 +126,13 @@
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Netlink Pay wallet</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Click analytics</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Hide footer link (toggle in settings)</li>
-              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> KYC verification badge</li>
             </ul>
             <div class="plan-cta">Draft pricing</div>
           </article>
+        </div>
+
+        <div class="addon-note">
+          <strong>KYC verification — $2.5 one-time add-on.</strong> Available from any tier (Basic, Silver, or Gold) — not bundled into or required by a specific plan. Verified users get a trust badge on their profile.
         </div>
 
         <p class="plans-footnote">
