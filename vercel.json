@@ -6,5 +6,8 @@
     { "source": "/page/:slug([a-z0-9_-]{1,25})", "destination": "/api/landing?slug=:slug" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/:username([a-z0-9_]{3,25})", "destination": "/api/bio?username=:username" }
+  ],
+  "crons": [
+    { "path": "/api/cron/rollup-analytics", "schedule": "10 0 * * *" }
   ]
 }

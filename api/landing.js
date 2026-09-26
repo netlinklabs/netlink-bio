@@ -10,6 +10,7 @@
 // deliberately never select `id` or `user_id` to avoid exposing them.
 
 import { escapeHtml, notFoundPage } from './_lib/html.js';
+import { recordEvent } from './_lib/analytics.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -227,8 +228,12 @@ export default async function handler(req, res) {
 
   let page;
   try {
+    // user_id is included here only to attribute the view_landing analytics
+    // event server-side (Gold tier stats) -- it must never be rendered into
+    // the HTML/JSON-LD output below, same rule this file already followed
+    // for id/user_id before analytics existed.
     const rows = await supabaseGet(
-      `landing_pages?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true&select=slug,title,business_type,content,updated_at`
+      `landing_pages?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true&select=slug,title,business_type,content,updated_at,user_id`
     );
     if (!rows.length) {
       res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
@@ -395,7 +400,7 @@ ${modules.location !== false ? `<button class="btn-secondary" onclick="document.
 ${c.addressLine ? `<p style="font-size: 15px; font-weight: 700; color: #212121;">${escapeHtml(c.addressLine)}</p>` : ''}
 ${c.addressCity ? `<span style="font-size: 13px; color: #777;">${escapeHtml(c.addressCity)}</span>` : ''}
 </div>
-<a href="${escapeHtml(mapsLink)}" target="_blank" rel="noopener" class="direction-btn" style="background: ${escapeHtml(primary)}15; color: ${escapeHtml(primary)};"><i class="fa-solid fa-map-location-dot"></i> Open in Maps</a>
+<a href="${escapeHtml(mapsLink)}" target="_blank" rel="noopener" class="direction-btn" style="background: ${escapeHtml(primary)}15; color: ${escapeHtml(primary)};" onclick="trackClick()"><i class="fa-solid fa-map-location-dot"></i> Open in Maps</a>
 ${c.closingText ? `<p style="margin-top: 20px; font-size: 14px; color: #666; line-height: 1.7; font-style: italic; text-align: center;">${escapeHtml(c.closingText)}</p>` : ''}
 </div>
 </section>`;
@@ -435,12 +440,12 @@ ${c.closingText ? `<p style="margin-top: 20px; font-size: 14px; color: #666; lin
           const value = String(contactChannels[ch.key].value).trim();
           const isPrimary = i === 0;
           if (ch.key === 'wechat') {
-            return `<button type="button" class="contact-btn wa-btn" style="background:${escapeHtml(primary)};" data-wechat-id="${escapeHtml(value)}" onclick="copyWeChatId(this.dataset.wechatId)"><i class="${ch.icon}" style="font-size:18px;"></i> WeChat: ${escapeHtml(value)}</button>`;
+            return `<button type="button" class="contact-btn wa-btn" style="background:${escapeHtml(primary)};" data-wechat-id="${escapeHtml(value)}" onclick="copyWeChatId(this.dataset.wechatId); trackClick();"><i class="${ch.icon}" style="font-size:18px;"></i> WeChat: ${escapeHtml(value)}</button>`;
           }
           const href = getChannelHref(ch.key, value);
           const btnClass = isPrimary ? 'contact-btn wa-btn' : 'contact-btn phone-btn';
           const style = isPrimary ? `background:${escapeHtml(primary)};` : `border-color:${escapeHtml(primary)};color:${escapeHtml(primary)};`;
-          return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" class="${btnClass}" style="${style}"><i class="${ch.icon}" style="font-size:18px;"></i> ${ch.label}</a>`;
+          return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" class="${btnClass}" style="${style}" onclick="trackClick()"><i class="${ch.icon}" style="font-size:18px;"></i> ${ch.label}</a>`;
         })
         .join('');
     }
@@ -557,6 +562,17 @@ ${contactHtml}
 </div>
 ${lightboxScript}
 <script>
+// Fire-and-forget click tracking (Gold Landing Page stats). Resolved by
+// slug server-side, same pattern as api/bio.js's trackClick.
+function trackClick() {
+  const payload = JSON.stringify({ slug: ${JSON.stringify(page.slug)}, referrer: document.referrer });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
+  } else {
+    fetch('/api/track-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+  }
+}
+
 function copyWeChatId(id) {
   navigator.clipboard.writeText(id).then(() => {
     alert('WeChat ID "' + id + '" copied! Search this ID inside the WeChat app to add.');
@@ -571,4 +587,6 @@ function copyWeChatId(id) {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=120');
   res.status(200).send(html);
+
+  await recordEvent({ userId: page.user_id, eventType: 'view_landing', referrer: req.headers.referer || '', req });
 }

@@ -6,6 +6,7 @@
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
 import { escapeHtml, notFoundPage } from './_lib/html.js';
+import { recordEvent } from './_lib/analytics.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -414,4 +415,6 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=120');
   res.status(200).send(html);
+
+  await recordEvent({ userId: profile.id, eventType: 'view_cv', referrer: req.headers.referer || '', req });
 }
