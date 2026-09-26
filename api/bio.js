@@ -518,7 +518,7 @@ export default async function handler(req, res) {
     // doesn't block the outbound navigation the <a> click is about to do;
     // fetch(..., {keepalive:true}) is the fallback for older browsers.
     function trackClick(linkId) {
-      const payload = JSON.stringify({ username: ${JSON.stringify(profile.username)}, linkId, referrer: document.referrer });
+      const payload = JSON.stringify({ username: ${JSON.stringify(profile.username)}, linkId, referrer: document.referrer, utmSource: new URLSearchParams(location.search).get('utm_source') });
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
       } else {

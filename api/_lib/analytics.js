@@ -44,6 +44,20 @@ function normalizeReferrer(referrer) {
   }
 }
 
+// Fallback source from a `utm_source` URL parameter, used only when the
+// browser sent no referrer. Many apps (including AI assistants like the
+// ChatGPT app) open links without a referrer, but some add a utm_source
+// (e.g. ChatGPT search citations use utm_source=chatgpt.com). Accepts a URL
+// or a bare name/domain; keeps only a short, safe token. Like the referrer
+// header, this is visitor-controlled, so it's a best-effort signal.
+function normalizeUtmSource(value) {
+  if (!value) return null;
+  const raw = String(Array.isArray(value) ? value[0] : value).trim().toLowerCase().slice(0, 100);
+  if (/^https?:\/\//.test(raw)) return normalizeReferrer(raw);
+  const cleaned = raw.replace(/^www\./, '').replace(/[^a-z0-9._-]/g, '').slice(0, 60);
+  return cleaned || null;
+}
+
 // Fire-and-forget: registers the insert with Vercel's waitUntil() so it
 // runs in the background without delaying the response. Call it BEFORE
 // sending the response and don't await it. (An earlier version awaited it
@@ -53,14 +67,20 @@ export function recordEvent(args) {
   waitUntil(insertEvent(args));
 }
 
-async function insertEvent({ userId, eventType, linkId = null, referrer = null, req }) {
+async function insertEvent({ userId, eventType, linkId = null, referrer = null, utmSource = null, req }) {
+  // Page views read utm_source from their own request URL (Vercel keeps the
+  // original query string through the rewrite); clicks pass it explicitly
+  // from the page, since the click beacon's own URL has none.
+  const utm = utmSource ?? req.query?.utm_source ?? null;
+  const source = normalizeReferrer(referrer) || normalizeUtmSource(utm);
+
   // TEMPORARY (remove once AI fetcher user-agents are identified): log the
-  // user-agent of page views that arrive without a referrer, so we can see
-  // which AI assistants (e.g. Qwen) fetch profiles server-side and what
-  // user-agent string they send. Vercel runtime logs only -- never stored
-  // in the database, and no IP is logged.
+  // user-agent (and utm_source, if any) of page views that arrive without a
+  // referrer, to see which AI assistants fetch or open profiles and what
+  // they send. Vercel runtime logs only -- never stored in the database,
+  // and no IP is logged.
   if (!referrer && eventType.startsWith('view_')) {
-    console.log(`[ua-probe] ${eventType} ua="${String(req.headers['user-agent'] || '').slice(0, 300)}"`);
+    console.log(`[ua-probe] ${eventType} utm_source="${String(utm ?? '').slice(0, 100)}" ua="${String(req.headers['user-agent'] || '').slice(0, 300)}"`);
   }
   if (!SERVICE_ROLE_KEY) {
     console.error('recordEvent: SUPABASE_SERVICE_ROLE_KEY is not set, skipping.');
@@ -79,7 +99,7 @@ async function insertEvent({ userId, eventType, linkId = null, referrer = null, 
         user_id: userId,
         event_type: eventType,
         link_id: linkId,
-        referrer: normalizeReferrer(referrer),
+        referrer: source,
         visitor_hash: visitorHash(req),
       }),
     });

@@ -4,6 +4,14 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Analytics: `utm_source` is used as the traffic source when there's no referrer.** Many apps open links without a referrer (confirmed in testing: a click from the ChatGPT Android app arrived as plain Chrome with no referrer and was indistinguishable from a typed URL), but some add a `utm_source` (ChatGPT search citations typically use `utm_source=chatgpt.com`). `api/_lib/analytics.js` now stores the referrer hostname if present, otherwise a sanitized `utm_source` (URL values reduced to their hostname, bare values lowercased and limited to `[a-z0-9._-]`, max 60 chars). Page views read it from their own request URL; the click beacons in `api/bio.js` and `api/landing.js` now send the page's `utm_source`, passed through by `api/track-event.js`. Like the referrer header, it's visitor-controlled, so it's a best-effort signal.
+- `analytics.html`: friendly names for bare `chatgpt` / `perplexity` utm values.
+
+### Changed
+- **`analytics.html`: "Direct" is now labeled "Direct or apps"**, with a note under Top Sources explaining it includes typed links and most visits from apps like WhatsApp, Telegram, and AI assistants, which usually don't share where the visitor came from.
+- The temporary `[ua-probe]` log line now also includes `utm_source`.
+
 ### Changed
 - **TEMPORARY: `api/_lib/analytics.js` logs the user-agent of page views that arrive without a referrer** (`[ua-probe] view_bio ua="..."`), to identify which AI assistants fetch profiles server-side (e.g. Qwen, whose fetch showed up as a "Direct" view) and what user-agent string they send. Vercel runtime logs only, never stored in the database, no IP logged. Remove once the user-agents are identified and the planned "AI Reads" stat is built.
 - **`privacy-policy.html` v1.4 (effective September 26, 2026): now covers visitors to public pages.** The policy previously only described data about account holders, but the analytics feature records data about anyone visiting a public profile/CV/business page. Added: a "Visitor analytics (public pages)" item in Section 2 (page type, date/time, referring domain, clicked link, a pseudonymous one-way hash of IP + user-agent, and identification of AI assistants/crawlers by their declared user-agent); a matching purpose in Section 3 (page-owner statistics, legitimate interest); and a retention note in Section 8 (raw visit records deleted after 90 days, only daily aggregates kept). Worded as "pseudonymous", not "anonymous", since a hash of IP + user-agent is still personal data under GDPR.

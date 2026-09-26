@@ -565,7 +565,7 @@ ${lightboxScript}
 // Fire-and-forget click tracking (Gold Landing Page stats). Resolved by
 // slug server-side, same pattern as api/bio.js's trackClick.
 function trackClick() {
-  const payload = JSON.stringify({ slug: ${JSON.stringify(page.slug)}, referrer: document.referrer });
+  const payload = JSON.stringify({ slug: ${JSON.stringify(page.slug)}, referrer: document.referrer, utmSource: new URLSearchParams(location.search).get('utm_source') });
   if (navigator.sendBeacon) {
     navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
   } else {
