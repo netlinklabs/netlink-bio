@@ -4,7 +4,11 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`plans.html`: fixed the price text rendering small/thin instead of bold and large.** The billing-toggle change wrapped the price in two `<span>`s (`.price-amount` and `.price-suffix`), but the old `.plan-price span` rule styled *both* spans down to the small secondary-text size meant only for the "/ month" suffix — so `.price-amount` (e.g. "$3") lost its bold 2rem styling too. Scoped the rule to `.plan-price .price-suffix` only.
+
 ### Changed
+- **`plans.html`: all three tiers (Basic/Silver/Gold) now list the same 7 features in the same order**, with a checkmark or an X/disabled row depending on whether that tier includes it — instead of each card only listing what it has. Makes cross-tier comparison easier at a glance. Order: Links in Bio, Template selection, Professional CV, Netlink Pay wallet, Click analytics, Landing Page, Hide footer link. Gold's list was reordered to match (Landing Page/Hide footer link moved to the end, after Click analytics, instead of sitting right after Professional CV).
 - **`plans.html`: Silver and Gold cards now each have their own Monthly/Annual billing toggle** (pill-style tabs above the price, matching `.billing-toggle`/`.billing-tab` styling). Clicking a tab swaps that card's price (`.price-amount`/`.price-suffix`), the billing note below it, and highlights the active tab — vanilla JS, no dependency, scoped per-card so Silver and Gold toggle independently. Annual tab shows a "-17%" save badge (Silver: $30/yr, save $6; Gold: $60/yr, save $12 — both work out to 2 months free vs. paying monthly for 12).
 - **`plans.html`: updated Silver/Gold pricing to match the original pitch deck figures** ($2.4 → $3/month Silver, $4.8 → $6/month Gold; annual notes now read "$30/year"/"$60/year") and **removed the mandatory-KYC gate from Gold**. KYC verification is now a separate $2.5 one-time add-on, available from any tier (Basic, Silver, or Gold) rather than bundled into or required for Gold — called out in a new `.addon-note` block below the pricing grid instead of as a Gold-only list item.
 
