@@ -8,8 +8,6 @@ const ACCOUNT_MENU = {
     {
       title: 'Profile & Page',
       items: [
-        { icon: 'link', label: 'Links', href: 'dashboard#profileCard' },
-        { icon: 'file-text', label: 'CV Builder', href: 'dashboard#cvCard' },
         { icon: 'book-user', label: 'Manage Contact', href: 'contacts' },
       ],
     },
@@ -22,18 +20,11 @@ const ACCOUNT_MENU = {
     {
       title: 'Account',
       items: [
-        { icon: 'fingerprint', label: 'NET ID & Privacy', href: 'identity' },
+        { icon: 'fingerprint', label: 'Account & Identity', href: 'identity' },
         { icon: 'shield', label: 'Privacy & Data', href: 'privacy' },
         { icon: 'coins', label: 'Local Currency', type: 'currency-select' },
         { icon: 'scan-face', label: 'Biometric Unlock', type: 'biometric-toggle' },
         { icon: 'key-round', label: 'Wallet Security', href: 'recovery' },
-      ],
-    },
-    {
-      title: 'Pro Features',
-      items: [
-        { icon: 'bar-chart-3', label: 'Analytics', locked: true },
-        { icon: 'shopping-cart', label: 'Store', locked: true },
       ],
     },
   ],
