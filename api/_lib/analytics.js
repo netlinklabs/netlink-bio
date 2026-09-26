@@ -8,6 +8,7 @@
 
 import { createHash } from 'crypto';
 import { waitUntil } from '@vercel/functions';
+import { detectAiBot } from './ai-bots.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -74,14 +75,12 @@ async function insertEvent({ userId, eventType, linkId = null, referrer = null, 
   const utm = utmSource ?? req.query?.utm_source ?? null;
   const source = normalizeReferrer(referrer) || normalizeUtmSource(utm);
 
-  // TEMPORARY (remove once AI fetcher user-agents are identified): log the
-  // user-agent (and utm_source, if any) of page views that arrive without a
-  // referrer, to see which AI assistants fetch or open profiles and what
-  // they send. Vercel runtime logs only -- never stored in the database,
-  // and no IP is logged.
-  if (!referrer && eventType.startsWith('view_')) {
-    console.log(`[ua-probe] ${eventType} utm_source="${String(utm ?? '').slice(0, 100)}" ua="${String(req.headers['user-agent'] || '').slice(0, 300)}"`);
-  }
+  // Tag known AI bot User-Agents (see api/_lib/ai-bots.js) so this event is
+  // counted as an "AI Read" instead of a human view/click. Only applied to
+  // page views -- a bot fetching static HTML doesn't run the page's JS, so
+  // it can never trigger a click event in the first place.
+  const aiBot = eventType.startsWith('view_') ? detectAiBot(req.headers['user-agent']) : null;
+
   if (!SERVICE_ROLE_KEY) {
     console.error('recordEvent: SUPABASE_SERVICE_ROLE_KEY is not set, skipping.');
     return;
@@ -101,6 +100,8 @@ async function insertEvent({ userId, eventType, linkId = null, referrer = null, 
         link_id: linkId,
         referrer: source,
         visitor_hash: visitorHash(req),
+        ai_bot_category: aiBot?.category ?? null,
+        ai_bot_name: aiBot?.name ?? null,
       }),
     });
     if (!res.ok) {
