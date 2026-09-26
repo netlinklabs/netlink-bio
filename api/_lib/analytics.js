@@ -54,6 +54,14 @@ export function recordEvent(args) {
 }
 
 async function insertEvent({ userId, eventType, linkId = null, referrer = null, req }) {
+  // TEMPORARY (remove once AI fetcher user-agents are identified): log the
+  // user-agent of page views that arrive without a referrer, so we can see
+  // which AI assistants (e.g. Qwen) fetch profiles server-side and what
+  // user-agent string they send. Vercel runtime logs only -- never stored
+  // in the database, and no IP is logged.
+  if (!referrer && eventType.startsWith('view_')) {
+    console.log(`[ua-probe] ${eventType} ua="${String(req.headers['user-agent'] || '').slice(0, 300)}"`);
+  }
   if (!SERVICE_ROLE_KEY) {
     console.error('recordEvent: SUPABASE_SERVICE_ROLE_KEY is not set, skipping.');
     return;
