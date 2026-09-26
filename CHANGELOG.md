@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **`plans.html`: full visual redesign of the tier cards per feedback from the live preview.** Each card now has its own top badge and matching border/box-shadow color instead of a single generic border + one "Most complete" badge on Gold only: Basic gets a thin near-black border (`#1a1a1a`) with a "Free Forever" badge, Silver a metallic-silver border (`#9CA3AF`) with a "Favourite" badge, Gold a metallic-gold border (`#D4AF37`) with a "Professional" badge (replacing "Most complete"). Removed the redundant "Forever free" note line under Basic's price (the new badge already says it). All three `.plan-cta` elements are now real `<button>` elements with tier-colored styling (dark/silver-gradient/gold-gradient) and explicit copy — "Get Started Free" (Basic), "Checkout Silver", "Checkout Gold" — instead of a static grey "Current default"/"Draft pricing" label. The KYC add-on block also gets its own outlined button ("Order KYC Verification"). No checkout logic wired up yet — buttons are visual only, this is still the internal draft page.
+
 ### Fixed
 - **`plans.html`: fixed the price text rendering small/thin instead of bold and large.** The billing-toggle change wrapped the price in two `<span>`s (`.price-amount` and `.price-suffix`), but the old `.plan-price span` rule styled *both* spans down to the small secondary-text size meant only for the "/ month" suffix — so `.price-amount` (e.g. "$3") lost its bold 2rem styling too. Scoped the rule to `.plan-price .price-suffix` only.
 
