@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 <title>Netlink.bio - Analytics</title>
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-<link rel="stylesheet" href="/shared/tailwind.css?v=3">
+<link rel="stylesheet" href="/shared/tailwind.css?v=4">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@0.460.0" defer></script>
 <style>
@@ -73,12 +73,18 @@
     </div>
     <p class="text-sm text-secondary mb-4">Views, clicks, and traffic sources for your profile.</p>
 
-    <div class="flex flex-wrap gap-2 mb-5">
-      <button type="button" class="period-btn" data-days="7" onclick="selectPeriod(7)">7 Days</button>
-      <button type="button" class="period-btn" data-days="30" onclick="selectPeriod(30)">30 Days</button>
-      <button type="button" class="period-btn" data-days="90" onclick="selectPeriod(90)">90 Days</button>
-      <button type="button" class="period-btn" data-days="all" onclick="selectPeriod('all')">All Time</button>
+    <div id="loadError" class="hidden mb-4 p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-500">
+      We couldn't load your analytics right now. Please refresh the page to try again.
     </div>
+
+    <div class="flex flex-wrap gap-2 mb-2">
+      <button type="button" class="period-btn" data-days="today" onclick="selectPeriod('today')" title="Today (UTC)">Today</button>
+      <button type="button" class="period-btn" data-days="7" onclick="selectPeriod(7)" title="Last 7 days">7D</button>
+      <button type="button" class="period-btn" data-days="30" onclick="selectPeriod(30)" title="Last 30 days">30D</button>
+      <button type="button" class="period-btn" data-days="90" onclick="selectPeriod(90)" title="Last 90 days">90D</button>
+      <button type="button" class="period-btn" data-days="all" onclick="selectPeriod('all')" title="All time">All</button>
+    </div>
+    <p class="text-xs text-muted mb-5">Days are counted in UTC.</p>
 
     <div id="statsBlurWrap" class="stats-blur-wrap">
       <div id="statsUnlockOverlay" class="stats-unlock-overlay hidden">
@@ -108,7 +114,7 @@
           </div>
         </div>
 
-        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+        <div id="trendCard" class="card rounded-2xl p-4 lg:p-6 mb-4">
           <h3 class="text-sm font-semibold text-primary mb-3">Views &amp; Clicks Trend</h3>
           <div id="trendChartWrap" style="position:relative; height:220px;">
             <canvas id="trendChart"></canvas>
@@ -169,7 +175,8 @@
 
     let currentUser = null;
     let currentProfile = null;
-    let currentPeriod = 30; // 7 | 30 | 90 | 'all'
+    let currentPeriod = 30; // 'today' | 7 | 30 | 90 | 'all'
+    let hasLandingPage = false;
     let trendChartInstance = null;
     let summaryRows = []; // full history, fetched once, filtered client-side per period
 
@@ -190,8 +197,11 @@
       try {
         await loadProfileAndData();
       } catch (err) {
+        // The auth gate is already hidden at this point, so showAuthError()
+        // would write into an invisible element -- show an inline banner
+        // instead, rather than silently leaving every tile at 0.
         console.error(err);
-        showAuthError(err.message || String(err));
+        document.getElementById('loadError').classList.remove('hidden');
       }
     }
 
@@ -221,8 +231,14 @@
 
     function isoDate(d) { return d.toISOString().slice(0, 10); }
 
+    // All dates are UTC, matching rollup_analytics_day() and
+    // get_today_analytics() on the database side.
     function filteredRows() {
       if (currentPeriod === 'all') return summaryRows;
+      if (currentPeriod === 'today') {
+        const todayStr = isoDate(new Date());
+        return summaryRows.filter((r) => r.date === todayStr);
+      }
       const cutoff = new Date();
       cutoff.setUTCDate(cutoff.getUTCDate() - (currentPeriod - 1));
       const cutoffStr = isoDate(cutoff);
@@ -258,9 +274,16 @@
         .eq('user_id', currentUser.id)
         .order('date', { ascending: true });
       if (summaryError) throw summaryError;
-      summaryRows = rows || [];
 
-      selectPeriod(30);
+      // Today hasn't been rolled up yet (the cron runs after the UTC day
+      // ends), so fetch it live and use it in place of any rollup row for
+      // the same date. This makes "Today" and every other range include
+      // visits from the last few minutes.
+      const { data: todayRows, error: todayError } = await supabaseClient.rpc('get_today_analytics');
+      if (todayError) throw todayError;
+      const today = (todayRows || [])[0];
+      summaryRows = (rows || []).filter((r) => !today || r.date !== today.date);
+      if (today) summaryRows.push(today);
 
       if ((profile.tier || 'basic') === 'gold') {
         document.getElementById('landingCard').classList.remove('hidden');
@@ -269,17 +292,12 @@
           .select('id')
           .eq('user_id', currentUser.id)
           .maybeSingle();
-        if (landingPage) {
-          document.getElementById('landingStats').classList.remove('hidden');
-          const landingViews = summaryRows.reduce((sum, r) => sum + (r.views_landing || 0), 0);
-          const landingClicks = summaryRows.reduce((sum, r) => sum + (r.clicks_landing || 0), 0);
-          document.getElementById('tileLandingViews').textContent = landingViews.toLocaleString();
-          document.getElementById('tileLandingClicks').textContent = landingClicks.toLocaleString();
-        } else {
-          document.getElementById('landingNoPage').classList.remove('hidden');
-        }
+        hasLandingPage = !!landingPage;
+        document.getElementById('landingStats').classList.toggle('hidden', !hasLandingPage);
+        document.getElementById('landingNoPage').classList.toggle('hidden', hasLandingPage);
       }
 
+      selectPeriod(30);
       if (window.lucide) lucide.createIcons();
     }
 
@@ -291,6 +309,12 @@
       document.getElementById('tileCvViews').textContent = sum('views_cv').toLocaleString();
       document.getElementById('tileClicks').textContent = sum('clicks_total').toLocaleString();
       document.getElementById('tileUniqueVisitors').textContent = sum('unique_visitors').toLocaleString();
+      // Landing Page tiles follow the selected period too (Gold only).
+      document.getElementById('tileLandingViews').textContent = sum('views_landing').toLocaleString();
+      document.getElementById('tileLandingClicks').textContent = sum('clicks_landing').toLocaleString();
+
+      // A one-day "trend" is a single point, so hide the chart for Today.
+      document.getElementById('trendCard').classList.toggle('hidden', currentPeriod === 'today');
 
       renderTrendChart(rows);
       renderReferrers(rows);
@@ -323,9 +347,22 @@
       const isDark = document.documentElement.classList.contains('dark');
       const colors = isDark ? CHART_COLORS.dark : CHART_COLORS.light;
 
-      const labels = rows.map((r) => r.date.slice(5)); // MM-DD
-      const viewsData = rows.map((r) => (r.views_bio || 0) + (r.views_cv || 0));
-      const clicksData = rows.map((r) => r.clicks_total || 0);
+      // Days with no visits have no rollup row, so build a continuous UTC
+      // day series and fill the gaps with 0. Otherwise the category axis
+      // draws e.g. 07-28 right next to 09-25 as if they were consecutive.
+      const byDate = new Map(rows.map((r) => [r.date, r]));
+      const end = new Date(isoDate(new Date()) + 'T00:00:00Z');
+      const start = new Date(end);
+      if (currentPeriod === 'all') {
+        start.setTime(new Date(rows[0].date + 'T00:00:00Z').getTime());
+      } else {
+        start.setUTCDate(start.getUTCDate() - (currentPeriod - 1));
+      }
+      const days = [];
+      for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) days.push(isoDate(d));
+      const labels = days.map((d) => d.slice(5)); // MM-DD
+      const viewsData = days.map((d) => (byDate.get(d)?.views_bio || 0) + (byDate.get(d)?.views_cv || 0));
+      const clicksData = days.map((d) => byDate.get(d)?.clicks_total || 0);
 
       if (trendChartInstance) trendChartInstance.destroy();
       trendChartInstance = new Chart(canvas.getContext('2d'), {
@@ -333,8 +370,8 @@
         data: {
           labels,
           datasets: [
-            { label: 'Views', data: viewsData, borderColor: colors.views, backgroundColor: colors.views, borderWidth: 2, pointRadius: rows.length > 40 ? 0 : 3, tension: 0.25 },
-            { label: 'Clicks', data: clicksData, borderColor: colors.clicks, backgroundColor: colors.clicks, borderWidth: 2, pointRadius: rows.length > 40 ? 0 : 3, tension: 0.25 },
+            { label: 'Views', data: viewsData, borderColor: colors.views, backgroundColor: colors.views, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, tension: 0.25 },
+            { label: 'Clicks', data: clicksData, borderColor: colors.clicks, backgroundColor: colors.clicks, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, tension: 0.25 },
           ],
         },
         options: {
@@ -346,7 +383,7 @@
             tooltip: { mode: 'index', intersect: false },
           },
           scales: {
-            x: { grid: { color: colors.grid }, ticks: { color: colors.text, maxRotation: 0, autoSkip: true } },
+            x: { grid: { color: colors.grid }, ticks: { color: colors.text, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
             y: { beginAtZero: true, grid: { color: colors.grid }, ticks: { color: colors.text, precision: 0 } },
           },
         },
