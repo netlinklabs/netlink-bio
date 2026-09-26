@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "@vercel/functions": "^3.9.9",
-    "@vercel/og": "^0.6.3"
+    "@vercel/og": "^0.6.3",
+    "web-bot-auth": "0.2.0"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.19"
