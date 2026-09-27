@@ -5,7 +5,7 @@
 //
 // Usage (after auth resolves and profile is loaded):
 //   NetlinkNav.init({
-//     activePage: 'pay',            // 'dashboard' | 'pay' | 'activity' | 'account' | null
+//     activePage: 'pay',            // 'dashboard' | 'analytics' | 'pay' | 'activity' | 'account' | null
 //     profile: currentProfile,      // { display_name, username, avatar_url, tier, net_id, local_currency }
 //     supabaseClient: supabaseClient,
 //     userId: currentUser.id,
@@ -16,7 +16,7 @@
 (function () {
   const BOTTOM_NAV_ITEMS = [
     { key: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard', href: 'dashboard' },
-    { key: 'card', icon: 'credit-card', label: 'Card', href: 'card' },
+    { key: 'analytics', icon: 'chart-no-axes-combined', label: 'Analytics', href: 'analytics' },
     { key: 'pay', icon: 'wallet', label: 'Wallet', href: 'pay' },
     { key: 'activity', icon: 'history', label: 'Activity', href: 'tx' },
     { key: 'account', icon: 'user-round', label: 'Account', href: null }, // opens sheet, not a page

@@ -5,6 +5,7 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Bottom nav: "Card" tab replaced with "Analytics"** (`shared/nav.js`). `card.html` (the Netlink Prepaid Card page) is currently just a "coming soon, register your interest" waitlist, a poor fit for one of only 5 permanent bottom-nav slots, while `analytics.html` was fully built and live but had no navigation entry point anywhere in the app (only reachable by typing the URL directly). Moved the Prepaid Card entry point into `pay.html` instead (new card row below the Swap widget, image left/text right, linking to `card.html`), since its "spend your balance" pitch fits the Wallet page's context better than a settings-style link in the account menu. `card.html`'s own `NetlinkNav.init` call updated from `activePage: 'card'` to `'pay'` since it's no longer a top-level tab. `analytics.html` updated from `activePage: null` to `'analytics'` to highlight its new tab. Revisit once the Prepaid Card actually launches.
 - **The "Privacy · Report" footer links on public pages now open in a new tab** (`target="_blank" rel="noopener"`) instead of navigating away from the profile/CV/business page in the same tab.
 
 ### Added
