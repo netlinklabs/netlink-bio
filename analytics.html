@@ -235,7 +235,7 @@
 
     let currentUser = null;
     let currentProfile = null;
-    let currentPeriod = 30; // 'today' | 7 | 30 | 90 | 'all'
+    let currentPeriod = 'today'; // 'today' | 7 | 30 | 90 | 'all'
     let hasLandingPage = false;
     let trendChartInstance = null;
     let summaryRows = []; // full history, fetched once, filtered client-side per period
@@ -372,7 +372,7 @@
         console.error('AI readiness unavailable:', err);
       }
 
-      selectPeriod(30);
+      selectPeriod('today');
       if (window.lucide) lucide.createIcons();
     }
 
