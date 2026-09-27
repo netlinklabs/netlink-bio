@@ -1,6 +1,10 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/ramlan", "destination": "/ramlanhadiansyah", "permanent": true },
+    { "source": "/cv/ramlan", "destination": "/cv/ramlanhadiansyah", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/cv/:username([a-z0-9_]{3,25})", "destination": "/api/cv?username=:username" },
     { "source": "/page/:slug([a-z0-9_-]{1,25})", "destination": "/api/landing?slug=:slug" },
