@@ -467,6 +467,9 @@ ${isDemoProfile(profile.username)
 
   .footer { text-align:center; margin-top:32px; }
   .footer a { color:var(--nl-text-muted); font-size:12px; text-decoration:none; }
+  .legal-footer { text-align:center; margin-top:8px; }
+  .legal-footer a { color:var(--nl-text-muted); font-size:11px; text-decoration:none; }
+  .legal-footer span { color:var(--nl-text-muted); font-size:11px; padding:0 4px; }
   .empty { text-align:center; color:var(--nl-text-muted); font-size:14px; padding:24px 0; }
 
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center; padding:20px; }
@@ -510,8 +513,11 @@ ${isDemoProfile(profile.username)
 
     ${showWatermark(profile) ? `
     <div class="footer">
-      <a href="/">netlink.bio &mdash; build your page free</a>
+      <a href="/">netlink.bio, build your page free</a>
     </div>` : ''}
+    <div class="legal-footer">
+      <a href="/privacy-policy">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio">Report</a>
+    </div>
   </div>
 
   ${donateModalHtml}
