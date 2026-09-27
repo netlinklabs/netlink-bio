@@ -5,6 +5,7 @@ All notable changes to Netlink.bio are documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **`analytics.html`: nudged the "upgrade to unlock" overlay's top padding from 48px to 96px**, after the first fix (below) landed a little too close to the period selector on a live device.
 - **`analytics.html`: Basic tier's "upgrade to unlock" overlay now sits near the top of the blurred stats block instead of vertically centered in it.** With `justify-content: center` on an `inset: 0` overlay, the message centered in the whole (tall) stats block, pushing the Upgrade Plan button below the fold on first load, found while testing the new Analytics bottom-nav tab on a Basic-tier account. Changed to `justify-content: flex-start` with top padding so it's visible immediately.
 
 ### Changed
