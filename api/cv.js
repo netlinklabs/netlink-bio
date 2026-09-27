@@ -337,6 +337,9 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item svg { flex-shrink:0; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
+.legal-footer { margin-top:8px; text-align:center; }
+.legal-footer a { color:#94a3b8; font-size:11px; text-decoration:none; }
+.legal-footer span { color:#94a3b8; font-size:11px; padding:0 4px; }
 .cv-corner-logo { position:absolute; top:16px; left:16px; z-index:5; display:inline-flex; }
 .cv-corner-logo img { width:30px; height:30px; border-radius:7px; display:block; }
 .cv-toolbar { max-width:1100px; margin:1.5rem auto 0; padding:0 1rem; display:flex; justify-content:center; gap:0.5rem; }
@@ -352,6 +355,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   body { background:white; padding:0; }
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
+  .legal-footer { display:none !important; }
   .cv-toolbar { display:none !important; }
   .cv-corner-logo { display:none !important; }
 }
@@ -385,7 +389,8 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
     <button type="button" class="cv-toolbar-btn" onclick="window.print()" title="Print / Save as PDF">${iconPrint()} Print</button>
     <button type="button" class="cv-toolbar-btn" onclick="shareCv(event)" title="Share this CV">${iconShare()} Share</button>
   </div>
-  ${showWatermark(profile) ? `<div class="footer-link"><a href="/">netlink.bio &mdash; build your page free</a></div>` : ''}
+  ${showWatermark(profile) ? `<div class="footer-link"><a href="/">netlink.bio, build your page free</a></div>` : ''}
+  <div class="legal-footer"><a href="/privacy-policy">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio">Report</a></div>
   ${badgeModalsHtml(profile)}
   <script>
     function shareCv(event) {

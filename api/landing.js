@@ -192,6 +192,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 .page-footer { padding: 32px 24px; text-align: center; background: #f8f8f8; border-top: 1px solid #f0f0f0; }
 .page-footer p, .page-footer a { font-size: 13px; color: #999; font-weight: 500; text-decoration: none; }
+.page-footer .legal-footer { margin-top: 10px; }
+.page-footer .legal-footer a { font-size: 11px; color: #999; text-decoration: none; }
+.page-footer .legal-footer span { font-size: 11px; color: #999; padding: 0 4px; }
 
 #lightbox { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(10,10,10,0.95); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
 #lightbox.active { display: flex; }
@@ -557,6 +560,9 @@ ${contactHtml}
 <footer class="page-footer">
 <div class="section-inner">
 <a href="https://netlink.bio" target="_blank" rel="noopener">Made with Netlink.bio</a>
+<div class="legal-footer">
+<a href="/privacy-policy">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio">Report</a>
+</div>
 </div>
 </footer>
 </div>
