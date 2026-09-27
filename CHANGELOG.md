@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`privacy-policy.html` v1.5: new "AI and search discoverability of public pages" clause under Section 2.** States that public pages (profile, CV, business page) are intentionally structured with machine-readable data (schema.org JSON-LD, `llms.txt`) so AI assistants and search engines can read them, and that publishing a public page means the user acknowledges its content may be accessed and referenced by automated AI agents and crawlers. Prompted by a round of manual testing across ChatGPT, Perplexity, Gemini, Qwen, and Google AI Mode confirming AI traffic reaches public pages by design; this documents that intent as explicit user consent rather than leaving it implicit. Doesn't change how third-party AI systems assess domain trust/safety (that's driven by their own domain-reputation heuristics, not by reading a site's own privacy policy) — it's a consent/transparency addition, not a trust-signal mechanism.
+
 ### Changed
 - **`analytics.html`: Top Sources and the AI Visibility bot list now show up to 10 rows each** (previously 8 and 6). Raised the matching per-day cap in `get_today_analytics()` and `rollup_analytics_day()` from 5 to 10 entries so there's enough long-tail data for the page to actually show 10 after merging across a period. Days already rolled up before this migration keep whatever was captured under the old cap of 5; only rollups from here on get the higher cap.
 
