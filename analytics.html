@@ -628,7 +628,7 @@
           merged[entry.referrer] = (merged[entry.referrer] || 0) + entry.count;
         });
       });
-      const sorted = Object.entries(merged).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      const sorted = Object.entries(merged).sort((a, b) => b[1] - a[1]).slice(0, 10);
       const list = document.getElementById('referrersList');
       const emptyMsg = document.getElementById('referrersEmpty');
       if (!sorted.length) {
@@ -657,7 +657,7 @@
           merged[key].count += entry.count;
         });
       });
-      const sorted = Object.values(merged).sort((a, b) => b.count - a.count).slice(0, 6);
+      const sorted = Object.values(merged).sort((a, b) => b.count - a.count).slice(0, 10);
       const list = document.getElementById('aiBotsList');
       const emptyMsg = document.getElementById('aiBotsEmpty');
       if (!sorted.length) {

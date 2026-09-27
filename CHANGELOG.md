@@ -4,6 +4,9 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **`analytics.html`: Top Sources and the AI Visibility bot list now show up to 10 rows each** (previously 8 and 6). Raised the matching per-day cap in `get_today_analytics()` and `rollup_analytics_day()` from 5 to 10 entries so there's enough long-tail data for the page to actually show 10 after merging across a period. Days already rolled up before this migration keep whatever was captured under the old cap of 5; only rollups from here on get the higher cap.
+
 ### Added
 - **`vercel.json`: 301 redirect from `/ramlan` and `/cv/ramlan` to `/ramlanhadiansyah` and `/cv/ramlanhadiansyah`.** The account's username changed from `ramlan` to `ramlanhadiansyah`; `ramlan` is kept reserved (`reason: owner`) rather than released, so this can't collide with another user later claiming it (an active `profiles.username` row always wins over any rewrite/redirect, since `redirects` only fires when nothing in the filesystem or a more specific route already served the request). Deliberately scoped to this one username pair, not a general old-username-to-new-username redirect system: no username-history table, no handling for rename chains. Search engines and AI assistants (Bing, Perplexity, confirmed) had indexed the old URL before the rename and were serving 404s; this fixes those links without waiting for re-crawl, on top of manually resubmitting the new URL to Bing Webmaster Tools.
 
