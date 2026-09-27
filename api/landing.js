@@ -561,7 +561,7 @@ ${contactHtml}
 <div class="section-inner">
 <a href="https://netlink.bio" target="_blank" rel="noopener">Made with Netlink.bio</a>
 <div class="legal-footer">
-<a href="/privacy-policy">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio">Report</a>
+<a href="/privacy-policy" target="_blank" rel="noopener">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio" target="_blank" rel="noopener">Report</a>
 </div>
 </div>
 </footer>

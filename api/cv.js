@@ -390,7 +390,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
     <button type="button" class="cv-toolbar-btn" onclick="shareCv(event)" title="Share this CV">${iconShare()} Share</button>
   </div>
   ${showWatermark(profile) ? `<div class="footer-link"><a href="/">netlink.bio, build your page free</a></div>` : ''}
-  <div class="legal-footer"><a href="/privacy-policy">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio">Report</a></div>
+  <div class="legal-footer"><a href="/privacy-policy" target="_blank" rel="noopener">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio" target="_blank" rel="noopener">Report</a></div>
   ${badgeModalsHtml(profile)}
   <script>
     function shareCv(event) {
