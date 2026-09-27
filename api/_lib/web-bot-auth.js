@@ -27,9 +27,29 @@
 // request could replay it to this domain until it expires (minutes) and
 // add a few AI reads. Acceptable for an informational stat; this is not
 // used for access control anywhere.
+//
+// The 'web-bot-auth' package and its '/crypto' subpath export are loaded
+// lazily (see loadLibrary() below) and any failure to load them is caught,
+// not thrown. This is analytics: a page view, click, or CV/landing render
+// must never fail because a third-party dependency didn't load (this bit
+// production once already, 2026-09-27 -- @vercel/nft didn't bundle the
+// package's dist/crypto.cjs, so every route that imports this file, even
+// indirectly through analytics.js, crashed at import time with "Cannot find
+// module"). A static top-level `import` would crash the whole module graph
+// the same way if it ever recurs; a lazy, caught dynamic import can't.
 
-import { verify, HTTP_MESSAGE_SIGNATURES_DIRECTORY } from 'web-bot-auth';
-import { verifierFromJWK } from 'web-bot-auth/crypto';
+let libraryPromise = null;
+function loadLibrary() {
+  if (!libraryPromise) {
+    libraryPromise = Promise.all([import('web-bot-auth'), import('web-bot-auth/crypto')])
+      .then(([main, crypto]) => ({ verify: main.verify, HTTP_MESSAGE_SIGNATURES_DIRECTORY: main.HTTP_MESSAGE_SIGNATURES_DIRECTORY, verifierFromJWK: crypto.verifierFromJWK }))
+      .catch((err) => {
+        console.error('[wba] web-bot-auth failed to load, Web Bot Auth verification disabled for this instance:', err.message);
+        return null;
+      });
+  }
+  return libraryPromise;
+}
 
 // Verified 2026-09-27 against each vendor's docs:
 //   ChatGPT: help.openai.com/en/articles/11845367 (cloud browser signs, legacy header form)
@@ -48,13 +68,13 @@ const MAX_DIRECTORY_BYTES = 64 * 1024;
 // origin -> { expiresAt, verifiers: Map<keyid, verifier> } (per warm instance)
 const keyCache = new Map();
 
-async function loadVerifiers(origin) {
+async function loadVerifiers(origin, lib) {
   const cached = keyCache.get(origin);
   if (cached && cached.expiresAt > Date.now()) return cached.verifiers;
 
   const verifiers = new Map();
   try {
-    const res = await fetch(new URL(HTTP_MESSAGE_SIGNATURES_DIRECTORY, origin), {
+    const res = await fetch(new URL(lib.HTTP_MESSAGE_SIGNATURES_DIRECTORY, origin), {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       redirect: 'error',
     });
@@ -65,7 +85,7 @@ async function loadVerifiers(origin) {
     if (!Array.isArray(keys)) throw new Error('directory has no keys');
     for (const jwk of keys) {
       try {
-        const verifier = await verifierFromJWK(jwk);
+        const verifier = await lib.verifierFromJWK(jwk);
         verifiers.set(verifier.keyid, verifier);
       } catch {
         // Unsupported or malformed key -- skip it, keep the rest.
@@ -105,9 +125,9 @@ function signatureLabels(signatureInput) {
   return [...String(signatureInput).matchAll(/(?:^|,)\s*([a-z*][a-z0-9_.*-]*)=\(/g)].map((m) => m[1]);
 }
 
-async function tryVerify(descriptor, label, state) {
+async function tryVerify(descriptor, label, state, lib) {
   state.origin = null;
-  return verify(descriptor, {
+  return lib.verify(descriptor, {
     label,
     clockSkew: 60,
     async resolver(candidate) {
@@ -119,7 +139,7 @@ async function tryVerify(descriptor, label, state) {
           state.unknownAgent = origin;
           continue;
         }
-        const verifier = (await loadVerifiers(origin)).get(candidate.keyid);
+        const verifier = (await loadVerifiers(origin, lib)).get(candidate.keyid);
         if (verifier) {
           state.origin = origin;
           return verifier;
@@ -137,6 +157,9 @@ export async function verifyWebBotAuth(req) {
   const signatureInput = header(req, 'signature-input');
   if (!signature || !signatureInput || !/web-bot-auth/.test(signatureInput)) return null;
 
+  const lib = await loadLibrary();
+  if (!lib) return null; // library unavailable in this instance -- fail open (no verification), never crash the request
+
   const state = {};
   let lastError = null;
   try {
@@ -146,7 +169,7 @@ export async function verifyWebBotAuth(req) {
     // proxy), try each one in turn.
     for (const label of labels.length > 1 ? labels : [undefined]) {
       try {
-        await tryVerify(descriptor, label, state);
+        await tryVerify(descriptor, label, state, lib);
         if (state.origin) return { category: 'assistant', name: KNOWN_AGENTS[state.origin].name };
       } catch (err) {
         lastError = err;
