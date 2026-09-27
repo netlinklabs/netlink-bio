@@ -10,6 +10,7 @@ All notable changes to Netlink.bio are documented in this file.
 
 ### Changed
 - `analytics.html`: the "No AI activity detected yet" empty state is now a compact one-line banner, so the readiness checklist sits right below it.
+- **`analytics.html`: the trend chart now draws straight lines between days (`tension: 0`) instead of smoothed curves.** Data is bucketed strictly per calendar day, so a curved line between two points visually implied values existed between the days when none do. Also shrank the legend dot (`boxWidth: 8` to `6`) to sit better next to the label text.
 
 ### Fixed
 - **`analytics.html`: Lucide icons could stay blank** if the data rendered before the deferred `lucide` script had loaded (fast Supabase response, slow unpkg), since every `createIcons()` call then no-oped. Added a final `createIcons()` on `DOMContentLoaded`, which always runs after deferred scripts. Found while testing the checklist in headless Chromium.

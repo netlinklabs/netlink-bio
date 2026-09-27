@@ -549,8 +549,8 @@
         data: {
           labels,
           datasets: [
-            { label: 'Views', data: viewsData, borderColor: colors.views, backgroundColor: colors.views, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, tension: 0.25 },
-            { label: 'Clicks', data: clicksData, borderColor: colors.clicks, backgroundColor: colors.clicks, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, tension: 0.25 },
+            { label: 'Views', data: viewsData, borderColor: colors.views, backgroundColor: colors.views, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, tension: 0 },
+            { label: 'Clicks', data: clicksData, borderColor: colors.clicks, backgroundColor: colors.clicks, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, tension: 0 },
           ],
         },
         options: {
@@ -558,7 +558,7 @@
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { position: 'top', labels: { color: colors.text, usePointStyle: true, boxWidth: 8 } },
+            legend: { position: 'top', labels: { color: colors.text, usePointStyle: true, boxWidth: 6 } },
             tooltip: { mode: 'index', intersect: false },
           },
           scales: {
