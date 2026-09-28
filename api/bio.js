@@ -33,10 +33,15 @@ function formatBadgeDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-// Gold and Platinum remove the "Made with Netlink.bio" watermark.
+// Gold and Platinum users can hide the "Made with Netlink.bio" watermark
+// via the "Hide Footer Link" toggle on privacy.html -- tier alone is no
+// longer enough, the toggle must also be on. profiles_bio_public exposes
+// hide_footer_link_bio unconditionally (it's not a privacy-sensitive
+// field), so it's always present in `profile` here.
 function showWatermark(profile) {
   const tier = profile?.tier || 'basic';
-  return tier !== 'gold' && tier !== 'platinum';
+  if (tier !== 'gold' && tier !== 'platinum') return true;
+  return !profile?.hide_footer_link_bio;
 }
 
 function computeBadges(profile) {

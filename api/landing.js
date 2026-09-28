@@ -1,13 +1,15 @@
 // api/landing.js
 // Public-facing renderer for page-builder.html landing pages, served at
 // netlink.bio/page/:slug (see vercel.json rewrite). Same pattern as
-// api/bio.js and api/cv.js: fetch from Supabase with the anon key
-// (RLS's "Public can view published landing pages" policy restricts rows
-// to is_published = true), then render server-side HTML.
+// api/bio.js and api/cv.js: fetch from the `landing_pages_public` view
+// with the anon key -- the view already scopes rows to is_published =
+// true and joins in the owning profile's tier/hide_footer_link_landing
+// (profiles itself is RLS-locked to auth.uid() = id, so it can't be
+// read anonymously; the view is what makes an anonymous read possible).
 //
-// Only the columns actually needed are requested in `select=` -- this is
-// a base-table query (not a public view like profiles_bio_public), so we
-// deliberately never select `id` or `user_id` to avoid exposing them.
+// Only the columns actually needed are requested in `select=`. user_id
+// is included only to attribute the view_landing analytics event
+// server-side -- it must never be rendered into the HTML/JSON-LD output.
 
 import { escapeHtml, notFoundPage } from './_lib/html.js';
 import { recordEvent } from './_lib/analytics.js';
@@ -96,6 +98,18 @@ function getChannelHref(key, value) {
   if (key === 'phone') return 'tel:' + value.replace(/[^0-9+]/g, '');
   if (key === 'email') return 'mailto:' + value.trim();
   return '#';
+}
+
+// Gold and Platinum owners can hide the "Made with Netlink.bio" watermark
+// via the "Hide Footer Link" toggle on privacy.html -- tier alone isn't
+// enough, the toggle must also be on. Mirrors api/bio.js's/api/cv.js's
+// showWatermark(). landing_pages_public exposes tier/hide_footer_link_landing
+// unconditionally (neither is privacy-sensitive), so both are always
+// present on `page` here.
+function showWatermark(page) {
+  const tier = page?.tier || 'basic';
+  if (tier !== 'gold' && tier !== 'platinum') return true;
+  return !page?.hide_footer_link_landing;
 }
 
 function formatPrice(value, currency) {
@@ -234,9 +248,10 @@ export default async function handler(req, res) {
     // user_id is included here only to attribute the view_landing analytics
     // event server-side (Gold tier stats) -- it must never be rendered into
     // the HTML/JSON-LD output below, same rule this file already followed
-    // for id/user_id before analytics existed.
+    // for id/user_id before analytics existed. tier/hide_footer_link_landing
+    // are used only by showWatermark() below.
     const rows = await supabaseGet(
-      `landing_pages?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true&select=slug,title,business_type,content,updated_at,user_id`
+      `landing_pages_public?slug=eq.${encodeURIComponent(slug)}&select=slug,title,business_type,content,updated_at,user_id,tier,hide_footer_link_landing`
     );
     if (!rows.length) {
       res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
@@ -559,7 +574,7 @@ ${hoursHtml}
 ${contactHtml}
 <footer class="page-footer">
 <div class="section-inner">
-<a href="https://netlink.bio" target="_blank" rel="noopener">Made with Netlink.bio</a>
+${showWatermark(page) ? `<a href="https://netlink.bio" target="_blank" rel="noopener">Made with Netlink.bio</a>` : ''}
 <div class="legal-footer">
 <a href="/privacy-policy" target="_blank" rel="noopener">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio" target="_blank" rel="noopener">Report</a>
 </div>
