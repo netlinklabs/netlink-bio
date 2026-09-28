@@ -743,34 +743,66 @@
             <button class="modal-close" onclick="closeCreateWalletModal()">&times;</button>
             <i data-lucide="sparkles" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
             <h3 class="font-semibold text-primary text-lg mb-2">Connect Your Wallet</h3>
-            <p class="text-sm text-secondary mb-5">We'll send a one-time code to your account email, <span id="createWalletFixedEmail" class="text-primary font-medium"></span>, to open your wallet.</p>
-            <p id="createWalletStatus" class="text-xs text-muted mb-3"></p>
 
-            <div id="createWalletEmailStep" class="text-left">
-                <!-- Account email is fixed and pre-filled -- never typed by the
-                     user -- so the wallet identity always matches the Netlink
-                     account. readonly, not editable. -->
-                <input id="createWalletEmailInput" type="email" readonly
-                    class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-muted mb-3 cursor-not-allowed">
-                <button id="createWalletEmailBtn" onclick="startEmailWalletConnect()"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
-                    <span id="createWalletEmailBtnText">Send code</span>
-                </button>
-                <p id="createWalletEmailError" class="text-xs text-red-500 mt-2 hidden"></p>
+            <!-- Shown only for accounts whose existing wallet is still
+                 Google-only (not yet linked to email OTP). They have to
+                 come back through Google once, so the wallet they land on
+                 is the SAME one they already have, not a fresh empty one --
+                 signIn({ email }) alone would resolve to a different wallet
+                 for an unlinked Google account. Email OTP then gets added
+                 as a second sign-in method automatically, right after. -->
+            <div id="createWalletGoogleLinkStep" class="hidden">
+                <p class="text-sm text-secondary mb-5">This wallet currently only opens with Google. Sign in once with Google to reach it, then we'll add email as a sign-in method too, so future visits only need a code.</p>
+                <div id="createWalletGoogleLinkWrap" class="flex items-center justify-center mb-3"></div>
+                <p id="createWalletGoogleLinkStatus" class="text-xs text-muted mb-3"></p>
+                <p id="createWalletGoogleLinkError" class="text-xs text-red-500 mt-2 hidden"></p>
             </div>
 
-            <div id="createWalletOtpStep" class="hidden text-left">
-                <label class="text-xs font-medium text-secondary block mb-1.5">Enter the 6-digit code sent to <span id="createWalletOtpEmail" class="text-primary font-medium"></span></label>
-                <input id="createWalletOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+            <!-- Auto-started right after the Google step above succeeds,
+                 for the same not-yet-linked accounts. -->
+            <div id="createWalletAutoLinkOtpStep" class="hidden text-left">
+                <p class="text-sm text-secondary mb-4 text-center">Signed in. Now enter the 6-digit code sent to <span id="createWalletAutoLinkEmail" class="text-primary font-medium"></span> to finish adding email as a sign-in method.</p>
+                <input id="createWalletAutoLinkOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
                     class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary text-center tracking-[0.4em] font-semibold mb-3">
-                <button id="createWalletOtpBtn" onclick="confirmEmailWalletConnect()"
+                <button id="createWalletAutoLinkOtpBtn" onclick="confirmAutoLinkEmail()"
                     class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
-                    <span id="createWalletOtpBtnText">Confirm</span>
+                    <span id="createWalletAutoLinkOtpBtnText">Confirm</span>
                 </button>
-                <button type="button" onclick="resetEmailWalletConnect()" class="w-full text-center text-xs text-muted mt-3 hover:text-secondary transition">
-                    Use a different email
-                </button>
-                <p id="createWalletOtpError" class="text-xs text-red-500 mt-2 hidden"></p>
+                <p id="createWalletAutoLinkOtpError" class="text-xs text-red-500 mt-2 hidden"></p>
+            </div>
+
+            <!-- Plain OTP-only path, for a brand-new wallet or an account
+                 that's already linked (or was always email-only). -->
+            <div id="createWalletPlainWrap">
+                <p class="text-sm text-secondary mb-5">We'll send a one-time code to your account email, <span id="createWalletFixedEmail" class="text-primary font-medium"></span>, to open your wallet.</p>
+                <p id="createWalletStatus" class="text-xs text-muted mb-3"></p>
+
+                <div id="createWalletEmailStep" class="text-left">
+                    <!-- Account email is fixed and pre-filled -- never typed by the
+                         user -- so the wallet identity always matches the Netlink
+                         account. readonly, not editable. -->
+                    <input id="createWalletEmailInput" type="email" readonly
+                        class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-muted mb-3 cursor-not-allowed">
+                    <button id="createWalletEmailBtn" onclick="startEmailWalletConnect()"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
+                        <span id="createWalletEmailBtnText">Send code</span>
+                    </button>
+                    <p id="createWalletEmailError" class="text-xs text-red-500 mt-2 hidden"></p>
+                </div>
+
+                <div id="createWalletOtpStep" class="hidden text-left">
+                    <label class="text-xs font-medium text-secondary block mb-1.5">Enter the 6-digit code sent to <span id="createWalletOtpEmail" class="text-primary font-medium"></span></label>
+                    <input id="createWalletOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+                        class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary text-center tracking-[0.4em] font-semibold mb-3">
+                    <button id="createWalletOtpBtn" onclick="confirmEmailWalletConnect()"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">
+                        <span id="createWalletOtpBtnText">Confirm</span>
+                    </button>
+                    <button type="button" onclick="resetEmailWalletConnect()" class="w-full text-center text-xs text-muted mt-3 hover:text-secondary transition">
+                        Use a different email
+                    </button>
+                    <p id="createWalletOtpError" class="text-xs text-red-500 mt-2 hidden"></p>
+                </div>
             </div>
         </div>
     </div>
@@ -1039,6 +1071,10 @@
         const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
         let currentUser = null;
         let currentWalletAddress = '';
+        // OTP-only test build: whether this account's existing wallet still
+        // needs a one-time Google-then-link step before it can use OTP
+        // alone. Computed once the profile loads (see loadUserProfile()).
+        let needsGoogleLinkFirst = false;
         let currentLocalCurrency = 'USD';
         let fxRateCache = { currency: null, rate: null, fetchedAt: 0 };
         let polPriceCache = { usdPrice: null, fetchedAt: 0 };
@@ -1099,7 +1135,7 @@
 
         async function loadUserProfile() {
             const { data, error } = await supabaseClient
-                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, business_verified_at, identity_verified_at').eq('id', currentUser.id).single();
+                .from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, business_verified_at, identity_verified_at, wallet_google_email, wallet_recovery_email').eq('id', currentUser.id).single();
 
             if (error) {
                 console.error('Failed to load profile:', error);
@@ -1110,6 +1146,12 @@
 
             currentWalletAddress = data.wallet_address || '';
             window.currentWalletAddress = currentWalletAddress;
+            // A DB proxy for "does this account's wallet still only open with
+            // Google" (best-effort, written by pay.html/recovery.html, not a
+            // live Sequence listAccounts() check). True only when Google is on
+            // file and email backup never was, i.e. it never went through
+            // recovery.html's "Add Email backup" or this same auto-link flow.
+            needsGoogleLinkFirst = !!(data.wallet_google_email && !data.wallet_recovery_email);
             currentLocalCurrency = (data.local_currency || 'USD').toUpperCase();
             window.currentLocalCurrency = currentLocalCurrency;
             if (currentWalletAddress) {
@@ -1480,18 +1522,41 @@
 
         window.openCreateWalletModal = function () {
             document.getElementById('createWalletStatus').textContent = '';
-            // OTP-only test build: no Google button, no user-typed email --
-            // resetEmailWalletConnect() below fills the email from the
-            // account itself.
-            resetEmailWalletConnect();
+
+            if (needsGoogleLinkFirst) {
+                // This account's wallet still only opens with Google -- show
+                // the "sign in with Google, then we link email" path instead
+                // of the plain OTP-only one.
+                document.getElementById('createWalletPlainWrap').classList.add('hidden');
+                document.getElementById('createWalletAutoLinkOtpStep').classList.add('hidden');
+                document.getElementById('createWalletGoogleLinkStep').classList.remove('hidden');
+                document.getElementById('createWalletGoogleLinkStatus').textContent = '';
+                document.getElementById('createWalletGoogleLinkError').classList.add('hidden');
+                renderCreateWalletGoogleLinkButton();
+            } else {
+                // New wallet, or an account that's already linked (or was
+                // always email-only): plain OTP-only, no Google button, no
+                // user-typed email -- resetEmailWalletConnect() below fills
+                // the email from the account itself.
+                document.getElementById('createWalletGoogleLinkStep').classList.add('hidden');
+                document.getElementById('createWalletAutoLinkOtpStep').classList.add('hidden');
+                document.getElementById('createWalletPlainWrap').classList.remove('hidden');
+                resetEmailWalletConnect();
+            }
+
             document.getElementById('createWalletModal').classList.add('active');
         };
         window.closeCreateWalletModal = function () {
             document.getElementById('createWalletModal').classList.remove('active');
         };
 
-        function renderCreateWalletGoogleButton() {
-            const container = document.getElementById('createWalletGoogleWrap');
+        // Google step of the "link first" path, for accounts whose wallet
+        // still only opens with Google (needsGoogleLinkFirst). Signs into the
+        // account's EXISTING wallet (same address as before), then chains
+        // straight into adding email as a second sign-in method -- see
+        // onCreateWalletGoogleLinkCredential() below.
+        function renderCreateWalletGoogleLinkButton() {
+            const container = document.getElementById('createWalletGoogleLinkWrap');
             container.innerHTML = '';
             container.style.opacity = '1';
             if (!window.google) {
@@ -1500,7 +1565,7 @@
             }
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: onCreateWalletCredential,
+                callback: onCreateWalletGoogleLinkCredential,
             });
             google.accounts.id.renderButton(container, {
                 theme: 'filled_blue',
@@ -1601,11 +1666,22 @@
             }
         };
 
-        async function onCreateWalletCredential(response) {
-            const statusEl = document.getElementById('createWalletStatus');
-            const container = document.getElementById('createWalletGoogleWrap');
+        // "Link first" path state: the wallet address from the Google
+        // sign-in step, carried over to the linking step below.
+        let pendingAutoLinkChallenge = null;
+        let pendingAutoLinkWalletAddress = null;
+
+        // Google step of the "link first" path. Signs into the account's
+        // EXISTING wallet (Google is its original, already-working identity,
+        // so this resolves to the same address as before -- not a new one),
+        // then chains straight into adding email as a second sign-in method.
+        async function onCreateWalletGoogleLinkCredential(response) {
+            const statusEl = document.getElementById('createWalletGoogleLinkStatus');
+            const errorEl = document.getElementById('createWalletGoogleLinkError');
+            const container = document.getElementById('createWalletGoogleLinkWrap');
+            errorEl.classList.add('hidden');
             container.style.opacity = '0.5';
-            statusEl.textContent = 'Creating your wallet...';
+            statusEl.textContent = 'Signing in...';
             const idToken = response.credential;
             try {
                 const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Pay');
@@ -1614,27 +1690,114 @@
                 if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
                     throw new Error('Invalid wallet address received');
                 }
-
-                const googleEmail = decodeGoogleIdTokenEmail(idToken);
-                await finalizeWalletConnection(walletAddress, googleEmail, true);
+                pendingAutoLinkWalletAddress = walletAddress;
+                statusEl.textContent = 'Signed in. Adding email as a sign-in method...';
+                await startAutoLinkEmail();
             } catch (err) {
-                console.error('Wallet creation error:', err);
-
-                // Guard: sequenceWaas.signIn() sometimes rejects (e.g. a
-                // confirmation timeout) even though the wallet WAS created and
-                // already saved a few lines above. Re-check actual saved state
-                // before showing a "failed" toast.
-                if (window.currentWalletAddress && /^0x[a-fA-F0-9]{40}$/.test(window.currentWalletAddress)) {
-                    closeCreateWalletModal();
-                    showToast('Wallet connected!');
-                    return;
-                }
-
-                statusEl.textContent = 'Could not create wallet — please try again.';
+                console.error('Google sign-in (link step) failed:', err);
+                errorEl.textContent = 'Could not sign in with Google. Please try again.';
+                errorEl.classList.remove('hidden');
+                statusEl.textContent = '';
                 container.style.opacity = '1';
-                showToast('Could not create wallet. Please try again.');
             }
         }
+
+        // Auto-started right after the Google step above succeeds. Sends a
+        // code to the account's own email (never typed) via
+        // initAuth()+linkAccount() -- the same challenge/answer pattern
+        // recovery.html's "Add Email backup" uses. Deliberately not the
+        // signIn()/onEmailAuthCodeRequired pattern the plain OTP path below
+        // uses: that one is for a fresh sign-in, this one links a second
+        // method onto the session we just authenticated above.
+        async function startAutoLinkEmail() {
+            const errorEl = document.getElementById('createWalletGoogleLinkError');
+            errorEl.classList.add('hidden');
+            const email = currentUser?.email || '';
+            try {
+                pendingAutoLinkChallenge = await sequenceWaas.initAuth({ email });
+                document.getElementById('createWalletGoogleLinkStep').classList.add('hidden');
+                document.getElementById('createWalletAutoLinkOtpStep').classList.remove('hidden');
+                document.getElementById('createWalletAutoLinkEmail').textContent = email;
+                document.getElementById('createWalletAutoLinkOtpInput').value = '';
+                document.getElementById('createWalletAutoLinkOtpError').classList.add('hidden');
+                document.getElementById('createWalletAutoLinkOtpInput').focus();
+            } catch (err) {
+                console.error('initAuth (auto-link email) failed:', err);
+                errorEl.textContent = 'Signed in, but could not start adding email. Please try again.';
+                errorEl.classList.remove('hidden');
+                document.getElementById('createWalletGoogleLinkWrap').style.opacity = '1';
+            }
+        }
+
+        window.confirmAutoLinkEmail = async function () {
+            const codeInput = document.getElementById('createWalletAutoLinkOtpInput');
+            const errorEl = document.getElementById('createWalletAutoLinkOtpError');
+            const btn = document.getElementById('createWalletAutoLinkOtpBtn');
+            const btnText = document.getElementById('createWalletAutoLinkOtpBtnText');
+            errorEl.classList.add('hidden');
+
+            const code = codeInput.value.trim();
+            if (!code || code.length < 6) {
+                errorEl.textContent = 'Enter the 6-digit code from your email.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!pendingAutoLinkChallenge) {
+                errorEl.textContent = 'Your code expired. Please close this and try again.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>';
+            try {
+                await sequenceWaas.linkAccount(pendingAutoLinkChallenge.withAnswer(code));
+                pendingAutoLinkChallenge = null;
+
+                const email = currentUser?.email || '';
+                // Best-effort: keep Supabase profile in sync, same as
+                // recovery.html's own "Add Email backup" flow.
+                try {
+                    await supabaseClient.from('profiles')
+                        .update({ wallet_recovery_email: email }).eq('id', currentUser.id);
+                } catch (syncErr) {
+                    console.error('Non-critical: failed to sync wallet_recovery_email:', syncErr);
+                }
+                needsGoogleLinkFirst = false;
+
+                // Repair profiles.wallet_address if it was empty (e.g. this
+                // wallet had been disconnected earlier) -- never overwrites a
+                // real existing value. Deliberately not reusing
+                // finalizeWalletConnection() here: its isGoogle branch would
+                // write wallet_google_email using this call's email, which is
+                // misleading for a linking event, not a fresh connection.
+                const walletAddress = pendingAutoLinkWalletAddress || window.currentWalletAddress;
+                if (walletAddress) {
+                    const { data: existing, error: fetchErr } = await supabaseClient
+                        .from('profiles').select('wallet_address').eq('id', currentUser.id).single();
+                    if (!fetchErr && !existing.wallet_address) {
+                        await supabaseClient.from('profiles').update({ wallet_address: walletAddress }).eq('id', currentUser.id);
+                    }
+                    currentWalletAddress = (existing && existing.wallet_address) || walletAddress;
+                    window.currentWalletAddress = currentWalletAddress;
+                    document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
+                    updateCardConnectState();
+                    fetchWalletBalances(currentWalletAddress);
+                    checkGasSponsorship(currentWalletAddress);
+                    if (window.lucide) lucide.createIcons();
+                }
+
+                closeCreateWalletModal();
+                showToast('Wallet connected, email added as a sign-in method!');
+            } catch (err) {
+                console.error('linkAccount (auto-link email) failed:', err);
+                errorEl.textContent = "That code didn't work. Please check it and try again.";
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Confirm';
+            }
+        };
 
         // ---- Email OTP flow (Sequence WaaS signIn + onEmailAuthCodeRequired) ----
         // IMPORTANT: sequenceWaas.signIn({ email }) internally sends the OTP and
