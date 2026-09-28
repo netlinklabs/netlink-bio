@@ -67,6 +67,13 @@
         .privacy-group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; margin: 20px 0 4px; }
         .privacy-group-title:first-child { margin-top: 0; }
 
+        .toggle-label-row { display: flex; align-items: center; gap: 6px; }
+        .gold-lock-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #b45309; background: rgba(245,158,11,0.14); border: none; padding: 2px 7px; border-radius: 999px; cursor: pointer; line-height: 1.4; }
+        html.dark .gold-lock-badge { color: #fbbf24; background: rgba(245,158,11,0.16); }
+        .toggle-row.is-locked .toggle-label { color: #94a3b8; }
+        html.dark .toggle-row.is-locked .toggle-label { color: #64748b; }
+        .toggle-row.is-locked .toggle-switch-input { opacity: 0.5; cursor: not-allowed; }
+
         /* Modal shared styles */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay:not(.hidden) { display: flex; }
@@ -162,10 +169,25 @@
             <div class="toggle-row"><span class="toggle-label">Show Telegram</span><input id="toggleTelegramBio" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Country on Bio Page</span><input id="toggleCountryBio" type="checkbox" class="toggle-switch-input" onchange="showCountryDirty = true"></div>
             <p class="text-xs text-muted mt-1">Note: your CV always shows your country regardless of this setting.</p>
+            <div class="toggle-row" id="rowHideFooterBio">
+                <span class="toggle-label-row"><span class="toggle-label">Hide Footer Link</span><button type="button" class="gold-lock-badge" id="lockHideFooterBio" onclick="showGoldLockToast()"><i data-lucide="lock" class="w-2.5 h-2.5"></i>Gold</button></span>
+                <input id="toggleHideFooterBio" type="checkbox" class="toggle-switch-input">
+            </div>
 
             <p class="privacy-group-title">CV</p>
             <div class="toggle-row"><span class="toggle-label">Show Public Email</span><input id="toggleEmailCv" type="checkbox" class="toggle-switch-input"></div>
             <div class="toggle-row"><span class="toggle-label">Show Phone Number</span><input id="togglePhoneCv" type="checkbox" class="toggle-switch-input"></div>
+            <div class="toggle-row" id="rowHideFooterCv">
+                <span class="toggle-label-row"><span class="toggle-label">Hide Footer Link</span><button type="button" class="gold-lock-badge" id="lockHideFooterCv" onclick="showGoldLockToast()"><i data-lucide="lock" class="w-2.5 h-2.5"></i>Gold</button></span>
+                <input id="toggleHideFooterCv" type="checkbox" class="toggle-switch-input">
+            </div>
+
+            <p class="privacy-group-title">Landing Page</p>
+            <div class="toggle-row" id="rowHideFooterLanding">
+                <span class="toggle-label-row"><span class="toggle-label">Hide Footer Link</span><button type="button" class="gold-lock-badge" id="lockHideFooterLanding" onclick="showGoldLockToast()"><i data-lucide="lock" class="w-2.5 h-2.5"></i>Gold</button></span>
+                <input id="toggleHideFooterLanding" type="checkbox" class="toggle-switch-input">
+            </div>
+            <p class="text-xs text-muted mt-1">Removes the "Made with Netlink.bio" link from the footer of your Bio, CV, and Landing Page. Available on Gold and up.</p>
 
             <p class="privacy-group-title">Token Transfer Receipt</p>
             <div class="toggle-row"><span class="toggle-label">Show Display Name</span><input id="toggleReceiptName" type="checkbox" class="toggle-switch-input"></div>
@@ -314,10 +336,15 @@
 
         // ---------------- Privacy Settings ----------------
 
+        // Set when the account is Gold/Platinum, so savePrivacySettings()
+        // knows whether the 3 Hide Footer Link toggles are actually editable
+        // (see applyGoldLock()).
+        let isGoldOrHigher = false;
+
         async function loadPrivacySettings() {
             const { data, error } = await supabaseClient
                 .from('profiles')
-                .select('show_donate, show_email_bio, show_phone_bio, show_telegram_bio, show_email_cv, show_phone_cv, receipt_show_display_name, receipt_wallet_display, net_id_discoverable, show_country_bio')
+                .select('show_donate, show_email_bio, show_phone_bio, show_telegram_bio, show_email_cv, show_phone_cv, receipt_show_display_name, receipt_wallet_display, net_id_discoverable, show_country_bio, tier, hide_footer_link_bio, hide_footer_link_cv, hide_footer_link_landing')
                 .eq('id', currentUser.id)
                 .single();
 
@@ -340,7 +367,45 @@
 
             document.getElementById('toggleCountryBio').checked = data.show_country_bio === true;
             showCountryDirty = false;
+
+            document.getElementById('toggleHideFooterBio').checked = data.hide_footer_link_bio === true;
+            document.getElementById('toggleHideFooterCv').checked = data.hide_footer_link_cv === true;
+            document.getElementById('toggleHideFooterLanding').checked = data.hide_footer_link_landing === true;
+            applyGoldLock(data.tier);
         }
+
+        // The 3 "Hide Footer Link" toggles are visible to every tier (so
+        // Basic/Silver/Bronze users can see the feature exists), but are
+        // disabled and forced off for non-Gold accounts, with a small
+        // amber "Gold" lock badge next to each -- tapping it shows an
+        // upgrade toast. Mirrors the locked-tile/upsell pattern already
+        // used for other Gold-only features on dashboard.html.
+        function applyGoldLock(tier) {
+            isGoldOrHigher = tier === 'gold' || tier === 'platinum';
+            const rowIds = ['rowHideFooterBio', 'rowHideFooterCv', 'rowHideFooterLanding'];
+            const toggleIds = ['toggleHideFooterBio', 'toggleHideFooterCv', 'toggleHideFooterLanding'];
+            const lockIds = ['lockHideFooterBio', 'lockHideFooterCv', 'lockHideFooterLanding'];
+            for (let i = 0; i < toggleIds.length; i++) {
+                const row = document.getElementById(rowIds[i]);
+                const toggle = document.getElementById(toggleIds[i]);
+                const lock = document.getElementById(lockIds[i]);
+                if (isGoldOrHigher) {
+                    row.classList.remove('is-locked');
+                    toggle.disabled = false;
+                    lock.classList.add('hidden');
+                } else {
+                    row.classList.add('is-locked');
+                    toggle.disabled = true;
+                    toggle.checked = false;
+                    lock.classList.remove('hidden');
+                }
+            }
+        }
+
+        function showGoldLockToast() {
+            showToast('Hide Footer Link is available from the Gold plan and up. Upgrade to unlock it.', false);
+        }
+        window.showGoldLockToast = showGoldLockToast;
 
         async function savePrivacySettings() {
             const btn = document.getElementById('privacySaveBtn');
@@ -369,6 +434,16 @@
             // dashboard.html's "Show Country" checkbox.
             if (showCountryDirty) {
                 payload.show_country_bio = document.getElementById('toggleCountryBio').checked;
+            }
+            // Only send the 3 Hide Footer Link toggles when the account is
+            // actually Gold/Platinum -- a locked (and therefore always-
+            // unchecked) toggle on a non-Gold account must never
+            // accidentally write hide_footer_link_* = false over a value
+            // the server-side tier gate would otherwise reject anyway.
+            if (isGoldOrHigher) {
+                payload.hide_footer_link_bio = document.getElementById('toggleHideFooterBio').checked;
+                payload.hide_footer_link_cv = document.getElementById('toggleHideFooterCv').checked;
+                payload.hide_footer_link_landing = document.getElementById('toggleHideFooterLanding').checked;
             }
 
             const { error } = await supabaseClient.from('profiles').update(payload).eq('id', currentUser.id);

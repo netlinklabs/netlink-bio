@@ -21,10 +21,15 @@ function formatBadgeDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-// Gold and Platinum remove the "netlink.bio -- build your page free" watermark.
+// Gold and Platinum users can hide the "netlink.bio -- build your page
+// free" watermark via the "Hide Footer Link" toggle on privacy.html --
+// tier alone is no longer enough, the toggle must also be on.
+// profiles_cv_public exposes hide_footer_link_cv unconditionally (it's
+// not a privacy-sensitive field), so it's always present in `profile`.
 function showWatermark(profile) {
   const tier = profile?.tier || 'basic';
-  return tier !== 'gold' && tier !== 'platinum';
+  if (tier !== 'gold' && tier !== 'platinum') return true;
+  return !profile?.hide_footer_link_cv;
 }
 
 function computeBadges(profile) {
