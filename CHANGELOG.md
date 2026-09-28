@@ -4,6 +4,10 @@ All notable changes to Netlink.bio are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`privacy.html`: the "Gold" lock badge on the three Hide Footer Link toggles stayed visible for Gold/Platinum accounts instead of hiding once the feature unlocked.** Same class of bug as the earlier `.modal-overlay` fix in this file: `.gold-lock-badge { display: inline-flex; ... }` is defined in this page's own inline `<style>` block, which loads after `shared/tailwind.css`, so it beat `.hidden { display: none }` at equal specificity (later rule wins). Added `.gold-lock-badge.hidden { display: none; }` so `applyGoldLock()`'s existing `classList.add('hidden')` call actually takes effect.
+- **`privacy.html`: the same badge redesigned to be smaller and less flashy**, per feedback that it read as too large/loud next to the toggle label. Uppercase "GOLD" (10px, bold, amber background) is now plain-case "Gold" (9px, semibold, neutral gray background), with only the small lock icon keeping an amber accent color instead of the whole pill.
+
 ### Added
 - **Gold-tier users can now individually toggle the "Made with Netlink.bio" footer link on Bio, CV, and Landing Page, instead of it being force-hidden with no control.** Previously `showWatermark()` in `bio.js`/`cv.js` only checked tier (`gold`/`platinum`), and `landing.js` had no watermark logic at all (its footer link always rendered, tier or not). Backed by three `profiles` columns: `hide_footer_link_bio`, `hide_footer_link_cv`, `hide_footer_link_landing` (all `boolean NOT NULL DEFAULT false`).
   - **`bio.js`/`cv.js`**: `showWatermark(profile)` now returns `false` (hides the link) only when the tier is Gold/Platinum **and** the matching toggle is `true` — previously tier alone was enough. Both continue querying `profiles_bio_public`/`profiles_cv_public` with `select=*`, which already returns the new column.
