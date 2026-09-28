@@ -277,6 +277,11 @@
 
     async function handleLogout() {
       if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
+      // See shared/nav.js's default logout handler for why this is here:
+      // a no-op unless this page happens to have loaded the Sequence SDK.
+      if (window.sequenceWaas) {
+        try { await window.sequenceWaas.dropSession(); } catch (err) { console.error('Failed to drop wallet session on logout:', err); }
+      }
       await supabaseClient.auth.signOut();
       window.location.href = 'login';
     }
