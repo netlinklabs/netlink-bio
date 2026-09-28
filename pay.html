@@ -342,8 +342,8 @@
         .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
         .gas-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
         html.dark .gas-warning { background: rgba(252,211,77,0.1); border-color: rgba(252,211,77,0.3); color: #fcd34d; }
-        .gas-warning-sponsored { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
-        html.dark .gas-warning-sponsored { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399; }
+        .gas-warning-sponsored { background: transparent; border: none; color: #1e293b; font-size: 12px; padding: 0; }
+        html.dark .gas-warning-sponsored { color: #ffffff; }
         .gas-info { background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
         html.dark .gas-info { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.3); color: #60a5fa; }
 
@@ -2066,7 +2066,7 @@
 
             if (window.isGasSponsored === true) {
                 // Confirmed sponsored — always allowed to send, even with 0 POL.
-                gasWarning.innerHTML = 'Your wallet has free gas sponsorship — no POL needed to send.';
+                gasWarning.innerHTML = 'Gas Sponsored ✅';
                 gasWarning.classList.remove('hidden', 'gas-warning');
                 gasWarning.classList.add('gas-warning-sponsored');
                 continueBtn.disabled = false;
