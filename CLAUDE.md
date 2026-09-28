@@ -102,6 +102,12 @@ When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and a
 
 **Always update `CHANGELOG.md`** to reflect what was changed, in the same PR/commit — even for small fixes. This is required, not optional; the changelog is the source of truth used to sync context across sessions and other tools.
 
+### Changelog archiving
+
+`CHANGELOG.md` is kept lean on purpose (it also gets synced to the claude.ai Project knowledge base regularly, so a bloated file wastes tokens on both sides). Older entries live in `changelog-archive/`, one snapshot file per cut, named `YYYY-MM-DD-HHMM.md` (date/time the cut was made). To find something: check `CHANGELOG.md` first, then the newest file in `changelog-archive/`, then work backwards to older-dated files. See `changelog-archive/README.md` for the full convention.
+
+When `CHANGELOG.md` grows large again (roughly 100-150KB, or whenever a single read/write of it feels heavy), cut a new archive: move its current content into a new `changelog-archive/YYYY-MM-DD-HHMM.md` file, then reset `CHANGELOG.md` to just the header plus an empty `## [Unreleased]` section. Do this as its own scoped commit, not mixed into an unrelated feature change.
+
 ## Before committing
 
 - Run through the branding + language rules above on any UI-facing change.
