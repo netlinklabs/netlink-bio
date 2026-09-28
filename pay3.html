@@ -1075,6 +1075,11 @@
         // needs a one-time Google-then-link step before it can use OTP
         // alone. Computed once the profile loads (see loadUserProfile()).
         let needsGoogleLinkFirst = false;
+        // The Google account this wallet actually expects (profiles.wallet_google_email),
+        // used as a login_hint so the account picker steers toward it instead
+        // of whichever Google account happens to be first on the device --
+        // relevant for anyone signed into more than one Google account.
+        let expectedGoogleEmail = '';
         let currentLocalCurrency = 'USD';
         let fxRateCache = { currency: null, rate: null, fetchedAt: 0 };
         let polPriceCache = { usdPrice: null, fetchedAt: 0 };
@@ -1152,6 +1157,7 @@
             // file and email backup never was, i.e. it never went through
             // recovery.html's "Add Email backup" or this same auto-link flow.
             needsGoogleLinkFirst = !!(data.wallet_google_email && !data.wallet_recovery_email);
+            expectedGoogleEmail = data.wallet_google_email || '';
             currentLocalCurrency = (data.local_currency || 'USD').toUpperCase();
             window.currentLocalCurrency = currentLocalCurrency;
             if (currentWalletAddress) {
@@ -1569,6 +1575,14 @@
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: onCreateWalletGoogleLinkCredential,
+                // Steers Google's account picker toward the Google account
+                // this wallet actually expects, so someone signed into
+                // multiple Google accounts on this device doesn't have to
+                // manually pick the right one. Not a hard guarantee (Google
+                // may still let another signed-in account be chosen if the
+                // hinted one isn't logged in on this device), so
+                // onCreateWalletGoogleLinkCredential() doesn't rely on it.
+                ...(expectedGoogleEmail ? { login_hint: expectedGoogleEmail } : {}),
             });
             google.accounts.id.renderButton(container, {
                 theme: 'filled_blue',
