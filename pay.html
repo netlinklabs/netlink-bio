@@ -1852,10 +1852,17 @@
                 ? 'A different wallet session was detected in this browser. Please confirm your identity again to continue.'
                 : 'Confirm your identity to continue.';
             pendingReauthResume = async function () {
+                // Resolve sponsorship status BEFORE revealing the form --
+                // we just authenticated, so this is the one moment we can
+                // get a definitive answer instead of the transient "unknown"
+                // state. Awaiting first (checkGasSponsorship's own internal
+                // re-render still runs, just against the still-hidden form)
+                // avoids a flash of the neutral note only to be replaced a
+                // moment later once the real answer resolves.
+                await checkGasSponsorship(window.currentWalletAddress);
                 document.getElementById('sendConfirmPending').classList.remove('hidden');
                 document.getElementById('sendStepConfirm').classList.add('hidden');
                 document.getElementById('sendStepForm').classList.remove('hidden');
-                checkGasSponsorship(window.currentWalletAddress);
             };
             renderGoogleConfirmButton();
         };
