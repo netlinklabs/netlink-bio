@@ -68,8 +68,11 @@
         .privacy-group-title:first-child { margin-top: 0; }
 
         .toggle-label-row { display: flex; align-items: center; gap: 6px; }
-        .gold-lock-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #b45309; background: rgba(245,158,11,0.14); border: none; padding: 2px 7px; border-radius: 999px; cursor: pointer; line-height: 1.4; }
-        html.dark .gold-lock-badge { color: #fbbf24; background: rgba(245,158,11,0.16); }
+        .gold-lock-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 600; letter-spacing: 0.02em; color: #94a3b8; background: rgba(148,163,184,0.14); border: none; padding: 1px 6px; border-radius: 999px; cursor: pointer; line-height: 1.5; }
+        .gold-lock-badge svg { width: 8px; height: 8px; color: #d97706; }
+        html.dark .gold-lock-badge { color: #64748b; background: rgba(148,163,184,0.12); }
+        html.dark .gold-lock-badge svg { color: #fbbf24; }
+        .gold-lock-badge.hidden { display: none; }
         .toggle-row.is-locked .toggle-label { color: #94a3b8; }
         html.dark .toggle-row.is-locked .toggle-label { color: #64748b; }
         .toggle-row.is-locked .toggle-switch-input { opacity: 0.5; cursor: not-allowed; }
