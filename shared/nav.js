@@ -392,6 +392,15 @@
     document.getElementById('nlnav-logout-btn').addEventListener('click', async () => {
       if (window.NetlinkAppLock) NetlinkAppLock.clearLockSession();
       if (typeof state.onLogout === 'function') { await state.onLogout(); return; }
+      // Sequence WaaS keeps a browser-global session that outlives this
+      // page (it isn't tied to window.sequenceWaas, only reading it is).
+      // Drop it here so a different Supabase account signing in next
+      // doesn't inherit the previous account's wallet session. Only pages
+      // that actually load the Sequence SDK set window.sequenceWaas, so
+      // this is a no-op everywhere else.
+      if (window.sequenceWaas) {
+        try { await window.sequenceWaas.dropSession(); } catch (err) { console.error('Failed to drop wallet session on logout:', err); }
+      }
       if (state.supabaseClient) await state.supabaseClient.auth.signOut();
       window.location.href = 'login';
     });
