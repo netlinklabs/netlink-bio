@@ -1164,8 +1164,11 @@
 
             // OTP-only test build: no manual "Connect Wallet" button -- open
             // the connect modal automatically the moment we know there's no
-            // wallet linked yet.
-            if (!currentWalletAddress) {
+            // wallet linked yet, OR the account is a Google-only-unlinked
+            // legacy wallet that still needs to go through the link-first
+            // migration path (wallet_address is already set for these, so
+            // checking currentWalletAddress alone would skip them).
+            if (!currentWalletAddress || needsGoogleLinkFirst) {
                 openCreateWalletModal();
             }
 
