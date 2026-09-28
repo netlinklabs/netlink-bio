@@ -344,6 +344,8 @@
         html.dark .gas-warning { background: rgba(252,211,77,0.1); border-color: rgba(252,211,77,0.3); color: #fcd34d; }
         .gas-warning-sponsored { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
         html.dark .gas-warning-sponsored { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399; }
+        .gas-info { background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af; font-size: 12px; padding: 10px 12px; border-radius: 10px; }
+        html.dark .gas-info { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.3); color: #60a5fa; }
 
         /* === Swap confirm modal — gas details block (swap-only, separate
            from Send's #gasWarning/.gas-warning above). The block itself is
@@ -2025,13 +2027,19 @@
                 gasWarning.classList.add('gas-warning');
                 continueBtn.disabled = true;
                 continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            } else if (window.isGasSponsored === null && polBalance <= 0) {
+            } else if (window.isGasSponsored === null) {
                 // Unknown yet (no active Sequence session established in this
-                // browser tab) — don't block Continue on a guess. The real
-                // sponsorship/fee answer gets resolved when the user
-                // authenticates at the Confirm Send step and performTransfer()
-                // makes its own live feeOptions() call.
-                gasWarning.classList.add('hidden');
+                // browser tab, e.g. right after logging in fresh -- logout
+                // now always drops the wallet session, see shared/nav.js).
+                // Don't block Continue on a guess or silently say nothing:
+                // a genuinely-sponsored wallet would otherwise look
+                // unsponsored with no explanation. The real sponsorship/fee
+                // answer gets resolved when the user authenticates at the
+                // Confirm Send step and performTransfer() makes its own live
+                // feeOptions() call.
+                gasWarning.innerHTML = 'We will confirm your gas sponsorship status when you continue.';
+                gasWarning.classList.remove('hidden', 'gas-warning', 'gas-warning-sponsored');
+                gasWarning.classList.add('gas-info');
                 continueBtn.disabled = false;
                 continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
