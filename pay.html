@@ -1040,6 +1040,12 @@
         const TIER_BADGE_CLASS = { basic: 'tier-badge-basic', silver: 'tier-badge-silver', gold: 'tier-badge-gold', platinum: 'tier-badge-platinum' };
         let currentUser = null;
         let currentWalletAddress = '';
+        // What to run once a Google/OTP re-auth (the sendStepConfirm identity
+        // step) succeeds. Defaults to doExecuteSend -- the original,
+        // only use of this re-auth UI (confirming an already-filled-in
+        // transfer). openSendModal() below points this elsewhere when it
+        // gates the Send form itself behind a re-auth first.
+        let pendingReauthResume = null;
         let currentLocalCurrency = 'USD';
         let fxRateCache = { currency: null, rate: null, fetchedAt: 0 };
         let polPriceCache = { usdPrice: null, fetchedAt: 0 };
@@ -1452,7 +1458,9 @@
             statusEl.textContent = 'Confirming your identity...';
             try {
                 await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
-                await doExecuteSend();
+                const resume = pendingReauthResume || doExecuteSend;
+                pendingReauthResume = null;
+                await resume();
             } catch (err) {
                 console.error(err);
                 statusEl.textContent = 'Confirm your identity to authorize this transfer.';
@@ -1806,25 +1814,54 @@
             document.getElementById('receiveModal').classList.remove('active');
         };
 
-        window.openSendModal = function () {
+        window.openSendModal = async function () {
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); return; }
             if (!window.currentWalletAddress) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
-            document.getElementById('sendStepForm').classList.remove('hidden');
-            document.getElementById('sendStepConfirm').classList.add('hidden');
             document.getElementById('sendToAddress').value = '';
             document.getElementById('sendAmount').value = '';
             document.getElementById('sendFormError').classList.add('hidden');
             document.getElementById('sendTokenDropdown').classList.add('hidden');
-            document.getElementById('sendConfirmPending').classList.remove('hidden');
             document.getElementById('sendConfirmSuccess').classList.add('hidden');
             document.getElementById('sendProgressWrap').classList.add('hidden');
             document.getElementById('sendProgressBar').style.width = '0%';
             selectSendToken('USDC');
             document.getElementById('sendModal').classList.add('active');
-            checkGasSponsorship(window.currentWalletAddress); // refresh sponsorship status every time the modal opens
+
+            // Gate on re-auth before showing the form at all when there's no
+            // live Sequence session yet (most commonly right after a fresh
+            // login -- logout always drops the wallet session, see
+            // shared/nav.js). Reuses the exact same identity-confirmation UI
+            // as the Confirm Send step below, just resumed into showing the
+            // form instead of executing a transfer that doesn't exist yet.
+            const sessionCheck = await sessionMatchesCurrentWallet();
+            if (sessionCheck.valid) {
+                document.getElementById('sendConfirmPending').classList.remove('hidden');
+                document.getElementById('sendStepForm').classList.remove('hidden');
+                document.getElementById('sendStepConfirm').classList.add('hidden');
+                checkGasSponsorship(window.currentWalletAddress); // refresh sponsorship status every time the modal opens
+                return;
+            }
+
+            document.getElementById('sendStepForm').classList.add('hidden');
+            document.getElementById('sendStepConfirm').classList.remove('hidden');
+            // Nothing to preview yet -- amount/recipient haven't been chosen.
+            document.getElementById('sendConfirmPending').classList.add('hidden');
+            resetSendConfirmEmail();
+            collapseSendConfirmEmail();
+            document.getElementById('sendConfirmStatus').textContent = sessionCheck.mismatched
+                ? 'A different wallet session was detected in this browser. Please confirm your identity again to continue.'
+                : 'Confirm your identity to continue.';
+            pendingReauthResume = async function () {
+                document.getElementById('sendConfirmPending').classList.remove('hidden');
+                document.getElementById('sendStepConfirm').classList.add('hidden');
+                document.getElementById('sendStepForm').classList.remove('hidden');
+                checkGasSponsorship(window.currentWalletAddress);
+            };
+            renderGoogleConfirmButton();
         };
         window.closeSendModal = function () {
             document.getElementById('sendModal').classList.remove('active');
+            pendingReauthResume = null;
         };
 
         // ---- Contact Picker ----
@@ -2169,7 +2206,9 @@
 
         window.backToSendForm = function () {
             document.getElementById('sendStepConfirm').classList.add('hidden');
+            document.getElementById('sendConfirmPending').classList.remove('hidden');
             document.getElementById('sendStepForm').classList.remove('hidden');
+            pendingReauthResume = null;
         };
 
         window.expandSendConfirmEmail = function () {
@@ -2261,7 +2300,9 @@
                 await pendingSendConfirmSignInPromise;
                 pendingSendConfirmAuthCode = null;
                 pendingSendConfirmSignInPromise = null;
-                await doExecuteSend();
+                const resume = pendingReauthResume || doExecuteSend;
+                pendingReauthResume = null;
+                await resume();
             } catch (err) {
                 console.error('signIn (send confirm email OTP) confirm failed:', err);
                 errorEl.textContent = "That code didn't work. Please check it and try again.";
