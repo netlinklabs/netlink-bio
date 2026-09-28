@@ -1426,6 +1426,13 @@
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: onGoogleConfirmCredential,
+                // Steers the account picker toward this account's own email,
+                // so re-authenticating a dropped/mismatched wallet session
+                // doesn't accidentally happen with a different Google
+                // account signed into the same device. A hint, not a hard
+                // guarantee -- the actual identity is whatever
+                // onGoogleConfirmCredential's idToken resolves to.
+                login_hint: currentUser?.email || undefined,
             });
             google.accounts.id.renderButton(container, {
                 theme: 'filled_blue',
@@ -1491,6 +1498,13 @@
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: onCreateWalletCredential,
+                // Steers the account picker toward this Netlink account's
+                // own email, so connecting a wallet for the first time
+                // defaults to matching Google and Netlink identities instead
+                // of whichever Google account happens to be first on the
+                // device. A hint, not a hard guarantee -- the actual wallet
+                // is whichever Google identity the user actually confirms.
+                login_hint: currentUser?.email || undefined,
             });
             google.accounts.id.renderButton(container, {
                 theme: 'filled_blue',
