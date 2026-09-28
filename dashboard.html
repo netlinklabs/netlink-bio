@@ -465,7 +465,7 @@
                     </div>
                     <div>
                         <h3 class="font-semibold text-primary">Landing Page</h3>
-                        <p id="landingPageSubtitle" class="text-sm text-secondary">Available from Silver plan and up</p>
+                        <p id="landingPageSubtitle" class="text-sm text-secondary">Available from Gold plan and up</p>
                     </div>
                 </div>
 
@@ -473,7 +473,7 @@
                 <div id="landingPageLocked" class="hidden">
                     <div class="p-4 bg-surface border border-subtle rounded-xl text-center">
                         <i data-lucide="lock" class="w-5 h-5 text-muted mx-auto mb-2"></i>
-                        <p class="text-sm text-secondary mb-3">Upgrade to Silver or higher to build a custom landing page.</p>
+                        <p class="text-sm text-secondary mb-3">Upgrade to Gold or higher to build a custom landing page.</p>
                         <button onclick="showToast('Contact us to upgrade your plan')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">Upgrade Plan</button>
                     </div>
                 </div>
@@ -1254,9 +1254,9 @@ window.openNetlinkPay = openNetlinkPay;
             emptyEl.classList.add('hidden');
             existsEl.classList.add('hidden');
 
-            // Basic tier can't create a landing page at all.
-            if (tier === 'basic') {
-                subtitleEl.textContent = 'Available from Silver plan and up';
+            // Basic and Silver tiers can't create a landing page yet -- only Gold and up.
+            if (tier === 'basic' || tier === 'silver') {
+                subtitleEl.textContent = 'Available from Gold plan and up';
                 lockedEl.classList.remove('hidden');
                 return;
             }
@@ -1290,8 +1290,8 @@ window.openNetlinkPay = openNetlinkPay;
                 .select().single();
 
             if (error) {
-                if (error.message && error.message.includes('available from the Silver plan')) {
-                    showToast('Landing Page requires the Silver plan or higher');
+                if (error.message && (error.message.includes('available from the Gold plan') || error.message.includes('available from the Silver plan'))) {
+                    showToast('Landing Page requires the Gold plan or higher');
                 } else {
                     showToast('Failed to create landing page');
                     console.error(error);
