@@ -1458,6 +1458,14 @@
             statusEl.textContent = 'Confirming your identity...';
             try {
                 await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                // Reset the dimmed-while-signing-in state on success too, not
+                // just on error below. googleConfirmWrap is reused as-is by
+                // whatever runs next (goToSendConfirm() rebuilds a real
+                // "Confirm Send" button in this same container when the gate
+                // resume just reveals the form), so leaving it at 0.5 left
+                // that later button looking permanently disabled even though
+                // it was fully clickable.
+                container.style.opacity = '1';
                 const resume = pendingReauthResume || doExecuteSend;
                 pendingReauthResume = null;
                 await resume();
