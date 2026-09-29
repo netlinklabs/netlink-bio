@@ -108,11 +108,15 @@ export async function handleAdmin(action, req, res, user, ctx) {
   // One SQL function (public.admin_overview) does all the counting on the database side.
   // Supabase Free plan limits are constants here; update them if the plan changes.
   if (action === 'admin-overview') {
-    const range = ['today', '7d', '30d', '1y'].includes(req.query.range) ? req.query.range : '7d';
+    const range = ['today', '7d', '30d', '1y', 'month', 'year'].includes(req.query.range) ? req.query.range : '7d';
+    // month = YYYY-MM, year = YYYY (calendar periods used by the printable report)
+    const period = String(req.query.period || '');
+    if (range === 'month' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) return res.status(400).json({ error: 'Invalid month' });
+    if (range === 'year' && !/^\d{4}$/.test(period)) return res.status(400).json({ error: 'Invalid year' });
     const rows = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_overview`, {
       method: 'POST',
       headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_range: range }),
+      body: JSON.stringify({ p_range: range, p_period: range === 'month' || range === 'year' ? period : null }),
     });
     if (!rows.ok) {
       console.error('admin-overview rpc failed', rows.status, await rows.text().catch(() => ''));
