@@ -17,6 +17,9 @@ const UUID_RE = /^[0-9a-f-]{36}$/i;
 const ORDER_STATUSES = ['awaiting_payment', 'underpaid', 'paid', 'expired', 'late_payment', 'cancelled', 'refunded'];
 const SETTLEABLE = ['awaiting_payment', 'underpaid', 'expired', 'late_payment'];
 
+import { sendMail, invoiceMail } from './mailer.js';
+const SAMPLE_ADDR = '0x0000000000000000000000000000000000000000';
+
 const READ_ROLES = ['super_admin', 'finance', 'support', 'kyc_reviewer'];
 const FINANCE_ROLES = ['super_admin', 'finance'];
 
@@ -31,6 +34,7 @@ const ACTION_ROLES = {
   'admin-ignore-payment': FINANCE_ROLES,
   'admin-accept-late': FINANCE_ROLES,
   'admin-audit': ['super_admin'],
+  'admin-test-email': ['super_admin'],
 };
 
 export function isAdminAction(action) {
@@ -290,6 +294,22 @@ export async function handleAdmin(action, req, res, user, ctx) {
         action: r.action, order_id: r.order_id, detail: r.detail, created_at: r.created_at,
       })),
     });
+  }
+
+  // ---------------------------------------------------------- admin-test-email
+  // Sends a sample invoice to the caller's own address to check SMTP setup.
+  if (action === 'admin-test-email') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (!user.email) return res.status(400).json({ error: 'Your account has no email address' });
+    const sample = {
+      id: '00000000-0000-0000-0000-000000000000', order_no: 'NL-TEST-000000', type: 'kyc', amount_usdc: '2.500000',
+      pay_to_address: SAMPLE_ADDR, payer_address: SAMPLE_ADDR, expires_at: new Date(Date.now() + 3 * 86400000).toISOString(),
+    };
+    const mail = invoiceMail(sample);
+    const ok = await sendMail({ ...mail, subject: `[Test] ${mail.subject}`, to: user.email });
+    await audit('test_email', null, { to: user.email, ok });
+    if (!ok) return res.status(502).json({ error: 'Email could not be sent. Check the SMTP settings in Vercel.' });
+    return res.status(200).json({ ok: true, to: user.email });
   }
 
   return res.status(400).json({ error: 'Unknown admin action' });

@@ -13,6 +13,8 @@
 // the endpoint open to anyone). CRON_SECRET is set in Vercel's production
 // env vars (2026-09-27).
 
+import { sendMail, getUserEmail, reminderMail } from '../_lib/mailer.js';
+
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -52,9 +54,40 @@ export default async function handler(req, res) {
       res.status(502).json({ error: 'Rollup RPC failed', detail: text });
       return;
     }
-    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)' });
+    const reminders = await sendReminders();
+    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || String(err) });
   }
+}
+
+// Day-2 payment reminder. Orders live 3 days, so an unpaid order whose invoice
+// expires within 24 hours is due. The cron runs daily, so each order lands in
+// this window once; meta.emails.reminder is the dedupe marker (no migration).
+async function sendReminders() {
+  const h = { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' };
+  const now = new Date();
+  const soon = new Date(now.getTime() + 24 * 3600 * 1000).toISOString();
+  let sent = 0;
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/orders?status=in.(awaiting_payment,underpaid)&expires_at=gt.${now.toISOString()}&expires_at=lte.${soon}&select=*`,
+      { headers: h }
+    );
+    if (!r.ok) return { error: r.status };
+    for (const o of await r.json()) {
+      if (o.meta?.test || o.meta?.emails?.reminder) continue;
+      const to = await getUserEmail(o.user_id);
+      if (!to) continue;
+      const ok = await sendMail({ ...reminderMail(o), to });
+      if (!ok) continue;
+      const meta = { ...(o.meta || {}), emails: { ...(o.meta?.emails || {}), reminder: now.toISOString() } };
+      await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${o.id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ meta }) });
+      sent++;
+    }
+  } catch (err) {
+    console.error('reminders failed', err);
+  }
+  return { sent };
 }
