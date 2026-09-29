@@ -45,6 +45,10 @@
         html.dark .status-pending { background: rgba(245,158,11,0.15); color: #fbbf24; }
         .status-declined, .status-expired { background: rgba(239,68,68,0.12); color: #dc2626; }
         html.dark .status-declined, html.dark .status-expired { background: rgba(239,68,68,0.15); color: #f87171; }
+        .status-awaiting_payment { background: rgba(245,158,11,0.12); color: #b45309; }
+        html.dark .status-awaiting_payment { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .status-paid { background: rgba(59,130,246,0.12); color: #2563eb; }
+        html.dark .status-paid { background: rgba(59,130,246,0.15); color: #60a5fa; }
         .status-resubmission_needed { background: rgba(249,115,22,0.12); color: #c2410c; }
         html.dark .status-resubmission_needed { background: rgba(249,115,22,0.15); color: #fb923c; }
         .status-not_started { background: rgba(100,116,139,0.12); color: #475569; }
@@ -107,6 +111,10 @@
                         <p id="identityDateText" class="text-xs text-muted mt-0.5">Not verified</p>
                     </div>
                     <span id="identityStatusBadge" class="status-badge status-not_started">Not Started</span>
+                </div>
+                <div id="identityActionRow" class="hidden -mt-2 flex items-center justify-between gap-3">
+                    <p id="identityActionText" class="text-xs text-muted"></p>
+                    <a id="identityActionLink" href="/checkout?type=kyc" class="shrink-0 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition"></a>
                 </div>
                 <div class="flex items-center justify-between">
                     <div>
@@ -187,11 +195,13 @@
 
         const STATUS_LABELS = {
             approved: 'Verified',
-            pending: 'In Review',
-            declined: 'Declined',
+            pending: 'Pending Review',
+            declined: 'Rejected',
             expired: 'Expired',
             resubmission_needed: 'Resubmission Needed',
             not_started: 'Not Started',
+            awaiting_payment: 'Awaiting Payment',
+            paid: 'Paid',
         };
 
         function showAuthError(msg) {
@@ -234,6 +244,66 @@
             const dateEl = document.getElementById(dateElId);
             const formatted = formatDate(dateIso);
             dateEl.textContent = formatted ? `${label} since ${formatted}` : 'Not verified yet';
+        }
+
+        // Identity badge = Didit result once a session exists, otherwise the latest paid KYC order.
+        async function renderIdentity(profile) {
+            const row = document.getElementById('identityActionRow');
+            const text = document.getElementById('identityActionText');
+            const link = document.getElementById('identityActionLink');
+            const setAction = (msg, label, href) => {
+                text.textContent = msg;
+                link.textContent = label || '';
+                link.classList.toggle('hidden', !label);
+                if (href) link.setAttribute('href', href);
+                row.classList.remove('hidden');
+            };
+            row.classList.add('hidden');
+
+            const status = profile.identity_verification_status || 'not_started';
+            if (status === 'approved') {
+                renderVerification(status, profile.identity_verified_at, 'identityStatusBadge', 'identityDateText', 'Verified');
+                return;
+            }
+
+            let order = null;
+            try {
+                const { data } = await supabaseClient.from('orders')
+                    .select('id, status, order_no')
+                    .eq('user_id', currentUser.id).eq('type', 'kyc')
+                    .in('status', ['awaiting_payment', 'underpaid', 'late_payment', 'paid'])
+                    .order('created_at', { ascending: false }).limit(1);
+                order = data && data[0] ? data[0] : null;
+            } catch (e) { console.error('Could not load KYC order', e); }
+
+            const go = order ? `/checkout?order=${order.id}` : '/checkout?type=kyc';
+            let key = status;
+            const dateEl = document.getElementById('identityDateText');
+
+            if (status === 'pending') {
+                setAction('Your documents are being reviewed. This can take up to 1 business day.');
+            } else if (status === 'resubmission_needed') {
+                setAction('We could not verify your documents. Please submit them again.', 'Try again', go);
+            } else if (status === 'declined') {
+                setAction('Your verification was rejected. Contact support if you think this is a mistake.');
+            } else if (order && (order.status === 'awaiting_payment' || order.status === 'underpaid')) {
+                key = 'awaiting_payment';
+                setAction(order.status === 'underpaid' ? 'Partial payment received. Send the remaining amount.' : 'Complete your payment to start verification.', 'Continue', go);
+            } else if (order && order.status === 'late_payment') {
+                key = 'awaiting_payment';
+                setAction('Your payment arrived after the order expired. Our team is reviewing it.');
+            } else if (order && order.status === 'paid') {
+                key = 'paid';
+                setAction('Payment received. Start your identity check.', 'Start verification', go);
+            } else {
+                key = 'not_started';
+                setAction('Verify your identity to unlock the verified badge.', 'Order verification', '/checkout?type=kyc');
+            }
+
+            const badge = document.getElementById('identityStatusBadge');
+            badge.textContent = STATUS_LABELS[key] || key;
+            badge.className = `status-badge status-${key}`;
+            dateEl.textContent = 'Not verified yet';
         }
 
         async function checkAuth() {
@@ -285,7 +355,7 @@
                 mismatchEl.classList.add('hidden');
             }
 
-            renderVerification(data.identity_verification_status, data.identity_verified_at, 'identityStatusBadge', 'identityDateText', 'Verified');
+            await renderIdentity(data);
             renderVerification(data.business_verification_status, data.business_verified_at, 'businessStatusBadge', 'businessDateText', 'Verified');
 
             const tierKey = (data.tier || 'basic').toLowerCase();
