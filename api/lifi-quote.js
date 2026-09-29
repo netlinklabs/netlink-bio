@@ -2,6 +2,8 @@
 // Proxies LI.FI quote requests server-side so the API key never appears
 // in client-side code. Adds our integrator string + fee automatically.
 
+import { withStats } from './_lib/stats.js';
+
 const LIFI_API_KEY = process.env.LIFI_API_KEY;
 const LIFI_BASE = 'https://li.quest/v1/quote';
 
@@ -16,7 +18,7 @@ const POLYGON_CHAIN_ID = 137;
 
 const TOKEN_ADDRESS = { POL: NATIVE_POL, USDC: USDC_CONTRACT };
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const { fromToken, toToken, fromAmount, fromAddress } = req.query;
 
   if (!fromToken || !toToken || !fromAmount || !fromAddress) {
@@ -75,3 +77,5 @@ export default async function handler(req, res) {
     res.status(502).json({ error: 'Failed to fetch quote from LI.FI' });
   }
 }
+
+export default withStats('lifi-quote', handler);

@@ -15,6 +15,7 @@
 // from attributing a click to an arbitrary user_id.
 
 import { recordEvent } from './_lib/analytics.js';
+import { withStats } from './_lib/stats.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -27,7 +28,7 @@ async function supabaseGet(path) {
   return res.json();
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -87,3 +88,5 @@ export default async function handler(req, res) {
     if (!res.headersSent) res.status(204).end();
   }
 }
+
+export default withStats('track-event', handler);

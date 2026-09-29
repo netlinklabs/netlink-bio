@@ -4,6 +4,8 @@
 // balance shown in pay.html into the user's local currency.
 // Reuses the same ALCHEMY_API_KEY already used by api/wallet.js.
 
+import { withStats } from './_lib/stats.js';
+
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_PRICES_URL = `https://api.g.alchemy.com/prices/v1/${ALCHEMY_API_KEY}/tokens/by-symbol?symbols=POL`;
 
@@ -69,7 +71,7 @@ function trailsConfig(req, res) {
   res.status(200).json({ apiKey });
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.query && req.query.action === 'trails-config') return trailsConfig(req, res);
   if (!ALCHEMY_API_KEY) {
     res.status(500).json({ error: 'Server misconfiguration: missing Alchemy API key' });
@@ -85,3 +87,5 @@ export default async function handler(req, res) {
     res.status(502).json({ error: 'Failed to fetch POL price' });
   }
 }
+
+export default withStats('pol-price', handler);

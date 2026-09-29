@@ -7,6 +7,8 @@
 // are copied over unchanged from the original file; this is a routing
 // consolidation only, not a behavior change.
 
+import { withStats } from './_lib/stats.js';
+
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 
@@ -359,10 +361,12 @@ async function handleGas(req, res) {
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const action = req.query.action;
   if (action === 'balance') return handleBalance(req, res);
   if (action === 'transactions') return handleTransactions(req, res);
   if (action === 'gas') return handleGas(req, res);
   res.status(400).json({ error: 'Invalid or missing action (expected balance, transactions, or gas)' });
 }
+
+export default withStats('wallet', handler);

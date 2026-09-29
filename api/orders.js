@@ -26,6 +26,7 @@
 
 import { notifyUser } from './_lib/notify.js';
 import { handleAdmin, isAdminAction } from './_lib/admin.js';
+import { withStats } from './_lib/stats.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -509,7 +510,7 @@ async function handleDiditSession(req, res, user) {
 
 // ---------------------------------------------------------------- dispatcher
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
   const cfg = configError();
@@ -540,3 +541,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 }
+
+export default withStats('orders', handler);

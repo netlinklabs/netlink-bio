@@ -8,7 +8,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Admin - Netlink</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-    <link rel="stylesheet" href="/shared/tailwind.css?v=9">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=10">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.460.0" defer></script>
     <style>
@@ -63,6 +63,39 @@
         .kv { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 13px; }
         .kv > span:first-child { color: #64748b; flex-shrink: 0; }
         .kv > span:last-child { text-align: right; min-width: 0; word-break: break-all; }
+
+        /* Overview */
+        :root { --series-1: #2a78d6; --series-2: #1baf7a; --grid: rgba(100,116,139,0.18); --meter-bg: rgba(100,116,139,0.18); --warn: #b45309; --crit: #dc2626; }
+        html.dark { --series-1: #3987e5; --series-2: #199e70; --warn: #fbbf24; --crit: #f87171; }
+        .range-btn { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #64748b; border: 1px solid rgba(100,116,139,0.3); }
+        .range-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+        .ov-title { font-size: 13px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: #64748b; margin: 20px 0 8px; }
+        .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+        @media (min-width: 640px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .tile { padding: 12px 14px; border-radius: 14px; text-align: left; display: block; width: 100%; }
+        .tile .v { font-size: 22px; font-weight: 700; line-height: 1.2; }
+        .tile .l { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .tile .s { font-size: 11px; color: #64748b; }
+        button.tile:hover { border-color: rgba(59,130,246,0.5); }
+        .tile.alert .v { color: var(--warn); }
+        .chart-card { padding: 12px 14px; border-radius: 14px; margin-bottom: 8px; position: relative; }
+        .chart-card h4 { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+        .legend { display: flex; gap: 12px; font-size: 11px; color: #64748b; margin-bottom: 4px; }
+        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+        .chart-svg { width: 100%; height: 150px; display: block; }
+        .chart-svg .ax { fill: #64748b; font-size: 10px; }
+        .tip { position: absolute; pointer-events: none; z-index: 5; padding: 6px 9px; border-radius: 8px; font-size: 11px; background: #0f172a; color: #f8fafc; box-shadow: 0 6px 16px rgba(0,0,0,.25); white-space: nowrap; opacity: 0; transition: opacity .1s; }
+        .tip.on { opacity: 1; }
+        .meter { height: 10px; border-radius: 999px; background: var(--meter-bg); overflow: hidden; }
+        .meter > div { height: 100%; border-radius: 999px; background: var(--series-1); }
+        .meter > div.warn { background: var(--warn); } .meter > div.crit { background: var(--crit); }
+        .split { display: flex; gap: 2px; height: 10px; }
+        .split > div { border-radius: 4px; }
+        details.tbl summary { font-size: 11px; color: #64748b; cursor: pointer; margin-top: 4px; }
+        table.mini { width: 100%; font-size: 12px; border-collapse: collapse; }
+        table.mini th { text-align: left; font-weight: 600; color: #64748b; font-size: 11px; padding: 4px 6px; }
+        table.mini td { padding: 5px 6px; border-top: 1px solid rgba(100,116,139,0.15); }
+        table.mini td.n, table.mini th.n { text-align: right; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -87,6 +120,18 @@
 
         <div id="adminView" class="hidden">
             <div id="tabs" class="flex gap-2 mb-4 overflow-x-auto"></div>
+
+            <!-- Overview -->
+            <section id="tab-overview" class="hidden">
+                <div class="flex gap-2 mb-2 flex-wrap" id="rangeBtns">
+                    <button class="range-btn" data-range="today">Today</button>
+                    <button class="range-btn active" data-range="7d">7D</button>
+                    <button class="range-btn" data-range="30d">30D</button>
+                    <button class="range-btn" data-range="1y">1Y</button>
+                </div>
+                <p id="ovError" class="hidden text-sm text-red-500 mb-2"></p>
+                <div id="overview"><p class="text-sm text-muted">Loading...</p></div>
+            </section>
 
             <!-- Orders -->
             <section id="tab-orders" class="hidden">
@@ -187,18 +232,21 @@
 
         // ---------- tabs ----------
         function buildTabs() {
-            const tabs = [{ id: 'orders', label: 'Orders' }];
+            const tabs = [];
+            if (isFinance()) tabs.push({ id: 'overview', label: 'Overview' });
+            tabs.push({ id: 'orders', label: 'Orders' });
             if (isFinance()) tabs.push({ id: 'payments', label: 'Payments' });
             if (has('super_admin')) tabs.push({ id: 'audit', label: 'Audit log' });
             $('tabs').innerHTML = tabs.map((t) => `<button class="tab-btn" data-tab="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
             $('tabs').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-            switchTab('orders');
+            switchTab(tabs[0].id);
         }
 
         function switchTab(id) {
             activeTab = id;
-            ['orders', 'payments', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
+            ['overview', 'orders', 'payments', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
             $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
+            if (id === 'overview') loadOverview();
             if (id === 'orders') loadOrders();
             if (id === 'payments') loadPayments();
             if (id === 'audit') loadAudit();
@@ -207,6 +255,229 @@
         function setUnmatchedBadge(n) {
             const el = $('badge-payments');
             if (el) el.innerHTML = n ? ` <span class="badge b-warn" style="margin-left:4px">${Number(n)}</span>` : '';
+        }
+
+
+
+        // ---------- volume in USD with IDR below (same sources as pay.html) ----------
+        const FX_TTL_MS = 10 * 60 * 1000;
+        const FX_PRIMARY_URL = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
+        const FX_FALLBACK_URL = 'https://latest.currency-api.pages.dev/v1/currencies/usd.json';
+        let fxCache = { rate: null, at: 0 };
+        let polCache = { price: null, at: 0 };
+
+        async function fetchIdrRate() {
+            if (fxCache.rate && Date.now() - fxCache.at < FX_TTL_MS) return fxCache.rate;
+            for (const url of [FX_PRIMARY_URL, FX_FALLBACK_URL]) {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('fx source failed');
+                    const rate = (await res.json()).usd?.idr;
+                    if (!rate) throw new Error('no idr rate');
+                    fxCache = { rate, at: Date.now() };
+                    return rate;
+                } catch (err) { console.warn('FX source failed:', err.message); }
+            }
+            return null;
+        }
+
+        async function fetchPolUsd() {
+            if (polCache.price && Date.now() - polCache.at < FX_TTL_MS) return polCache.price;
+            try {
+                const res = await fetch('/api/pol-price');
+                if (!res.ok) throw new Error('pol-price failed');
+                const json = await res.json();
+                if (!json.pol_usd) throw new Error('no pol_usd');
+                polCache = { price: json.pol_usd, at: Date.now() };
+                return json.pol_usd;
+            } catch (err) { console.warn('POL price failed:', err.message); return null; }
+        }
+
+        // USDC counts 1:1, POL at the current price, a swap uses its USDC side. NET has no USD price.
+        function computeVolume(rows, polUsd) {
+            const out = { send: { usd: 0, net: 0, n: 0 }, receive: { usd: 0, net: 0, n: 0 }, swap: { usd: 0, net: 0, n: 0 }, polMissing: false };
+            for (const r of rows || []) {
+                const b = out[r.type]; if (!b) continue;
+                b.n += Number(r.count) || 0;
+                const amt = Number(r.amount) || 0, to = Number(r.to_amount) || 0;
+                const pol = (x) => { if (polUsd) return x * polUsd; out.polMissing = true; return 0; };
+                if (r.type === 'swap') {
+                    if (r.token === 'USDC') b.usd += amt;
+                    else if (r.to_token === 'USDC') b.usd += to;
+                    else if (r.token === 'POL') b.usd += pol(amt);
+                    else if (r.token === 'NET') b.net += amt;
+                } else if (r.token === 'USDC') b.usd += amt;
+                else if (r.token === 'POL') b.usd += pol(amt);
+                else if (r.token === 'NET') b.net += amt;
+            }
+            return out;
+        }
+
+        const fmtUsd = (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtIdr = (usd, rate) => (rate ? '≈ Rp ' + Math.round(usd * rate).toLocaleString('id-ID') : '');
+
+        async function fillVolume(d) {
+            const box = $('volBlock'); if (!box) return;
+            const [polUsd, idr] = await Promise.all([fetchPolUsd(), fetchIdrRate()]);
+            if (d.range !== ovRange || !$('volBlock')) return; // user switched range meanwhile
+            const v = computeVolume(d.pay.tx_volume, polUsd);
+            const order = Number(d.finance.revenue_in_range) || 0;
+            const overall = v.send.usd + v.receive.usd + v.swap.usd;
+            const netTotal = v.send.net + v.receive.net + v.swap.net;
+            const vt = (usd, label, sub, wide) => `<div class="card tile"${wide ? ' style="grid-column: 1 / -1"' : ''}><div class="v text-primary">${fmtUsd(usd)}</div><div class="l">${esc(label)}</div><div class="s">${esc(fmtIdr(usd, idr))}</div>${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>`;
+            box.innerHTML = `<div class="tiles">
+                ${vt(overall, 'Total volume, all', fmtN(v.send.n + v.receive.n + v.swap.n) + ' transactions', true)}
+                ${vt(v.send.usd, 'Send', fmtN(v.send.n) + ' transactions')}
+                ${vt(v.receive.usd, 'Receive', fmtN(v.receive.n) + ' transactions')}
+                ${vt(v.swap.usd, 'Swap', fmtN(v.swap.n) + ' transactions')}
+                ${vt(order, 'Order', fmtN(d.finance.paid_in_range) + ' paid orders')}
+            </div>
+            <p class="text-xs text-muted mb-2">${netTotal ? 'NET moved: ' + fmtN(netTotal) + ' NET, not valued in USD because NET has no market price. ' : ''}${v.polMissing ? 'POL price is unavailable right now, so POL amounts are left out. ' : ''}${idr ? '' : 'IDR rate is unavailable right now. '}USDC counts 1:1, POL uses the current price, and a swap uses its USDC side. Overall is Send + Receive + Swap. A transfer between two Netlink users appears in both Send and Receive, and Order paid from Netlink Pay is also inside Send.</p>`;
+        }
+
+        // ---------- overview ----------
+        let ovRange = '7d';
+        const nf = new Intl.NumberFormat('en-US');
+        const fmtN = (v) => nf.format(Math.round(Number(v) || 0));
+        const fmtBytes = (b) => { b = Number(b) || 0; return b >= 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' : (b / 1048576).toFixed(1) + ' MB'; };
+        const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+
+        document.querySelectorAll('#rangeBtns .range-btn').forEach((b) => b.addEventListener('click', () => {
+            ovRange = b.dataset.range;
+            document.querySelectorAll('#rangeBtns .range-btn').forEach((x) => x.classList.toggle('active', x === b));
+            loadOverview();
+        }));
+
+        function bucketLabel(iso, unit) {
+            const d = new Date(iso.length === 10 ? iso + 'T00:00' : iso);
+            if (unit === 'hour') return String(d.getHours()).padStart(2, '0') + ':00';
+            if (unit === 'month') return d.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+            return d.toLocaleString('en-US', { day: 'numeric', month: 'short' });
+        }
+
+        // Grouped bar chart as inline SVG. series: [{ name, values, color }]
+        function chartHtml(title, buckets, unit, series, fmt) {
+            fmt = fmt || fmtN;
+            const W = 600, H = 150, L = 6, R = 6, T = 8, B = 20;
+            const n = buckets.length || 1;
+            const max = Math.max(1, ...series.flatMap((s) => s.values.map(Number)));
+            const slot = (W - L - R) / n;
+            const gap = Math.min(4, slot * 0.2);
+            const bw = Math.max(2, (slot - gap) / series.length - (series.length > 1 ? 1 : 0));
+            let bars = '', hits = '';
+            buckets.forEach((b, i) => {
+                series.forEach((s, k) => {
+                    const v = Number(s.values[i]) || 0;
+                    const h = v ? Math.max(2, (v / max) * (H - T - B)) : 0;
+                    const x = L + i * slot + gap / 2 + k * (bw + 1);
+                    if (h) bars += `<rect x="${x.toFixed(1)}" y="${(H - B - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${s.color}"/>`;
+                });
+                hits += `<rect class="hit" data-i="${i}" x="${(L + i * slot).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H - B}" fill="transparent"/>`;
+            });
+            const step = Math.max(1, Math.ceil(n / 6));
+            let ax = '';
+            buckets.forEach((b, i) => { if (i % step === 0 || i === n - 1) ax += `<text class="ax" x="${(L + i * slot + slot / 2).toFixed(1)}" y="${H - 5}" text-anchor="middle">${esc(bucketLabel(b, unit))}</text>`; });
+            const legend = series.length > 1 ? `<div class="legend">${series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>` : '';
+            const total = series.map((s) => `${s.name}: ${fmt(s.values.reduce((a, v) => a + Number(v), 0))}`).join(' · ');
+            const rows = buckets.map((b, i) => `<tr><td>${esc(bucketLabel(b, unit))}</td>${series.map((s) => `<td class="n">${fmt(s.values[i])}</td>`).join('')}</tr>`).join('');
+            const id = 'c' + Math.random().toString(36).slice(2, 8);
+            queueMicrotask(() => wireChart(id, buckets, unit, series, fmt));
+            return `<div class="card chart-card" id="${id}">
+                <h4 class="text-primary">${esc(title)}</h4>${legend}
+                <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(title + '. ' + total)}">
+                    <line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="var(--grid)"/>${bars}${ax}${hits}</svg>
+                <div class="tip"></div>
+                <details class="tbl"><summary>View as table</summary><table class="mini"><thead><tr><th></th>${series.map((s) => `<th class="n">${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></details>
+            </div>`;
+        }
+
+        function wireChart(id, buckets, unit, series, fmt) {
+            const card = document.getElementById(id); if (!card) return;
+            const tip = card.querySelector('.tip'); const svg = card.querySelector('svg');
+            card.querySelectorAll('.hit').forEach((r) => {
+                const show = () => {
+                    const i = Number(r.dataset.i);
+                    tip.innerHTML = `<b>${esc(bucketLabel(buckets[i], unit))}</b><br>` + series.map((s) => `${esc(s.name)}: ${fmt(s.values[i])}`).join('<br>');
+                    const sr = svg.getBoundingClientRect(), cr = card.getBoundingClientRect(), rr = r.getBoundingClientRect();
+                    const x = rr.left + rr.width / 2 - cr.left;
+                    tip.style.left = Math.min(Math.max(4, x - 40), cr.width - 110) + 'px';
+                    tip.style.top = (sr.top - cr.top + 10) + 'px';
+                    tip.classList.add('on');
+                };
+                r.addEventListener('mouseenter', show); r.addEventListener('click', show);
+                r.addEventListener('mouseleave', () => tip.classList.remove('on'));
+            });
+        }
+
+        const tile = (v, l, s, opts = {}) => {
+            const tag = opts.go ? 'button' : 'div';
+            return `<${tag} class="card tile${opts.alert ? ' alert' : ''}"${opts.go ? ` data-go="${opts.go}"` : ''}><div class="v text-primary">${v}</div><div class="l">${esc(l)}</div>${s ? `<div class="s">${s}</div>` : ''}</${tag}>`;
+        };
+
+        function meterRow(label, used, limit) {
+            const pct = limit ? (used / limit) * 100 : 0;
+            const cls = pct >= 90 ? 'crit' : pct >= 70 ? 'warn' : '';
+            const note = pct >= 90 ? ' (almost full)' : pct >= 70 ? ' (getting full)' : '';
+            return `<div class="mb-3"><div class="flex justify-between text-sm mb-1"><span class="text-primary font-semibold">${esc(label)}</span><span class="text-secondary">${fmtBytes(used)} of ${fmtBytes(limit)} · ${pct < 0.1 && used ? '<0.1' : pct.toFixed(1)}%${note}</span></div><div class="meter"><div class="${cls}" style="width:${Math.min(100, Math.max(used ? 1 : 0, pct)).toFixed(1)}%"></div></div></div>`;
+        }
+
+        function renderOverview(d) {
+            const u = d.users, p = d.pay, f = d.finance, a = d.api, st = d.storage, lim = d.limits;
+            const rangeName = { today: 'today', '7d': 'last 7 days', '30d': 'last 30 days', '1y': 'last 12 months' }[d.range];
+            const tiers = ['basic', 'silver', 'gold', 'platinum'].filter((t) => t === 'basic' || t === 'silver' || t === 'gold' || u.tiers[t]);
+            const kycPct = u.total ? (u.kyc / u.total) * 100 : 0;
+            let h = '';
+
+            h += `<div class="ov-title">Finance</div><div class="tiles">
+                ${tile(fmtN(f.orders_in_range), 'Orders, ' + rangeName, fmtN(f.orders_total) + ' in total', { go: 'orders' })}
+                ${tile('$' + Number(f.revenue_in_range).toFixed(2), 'Paid USDC, ' + rangeName, fmtN(f.paid_in_range) + ' paid orders (tests excluded)', { go: 'payments' })}
+                ${tile(fmtN(f.unmatched_payments), 'Payments to review', f.awaiting ? fmtN(f.awaiting) + ' orders awaiting payment' : 'Nothing waiting', { go: 'payments', alert: f.unmatched_payments > 0 })}
+                ${has('super_admin') ? tile(fmtN(f.audit_in_range), 'Audit log entries, ' + rangeName, '', { go: 'audit' }) : tile(fmtN(f.awaiting), 'Awaiting payment', '')}
+            </div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
+
+            h += `<div class="ov-title">Users</div><div class="tiles">
+                ${tile(fmtN(u.kyc), 'KYC verified', fmtN(u.kyc_in_range) + ' new, ' + rangeName)}
+                ${tile(fmtN(u.non_kyc), 'Not KYC verified', fmtN(u.total) + ' users in total')}
+                ${tile(fmtN(u.new_in_range), 'New users, ' + rangeName, '')}
+                ${tile(kycPct.toFixed(0) + '%', 'KYC rate', '')}
+            </div>
+            <div class="tiles">${tiers.map((t) => tile(fmtN(u.tiers[t] || 0), TIER_LABEL[t] + ' users', 'Current plan')).join('')}</div>
+            ${chartHtml('New users and KYC verified', d.buckets, d.unit, [{ name: 'New users', values: u.series_new, color: 'var(--series-1)' }, { name: 'KYC verified', values: u.series_kyc, color: 'var(--series-2)' }])}`;
+
+            const types = Object.entries(p.tx_by_type || {}).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${esc(k)} ${fmtN(v)}`).join(' · ');
+            h += `<div class="ov-title">Netlink Pay</div><div class="tiles">
+                ${tile(fmtN(p.wallets), 'Wallets connected', fmtN(u.total ? (p.wallets / u.total) * 100 : 0) + '% of users')}
+                ${tile(fmtN(p.tx_in_range), 'Transactions, ' + rangeName, fmtN(p.tx_total) + ' in total')}
+                <div class="card tile" style="grid-column: span 2"><div class="l">Transaction types, ${esc(rangeName)}</div><div class="s text-secondary" style="font-size:13px;margin-top:4px">${types || 'No transactions'}</div></div>
+            </div><div id="volBlock"><p class="text-xs text-muted mb-2">Loading volume...</p></div>${chartHtml('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: 'var(--series-1)' }])}
+            <p class="text-xs text-muted mb-2">Counts transactions recorded by Netlink Pay. Transfers made outside the app are not included.</p>`;
+
+            const rate = a.total ? ((a.errors / a.total) * 100).toFixed(1) : '0.0';
+            h += `<div class="ov-title">API requests</div><div class="tiles">
+                ${tile(fmtN(a.total), 'Requests, ' + rangeName, '')}
+                ${tile(fmtN(a.errors), 'Errors (4xx and 5xx)', rate + '% of requests')}
+                ${tile(fmtN(a.server_errors), 'Server errors (5xx)', '', { alert: a.server_errors > 0 })}
+            </div>${chartHtml('Requests per day', d.api_buckets, d.unit === 'month' ? 'month' : 'day', [{ name: 'Requests', values: a.series_total, color: 'var(--series-1)' }])}
+            <div class="card chart-card"><h4 class="text-primary">By endpoint</h4>${a.by_endpoint.length ? `<table class="mini"><thead><tr><th>Endpoint</th><th class="n">Requests</th><th class="n">Errors</th><th class="n">Error rate</th></tr></thead><tbody>${a.by_endpoint.map((e) => `<tr><td class="mono">${esc(e.endpoint)}</td><td class="n">${fmtN(e.total)}</td><td class="n">${fmtN(e.errors)}</td><td class="n">${e.total ? ((e.errors / e.total) * 100).toFixed(1) : '0.0'}%</td></tr>`).join('')}</tbody></table>` : '<p class="text-xs text-muted">No requests counted yet.</p>'}
+                ${a.by_action.length ? `<details class="tbl"><summary>By action (successful requests)</summary><table class="mini"><tbody>${a.by_action.map((e) => `<tr><td class="mono">${esc(e.endpoint)} / ${esc(e.action)}</td><td class="n">${fmtN(e.total)}</td></tr>`).join('')}</tbody></table></details>` : ''}
+            </div><p class="text-xs text-muted mb-2">Counting started when this feature was released, so earlier requests are not included. Image rendering (og) is not counted.</p>`;
+
+            h += `<div class="ov-title">Storage (${esc(lim.plan)})</div><div class="card chart-card">
+                ${meterRow('Database', st.db_bytes, lim.db_bytes)}${meterRow('File storage', st.storage_bytes, lim.storage_bytes)}
+                <p class="text-xs text-muted">Percent of the plan quota. Bandwidth and monthly active users are not shown here.</p></div>`;
+
+            $('overview').innerHTML = h;
+            $('overview').querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.go)));
+            fillVolume(d);
+        }
+
+        async function loadOverview() {
+            show('ovError', false);
+            try {
+                const d = await api('admin-overview', { query: `&range=${encodeURIComponent(ovRange)}` });
+                setUnmatchedBadge(d.finance.unmatched_payments);
+                renderOverview(d);
+            } catch (err) { $('ovError').textContent = err.message; show('ovError', true); $('overview').innerHTML = ''; }
         }
 
         // ---------- orders ----------
