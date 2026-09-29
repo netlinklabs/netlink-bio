@@ -56,15 +56,16 @@ function computeBadges(profile) {
       date: null,
     });
   }
+  // Gold Verified Business stays a Gold/Platinum perk. Identity (KYC) is green for every tier.
   if (profile.business_verified_at) {
-    badges.push(tierEligible
-      ? { color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink.bio team.", date: profile.business_verified_at }
-      : { color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.business_verified_at });
+    if (tierEligible) {
+      badges.push({ color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink.bio team.", date: profile.business_verified_at });
+    } else if (!profile.identity_verified_at) {
+      badges.push({ color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.business_verified_at });
+    }
   }
   if (profile.identity_verified_at) {
-    badges.push(tierEligible
-      ? { color: 'green', label: 'Verified Profile', message: "This profile's identity has been manually verified by the Netlink.bio team.", date: profile.identity_verified_at }
-      : { color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.identity_verified_at });
+    badges.push({ color: 'green', label: 'Verified Profile', message: "This profile's identity has been verified by the Netlink.bio team.", date: profile.identity_verified_at });
   }
   return badges;
 }
