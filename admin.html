@@ -96,6 +96,50 @@
         table.mini th { text-align: left; font-weight: 600; color: #64748b; font-size: 11px; padding: 4px 6px; }
         table.mini td { padding: 5px 6px; border-top: 1px solid rgba(100,116,139,0.15); }
         table.mini td.n, table.mini th.n { text-align: right; }
+
+        /* Print button (same look as the CV toolbar button) */
+        .print-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; }
+        .print-btn.hidden { display: none; }
+        .print-btn:hover { color: #3b82f6; }
+        html.dark .print-btn { background: #1e293b; border-color: rgba(255,255,255,0.12); color: #cbd5e1; }
+        .cn-row { display: grid; grid-template-columns: 22px minmax(0, 1.2fr) minmax(0, 1.4fr) 44px; gap: 8px; align-items: center; padding: 5px 0; font-size: 12px; }
+        .cn-row .bar { height: 8px; border-radius: 999px; background: var(--meter-bg); overflow: hidden; }
+        .cn-row .bar > div { height: 100%; border-radius: 999px; background: var(--series-1); }
+
+        /* Printable report: hidden on screen, the only thing shown when printing */
+        #printReport { display: none; }
+        #printReport, #printReport * { box-sizing: border-box; }
+        #printReport .rp { font-family: 'Inter', sans-serif; color: #0f172a; font-size: 10pt; line-height: 1.4; }
+        #printReport .rp-head { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 14px; }
+        #printReport .rp-head img { width: 34px; height: 34px; }
+        #printReport .rp-head h1 { font-size: 17pt; font-weight: 800; margin: 0; }
+        #printReport .rp-head .sub { font-size: 9.5pt; color: #475569; }
+        #printReport .rp-sec { break-inside: avoid; page-break-inside: avoid; margin-bottom: 14px; }
+        #printReport .rp-sec h2 { font-size: 11pt; font-weight: 700; color: #1d4ed8; margin: 0 0 6px; text-transform: uppercase; letter-spacing: .03em; }
+        #printReport .rp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+        #printReport .rp-kpi { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; }
+        #printReport .rp-kpi b { display: block; font-size: 13pt; }
+        #printReport .rp-kpi span { display: block; font-size: 8pt; color: #475569; }
+        #printReport table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 8px; }
+        #printReport th { text-align: left; font-size: 8.5pt; color: #475569; border-bottom: 1px solid #94a3b8; padding: 3px 4px; }
+        #printReport td { font-size: 9pt; padding: 3px 4px; border-bottom: 1px solid #e2e8f0; word-break: break-word; }
+        #printReport .n { text-align: right; }
+        #printReport .rp-chart { border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; break-inside: avoid; }
+        #printReport .rp-chart h3 { font-size: 9pt; font-weight: 600; margin: 0 0 2px; }
+        #printReport .rp-chart svg { width: 100%; height: 95px; display: block; }
+        #printReport .rp-legend { font-size: 8pt; color: #475569; margin-bottom: 2px; }
+        #printReport .rp-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin: 0 4px 0 8px; }
+        #printReport .rp-meter { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 2px 0 6px; }
+        #printReport .rp-meter > div { height: 100%; background: #2a78d6; }
+        #printReport .rp-note { font-size: 8pt; color: #64748b; margin: 2px 0 6px; }
+        #printReport .rp-foot { border-top: 1px solid #cbd5e1; padding-top: 6px; font-size: 8pt; color: #64748b; }
+        @media print {
+            @page { size: A4; margin: 12mm; }
+            html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; min-height: 0 !important; }
+            body > *:not(#printReport) { display: none !important; }
+            #printReport { display: block !important; }
+            #printReport * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -110,7 +154,10 @@
     <main class="px-4 pt-4 pb-24 lg:px-8 max-w-4xl mx-auto">
         <div class="flex items-center justify-between mb-1">
             <h1 class="text-xl font-bold text-primary">Admin</h1>
-            <span id="roleBadges" class="flex gap-1 flex-wrap justify-end"></span>
+            <div class="flex items-center gap-2">
+                <span id="roleBadges" class="flex gap-1 flex-wrap justify-end"></span>
+                <button id="printBtn" type="button" class="print-btn hidden" title="Print or save the report as PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
+            </div>
         </div>
         <p class="text-sm text-muted mb-4">Orders, payments and audit log</p>
 
@@ -174,6 +221,7 @@
     </main>
 
     <div id="modal" class="modal hidden"><div id="modalBox" class="modal-box card"></div></div>
+    <div id="printReport" aria-hidden="true"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -185,6 +233,7 @@
         const show = (id, on = true) => $(id).classList.toggle('hidden', !on);
         let roles = [];
         let currentUser = null;
+        let currentProfileName = '';
         let activeTab = null;
 
         const STATUS_LABEL = { awaiting_payment: 'Awaiting payment', underpaid: 'Partially paid', paid: 'Paid', expired: 'Expired', late_payment: 'Late payment', cancelled: 'Cancelled', refunded: 'Refunded' };
@@ -258,6 +307,154 @@
         }
 
 
+
+
+        // ---------- top countries ----------
+        let regionNames = null;
+        try { regionNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch (e) { /* older browsers show the code */ }
+        function countryName(code) { try { return (regionNames && regionNames.of(code)) || code; } catch (e) { return code; } }
+
+        function countriesHtml(u) {
+            const list = u.countries || [];
+            const total = Number(u.total) || 0;
+            const rows = list.map((c, i) => {
+                const pct = total ? (c.count / total) * 100 : 0;
+                return `<div class="cn-row"><span class="text-muted">${i + 1}</span><span class="text-primary">${esc(countryName(c.code))} <span class="text-muted">(${esc(c.code)})</span></span><span class="bar"><div style="width:${Math.max(2, pct).toFixed(1)}%"></div></span><span class="text-secondary" style="text-align:right">${fmtN(c.count)}</span></div>`;
+            }).join('');
+            const unk = Number(u.country_unknown) || 0;
+            return `<div class="card chart-card"><h4 class="text-primary">Top 10 countries by users</h4>
+                ${rows || '<p class="text-xs text-muted">No country data yet.</p>'}
+                ${unk ? `<p class="text-xs text-muted mt-2">${fmtN(unk)} users have not set a country.</p>` : ''}</div>`;
+        }
+
+        // ---------- printable report (A4, Save as PDF from the browser print dialog) ----------
+        function monthOptions() {
+            const out = []; const now = new Date();
+            for (let i = 0; i < 12; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                out.push({ value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleString('en-US', { month: 'long', year: 'numeric' }) });
+            }
+            return out;
+        }
+        function yearOptions() { const y = new Date().getFullYear(); return [y, y - 1, y - 2].map((v) => ({ value: String(v), label: String(v) })); }
+
+        function openPrintDialog() {
+            const opt = (o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`;
+            openModal(`
+                <h3 class="text-base font-bold text-primary mb-1">Print report</h3>
+                <p class="text-xs text-muted mb-3">Creates an A4 report. In the print dialog choose "Save as PDF" or a printer.</p>
+                <div class="flex gap-2 mb-3">
+                    <button type="button" class="range-btn active" data-kind="month">Monthly</button>
+                    <button type="button" class="range-btn" data-kind="year">Yearly</button>
+                </div>
+                <select id="rpPeriod" class="field mb-3">${monthOptions().map(opt).join('')}</select>
+                <p id="rpErr" class="text-xs text-red-500 mb-2 hidden"></p>
+                <div class="flex gap-2 justify-end"><button id="rpCancel" class="btn btn-ghost">Cancel</button><button id="rpGo" class="btn">Print</button></div>`);
+            let kind = 'month';
+            $('modalBox').querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => {
+                kind = b.dataset.kind;
+                $('modalBox').querySelectorAll('[data-kind]').forEach((x) => x.classList.toggle('active', x === b));
+                $('rpPeriod').innerHTML = (kind === 'month' ? monthOptions() : yearOptions()).map(opt).join('');
+            }));
+            $('rpCancel').addEventListener('click', closeModal);
+            $('rpGo').addEventListener('click', async () => {
+                const btn = $('rpGo'); btn.disabled = true; btn.textContent = 'Preparing...';
+                try { await printReport(kind, $('rpPeriod').value); closeModal(); }
+                catch (err) { $('rpErr').textContent = err.message || 'Could not create the report'; show('rpErr', true); btn.disabled = false; btn.textContent = 'Print'; }
+            });
+        }
+
+        // Static bars for print (no hover, fixed light colors)
+        function printBars(title, buckets, unit, series) {
+            const W = 600, H = 95, L = 4, R = 4, T = 6, B = 16;
+            const n = buckets.length || 1;
+            const max = Math.max(1, ...series.flatMap((s) => s.values.map(Number)));
+            const slot = (W - L - R) / n, gap = Math.min(3, slot * 0.2);
+            const bw = Math.max(2, (slot - gap) / series.length - (series.length > 1 ? 1 : 0));
+            let bars = '', ax = '';
+            buckets.forEach((b, i) => series.forEach((s, k) => {
+                const v = Number(s.values[i]) || 0; if (!v) return;
+                const h = Math.max(2, (v / max) * (H - T - B));
+                bars += `<rect x="${(L + i * slot + gap / 2 + k * (bw + 1)).toFixed(1)}" y="${(H - B - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="${s.color}"/>`;
+            }));
+            const step = Math.max(1, Math.ceil(n / 8));
+            buckets.forEach((b, i) => { if (i % step === 0 || (i === n - 1 && (n - 1) % step >= Math.ceil(step / 2))) ax += `<text x="${(L + i * slot + slot / 2).toFixed(1)}" y="${H - 3}" text-anchor="middle" font-size="9" fill="#64748b">${esc(bucketLabel(b, unit))}</text>`; });
+            const legend = series.length > 1 ? `<div class="rp-legend">${series.map((s) => `<i style="background:${s.color}"></i>${esc(s.name)}`).join('')}</div>` : '';
+            return `<div class="rp-chart"><h3>${esc(title)}</h3>${legend}<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#cbd5e1"/>${bars}${ax}</svg></div>`;
+        }
+
+        function reportHtml(d, kind, period, polUsd, idr, who) {
+            const u = d.users, p = d.pay, f = d.finance, a = d.api, st = d.storage, lim = d.limits;
+            const label = kind === 'month'
+                ? new Date(Number(period.slice(0, 4)), Number(period.slice(5, 7)) - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+                : period;
+            const fmtDay = (iso) => new Date(iso + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            const now = new Date();
+            const stamp = now.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }) + ' WIB';
+            const v = computeVolume(p.tx_volume, polUsd);
+            const order = Number(f.revenue_in_range) || 0;
+            const overall = v.send.usd + v.receive.usd + v.swap.usd;
+            const netTotal = v.send.net + v.receive.net + v.swap.net;
+            const kpi = (val, l) => `<div class="rp-kpi"><b>${val}</b><span>${esc(l)}</span></div>`;
+            const tiers = ['basic', 'silver', 'gold', 'platinum'].filter((t) => t !== 'platinum' || u.tiers.platinum);
+            const meter = (name, used, limit) => { const pc = limit ? (used / limit) * 100 : 0; return `<div style="font-size:9pt"><b>${esc(name)}</b>: ${fmtBytes(used)} of ${fmtBytes(limit)} (${pc < 0.1 && used ? '<0.1' : pc.toFixed(1)}%)</div><div class="rp-meter"><div style="width:${Math.min(100, Math.max(used ? 1 : 0, pc)).toFixed(1)}%"></div></div>`; };
+            const volRow = (name, usd, n) => `<tr><td>${esc(name)}</td><td class="n">${fmtUsd(usd)}</td><td class="n">${idr ? 'Rp ' + Math.round(usd * idr).toLocaleString('id-ID') : '-'}</td><td class="n">${esc(n)}</td></tr>`;
+            const S1 = '#2a78d6', S2 = '#1baf7a';
+            const period_ = `${fmtDay(d.period_start)} to ${fmtDay(d.period_end)}`;
+            const partial = kind === 'month' ? period === new Date().toISOString().slice(0, 7) : Number(period) === now.getFullYear();
+
+            return `<div class="rp">
+                <div class="rp-head"><img src="/assets/netlinkbio-icon.png" alt="Netlink"><div><h1>Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report</h1><div class="sub">${esc(label)} · ${esc(period_)}${partial ? ' · period still running' : ''}</div><div class="sub">Generated ${esc(stamp)}${who ? ' by @' + esc(who) : ''}</div></div></div>
+
+                <div class="rp-sec"><h2>Finance</h2><div class="rp-kpis">
+                    ${kpi(fmtN(f.orders_in_range), 'Orders in period')}${kpi(fmtUsd(order), 'Paid USDC (tests excluded)')}${kpi(fmtN(f.paid_in_range), 'Paid orders')}${kpi(fmtN(f.audit_in_range), 'Audit log entries')}</div>
+                    ${printBars('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: S1 }])}</div>
+
+                <div class="rp-sec"><h2>Users</h2><div class="rp-kpis">
+                    ${kpi(fmtN(u.total), 'Users in total')}${kpi(fmtN(u.new_in_range), 'New users in period')}${kpi(fmtN(u.kyc) + ' / ' + fmtN(u.non_kyc), 'KYC verified / not verified')}${kpi(fmtN(u.kyc_in_range), 'KYC verified in period')}</div>
+                    <table><thead><tr><th>Plan</th><th class="n">Users</th><th style="width:8%"></th><th>Top 10 countries</th><th class="n">Users</th></tr></thead><tbody>
+                    ${Array.from({ length: Math.max(tiers.length, (u.countries || []).length, 1) }, (_, i) => {
+                        const t = tiers[i]; const c = (u.countries || [])[i];
+                        return `<tr><td>${t ? esc(TIER_LABEL[t]) : ''}</td><td class="n">${t ? fmtN(u.tiers[t] || 0) : ''}</td><td></td><td>${c ? esc(`${i + 1}. ${countryName(c.code)} (${c.code})`) : ''}</td><td class="n">${c ? fmtN(c.count) : ''}</td></tr>`;
+                    }).join('')}</tbody></table>
+                    ${u.country_unknown ? `<div class="rp-note">${fmtN(u.country_unknown)} users have not set a country. Plan, KYC and country figures are as of ${esc(stamp)}.</div>` : `<div class="rp-note">Plan, KYC and country figures are as of ${esc(stamp)}.</div>`}
+                    ${printBars('New users and KYC verified', d.buckets, d.unit, [{ name: 'New users', values: u.series_new, color: S1 }, { name: 'KYC verified', values: u.series_kyc, color: S2 }])}</div>
+
+                <div class="rp-sec"><h2>Netlink Pay</h2><div class="rp-kpis">
+                    ${kpi(fmtN(p.wallets), 'Wallets connected')}${kpi(fmtN(p.tx_in_range), 'Transactions in period')}${kpi(fmtN(p.tx_total), 'Transactions in total')}${kpi(fmtUsd(overall), 'Total volume')}</div>
+                    <table><thead><tr><th>Volume</th><th class="n">USD</th><th class="n">IDR</th><th class="n">Transactions</th></tr></thead><tbody>
+                    ${volRow('Total, all', overall, fmtN(v.send.n + v.receive.n + v.swap.n))}${volRow('Send', v.send.usd, fmtN(v.send.n))}${volRow('Receive', v.receive.usd, fmtN(v.receive.n))}${volRow('Swap', v.swap.usd, fmtN(v.swap.n))}${volRow('Order', order, fmtN(f.paid_in_range) + ' orders')}</tbody></table>
+                    <div class="rp-note">${netTotal ? 'NET moved: ' + fmtN(netTotal) + ' NET, not valued in USD (no market price). ' : ''}${v.polMissing ? 'POL price was unavailable, POL amounts are left out. ' : ''}USDC counts 1:1, POL uses the price at generation time, a swap uses its USDC side. IDR rate: ${idr ? '1 USD = Rp ' + Math.round(idr).toLocaleString('id-ID') : 'unavailable'}. Total is Send + Receive + Swap; a transfer between two Netlink users appears in both Send and Receive, and Order paid from Netlink Pay is also inside Send.</div>
+                    ${printBars('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: S1 }])}</div>
+
+                <div class="rp-sec"><h2>API requests</h2><div class="rp-kpis">
+                    ${kpi(fmtN(a.total), 'Requests')}${kpi(fmtN(a.errors), 'Errors (4xx and 5xx)')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}${kpi((a.total ? (a.errors / a.total) * 100 : 0).toFixed(1) + '%', 'Error rate')}</div>
+                    ${a.by_endpoint.length ? `<table><thead><tr><th>Endpoint</th><th class="n">Requests</th><th class="n">Errors</th><th class="n">Error rate</th></tr></thead><tbody>${a.by_endpoint.map((e) => `<tr><td>${esc(e.endpoint)}</td><td class="n">${fmtN(e.total)}</td><td class="n">${fmtN(e.errors)}</td><td class="n">${e.total ? ((e.errors / e.total) * 100).toFixed(1) : '0.0'}%</td></tr>`).join('')}</tbody></table>` : '<div class="rp-note">No API requests counted in this period. Counting started when the feature was released.</div>'}
+                    ${printBars('Requests per ' + (d.unit === 'month' ? 'month' : 'day'), d.api_buckets, d.unit === 'month' ? 'month' : 'day', [{ name: 'Requests', values: a.series_total, color: S1 }])}</div>
+
+                <div class="rp-sec"><h2>Storage (${esc(lim.plan)})</h2>
+                    ${meter('Database', st.db_bytes, lim.db_bytes)}${meter('File storage', st.storage_bytes, lim.storage_bytes)}
+                    <div class="rp-note">Storage is the level at generation time, as a percent of the plan quota.</div></div>
+
+                <div class="rp-foot">Netlink, internal report. Confidential. Do not share outside the team.</div>
+            </div>`;
+        }
+
+        async function printReport(kind, period) {
+            const [d, polUsd, idr] = await Promise.all([
+                api('admin-overview', { query: `&range=${encodeURIComponent(kind)}&period=${encodeURIComponent(period)}` }),
+                fetchPolUsd(), fetchIdrRate(),
+            ]);
+            const label = kind === 'month' ? period : period;
+            $('printReport').innerHTML = reportHtml(d, kind, period, polUsd, idr, currentProfileName);
+            const prevTitle = document.title;
+            document.title = `Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report ${label}`;
+            const restore = () => { document.title = prevTitle; $('printReport').innerHTML = ''; window.removeEventListener('afterprint', restore); };
+            window.addEventListener('afterprint', restore);
+            await new Promise((r) => setTimeout(r, 150)); // let the browser lay out the SVG before printing
+            window.print();
+        }
+        $('printBtn').addEventListener('click', openPrintDialog);
 
         // ---------- volume in USD with IDR below (same sources as pay.html) ----------
         const FX_TTL_MS = 10 * 60 * 1000;
@@ -376,7 +573,7 @@
             });
             const step = Math.max(1, Math.ceil(n / 6));
             let ax = '';
-            buckets.forEach((b, i) => { if (i % step === 0 || i === n - 1) ax += `<text class="ax" x="${(L + i * slot + slot / 2).toFixed(1)}" y="${H - 5}" text-anchor="middle">${esc(bucketLabel(b, unit))}</text>`; });
+            buckets.forEach((b, i) => { if (i % step === 0 || (i === n - 1 && (n - 1) % step >= Math.ceil(step / 2))) ax += `<text class="ax" x="${(L + i * slot + slot / 2).toFixed(1)}" y="${H - 5}" text-anchor="middle">${esc(bucketLabel(b, unit))}</text>`; });
             const legend = series.length > 1 ? `<div class="legend">${series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>` : '';
             const total = series.map((s) => `${s.name}: ${fmt(s.values.reduce((a, v) => a + Number(v), 0))}`).join(' · ');
             const rows = buckets.map((b, i) => `<tr><td>${esc(bucketLabel(b, unit))}</td>${series.map((s) => `<td class="n">${fmt(s.values[i])}</td>`).join('')}</tr>`).join('');
@@ -442,6 +639,7 @@
                 ${tile(kycPct.toFixed(0) + '%', 'KYC rate', '')}
             </div>
             <div class="tiles">${tiers.map((t) => tile(fmtN(u.tiers[t] || 0), TIER_LABEL[t] + ' users', 'Current plan')).join('')}</div>
+            ${countriesHtml(u)}
             ${chartHtml('New users and KYC verified', d.buckets, d.unit, [{ name: 'New users', values: u.series_new, color: 'var(--series-1)' }, { name: 'KYC verified', values: u.series_kyc, color: 'var(--series-2)' }])}`;
 
             const types = Object.entries(p.tx_by_type || {}).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${esc(k)} ${fmtN(v)}`).join(' · ');
@@ -694,12 +892,14 @@
                     .eq('id', currentUser.id).single();
                 if (window.NetlinkNav && profile) NetlinkNav.init({ activePage: null, profile, supabaseClient, userId: currentUser.id });
 
+                currentProfileName = profile?.username || '';
                 const me = await api('admin-me');
                 roles = me.roles || [];
                 $('authGate').style.display = 'none';
                 if (!roles.length) { show('deniedView', true); return; }
                 $('roleBadges').innerHTML = roles.map((r) => `<span class="badge b-info">${esc(r.replace('_', ' '))}</span>`).join('');
                 show('adminView', true);
+                if (isFinance()) show('printBtn', true);
                 buildTabs();
                 setUnmatchedBadge(me.unmatched_payments);
                 if (window.lucide) lucide.createIcons();
