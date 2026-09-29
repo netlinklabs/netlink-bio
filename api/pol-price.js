@@ -52,7 +52,25 @@ async function fetchPolPrice() {
   throw lastErr;
 }
 
+// Merged from api/trails-config.js (Vercel Hobby allows max 12 functions).
+// /api/trails-config is rewritten to /api/pol-price?action=trails-config in vercel.json.
+// Serves the Trails client key from env; the key is public by design, restrict it by domain in the Trails dashboard.
+function trailsConfig(req, res) {
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+  const apiKey = process.env.TRAILS_API_KEY;
+  if (!apiKey) {
+    res.status(500).json({ error: 'Server misconfiguration: missing Trails API key' });
+    return;
+  }
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(200).json({ apiKey });
+}
+
 export default async function handler(req, res) {
+  if (req.query && req.query.action === 'trails-config') return trailsConfig(req, res);
   if (!ALCHEMY_API_KEY) {
     res.status(500).json({ error: 'Server misconfiguration: missing Alchemy API key' });
     return;

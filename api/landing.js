@@ -13,6 +13,7 @@
 
 import { escapeHtml, notFoundPage } from './_lib/html.js';
 import { recordEvent } from './_lib/analytics.js';
+import { sitemapHandler } from './_lib/sitemap.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -240,6 +241,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 `;
 
 export default async function handler(req, res) {
+  if (req.query.action === 'sitemap') return sitemapHandler(req, res);
   const slug = (req.query.slug || '').toLowerCase().trim();
   if (!slug) { res.status(400).send('Missing slug'); return; }
 
