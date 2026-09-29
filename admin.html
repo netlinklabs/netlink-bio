@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <!-- PAGE-TYPE: app -->
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin - Netlink</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=9">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.460.0" defer></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 80; max-width: 320px; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.error { background: #ef4444; }
+
+        .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .b-ok { background: rgba(16,185,129,0.12); color: #059669; }
+        .b-warn { background: rgba(245,158,11,0.12); color: #b45309; }
+        .b-bad { background: rgba(239,68,68,0.12); color: #dc2626; }
+        .b-info { background: rgba(59,130,246,0.12); color: #2563eb; }
+        .b-gray { background: rgba(100,116,139,0.15); color: #475569; }
+        html.dark .b-ok { color: #34d399; } html.dark .b-warn { color: #fbbf24; } html.dark .b-bad { color: #f87171; } html.dark .b-info { color: #93c5fd; } html.dark .b-gray { color: #cbd5e1; }
+
+        .tab-btn { padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
+        .tab-btn.active { background: #3b82f6; color: #fff; }
+        .row { display: block; width: 100%; text-align: left; padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .row:last-child { border-bottom: 0; }
+        button.row:hover { background: rgba(59,130,246,0.05); }
+        html.dark .row { border-bottom-color: rgba(255,255,255,0.05); }
+        .field { width: 100%; border: 1px solid rgba(0,0,0,0.12); border-radius: 10px; padding: 8px 12px; font-size: 13px; background: transparent; color: inherit; }
+        html.dark .field { border-color: rgba(255,255,255,0.12); }
+        .btn { padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #3b82f6; color: #fff; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-ghost { background: rgba(100,116,139,0.15); color: #475569; }
+        html.dark .btn-ghost { color: #cbd5e1; }
+        .btn-danger { background: #ef4444; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+        .modal { position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 70; display: flex; align-items: flex-end; justify-content: center; }
+        .modal.hidden { display: none; }
+        @media (min-width: 640px) { .modal { align-items: center; } }
+        .modal-box { width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; border-radius: 18px 18px 0 0; padding: 20px; }
+        @media (min-width: 640px) { .modal-box { border-radius: 18px; } }
+        .kv { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 13px; }
+        .kv > span:first-child { color: #64748b; flex-shrink: 0; }
+        .kv > span:last-child { text-align: right; min-width: 0; word-break: break-all; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading admin...</p>
+        </div>
+    </div>
+    <div id="toast" class="toast">Done</div>
+
+    <main class="px-4 pt-4 pb-24 lg:px-8 max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-1">
+            <h1 class="text-xl font-bold text-primary">Admin</h1>
+            <span id="roleBadges" class="flex gap-1 flex-wrap justify-end"></span>
+        </div>
+        <p class="text-sm text-muted mb-4">Orders, payments and audit log</p>
+
+        <div id="deniedView" class="hidden card rounded-2xl p-5">
+            <p class="text-sm text-secondary">You do not have access to this page.</p>
+        </div>
+
+        <div id="adminView" class="hidden">
+            <div id="tabs" class="flex gap-2 mb-4 overflow-x-auto"></div>
+
+            <!-- Orders -->
+            <section id="tab-orders" class="hidden">
+                <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                    <input id="orderSearch" class="field" placeholder="Search order number, e.g. NL-260929" maxlength="20" autocomplete="off">
+                    <select id="orderStatus" class="field sm:max-w-[200px]">
+                        <option value="">All statuses</option>
+                        <option value="awaiting_payment">Awaiting payment</option>
+                        <option value="underpaid">Partially paid</option>
+                        <option value="paid">Paid</option>
+                        <option value="late_payment">Late payment</option>
+                        <option value="expired">Expired</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="refunded">Refunded</option>
+                    </select>
+                </div>
+                <div id="orderList" class="card rounded-2xl overflow-hidden"></div>
+            </section>
+
+            <!-- Payments -->
+            <section id="tab-payments" class="hidden">
+                <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                    <select id="payStatus" class="field sm:max-w-[220px]">
+                        <option value="unmatched">Unmatched</option>
+                        <option value="late">Late</option>
+                        <option value="matched">Matched</option>
+                        <option value="ignored">Ignored</option>
+                    </select>
+                    <button id="syncBtn" class="btn sm:ml-auto">Sync from chain</button>
+                </div>
+                <div id="syncResult" class="hidden text-xs text-muted mb-3"></div>
+                <div id="paymentList" class="card rounded-2xl overflow-hidden"></div>
+            </section>
+
+            <!-- Audit -->
+            <section id="tab-audit" class="hidden">
+                <div id="auditList" class="card rounded-2xl overflow-hidden"></div>
+            </section>
+        </div>
+    </main>
+
+    <div id="modal" class="modal hidden"><div id="modalBox" class="modal-box card"></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const $ = (id) => document.getElementById(id);
+        const show = (id, on = true) => $(id).classList.toggle('hidden', !on);
+        let roles = [];
+        let currentUser = null;
+        let activeTab = null;
+
+        const STATUS_LABEL = { awaiting_payment: 'Awaiting payment', underpaid: 'Partially paid', paid: 'Paid', expired: 'Expired', late_payment: 'Late payment', cancelled: 'Cancelled', refunded: 'Refunded' };
+        const STATUS_CLASS = { awaiting_payment: 'b-warn', underpaid: 'b-warn', paid: 'b-ok', expired: 'b-bad', late_payment: 'b-info', cancelled: 'b-gray', refunded: 'b-gray' };
+        const PAY_CLASS = { unmatched: 'b-warn', late: 'b-info', matched: 'b-ok', ignored: 'b-gray' };
+        const TYPE_LABEL = { kyc: 'KYC', kyb: 'KYB', plan: 'Plan' };
+
+        function esc(v) { return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function showAuthError(msg) { $('authGateText').textContent = 'Something went wrong: ' + msg; }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+        function showToast(message, isError) {
+            const t = $('toast'); t.textContent = message; t.classList.toggle('error', !!isError); t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+        const fmtUsdc = (v) => `$${Number(v).toFixed(2)}`;
+        const fmtDate = (v) => (v ? new Date(v).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '-');
+        const shortAddr = (a) => (a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '-');
+        const has = (...r) => r.some((x) => roles.includes(x));
+        const isFinance = () => has('super_admin', 'finance');
+
+        async function api(action, { method = 'GET', body, query = '' } = {}) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { window.location.href = 'login'; throw new Error('Signed out'); }
+            const res = await fetch(`/api/orders?action=${action}${query}`, {
+                method,
+                headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) { const err = new Error(json.error || 'Request failed'); err.status = res.status; throw err; }
+            return json;
+        }
+
+        // ---------- modal ----------
+        function openModal(html) { $('modalBox').innerHTML = html; show('modal', true); if (window.lucide) lucide.createIcons(); }
+        function closeModal() { show('modal', false); $('modalBox').innerHTML = ''; }
+        $('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        function copy(text) {
+            navigator.clipboard.writeText(text).then(() => showToast('Copied'), () => showToast('Could not copy', true));
+        }
+        window.copyText = copy;
+
+        // ---------- tabs ----------
+        function buildTabs() {
+            const tabs = [{ id: 'orders', label: 'Orders' }];
+            if (isFinance()) tabs.push({ id: 'payments', label: 'Payments' });
+            if (has('super_admin')) tabs.push({ id: 'audit', label: 'Audit log' });
+            $('tabs').innerHTML = tabs.map((t) => `<button class="tab-btn" data-tab="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
+            $('tabs').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+            switchTab('orders');
+        }
+
+        function switchTab(id) {
+            activeTab = id;
+            ['orders', 'payments', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
+            $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
+            if (id === 'orders') loadOrders();
+            if (id === 'payments') loadPayments();
+            if (id === 'audit') loadAudit();
+        }
+
+        function setUnmatchedBadge(n) {
+            const el = $('badge-payments');
+            if (el) el.innerHTML = n ? ` <span class="badge b-warn" style="margin-left:4px">${Number(n)}</span>` : '';
+        }
+
+        // ---------- orders ----------
+        async function loadOrders() {
+            const list = $('orderList');
+            list.innerHTML = '<p class="p-4 text-sm text-muted">Loading...</p>';
+            try {
+                const q = encodeURIComponent($('orderSearch').value.trim());
+                const st = encodeURIComponent($('orderStatus').value);
+                const { orders } = await api('admin-orders', { query: `&q=${q}&status=${st}` });
+                if (!orders.length) { list.innerHTML = '<p class="p-4 text-sm text-muted">No orders found.</p>'; return; }
+                list.innerHTML = orders.map((o) => `
+                    <button class="row" data-order="${esc(o.id)}">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-semibold text-primary mono">${esc(o.order_no)}</span>
+                            <span class="badge ${STATUS_CLASS[o.status] || 'b-gray'}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 mt-1 text-xs text-muted">
+                            <span>${esc(TYPE_LABEL[o.type] || o.type)} · ${esc(o.user ? '@' + o.user.username : 'unknown user')}${o.meta && o.meta.test ? ' · test' : ''}</span>
+                            <span>${fmtUsdc(o.paid_amount)} / ${fmtUsdc(o.amount_usdc)} · ${esc(fmtDate(o.created_at))}</span>
+                        </div>
+                    </button>`).join('');
+                list.querySelectorAll('button[data-order]').forEach((b) => b.addEventListener('click', () => openOrder(b.dataset.order)));
+            } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
+        }
+
+        let searchTimer = null;
+        $('orderSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadOrders, 350); });
+        $('orderStatus').addEventListener('change', loadOrders);
+
+        function kv(k, v, mono) { return `<div class="kv"><span>${esc(k)}</span><span${mono ? ' class="mono"' : ''}>${v}</span></div>`; }
+
+        async function openOrder(id) {
+            openModal('<p class="text-sm text-muted">Loading...</p>');
+            try {
+                const d = await api('admin-order', { query: `&order_id=${encodeURIComponent(id)}` });
+                const o = d.order;
+                const u = o.user || {};
+                const sessions = (d.sessions || []).map((s) => `<div class="kv"><span>${esc(fmtDate(s.created_at))}</span><span class="mono">${esc(s.didit_session_id)} <button class="text-blue-500" data-copy="${esc(s.didit_session_id)}">Copy</button></span></div>`).join('') || '<p class="text-xs text-muted">No Didit session yet.</p>';
+                const verifs = (d.verifications || []).map((v) => `<div class="kv"><span>${esc(fmtDate(v.created_at))}</span><span>${esc(v.raw_status || v.status)}</span></div>`).join('') || '<p class="text-xs text-muted">No verification results yet.</p>';
+                const pays = (d.payments || []).map((p) => `<div class="py-2 border-b border-subtle"><div class="flex justify-between text-sm"><span class="font-semibold text-primary">${fmtUsdc(p.amount)}</span><span class="badge ${PAY_CLASS[p.match_status] || 'b-gray'}">${esc(p.match_status)}</span></div><div class="mono text-muted mt-1">${esc(p.tx_hash)}</div><div class="text-xs text-muted">${esc(fmtDate(p.occurred_at))} from ${esc(shortAddr(p.from_address))}${p.admin_note ? ' · ' + esc(p.admin_note) : ''}</div></div>`).join('');
+                const canLate = isFinance() && o.status === 'late_payment';
+                openModal(`
+                    <div class="flex items-start justify-between mb-3">
+                        <div><p class="text-base font-bold text-primary mono">${esc(o.order_no)}</p>
+                        <span class="badge ${STATUS_CLASS[o.status] || 'b-gray'}">${esc(STATUS_LABEL[o.status] || o.status)}</span></div>
+                        <button id="closeModalBtn" class="text-muted text-sm" aria-label="Close">Close</button>
+                    </div>
+                    ${kv('Type', esc(TYPE_LABEL[o.type] || o.type))}
+                    ${kv('User', esc(u.username ? '@' + u.username : '-') + (u.display_name ? ' (' + esc(u.display_name) + ')' : ''))}
+                    ${kv('Email', esc(d.email || '-'))}
+                    ${kv('Identity status', esc(u.identity_status || '-'))}
+                    ${kv('Amount', fmtUsdc(o.amount_usdc))}
+                    ${kv('Paid so far', fmtUsdc(o.paid_amount))}
+                    ${kv('Method', esc(o.pay_method || '-'))}
+                    ${kv('Payer wallet', esc(o.payer_address || '-'), true)}
+                    ${kv('Paid tx', esc(o.paid_tx_hash || '-'), true)}
+                    ${kv('Created', esc(fmtDate(o.created_at)))}
+                    ${kv('Expires', esc(fmtDate(o.expires_at)))}
+                    ${kv('Paid at', esc(fmtDate(o.paid_at)))}
+                    ${kv('Fulfilled', esc(fmtDate(o.fulfilled_at)))}
+                    ${o.meta && o.meta.test ? kv('Flag', 'Test order') : ''}
+                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Didit sessions</h4>
+                    ${sessions}
+                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Verification results</h4>
+                    ${verifs}
+                    ${d.payments ? `<h4 class="text-sm font-semibold text-primary mt-4 mb-1">Payments</h4>${pays || '<p class="text-xs text-muted">No payments recorded.</p>'}` : ''}
+                    ${canLate ? `<div class="mt-4"><button id="acceptLateBtn" class="btn">Accept late payment</button></div>` : ''}
+                `);
+                $('closeModalBtn').addEventListener('click', closeModal);
+                $('modalBox').querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => copy(b.dataset.copy)));
+                if (canLate) $('acceptLateBtn').addEventListener('click', () => askNote({
+                    title: 'Accept late payment',
+                    text: 'The payment arrived after the order expired. Accepting counts it as on time. A note is required.',
+                    confirm: 'Accept',
+                    run: async (note) => { await api('admin-accept-late', { method: 'POST', body: { order_id: o.id, note } }); showToast('Late payment accepted'); openOrder(o.id); loadOrders(); },
+                }));
+            } catch (err) { openModal(`<p class="text-sm text-red-500 mb-3">${esc(err.message)}</p><button id="closeModalBtn" class="btn btn-ghost">Close</button>`); $('closeModalBtn').addEventListener('click', closeModal); }
+        }
+
+        // Reusable "note required" confirm dialog.
+        function askNote({ title, text, confirm, run, extra = '', extraSetup }) {
+            openModal(`
+                <h3 class="text-base font-bold text-primary mb-1">${esc(title)}</h3>
+                <p class="text-xs text-muted mb-3">${esc(text)}</p>
+                ${extra}
+                <label class="text-xs text-muted">Note (required)</label>
+                <textarea id="noteInput" class="field mt-1 mb-3" rows="3" maxlength="500"></textarea>
+                <p id="noteErr" class="text-xs text-red-500 mb-2 hidden"></p>
+                <div class="flex gap-2 justify-end"><button id="noteCancel" class="btn btn-ghost">Cancel</button><button id="noteOk" class="btn">${esc(confirm)}</button></div>`);
+            if (extraSetup) extraSetup();
+            $('noteCancel').addEventListener('click', closeModal);
+            $('noteOk').addEventListener('click', async () => {
+                const note = $('noteInput').value.trim();
+                const err = $('noteErr');
+                if (!note) { err.textContent = 'Please write a note.'; err.classList.remove('hidden'); return; }
+                $('noteOk').disabled = true;
+                try { await run(note); } catch (e) { err.textContent = e.message; err.classList.remove('hidden'); $('noteOk').disabled = false; }
+            });
+        }
+
+        // ---------- payments ----------
+        let payCache = [];
+        async function loadPayments() {
+            const list = $('paymentList');
+            list.innerHTML = '<p class="p-4 text-sm text-muted">Loading...</p>';
+            try {
+                const st = $('payStatus').value;
+                const { payments } = await api('admin-payments', { query: `&status=${encodeURIComponent(st)}` });
+                payCache = payments;
+                if (!payments.length) { list.innerHTML = '<p class="p-4 text-sm text-muted">Nothing here.</p>'; return; }
+                list.innerHTML = payments.map((p) => {
+                    const actions = !p.order_id && (p.match_status === 'unmatched')
+                        ? `<div class="flex gap-2 mt-2"><button class="btn" data-link="${esc(p.id)}">Link to order</button><button class="btn btn-ghost" data-ignore="${esc(p.id)}">Ignore</button></div>` : '';
+                    return `<div class="row">
+                        <div class="flex justify-between text-sm"><span class="font-semibold text-primary">${fmtUsdc(p.amount)} USDC</span><span class="badge ${PAY_CLASS[p.match_status] || 'b-gray'}">${esc(p.match_status)}</span></div>
+                        <div class="mono text-muted mt-1">${esc(p.tx_hash)} <button class="text-blue-500" data-copy="${esc(p.tx_hash)}">Copy</button></div>
+                        <div class="text-xs text-muted">${esc(fmtDate(p.occurred_at))} from <span class="mono">${esc(p.from_address)}</span>${p.order_no ? ' · order ' + esc(p.order_no) : ''}${p.admin_note ? ' · ' + esc(p.admin_note) : ''}</div>
+                        ${actions}</div>`;
+                }).join('');
+                list.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => copy(b.dataset.copy)));
+                list.querySelectorAll('[data-link]').forEach((b) => b.addEventListener('click', () => linkFlow(b.dataset.link)));
+                list.querySelectorAll('[data-ignore]').forEach((b) => b.addEventListener('click', () => askNote({
+                    title: 'Ignore payment', text: 'Use this for transfers that are not for any order. It stays in the log.', confirm: 'Ignore',
+                    run: async (note) => { await api('admin-ignore-payment', { method: 'POST', body: { payment_id: b.dataset.ignore, note } }); closeModal(); showToast('Payment ignored'); loadPayments(); refreshMe(); },
+                })));
+            } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
+        }
+        $('payStatus').addEventListener('change', loadPayments);
+
+        function linkFlow(paymentId) {
+            const p = payCache.find((x) => x.id === paymentId);
+            let chosen = null;
+            askNote({
+                title: 'Link payment to order',
+                text: `${p ? fmtUsdc(p.amount) + ' USDC from ' + shortAddr(p.from_address) : ''}. Search the order number, then pick it.`,
+                confirm: 'Link payment',
+                extra: `<input id="linkSearch" class="field mb-2" placeholder="Order number, e.g. NL-260929" maxlength="20" autocomplete="off"><div id="linkResults" class="mb-3 card rounded-xl overflow-hidden hidden"></div><p id="linkChosen" class="text-xs text-primary mb-3 hidden"></p>`,
+                extraSetup: () => {
+                    let t = null;
+                    $('linkSearch').addEventListener('input', () => {
+                        clearTimeout(t);
+                        t = setTimeout(async () => {
+                            const q = $('linkSearch').value.trim();
+                            if (q.length < 3) { show('linkResults', false); return; }
+                            try {
+                                const { orders } = await api('admin-orders', { query: `&q=${encodeURIComponent(q)}&limit=8` });
+                                const usable = orders.filter((o) => ['awaiting_payment', 'underpaid', 'expired', 'late_payment'].includes(o.status));
+                                $('linkResults').innerHTML = usable.length ? usable.map((o) => `<button class="row" data-pick="${esc(o.id)}" data-no="${esc(o.order_no)}"><span class="mono">${esc(o.order_no)}</span> <span class="badge ${STATUS_CLASS[o.status]}">${esc(STATUS_LABEL[o.status])}</span> <span class="text-xs text-muted">${esc(o.user ? '@' + o.user.username : '')} ${fmtUsdc(o.paid_amount)} / ${fmtUsdc(o.amount_usdc)}</span></button>`).join('') : '<p class="p-3 text-xs text-muted">No open orders match.</p>';
+                                show('linkResults', true);
+                                $('linkResults').querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => {
+                                    chosen = b.dataset.pick;
+                                    $('linkChosen').textContent = 'Selected: ' + b.dataset.no;
+                                    show('linkChosen', true); show('linkResults', false);
+                                }));
+                            } catch (e) { showToast(e.message, true); }
+                        }, 350);
+                    });
+                },
+                run: async (note) => {
+                    if (!chosen) throw new Error('Pick an order first');
+                    const { order } = await api('admin-link-payment', { method: 'POST', body: { payment_id: paymentId, order_id: chosen, note } });
+                    closeModal(); showToast(`Linked. Order is now ${STATUS_LABEL[order.status] || order.status}`); loadPayments(); refreshMe();
+                },
+            });
+        }
+
+        $('syncBtn').addEventListener('click', async () => {
+            const btn = $('syncBtn'); btn.disabled = true; btn.textContent = 'Syncing...';
+            try {
+                const r = await api('admin-sync', { method: 'POST' });
+                const el = $('syncResult');
+                el.textContent = `Transfers seen: ${r.transfers_seen}. Open orders checked: ${r.open_orders}. Orders changed: ${r.orders_changed}. Unmatched left: ${r.unmatched_payments}.`;
+                show('syncResult', true);
+                setUnmatchedBadge(r.unmatched_payments);
+                loadPayments();
+            } catch (err) { showToast(err.message, true); }
+            btn.disabled = false; btn.textContent = 'Sync from chain';
+        });
+
+        // ---------- audit ----------
+        async function loadAudit() {
+            const list = $('auditList');
+            list.innerHTML = '<p class="p-4 text-sm text-muted">Loading...</p>';
+            try {
+                const { entries } = await api('admin-audit', { query: '&limit=100' });
+                if (!entries.length) { list.innerHTML = '<p class="p-4 text-sm text-muted">No entries yet.</p>'; return; }
+                list.innerHTML = entries.map((e) => {
+                    const d = e.detail || {};
+                    const bits = [];
+                    if (d.note) bits.push('Note: ' + d.note);
+                    if (d.amount) bits.push('Amount: ' + d.amount);
+                    if (d.order_status) bits.push('Order: ' + d.order_status);
+                    if (d.transfers_seen !== undefined) bits.push(`Seen ${d.transfers_seen}, changed ${d.orders_changed}`);
+                    return `<div class="row"><div class="flex justify-between text-sm"><span class="font-semibold text-primary">${esc(e.action)}</span><span class="text-xs text-muted">${esc(fmtDate(e.created_at))}</span></div><div class="text-xs text-muted">${esc(String(e.admin))} (${esc(e.role)})${bits.length ? ' · ' + esc(bits.join(' · ')) : ''}</div></div>`;
+                }).join('');
+            } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
+        }
+
+        // ---------- boot ----------
+        async function refreshMe() {
+            try { const me = await api('admin-me'); setUnmatchedBadge(me.unmatched_payments); } catch (e) { /* non-fatal */ }
+        }
+
+        async function boot() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login'; return; }
+                currentUser = session.user;
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency, wallet_address, identity_verification_status, identity_verified_at, business_verified_at')
+                    .eq('id', currentUser.id).single();
+                if (window.NetlinkNav && profile) NetlinkNav.init({ activePage: null, profile, supabaseClient, userId: currentUser.id });
+
+                const me = await api('admin-me');
+                roles = me.roles || [];
+                $('authGate').style.display = 'none';
+                if (!roles.length) { show('deniedView', true); return; }
+                $('roleBadges').innerHTML = roles.map((r) => `<span class="badge b-info">${esc(r.replace('_', ' '))}</span>`).join('');
+                show('adminView', true);
+                buildTabs();
+                setUnmatchedBadge(me.unmatched_payments);
+                if (window.lucide) lucide.createIcons();
+            } catch (err) { console.error(err); showAuthError(err.message || String(err)); }
+        }
+        boot();
+    </script>
+    <script src="/shared/account-menu.js?v=4"></script>
+    <script src="/shared/nav.js?v=6"></script>
+</body>
+</html>

@@ -10,6 +10,7 @@ module.exports = {
   content: [
     './analytics.html',
     './card.html',
+    './admin.html',
     './checkout.html',
     './contacts.html',
     './dashboard.html',

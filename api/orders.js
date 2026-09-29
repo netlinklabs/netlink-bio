@@ -1,6 +1,7 @@
 // api/orders.js
 // One serverless function for every paid order (KYC now, KYB and plans later),
-// dispatched by ?action=create|status|check-payment|cancel|didit-session. Kept as a single
+// dispatched by ?action=create|status|check-payment|cancel|didit-session, plus admin-* actions
+// (see api/_lib/admin.js). Kept as a single
 // file on purpose: the Vercel Hobby plan caps a deployment at 12 functions
 // and this is the last free slot.
 //
@@ -24,6 +25,7 @@
 // All amounts are handled as integer micro-USDC (BigInt) to avoid float drift.
 
 import { notifyUser } from './_lib/notify.js';
+import { handleAdmin, isAdminAction } from './_lib/admin.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -285,6 +287,89 @@ async function fetchIncomingTransfers() {
     .filter(Boolean);
 }
 
+// Assigns transfers that belong to this order: sent from its payer address, or
+// matching the hash the user supplied. Late ones (after expiry) are marked
+// 'late' for an admin to decide. The claim is atomic (order_id=is.null).
+async function claimTransfersForOrder(order) {
+  const expiresAt = new Date(order.expires_at).getTime();
+  const since = new Date(new Date(order.created_at).getTime() - 60_000).toISOString();
+  const filters = [`from_address.eq.${order.payer_address}`];
+  if (order.claimed_tx_hash) filters.push(`tx_hash.eq.${order.claimed_tx_hash}`);
+  const candidates = await db(
+    `order_payments?order_id=is.null&match_status=eq.unmatched&occurred_at=gte.${since}` +
+      `&or=(${filters.join(',')})&select=id,occurred_at`
+  );
+  for (const c of candidates) {
+    const isLate = new Date(c.occurred_at).getTime() > expiresAt;
+    // order_id=is.null in the filter makes the claim atomic: a transfer can only be taken once.
+    await db(`order_payments?id=eq.${c.id}&order_id=is.null`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: { order_id: order.id, match_status: isLate ? 'late' : 'matched' },
+    });
+  }
+}
+
+// Recomputes an order from its assigned transfers and saves the result. Used by
+// the user's payment check and by the admin actions, so both follow the same
+// rules. Returns the updated order row, or null if nothing changed (for example
+// another request already settled it). Sends the in-app notification only when
+// this call actually changed the order.
+async function settleOrder(order, now = Date.now()) {
+  const assigned = await db(`order_payments?order_id=eq.${order.id}&select=amount,match_status,tx_hash,occurred_at&order=occurred_at.desc`);
+  let onTime = 0n;
+  let late = 0n;
+  let lastMatchedHash = null; // newest on-time transfer, shown as the receipt reference
+  for (const p of assigned) {
+    if (p.match_status === 'matched') {
+      onTime += toMicro(p.amount);
+      if (!lastMatchedHash) lastMatchedHash = p.tx_hash;
+    } else if (p.match_status === 'late') late += toMicro(p.amount);
+  }
+  const target = toMicro(order.amount_usdc) - TOLERANCE;
+
+  const patch = { paid_amount: fromMicro(onTime) };
+  if (onTime >= target) {
+    patch.status = 'paid';
+    patch.paid_at = new Date().toISOString();
+    patch.paid_tx_hash = lastMatchedHash;
+  } else if (onTime + late >= target) {
+    patch.status = 'late_payment'; // arrived after expiry: an admin decides
+  } else if (onTime > 0n) {
+    patch.status = 'underpaid';
+  } else if (order.status === 'awaiting_payment' && now > new Date(order.expires_at).getTime()) {
+    patch.status = 'expired';
+  }
+
+  const updated = await db(`orders?id=eq.${order.id}&status=in.(awaiting_payment,underpaid,expired,late_payment)`, {
+    method: 'PATCH',
+    prefer: 'return=representation',
+    body: patch,
+  });
+
+  // In-app notifications, only when this call actually changed the order.
+  const after = updated[0];
+  if (after) {
+    if (after.status === 'paid' && order.status !== 'paid') {
+      await notifyUser(order.user_id, {
+        type: 'kyc', icon: 'shield-check',
+        title: 'Payment received',
+        body: `We received ${fromMicro(toMicro(after.paid_amount))} USDC for order ${after.order_no}. You can start your verification now.`,
+        link: `/checkout?order=${after.id}&n=paid`,
+      });
+    } else if (after.status === 'underpaid' && toMicro(after.paid_amount) !== toMicro(order.paid_amount)) {
+      const left = toMicro(after.amount_usdc) - toMicro(after.paid_amount);
+      await notifyUser(order.user_id, {
+        type: 'kyc', icon: 'shield-check',
+        title: 'Partial payment received',
+        body: `Order ${after.order_no} still needs ${fromMicro(left > 0n ? left : 0n)} USDC. Send the rest from the same wallet.`,
+        link: `/checkout?order=${after.id}&n=partial-${toMicro(after.paid_amount)}`,
+      });
+    }
+  }
+  return updated[0] || null;
+}
+
 async function handleCheckPayment(req, res, user) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!ALCHEMY_API_KEY) return res.status(500).json({ error: 'Server misconfiguration' });
@@ -332,77 +417,11 @@ async function handleCheckPayment(req, res, user) {
   }
 
   // 2. Claim unassigned transfers that belong to this order.
-  const since = new Date(new Date(order.created_at).getTime() - 60_000).toISOString();
-  const filters = [`from_address.eq.${order.payer_address}`];
-  if (order.claimed_tx_hash) filters.push(`tx_hash.eq.${order.claimed_tx_hash}`);
-  const candidates = await db(
-    `order_payments?order_id=is.null&match_status=eq.unmatched&occurred_at=gte.${since}` +
-      `&or=(${filters.join(',')})&select=id,occurred_at`
-  );
-  for (const c of candidates) {
-    const isLate = new Date(c.occurred_at).getTime() > expiresAt;
-    // order_id=is.null in the filter makes the claim atomic: a transfer can only be taken once.
-    await db(`order_payments?id=eq.${c.id}&order_id=is.null`, {
-      method: 'PATCH',
-      prefer: 'return=minimal',
-      body: { order_id: order.id, match_status: isLate ? 'late' : 'matched' },
-    });
-  }
+  await claimTransfersForOrder(order);
 
   // 3. Recompute the order from its assigned transfers.
-  const assigned = await db(`order_payments?order_id=eq.${order.id}&select=amount,match_status,tx_hash,occurred_at&order=occurred_at.desc`);
-  let onTime = 0n;
-  let late = 0n;
-  let lastMatchedHash = null; // newest on-time transfer, shown as the receipt reference
-  for (const p of assigned) {
-    if (p.match_status === 'matched') {
-      onTime += toMicro(p.amount);
-      if (!lastMatchedHash) lastMatchedHash = p.tx_hash;
-    } else if (p.match_status === 'late') late += toMicro(p.amount);
-  }
-  const target = toMicro(order.amount_usdc) - TOLERANCE;
-
-  const patch = { paid_amount: fromMicro(onTime) };
-  if (onTime >= target) {
-    patch.status = 'paid';
-    patch.paid_at = new Date().toISOString();
-    patch.paid_tx_hash = lastMatchedHash;
-  } else if (onTime + late >= target) {
-    patch.status = 'late_payment'; // arrived after expiry: an admin decides
-  } else if (onTime > 0n) {
-    patch.status = 'underpaid';
-  } else if (order.status === 'awaiting_payment' && now > expiresAt) {
-    patch.status = 'expired';
-  }
-
-  const updated = await db(`orders?id=eq.${order.id}&status=in.(awaiting_payment,underpaid,expired,late_payment)`, {
-    method: 'PATCH',
-    prefer: 'return=representation',
-    body: patch,
-  });
-
-  // In-app notifications, only when this call actually changed the order.
-  const after = updated[0];
-  if (after) {
-    if (after.status === 'paid' && order.status !== 'paid') {
-      await notifyUser(user.id, {
-        type: 'kyc', icon: 'shield-check',
-        title: 'Payment received',
-        body: `We received ${fromMicro(toMicro(after.paid_amount))} USDC for order ${after.order_no}. You can start your verification now.`,
-        link: `/checkout?order=${after.id}&n=paid`,
-      });
-    } else if (after.status === 'underpaid' && toMicro(after.paid_amount) !== toMicro(order.paid_amount)) {
-      const left = toMicro(after.amount_usdc) - toMicro(after.paid_amount);
-      await notifyUser(user.id, {
-        type: 'kyc', icon: 'shield-check',
-        title: 'Partial payment received',
-        body: `Order ${after.order_no} still needs ${fromMicro(left > 0n ? left : 0n)} USDC. Send the rest from the same wallet.`,
-        link: `/checkout?order=${after.id}&n=partial-${toMicro(after.paid_amount)}`,
-      });
-    }
-  }
-
-  return res.status(200).json({ order: publicOrder(updated[0] || order) });
+  const settled = await settleOrder(order, now);
+  return res.status(200).json({ order: publicOrder(settled || order) });
 }
 
 // ---------------------------------------------------------------- action=didit-session
@@ -504,6 +523,12 @@ export default async function handler(req, res) {
     if (!user) return res.status(401).json({ error: 'Please sign in to continue' });
 
     const action = req.query.action;
+    if (isAdminAction(action)) {
+      return await handleAdmin(action, req, res, user, {
+        db, toMicro, fromMicro, SUPABASE_URL, SERVICE_ROLE_KEY,
+        fetchIncomingTransfers, claimTransfersForOrder, settleOrder,
+      });
+    }
     if (action === 'create') return await handleCreate(req, res, user);
     if (action === 'status') return await handleStatus(req, res, user);
     if (action === 'check-payment') return await handleCheckPayment(req, res, user);
