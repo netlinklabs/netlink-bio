@@ -23,6 +23,8 @@
 //
 // All amounts are handled as integer micro-USDC (BigInt) to avoid float drift.
 
+import { notifyUser } from './_lib/notify.js';
+
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -348,12 +350,15 @@ async function handleCheckPayment(req, res, user) {
   }
 
   // 3. Recompute the order from its assigned transfers.
-  const assigned = await db(`order_payments?order_id=eq.${order.id}&select=amount,match_status`);
+  const assigned = await db(`order_payments?order_id=eq.${order.id}&select=amount,match_status,tx_hash,occurred_at&order=occurred_at.desc`);
   let onTime = 0n;
   let late = 0n;
+  let lastMatchedHash = null; // newest on-time transfer, shown as the receipt reference
   for (const p of assigned) {
-    if (p.match_status === 'matched') onTime += toMicro(p.amount);
-    else if (p.match_status === 'late') late += toMicro(p.amount);
+    if (p.match_status === 'matched') {
+      onTime += toMicro(p.amount);
+      if (!lastMatchedHash) lastMatchedHash = p.tx_hash;
+    } else if (p.match_status === 'late') late += toMicro(p.amount);
   }
   const target = toMicro(order.amount_usdc) - TOLERANCE;
 
@@ -361,6 +366,7 @@ async function handleCheckPayment(req, res, user) {
   if (onTime >= target) {
     patch.status = 'paid';
     patch.paid_at = new Date().toISOString();
+    patch.paid_tx_hash = lastMatchedHash;
   } else if (onTime + late >= target) {
     patch.status = 'late_payment'; // arrived after expiry: an admin decides
   } else if (onTime > 0n) {
@@ -374,6 +380,27 @@ async function handleCheckPayment(req, res, user) {
     prefer: 'return=representation',
     body: patch,
   });
+
+  // In-app notifications, only when this call actually changed the order.
+  const after = updated[0];
+  if (after) {
+    if (after.status === 'paid' && order.status !== 'paid') {
+      await notifyUser(user.id, {
+        type: 'kyc', icon: 'shield-check',
+        title: 'Payment received',
+        body: `We received ${fromMicro(toMicro(after.paid_amount))} USDC for order ${after.order_no}. You can start your verification now.`,
+        link: `/checkout?order=${after.id}&n=paid`,
+      });
+    } else if (after.status === 'underpaid' && toMicro(after.paid_amount) !== toMicro(order.paid_amount)) {
+      const left = toMicro(after.amount_usdc) - toMicro(after.paid_amount);
+      await notifyUser(user.id, {
+        type: 'kyc', icon: 'shield-check',
+        title: 'Partial payment received',
+        body: `Order ${after.order_no} still needs ${fromMicro(left > 0n ? left : 0n)} USDC. Send the rest from the same wallet.`,
+        link: `/checkout?order=${after.id}&n=partial-${toMicro(after.paid_amount)}`,
+      });
+    }
+  }
 
   return res.status(200).json({ order: publicOrder(updated[0] || order) });
 }
