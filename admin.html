@@ -258,6 +258,83 @@
         }
 
 
+
+        // ---------- volume in USD with IDR below (same sources as pay.html) ----------
+        const FX_TTL_MS = 10 * 60 * 1000;
+        const FX_PRIMARY_URL = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
+        const FX_FALLBACK_URL = 'https://latest.currency-api.pages.dev/v1/currencies/usd.json';
+        let fxCache = { rate: null, at: 0 };
+        let polCache = { price: null, at: 0 };
+
+        async function fetchIdrRate() {
+            if (fxCache.rate && Date.now() - fxCache.at < FX_TTL_MS) return fxCache.rate;
+            for (const url of [FX_PRIMARY_URL, FX_FALLBACK_URL]) {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('fx source failed');
+                    const rate = (await res.json()).usd?.idr;
+                    if (!rate) throw new Error('no idr rate');
+                    fxCache = { rate, at: Date.now() };
+                    return rate;
+                } catch (err) { console.warn('FX source failed:', err.message); }
+            }
+            return null;
+        }
+
+        async function fetchPolUsd() {
+            if (polCache.price && Date.now() - polCache.at < FX_TTL_MS) return polCache.price;
+            try {
+                const res = await fetch('/api/pol-price');
+                if (!res.ok) throw new Error('pol-price failed');
+                const json = await res.json();
+                if (!json.pol_usd) throw new Error('no pol_usd');
+                polCache = { price: json.pol_usd, at: Date.now() };
+                return json.pol_usd;
+            } catch (err) { console.warn('POL price failed:', err.message); return null; }
+        }
+
+        // USDC counts 1:1, POL at the current price, a swap uses its USDC side. NET has no USD price.
+        function computeVolume(rows, polUsd) {
+            const out = { send: { usd: 0, net: 0, n: 0 }, receive: { usd: 0, net: 0, n: 0 }, swap: { usd: 0, net: 0, n: 0 }, polMissing: false };
+            for (const r of rows || []) {
+                const b = out[r.type]; if (!b) continue;
+                b.n += Number(r.count) || 0;
+                const amt = Number(r.amount) || 0, to = Number(r.to_amount) || 0;
+                const pol = (x) => { if (polUsd) return x * polUsd; out.polMissing = true; return 0; };
+                if (r.type === 'swap') {
+                    if (r.token === 'USDC') b.usd += amt;
+                    else if (r.to_token === 'USDC') b.usd += to;
+                    else if (r.token === 'POL') b.usd += pol(amt);
+                    else if (r.token === 'NET') b.net += amt;
+                } else if (r.token === 'USDC') b.usd += amt;
+                else if (r.token === 'POL') b.usd += pol(amt);
+                else if (r.token === 'NET') b.net += amt;
+            }
+            return out;
+        }
+
+        const fmtUsd = (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtIdr = (usd, rate) => (rate ? '≈ Rp ' + Math.round(usd * rate).toLocaleString('id-ID') : '');
+
+        async function fillVolume(d) {
+            const box = $('volBlock'); if (!box) return;
+            const [polUsd, idr] = await Promise.all([fetchPolUsd(), fetchIdrRate()]);
+            if (d.range !== ovRange || !$('volBlock')) return; // user switched range meanwhile
+            const v = computeVolume(d.pay.tx_volume, polUsd);
+            const order = Number(d.finance.revenue_in_range) || 0;
+            const overall = v.send.usd + v.receive.usd + v.swap.usd;
+            const netTotal = v.send.net + v.receive.net + v.swap.net;
+            const vt = (usd, label, sub, wide) => `<div class="card tile"${wide ? ' style="grid-column: 1 / -1"' : ''}><div class="v text-primary">${fmtUsd(usd)}</div><div class="l">${esc(label)}</div><div class="s">${esc(fmtIdr(usd, idr))}</div>${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>`;
+            box.innerHTML = `<div class="tiles">
+                ${vt(overall, 'Total volume, all', fmtN(v.send.n + v.receive.n + v.swap.n) + ' transactions', true)}
+                ${vt(v.send.usd, 'Send', fmtN(v.send.n) + ' transactions')}
+                ${vt(v.receive.usd, 'Receive', fmtN(v.receive.n) + ' transactions')}
+                ${vt(v.swap.usd, 'Swap', fmtN(v.swap.n) + ' transactions')}
+                ${vt(order, 'Order', fmtN(d.finance.paid_in_range) + ' paid orders')}
+            </div>
+            <p class="text-xs text-muted mb-2">${netTotal ? 'NET moved: ' + fmtN(netTotal) + ' NET, not valued in USD because NET has no market price. ' : ''}${v.polMissing ? 'POL price is unavailable right now, so POL amounts are left out. ' : ''}${idr ? '' : 'IDR rate is unavailable right now. '}USDC counts 1:1, POL uses the current price, and a swap uses its USDC side. Overall is Send + Receive + Swap. A transfer between two Netlink users appears in both Send and Receive, and Order paid from Netlink Pay is also inside Send.</p>`;
+        }
+
         // ---------- overview ----------
         let ovRange = '7d';
         const nf = new Intl.NumberFormat('en-US');
@@ -372,7 +449,7 @@
                 ${tile(fmtN(p.wallets), 'Wallets connected', fmtN(u.total ? (p.wallets / u.total) * 100 : 0) + '% of users')}
                 ${tile(fmtN(p.tx_in_range), 'Transactions, ' + rangeName, fmtN(p.tx_total) + ' in total')}
                 <div class="card tile" style="grid-column: span 2"><div class="l">Transaction types, ${esc(rangeName)}</div><div class="s text-secondary" style="font-size:13px;margin-top:4px">${types || 'No transactions'}</div></div>
-            </div>${chartHtml('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: 'var(--series-1)' }])}
+            </div><div id="volBlock"><p class="text-xs text-muted mb-2">Loading volume...</p></div>${chartHtml('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: 'var(--series-1)' }])}
             <p class="text-xs text-muted mb-2">Counts transactions recorded by Netlink Pay. Transfers made outside the app are not included.</p>`;
 
             const rate = a.total ? ((a.errors / a.total) * 100).toFixed(1) : '0.0';
@@ -391,6 +468,7 @@
 
             $('overview').innerHTML = h;
             $('overview').querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.go)));
+            fillVolume(d);
         }
 
         async function loadOverview() {
