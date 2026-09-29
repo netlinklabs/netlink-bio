@@ -182,8 +182,9 @@
             <div id="paidPanel" class="hidden card rounded-2xl p-5 mb-4 text-center">
                 <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500 flex items-center justify-center"><i data-lucide="check" class="w-8 h-8 text-white"></i></div>
                 <p class="text-base font-semibold text-primary mb-1">Payment confirmed</p>
-                <p class="text-sm text-muted mb-4">Continue on your Account page to start identity verification.</p>
-                <a href="/identity" class="inline-block px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Go to Account</a>
+                <p class="text-sm text-muted mb-4">Next, verify your identity with a government ID and a quick selfie. It takes about 2 minutes.</p>
+                <button id="startVerifyBtn" type="button" class="w-full px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition">Start verification</button>
+                <a href="/identity" class="inline-block mt-3 text-xs text-muted hover:text-primary">Later, go to Account</a>
             </div>
 
             <!-- Start over (expired, cancelled) -->
@@ -425,6 +426,21 @@
         $('copyPayToBtn').addEventListener('click', () => {
             if (!order) return;
             navigator.clipboard.writeText(order.pay_to_address).then(() => showToast('Address copied'), () => showToast('Could not copy', true));
+        });
+
+        $('startVerifyBtn').addEventListener('click', async () => {
+            if (!order) return;
+            const btn = $('startVerifyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Starting...';
+            try {
+                const { url } = await api('didit-session', { method: 'POST', body: { order_id: order.id } });
+                window.location.href = url;
+            } catch (err) {
+                showToast(err.message, true);
+                btn.disabled = false;
+                btn.textContent = 'Start verification';
+            }
         });
 
         $('cancelBtn').addEventListener('click', async () => {

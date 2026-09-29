@@ -1,6 +1,6 @@
 // api/orders.js
 // One serverless function for every paid order (KYC now, KYB and plans later),
-// dispatched by ?action=create|status|check-payment|cancel. Kept as a single
+// dispatched by ?action=create|status|check-payment|cancel|didit-session. Kept as a single
 // file on purpose: the Vercel Hobby plan caps a deployment at 12 functions
 // and this is the last free slot.
 //
@@ -378,6 +378,89 @@ async function handleCheckPayment(req, res, user) {
   return res.status(200).json({ order: publicOrder(updated[0] || order) });
 }
 
+// ---------------------------------------------------------------- action=didit-session
+
+// Creates (or resumes) the Didit verification session for a PAID kyc order.
+// Limits protect the per-session Didit cost: 3 new sessions per rolling 24 h
+// and 10 per order. vendor_data is the profile id, which is what
+// api/webhooks/didit.js uses to attach the result to the user.
+const DIDIT_API_KEY = process.env.DIDIT_API_KEY;
+const DIDIT_WORKFLOW_ID = process.env.DIDIT_WORKFLOW_ID;
+const DIDIT_SESSION_URL = 'https://verification.didit.me/v3/session/';
+const SESSIONS_PER_DAY = 3;
+const SESSIONS_PER_ORDER = 10;
+const IDENTITY_CALLBACK = 'https://netlink.bio/identity';
+
+async function handleDiditSession(req, res, user) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!DIDIT_API_KEY || !DIDIT_WORKFLOW_ID) {
+    console.error('orders: DIDIT_API_KEY or DIDIT_WORKFLOW_ID is not configured');
+    return res.status(500).json({ error: 'Server misconfiguration' });
+  }
+
+  const order = await loadOwnOrder(req.body?.order_id, user.id);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (order.type !== 'kyc') return res.status(400).json({ error: 'This order does not include verification' });
+  if (order.status !== 'paid') return res.status(409).json({ error: 'Payment is not confirmed yet' });
+
+  const profiles = await db(`profiles?id=eq.${user.id}&select=identity_verification_status&limit=1`);
+  if (profiles[0]?.identity_verification_status === 'approved') {
+    return res.status(409).json({ error: 'Your identity is already verified' });
+  }
+
+  const sessions = await db(
+    `kyc_sessions?order_id=eq.${order.id}&select=didit_session_id,created_at&order=created_at.desc`
+  );
+  const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  const today = sessions.filter((x) => new Date(x.created_at).getTime() > dayAgo).length;
+  if (sessions.length >= SESSIONS_PER_ORDER) {
+    return res.status(429).json({ error: 'Verification attempt limit reached. Please contact support.' });
+  }
+  if (today >= SESSIONS_PER_DAY) {
+    return res.status(429).json({ error: 'Daily verification attempt limit reached. Please try again tomorrow.' });
+  }
+
+  const r = await fetch(DIDIT_SESSION_URL, {
+    method: 'POST',
+    headers: { 'x-api-key': DIDIT_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workflow_id: DIDIT_WORKFLOW_ID,
+      vendor_data: user.id,
+      callback: IDENTITY_CALLBACK,
+      metadata: { order_id: order.id, order_no: order.order_no },
+    }),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || !data.session_id || !data.url) {
+    console.error('orders: Didit session failed', r.status, JSON.stringify(data).slice(0, 500));
+    return res.status(502).json({ error: 'Could not start verification. Please try again in a moment.' });
+  }
+
+  // Didit returns the same unfinished session for the same vendor_data.
+  // Only count it as a new attempt when we have not stored it yet.
+  const known = sessions.some((x) => x.didit_session_id === data.session_id);
+  if (!known) {
+    await db('kyc_sessions', {
+      method: 'POST',
+      body: {
+        order_id: order.id,
+        user_id: user.id,
+        didit_session_id: data.session_id,
+        verification_url: data.url,
+      },
+    });
+    if (!order.fulfilled_at) {
+      await db(`orders?id=eq.${order.id}`, { method: 'PATCH', body: { fulfilled_at: new Date().toISOString() } });
+    }
+  }
+
+  return res.status(200).json({
+    url: data.url,
+    resumed: known,
+    attempts_left: Math.max(0, Math.min(SESSIONS_PER_DAY - today - (known ? 0 : 1), SESSIONS_PER_ORDER - sessions.length - (known ? 0 : 1))),
+  });
+}
+
 // ---------------------------------------------------------------- dispatcher
 
 export default async function handler(req, res) {
@@ -398,7 +481,8 @@ export default async function handler(req, res) {
     if (action === 'status') return await handleStatus(req, res, user);
     if (action === 'check-payment') return await handleCheckPayment(req, res, user);
     if (action === 'cancel') return await handleCancel(req, res, user);
-    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, check-payment, or cancel)' });
+    if (action === 'didit-session') return await handleDiditSession(req, res, user);
+    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, check-payment, cancel, or didit-session)' });
   } catch (err) {
     console.error('orders: unhandled error', err);
     return res.status(500).json({ error: 'Something went wrong. Please try again.' });
