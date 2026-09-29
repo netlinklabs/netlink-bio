@@ -22,6 +22,7 @@ const FINANCE_ROLES = ['super_admin', 'finance'];
 
 const ACTION_ROLES = {
   'admin-me': null, // any signed-in user; returns an empty role list for non-admins
+  'admin-overview': FINANCE_ROLES,
   'admin-orders': READ_ROLES,
   'admin-order': READ_ROLES,
   'admin-payments': FINANCE_ROLES,
@@ -102,6 +103,25 @@ export async function handleAdmin(action, req, res, user, ctx) {
     order_no: orderNo || null,
     admin_note: p.admin_note,
   });
+
+  // ---------------------------------------------------------- admin-overview
+  // One SQL function (public.admin_overview) does all the counting on the database side.
+  // Supabase Free plan limits are constants here; update them if the plan changes.
+  if (action === 'admin-overview') {
+    const range = ['today', '7d', '30d', '1y'].includes(req.query.range) ? req.query.range : '7d';
+    const rows = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_overview`, {
+      method: 'POST',
+      headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_range: range }),
+    });
+    if (!rows.ok) {
+      console.error('admin-overview rpc failed', rows.status, await rows.text().catch(() => ''));
+      return res.status(500).json({ error: 'Could not load the overview' });
+    }
+    const data = await rows.json();
+    data.limits = { db_bytes: 500 * 1024 * 1024, storage_bytes: 1024 * 1024 * 1024, plan: 'Supabase Free' };
+    return res.status(200).json(data);
+  }
 
   // ---------------------------------------------------------- admin-orders
   if (action === 'admin-orders') {

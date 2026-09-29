@@ -6,6 +6,8 @@
 // error handling are copied over unchanged from the original file; this
 // is a routing consolidation only, not a behavior change.
 
+import { withStats } from './_lib/stats.js';
+
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
 
@@ -150,9 +152,11 @@ async function handleConsent(req, res) {
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const action = req.query.action;
   if (action === 'export') return handleExport(req, res);
   if (action === 'consent') return handleConsent(req, res);
   res.status(400).json({ error: 'Invalid or missing action (expected export or consent)' });
 }
+
+export default withStats('account', handler);

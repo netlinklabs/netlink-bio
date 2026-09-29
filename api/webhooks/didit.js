@@ -13,6 +13,7 @@
 
 import crypto from 'crypto';
 import { notifyUser } from '../_lib/notify.js';
+import { withStats } from '../_lib/stats.js';
 
 export const config = {
   api: { bodyParser: false }, // we parse manually so we control exactly what gets hashed
@@ -140,7 +141,7 @@ async function insertVerification(row) {
   throw new Error(`Supabase insert failed: ${res.status} ${text}`);
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -229,3 +230,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Internal error' }); // 5xx -> Didit will retry
   }
 }
+
+export default withStats('webhook-didit', handler);

@@ -9,6 +9,7 @@ import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
 import { escapeHtml, notFoundPage } from './_lib/html.js';
 import { isDemoProfile } from './_lib/demo-profiles.js';
 import { recordEvent } from './_lib/analytics.js';
+import { withStats } from './_lib/stats.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -162,7 +163,7 @@ async function supabaseGet(path) {
   return res.json();
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const username = (req.query.username || '').toLowerCase().trim();
   if (!username) { res.status(400).send('Missing username'); return; }
 
@@ -589,3 +590,5 @@ ${isDemoProfile(profile.username)
   res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=120');
   res.status(200).send(html);
 }
+
+export default withStats('bio', handler);
