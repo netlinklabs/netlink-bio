@@ -156,6 +156,7 @@
             <h1 class="text-xl font-bold text-primary">Admin</h1>
             <div class="flex items-center gap-2">
                 <span id="roleBadges" class="flex gap-1 flex-wrap justify-end"></span>
+                <button id="testMailBtn" type="button" class="print-btn hidden" title="Send a sample invoice email to your own address">Test email</button>
                 <button id="printBtn" type="button" class="print-btn hidden" title="Print or save the report as PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
             </div>
         </div>
@@ -455,6 +456,12 @@
             window.print();
         }
         $('printBtn').addEventListener('click', openPrintDialog);
+        $('testMailBtn').addEventListener('click', async () => {
+            const b = $('testMailBtn'); b.disabled = true;
+            try { const r = await api('admin-test-email', { method: 'POST', body: {} }); alert('Test email sent to ' + r.to); }
+            catch (e) { alert(e.message || 'Could not send the test email'); }
+            finally { b.disabled = false; }
+        });
 
         // ---------- volume in USD with IDR below (same sources as pay.html) ----------
         const FX_TTL_MS = 10 * 60 * 1000;
@@ -900,6 +907,7 @@
                 $('roleBadges').innerHTML = roles.map((r) => `<span class="badge b-info">${esc(r.replace('_', ' '))}</span>`).join('');
                 show('adminView', true);
                 if (isFinance()) show('printBtn', true);
+                if (has('super_admin')) show('testMailBtn', true);
                 buildTabs();
                 setUnmatchedBadge(me.unmatched_payments);
                 if (window.lucide) lucide.createIcons();

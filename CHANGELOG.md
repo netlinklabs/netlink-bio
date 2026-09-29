@@ -7,6 +7,10 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Added
+- **Transactional emails from `finance@netlink.bio` (SMTP, nodemailer).** New `api/_lib/mailer.js` (no new serverless function). Emails: invoice (order created), receipt (order paid), day-2 payment reminder (unpaid order expiring within 24 hours, sent by the existing daily cron, dedupe marker in `orders.meta.emails.reminder`, no migration), KYC result (approved, declined, resubmission needed, sent only for a new Didit event), and a "new paid order" notice to the team mailbox. Emails are fire-and-forget (`waitUntil`) and never block or fail a payment or webhook. Needs Vercel env `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; optional `ADMIN_NOTIFY_EMAIL` (defaults to `SMTP_USER`). Without them nothing is sent and nothing breaks.
+- **Admin: "Test email" button (super_admin only)** and action `admin-test-email`, sends a sample invoice to the caller's own address and writes an audit log entry. Used to verify the SMTP setup.
+
 
 ### Security
 - **Supabase `profiles`: signed-in users could edit their own `tier`, `tier_expires_at`, verification statuses, `is_black_badge`, `net_id`, `referral_code`, and `net_reward_*` directly from the browser (RLS only checked the row, not the columns), so anyone could self-upgrade to Gold or mark themselves verified.** Migration `lock_profile_sensitive_columns` revokes table-level `UPDATE` from `authenticated`/`anon` and grants it back only on the 40 user-editable columns (bio, contact, wallet, theme, privacy toggles, etc.). No page in this repo writes the locked columns from the client; the `SECURITY DEFINER` trigger `sync_verification_cache`, the Didit webhook, and the service role are unaffected. Verified after the change: `dashboard.html` and `pay.html` still save normally. Any new client-side `profiles.update()` on a locked column will now fail with "permission denied" and must go through an API route instead.

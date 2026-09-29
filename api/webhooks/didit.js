@@ -13,6 +13,7 @@
 
 import crypto from 'crypto';
 import { notifyUser } from '../_lib/notify.js';
+import { emailUser, kycResultMail } from '../_lib/mailer.js';
 import { withStats } from '../_lib/stats.js';
 
 export const config = {
@@ -217,11 +218,13 @@ async function handler(req, res) {
         resubmission_needed: ['Please resubmit your documents', 'We could not verify your documents. Submit them again from your Account page.'],
       };
       if (messages[status]) {
-        await notifyUser(profileId, {
+        const fresh = await notifyUser(profileId, {
           type: 'kyc', icon: 'shield-check',
           title: messages[status][0], body: messages[status][1],
           link: `/identity?r=${status}&s=${encodeURIComponent(sessionId)}`,
         });
+        // notifyUser returns true only for a new event, so retries send no second email.
+        if (fresh) emailUser(profileId, kycResultMail(status));
       }
     }
     res.status(200).json({ received: true, ...result });

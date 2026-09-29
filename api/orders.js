@@ -25,6 +25,7 @@
 // All amounts are handled as integer micro-USDC (BigInt) to avoid float drift.
 
 import { notifyUser } from './_lib/notify.js';
+import { emailUser, emailAdmin, invoiceMail, receiptMail, adminPaidMail, getUserEmail } from './_lib/mailer.js';
 import { handleAdmin, isAdminAction } from './_lib/admin.js';
 import { withStats } from './_lib/stats.js';
 
@@ -194,6 +195,7 @@ async function handleCreate(req, res, user) {
         pay_to_address: FINANCE_WALLET,
       },
     });
+    emailUser(user.id, invoiceMail(rows[0]));
     return res.status(201).json({ order: publicOrder(rows[0]), existing: false });
   } catch (err) {
     // orders_one_active_per_payer: another user is already paying from this address
@@ -358,6 +360,9 @@ async function settleOrder(order, now = Date.now()) {
         body: `We received ${fromMicro(toMicro(after.paid_amount))} USDC for order ${after.order_no}. You can start your verification now.`,
         link: `/checkout?order=${after.id}&n=paid`,
       });
+      // Emails go out only on this transition, so repeated checks never resend.
+      emailUser(order.user_id, receiptMail(after));
+      getUserEmail(order.user_id).then((e) => emailAdmin(adminPaidMail(after, e)));
     } else if (after.status === 'underpaid' && toMicro(after.paid_amount) !== toMicro(order.paid_amount)) {
       const left = toMicro(after.amount_usdc) - toMicro(after.paid_amount);
       await notifyUser(order.user_id, {
