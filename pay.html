@@ -7,7 +7,7 @@
     <title>Netlink Pay</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-    <link rel="stylesheet" href="/shared/tailwind.css?v=7">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=8">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.460.0" defer></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -800,7 +800,7 @@
     <div id="sendModal" class="modal-overlay" onclick="if(event.target===this) closeSendModal()">
         <div class="modal-box">
             <button class="modal-close" onclick="closeSendModal()">&times;</button>
-            <h3 class="font-semibold text-primary text-lg mb-4">Send</h3>
+            <h3 id="sendModalTitle" class="font-semibold text-primary text-lg mb-4">Send</h3>
 
             <div id="sendStepForm">
                 <label class="text-xs font-medium text-secondary block mb-1.5">Token</label>
@@ -1067,6 +1067,14 @@
                 document.getElementById('authGate').style.display = 'none';
                 await loadDeletionGuardStatus();
                 await loadUserProfile();
+                const orderParam = new URLSearchParams(window.location.search).get('order');
+                if (orderParam) {
+                    // startOrderPayment lives in the module script below; deferred
+                    // modules run before DOMContentLoaded, so wait for it if needed.
+                    const runOrderPayment = () => window.startOrderPayment(orderParam);
+                    if (window.startOrderPayment) runOrderPayment();
+                    else window.addEventListener('DOMContentLoaded', runOrderPayment);
+                }
             } catch (err) {
                 console.error(err);
                 showAuthError(err.message || String(err));
@@ -1833,6 +1841,7 @@
             document.getElementById('sendProgressWrap').classList.add('hidden');
             document.getElementById('sendProgressBar').style.width = '0%';
             selectSendToken('USDC');
+            applySendOrderMode();
             document.getElementById('sendModal').classList.add('active');
 
             // Gate on re-auth before showing the form at all when there's no
@@ -1877,7 +1886,59 @@
         window.closeSendModal = function () {
             document.getElementById('sendModal').classList.remove('active');
             pendingReauthResume = null;
+            window.orderPay = null;
+            applySendOrderMode();
         };
+
+        // ---- Order payment mode (checkout.html sends the user here as pay?order=<id>) ----
+        // Locks the Send form to USDC, the order's receiving address, and the
+        // remaining amount. doExecuteSend() also reads these from window.orderPay
+        // instead of the form fields, so editing the DOM cannot change what is sent.
+        // The transfer itself still goes through the normal wallet-session and
+        // re-auth checks above (sessionMatchesCurrentWallet), nothing is bypassed.
+        window.orderPay = null; // { id, order_no, pay_to, amount } while paying an order
+
+        function applySendOrderMode() {
+            const op = window.orderPay;
+            const to = document.getElementById('sendToAddress');
+            const amt = document.getElementById('sendAmount');
+            document.getElementById('sendModalTitle').textContent = op ? `Pay order ${op.order_no}` : 'Send';
+            to.readOnly = !!op;
+            amt.readOnly = !!op;
+            document.getElementById('sendTokenBtn').disabled = !!op;
+            to.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('hidden', !!op));
+            if (op) {
+                to.value = op.pay_to;
+                amt.value = String(Number(op.amount));
+            }
+        }
+
+        async function startOrderPayment(orderId) {
+            const backToCheckout = () => setTimeout(() => { window.location.href = 'checkout?order=' + encodeURIComponent(orderId); }, 2500);
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const res = await fetch(`/api/orders?action=status&order_id=${encodeURIComponent(orderId)}`, {
+                    headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(json.error || 'Could not load this order');
+                const o = json.order;
+                if (o.pay_method !== 'netlink_pay') throw new Error('This order is paid from an external wallet.');
+                if (o.status !== 'awaiting_payment' && o.status !== 'underpaid') throw new Error('This order is not waiting for payment.');
+                const wallet = (window.currentWalletAddress || '').toLowerCase();
+                if (!wallet) throw new Error('Connect your Netlink Pay wallet first.');
+                if (o.payer_address !== wallet) throw new Error('Your connected wallet is not the wallet chosen for this order.');
+                await fetchWalletBalances(window.currentWalletAddress);
+                window.orderPay = { id: o.id, order_no: o.order_no, pay_to: o.pay_to_address, amount: o.remaining_usdc };
+                await openSendModal();
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || 'Could not start payment');
+                backToCheckout();
+            }
+        }
+
+        window.startOrderPayment = startOrderPayment;
 
         // ---- Contact Picker ----
         // Contacts are stored lean (references only) -- resolve live from
@@ -2441,9 +2502,10 @@
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); closeSendModal(); return; }
             sendTxInProgress = true;
             setSendConfirmBusy(true);
-            const token = document.getElementById('sendTokenSelect').value;
-            const to = document.getElementById('sendToAddress').value.trim();
-            const amount = document.getElementById('sendAmount').value.trim();
+            const orderPay = window.orderPay; // captured now: closeSendModal() clears it on success
+            const token = orderPay ? 'USDC' : document.getElementById('sendTokenSelect').value;
+            const to = orderPay ? orderPay.pay_to : document.getElementById('sendToAddress').value.trim();
+            const amount = orderPay ? String(Number(orderPay.amount)) : document.getElementById('sendAmount').value.trim();
             const statusEl = document.getElementById('sendConfirmStatus');
             const config = TOKEN_CONFIG[token];
             const valueWei = toWei(amount, config.decimals);
@@ -2476,6 +2538,13 @@
                         fetchWalletBalances(window.currentWalletAddress);
                     }
                 }, 4500);
+
+                if (orderPay) {
+                    // Give the transaction record above a moment to save, then let
+                    // checkout confirm the payment (it checks the chain on load).
+                    showToast('Payment sent. Returning to checkout...');
+                    setTimeout(() => { window.location.href = 'checkout?order=' + encodeURIComponent(orderPay.id); }, 2500);
+                }
             } catch (err) {
                 console.error(err);
                 stopSendProgress(progressTimer, false);

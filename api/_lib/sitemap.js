@@ -1,4 +1,4 @@
-// api/sitemap.js
+// api/_lib/sitemap.js (served by api/landing.js?action=sitemap, kept out of api/ to stay under the Hobby 12-function cap)
 // Dynamic sitemap.xml -- generated on request (cached at the edge for an
 // hour, see Cache-Control below) instead of hand-maintained, so every
 // live bio/CV/business page shows up without a redeploy.
@@ -24,7 +24,7 @@
 //
 // Same security note as api/landing.js: never select id/user_id.
 
-import { isDemoProfile } from './_lib/demo-profiles.js';
+import { isDemoProfile } from './demo-profiles.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -99,7 +99,7 @@ function hasRealCvContent(cv) {
   return false;
 }
 
-export default async function handler(req, res) {
+export async function sitemapHandler(req, res) {
   const entries = STATIC_PAGES.map((path) =>
     urlEntry(`https://netlink.bio${path}`, { changefreq: 'monthly', priority: path === '/' ? '1.0' : '0.8' })
   );

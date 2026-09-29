@@ -8,7 +8,8 @@
   "rewrites": [
     { "source": "/cv/:username([a-z0-9_]{3,25})", "destination": "/api/cv?username=:username" },
     { "source": "/page/:slug([a-z0-9_-]{1,25})", "destination": "/api/landing?slug=:slug" },
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/api/trails-config", "destination": "/api/pol-price?action=trails-config" },
+    { "source": "/sitemap.xml", "destination": "/api/landing?action=sitemap" },
     { "source": "/:username([a-z0-9_]{3,25})", "destination": "/api/bio?username=:username" }
   ],
   "crons": [
