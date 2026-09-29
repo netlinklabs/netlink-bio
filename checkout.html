@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <!-- PAGE-TYPE: app -->
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Checkout - Netlink</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.460.0" defer></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.error { background: #ef4444; }
+
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+        .status-approved { background: rgba(16,185,129,0.12); color: #059669; }
+        html.dark .status-approved { background: rgba(16,185,129,0.15); color: #34d399; }
+        .status-pending { background: rgba(245,158,11,0.12); color: #b45309; }
+        html.dark .status-pending { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .status-declined { background: rgba(239,68,68,0.12); color: #dc2626; }
+        html.dark .status-declined { background: rgba(239,68,68,0.15); color: #f87171; }
+        .status-resubmission_needed { background: rgba(249,115,22,0.12); color: #c2410c; }
+        html.dark .status-resubmission_needed { background: rgba(249,115,22,0.15); color: #fb923c; }
+
+        .method-card { border: 2px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+        html.dark .method-card { border-color: rgba(255,255,255,0.08); }
+        .method-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
+        .method-card.disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .notice { border-radius: 10px; padding: 10px 12px; font-size: 12px; }
+        .notice-warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #92400e; }
+        html.dark .notice-warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.25); color: #fbbf24; }
+        .notice-info { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); color: #1e40af; }
+        html.dark .notice-info { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); color: #93c5fd; }
+        .notice-ok { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #047857; }
+        html.dark .notice-ok { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.25); color: #34d399; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading checkout...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Done</div>
+
+    <main class="px-4 pt-4 pb-24 lg:px-8 max-w-2xl mx-auto">
+        <h1 class="text-xl font-bold text-primary mb-1">Checkout</h1>
+        <p id="pageSubtitle" class="text-sm text-muted mb-4">Complete your order</p>
+
+        <!-- Blocking message (already verified, unknown order, errors) -->
+        <div id="blockedView" class="hidden card rounded-2xl p-5 mb-4">
+            <p id="blockedText" class="text-sm text-secondary mb-4"></p>
+            <a id="blockedLink" href="/identity" class="inline-block px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Back to Account</a>
+        </div>
+
+        <!-- Step 1: choose how to pay -->
+        <div id="selectView" class="hidden">
+            <div class="card rounded-2xl p-5 mb-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-primary">Identity Verification (KYC)</p>
+                        <p class="text-xs text-muted mt-0.5">One-time fee, valid for any plan</p>
+                    </div>
+                    <p class="text-lg font-bold text-primary">$2.50 <span class="text-xs font-medium text-muted">USDC</span></p>
+                </div>
+            </div>
+
+            <div class="card rounded-2xl p-5 mb-4">
+                <h3 class="font-semibold text-primary text-sm mb-3">Pay with</h3>
+
+                <div id="methodNetlinkPay" class="method-card mb-3" data-method="netlink_pay" role="radio" tabindex="0" aria-checked="false">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0"><i data-lucide="wallet" class="w-4 h-4 text-blue-500"></i></div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-primary">Netlink Pay wallet</p>
+                            <p id="netlinkPayHint" class="text-xs text-muted truncate">Pay from your Netlink Pay balance</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="methodExternal" class="method-card" data-method="external_wallet" role="radio" tabindex="0" aria-checked="false">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-slate-500/10 flex items-center justify-center flex-shrink-0"><i data-lucide="arrow-up-right" class="w-4 h-4 text-secondary"></i></div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-primary">External wallet</p>
+                            <p class="text-xs text-muted">Send USDC from another wallet on Polygon</p>
+                        </div>
+                    </div>
+                    <div id="externalFields" class="hidden mt-4">
+                        <label for="payerAddressInput" class="text-xs font-medium text-secondary block mb-1.5">Your personal wallet address <span class="text-emerald-600">(Recommended)</span></label>
+                        <input id="payerAddressInput" type="text" autocomplete="off" spellcheck="false" placeholder="0x..." class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary font-mono focus:outline-none">
+                        <p class="text-xs text-muted mt-2">Send from a personal wallet (MetaMask, Trust Wallet, etc.), not from an exchange. We match your payment by this sending address.</p>
+                        <p class="text-xs text-muted mt-1">Paying from an exchange? You can add the transaction hash after you send.</p>
+                    </div>
+                </div>
+
+                <p id="selectError" class="hidden text-xs text-red-500 mt-3"></p>
+                <button id="continueBtn" type="button" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium rounded-xl transition text-sm">Continue</button>
+            </div>
+        </div>
+
+        <!-- Step 2: order details and payment -->
+        <div id="orderView" class="hidden">
+            <div class="card rounded-2xl p-5 mb-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs text-muted">Order</p>
+                        <p id="orderNo" class="text-sm font-semibold text-primary font-mono">-</p>
+                    </div>
+                    <span id="orderStatusBadge" class="status-badge status-pending">-</span>
+                </div>
+                <div class="mt-4 space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-muted">Item</span><span class="text-primary font-medium">Identity Verification (KYC)</span></div>
+                    <div class="flex justify-between"><span class="text-muted">Total</span><span id="orderTotal" class="text-primary font-medium">-</span></div>
+                    <div id="orderPaidRow" class="hidden flex justify-between"><span class="text-muted">Received</span><span id="orderPaid" class="text-primary font-medium">-</span></div>
+                    <div id="orderRemainingRow" class="hidden flex justify-between"><span class="text-muted">Remaining</span><span id="orderRemaining" class="text-primary font-semibold">-</span></div>
+                    <div id="orderExpiryRow" class="flex justify-between"><span class="text-muted">Expires</span><span id="orderExpiry" class="text-primary font-medium">-</span></div>
+                </div>
+            </div>
+
+            <div id="stateNotice" class="notice hidden mb-4"></div>
+
+            <!-- Netlink Pay -->
+            <div id="netlinkPayPanel" class="hidden card rounded-2xl p-5 mb-4">
+                <p class="text-sm text-secondary mb-4">Pay <span id="npAmount" class="font-semibold text-primary">-</span> USDC from your Netlink Pay wallet. You will confirm the transfer on the next screen.</p>
+                <a id="npPayBtn" href="/pay" class="block text-center w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Pay with Netlink Pay</a>
+            </div>
+
+            <!-- External wallet -->
+            <div id="externalPanel" class="hidden card rounded-2xl p-5 mb-4">
+                <h3 class="font-semibold text-primary text-sm mb-3">Send exactly</h3>
+                <p class="text-2xl font-bold text-primary mb-1"><span id="extAmount">-</span> <span class="text-sm font-semibold text-muted">USDC</span></p>
+                <p class="text-xs text-muted mb-4">Network: <strong class="text-secondary">Polygon</strong>. Token: <strong class="text-secondary">USDC (native)</strong>. Do not send USDC.e or use another network.</p>
+
+                <p class="text-xs text-muted mb-1">To this address</p>
+                <div class="flex items-center gap-2 mb-3">
+                    <p id="extPayTo" class="flex-1 min-w-0 text-xs font-mono text-primary break-all bg-surface rounded-lg px-3 py-2.5">-</p>
+                    <button id="copyPayToBtn" type="button" class="p-2.5 bg-surface rounded-lg" aria-label="Copy address"><i data-lucide="copy" class="w-4 h-4 text-secondary"></i></button>
+                </div>
+                <div class="flex justify-center mb-3"><img id="extQr" alt="QR code of the receiving address" width="160" height="160" class="rounded-lg bg-white p-1"></div>
+
+                <p class="text-xs text-muted mb-1">Sending from</p>
+                <p id="extPayer" class="text-xs font-mono text-secondary break-all mb-4">-</p>
+
+                <div class="border-t border-subtle pt-4">
+                    <label for="txHashInput" class="text-xs font-medium text-secondary block mb-1.5">Transaction hash <span class="text-muted">(Optional)</span></label>
+                    <input id="txHashInput" type="text" autocomplete="off" spellcheck="false" placeholder="0x..." class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary font-mono focus:outline-none">
+                    <p class="text-xs text-muted mt-2">Paid from an exchange? Enter the transaction hash so your payment can be matched.</p>
+                    <button id="checkNowBtn" type="button" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium rounded-xl transition text-sm">I have paid, check now</button>
+                    <p class="text-xs text-muted text-center mt-2">We also check automatically every 20 seconds.</p>
+                </div>
+            </div>
+
+            <!-- Paid -->
+            <div id="paidPanel" class="hidden card rounded-2xl p-5 mb-4 text-center">
+                <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500 flex items-center justify-center"><i data-lucide="check" class="w-8 h-8 text-white"></i></div>
+                <p class="text-base font-semibold text-primary mb-1">Payment confirmed</p>
+                <p class="text-sm text-muted mb-4">Continue on your Account page to start identity verification.</p>
+                <a href="/identity" class="inline-block px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Go to Account</a>
+            </div>
+
+            <!-- Start over (expired, cancelled) -->
+            <div id="restartPanel" class="hidden card rounded-2xl p-5 mb-4 text-center">
+                <a href="/checkout?type=kyc" class="inline-block px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Start a new order</a>
+            </div>
+
+            <div class="text-center">
+                <button id="cancelBtn" type="button" class="hidden text-xs text-muted underline">Cancel this order</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const params = new URLSearchParams(location.search);
+        const ORDER_TYPE = 'kyc'; // KYB and plan orders reuse this page later
+        const POLL_MS = 20000;
+        const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
+
+        let currentUser = null;
+        let currentProfile = null;
+        let order = null;
+        let selectedMethod = null;
+        let pollTimer = null;
+        let expiryTimer = null;
+
+        const STATUS_LABEL = {
+            awaiting_payment: 'Awaiting payment', underpaid: 'Partially paid', paid: 'Paid',
+            expired: 'Expired', late_payment: 'Late payment', cancelled: 'Cancelled', refunded: 'Refunded',
+        };
+        const STATUS_CLASS = {
+            awaiting_payment: 'status-pending', underpaid: 'status-pending', paid: 'status-approved',
+            expired: 'status-declined', late_payment: 'status-resubmission_needed', cancelled: 'status-declined', refunded: 'status-pending',
+        };
+
+        const $ = (id) => document.getElementById(id);
+        const show = (id, on = true) => $(id).classList.toggle('hidden', !on);
+
+        function showAuthError(msg) { $('authGateText').textContent = 'Something went wrong: ' + msg; }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+        function showToast(message, isError) {
+            const toast = $('toast');
+            toast.textContent = message;
+            toast.classList.toggle('error', !!isError);
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function fmtUsdc(v) { return `$${Number(v).toFixed(2)} USDC`; }
+        function shortAddr(a) { return a ? `${a.slice(0, 6)}...${a.slice(-4)}` : ''; }
+
+        async function api(action, { method = 'GET', body, query = '' } = {}) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { window.location.href = 'login'; throw new Error('Signed out'); }
+            const res = await fetch(`/api/orders?action=${action}${query}`, {
+                method,
+                headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) { const err = new Error(json.error || 'Request failed'); err.status = res.status; throw err; }
+            return json;
+        }
+
+        function showBlocked(text, linkHref, linkLabel) {
+            show('selectView', false); show('orderView', false); show('blockedView', true);
+            $('blockedText').textContent = text;
+            $('blockedLink').setAttribute('href', linkHref || '/identity');
+            $('blockedLink').textContent = linkLabel || 'Back to Account';
+            $('authGate').style.display = 'none';
+        }
+
+        // ---------------- Step 1: choose payment method ----------------
+
+        function selectMethod(method) {
+            if (method === 'netlink_pay' && !currentProfile.wallet_address) return;
+            selectedMethod = method;
+            for (const [id, m] of [['methodNetlinkPay', 'netlink_pay'], ['methodExternal', 'external_wallet']]) {
+                const el = $(id);
+                el.classList.toggle('selected', m === method);
+                el.setAttribute('aria-checked', m === method ? 'true' : 'false');
+            }
+            show('externalFields', method === 'external_wallet');
+            $('selectError').classList.add('hidden');
+        }
+
+        function initSelectView() {
+            const hasWallet = !!currentProfile.wallet_address;
+            const card = $('methodNetlinkPay');
+            if (hasWallet) {
+                $('netlinkPayHint').textContent = `Wallet ${shortAddr(currentProfile.wallet_address)}`;
+            } else {
+                card.classList.add('disabled');
+                $('netlinkPayHint').innerHTML = '';
+                const a = document.createElement('a');
+                a.href = '/pay'; a.className = 'underline text-blue-500'; a.textContent = 'Connect your Netlink Pay wallet first';
+                $('netlinkPayHint').appendChild(a);
+            }
+            for (const el of [card, $('methodExternal')]) {
+                el.addEventListener('click', (e) => {
+                    if (e.target.closest('input, a')) return;
+                    selectMethod(el.dataset.method);
+                });
+                el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectMethod(el.dataset.method); } });
+            }
+            selectMethod(hasWallet ? 'netlink_pay' : 'external_wallet');
+            show('selectView', true);
+        }
+
+        $('continueBtn').addEventListener('click', async () => {
+            const errEl = $('selectError');
+            errEl.classList.add('hidden');
+            const body = { type: ORDER_TYPE, pay_method: selectedMethod };
+            if (selectedMethod === 'external_wallet') {
+                const addr = $('payerAddressInput').value.trim();
+                if (!ADDR_RE.test(addr)) { errEl.textContent = 'Enter a valid wallet address that starts with 0x.'; errEl.classList.remove('hidden'); return; }
+                body.payer_address = addr;
+            }
+            const btn = $('continueBtn');
+            btn.disabled = true;
+            try {
+                const { order: created } = await api('create', { method: 'POST', body });
+                history.replaceState(null, '', `/checkout?order=${encodeURIComponent(created.id)}`);
+                show('selectView', false);
+                renderOrder(created);
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // ---------------- Step 2: order view ----------------
+
+        function expiryText(iso) {
+            const ms = new Date(iso).getTime() - Date.now();
+            if (ms <= 0) return 'Expired';
+            const d = Math.floor(ms / 864e5), h = Math.floor((ms % 864e5) / 36e5), m = Math.floor((ms % 36e5) / 6e4);
+            return d > 0 ? `in ${d}d ${h}h` : (h > 0 ? `in ${h}h ${m}m` : `in ${m}m`);
+        }
+
+        function setNotice(kind, text) {
+            const el = $('stateNotice');
+            if (!text) { el.classList.add('hidden'); return; }
+            el.className = `notice notice-${kind} mb-4`;
+            el.textContent = text;
+        }
+
+        function renderOrder(o) {
+            order = o;
+            show('blockedView', false); show('selectView', false); show('orderView', true);
+            $('authGate').style.display = 'none';
+            $('pageSubtitle').textContent = `Order ${o.order_no}`;
+            $('orderNo').textContent = o.order_no;
+            const badge = $('orderStatusBadge');
+            badge.textContent = STATUS_LABEL[o.status] || o.status;
+            badge.className = `status-badge ${STATUS_CLASS[o.status] || 'status-pending'}`;
+            $('orderTotal').textContent = fmtUsdc(o.amount_usdc);
+
+            const paid = Number(o.paid_amount) > 0;
+            show('orderPaidRow', paid);
+            $('orderPaid').textContent = fmtUsdc(o.paid_amount);
+            const open = o.status === 'awaiting_payment' || o.status === 'underpaid';
+            show('orderRemainingRow', open && paid);
+            $('orderRemaining').textContent = fmtUsdc(o.remaining_usdc);
+            show('orderExpiryRow', open);
+            $('orderExpiry').textContent = expiryText(o.expires_at);
+
+            const isNp = o.pay_method === 'netlink_pay';
+            show('netlinkPayPanel', open && isNp);
+            show('externalPanel', open && !isNp);
+            show('paidPanel', o.status === 'paid');
+            show('restartPanel', o.status === 'expired' || o.status === 'cancelled');
+            show('cancelBtn', o.status === 'awaiting_payment' && !paid);
+
+            if (open && isNp) {
+                $('npAmount').textContent = Number(o.remaining_usdc).toFixed(2);
+                $('npPayBtn').setAttribute('href', `/pay?order=${encodeURIComponent(o.id)}`);
+            }
+            if (open && !isNp) {
+                $('extAmount').textContent = Number(o.remaining_usdc).toFixed(2);
+                $('extPayTo').textContent = o.pay_to_address;
+                $('extPayer').textContent = o.payer_address;
+                $('extQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(o.pay_to_address)}`;
+                if (o.claimed_tx_hash) $('txHashInput').value = o.claimed_tx_hash;
+            }
+
+            if (o.status === 'underpaid') setNotice('warn', `We received ${fmtUsdc(o.paid_amount)}. Send the remaining ${fmtUsdc(o.remaining_usdc)} from the same address to complete this order.`);
+            else if (o.status === 'late_payment') setNotice('warn', 'Your payment arrived after this order expired. Our team will review it. Please contact support with your order number.');
+            else if (o.status === 'expired') setNotice('warn', 'This order expired before a payment was received. If you already sent USDC, please contact support with your order number.');
+            else if (o.status === 'cancelled') setNotice('info', 'This order was cancelled.');
+            else if (o.status === 'paid') setNotice('ok', 'Your payment has been received.');
+            else setNotice('', '');
+
+            schedulePolling();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function schedulePolling() {
+            clearInterval(pollTimer);
+            clearInterval(expiryTimer);
+            if (!order || !(order.status === 'awaiting_payment' || order.status === 'underpaid')) return;
+            expiryTimer = setInterval(() => { if (order) $('orderExpiry').textContent = expiryText(order.expires_at); }, 30000);
+            // Only pay-from-Netlink-Pay orders and external orders need polling; both use the same check.
+            pollTimer = setInterval(() => { if (!document.hidden) checkPayment(false); }, POLL_MS);
+        }
+
+        async function checkPayment(manual) {
+            if (!order) return;
+            const btn = $('checkNowBtn');
+            if (manual) btn.disabled = true;
+            try {
+                const body = { order_id: order.id };
+                const hash = $('txHashInput').value.trim();
+                if (manual && hash) body.tx_hash = hash;
+                const { order: updated, throttled } = await api('check-payment', { method: 'POST', body });
+                const before = order.status;
+                renderOrder(updated);
+                if (manual && !throttled && updated.status === before && (updated.status === 'awaiting_payment')) {
+                    showToast('No payment found yet. It can take a minute after you send.', true);
+                }
+            } catch (err) {
+                if (manual) showToast(err.message, true);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        $('checkNowBtn').addEventListener('click', () => checkPayment(true));
+
+        $('copyPayToBtn').addEventListener('click', () => {
+            if (!order) return;
+            navigator.clipboard.writeText(order.pay_to_address).then(() => showToast('Address copied'), () => showToast('Could not copy', true));
+        });
+
+        $('cancelBtn').addEventListener('click', async () => {
+            if (!order || !confirm('Cancel this order?')) return;
+            try {
+                const { order: updated } = await api('cancel', { method: 'POST', body: { order_id: order.id } });
+                renderOrder(updated);
+            } catch (err) { showToast(err.message, true); }
+        });
+
+        // Confirm on open (for example right after paying from Netlink Pay), instead of waiting for the first poll.
+        function checkOnOpen() {
+            if (order && (order.status === 'awaiting_payment' || order.status === 'underpaid')) checkPayment(false);
+        }
+
+        // ---------------- Boot ----------------
+
+        async function loadProfile() {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency, wallet_address, identity_verification_status, identity_verified_at, business_verified_at')
+                .eq('id', currentUser.id).single();
+            if (error) throw error;
+            currentProfile = data;
+            if (window.NetlinkNav) {
+                NetlinkNav.init({ activePage: null, profile: data, supabaseClient, userId: currentUser.id });
+            }
+        }
+
+        async function boot() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login'; return; }
+                currentUser = session.user;
+                await loadProfile();
+
+                const orderId = params.get('order');
+                if (orderId) {
+                    try {
+                        const { order: o } = await api('status', { query: `&order_id=${encodeURIComponent(orderId)}` });
+                        renderOrder(o);
+                        checkOnOpen();
+                    } catch (err) {
+                        showBlocked(err.status === 404 ? 'We could not find this order.' : err.message, '/checkout?type=kyc', 'Start a new order');
+                    }
+                    return;
+                }
+
+                if (params.get('type') !== ORDER_TYPE) {
+                    showBlocked('Choose what you want to order from the plans page.', '/plans', 'View plans');
+                    return;
+                }
+                if (currentProfile.identity_verification_status === 'approved') {
+                    showBlocked('Your identity is already verified. No payment is needed.');
+                    return;
+                }
+                // Resume an open order instead of asking again.
+                const { order: existing } = await api('status', { query: `&type=${ORDER_TYPE}` });
+                if (existing) {
+                    history.replaceState(null, '', `/checkout?order=${encodeURIComponent(existing.id)}`);
+                    renderOrder(existing);
+                    checkOnOpen();
+                    return;
+                }
+                $('authGate').style.display = 'none';
+                initSelectView();
+                if (window.lucide) lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        boot();
+    </script>
+
+    <script src="/shared/account-menu.js?v=4"></script>
+    <script src="/shared/nav.js?v=5"></script>
+</body>
+</html>

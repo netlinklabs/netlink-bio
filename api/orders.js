@@ -201,11 +201,25 @@ async function handleCreate(req, res, user) {
 
 // ---------------------------------------------------------------- action=status
 
+// ?order_id=<uuid> returns that order (404 if it is not the caller's).
+// ?type=kyc returns the caller's most recent open or paid order of that type,
+// or { order: null }, so the checkout page can resume instead of starting over.
 async function handleStatus(req, res, user) {
-  const order = await loadOwnOrder(req.query.order_id, user.id);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
   res.setHeader('Cache-Control', 'no-store');
-  return res.status(200).json({ order: publicOrder(order) });
+
+  if (req.query.order_id) {
+    const order = await loadOwnOrder(req.query.order_id, user.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    return res.status(200).json({ order: publicOrder(order) });
+  }
+
+  const type = req.query.type;
+  if (!PRICES[type]) return res.status(400).json({ error: 'Missing order_id or a valid type' });
+  const rows = await db(
+    `orders?user_id=eq.${user.id}&type=eq.${type}` +
+      `&status=in.(awaiting_payment,underpaid,late_payment,paid)&select=*&order=created_at.desc&limit=1`
+  );
+  return res.status(200).json({ order: rows[0] ? publicOrder(rows[0]) : null });
 }
 
 // ---------------------------------------------------------------- action=cancel
