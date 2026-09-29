@@ -12,6 +12,7 @@
 // which is fine for us since we never read `decision` at all.
 
 import crypto from 'crypto';
+import { notifyUser } from '../_lib/notify.js';
 
 export const config = {
   api: { bodyParser: false }, // we parse manually so we control exactly what gets hashed
@@ -205,6 +206,23 @@ export default async function handler(req, res) {
       status: normalizeStatus(payload.status),
       raw_status: payload.status,
     });
+    // In-app notification for the final identity outcomes. notifyUser dedupes
+    // on the link, so Didit retries never create a second notification.
+    if (kind === 'identity' && sessionId && !(result.note || '').includes('unusable')) {
+      const status = normalizeStatus(payload.status);
+      const messages = {
+        approved: ['Identity verified', 'Your identity is verified. Your green badge is now active.'],
+        declined: ['Verification rejected', 'We could not verify your identity. Contact support if you think this is a mistake.'],
+        resubmission_needed: ['Please resubmit your documents', 'We could not verify your documents. Submit them again from your Account page.'],
+      };
+      if (messages[status]) {
+        await notifyUser(profileId, {
+          type: 'kyc', icon: 'shield-check',
+          title: messages[status][0], body: messages[status][1],
+          link: `/identity?r=${status}&s=${encodeURIComponent(sessionId)}`,
+        });
+      }
+    }
     res.status(200).json({ received: true, ...result });
   } catch (err) {
     console.error('Didit webhook: failed to record verification', err);
