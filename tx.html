@@ -335,7 +335,7 @@
             } catch (e) { console.error('Could not load order labels', e); }
             document.getElementById('skeletonLoader').classList.add('hidden'); renderTransactions();
         }
-        const ORDER_LABELS = { kyc: 'Identity Verification (KYC)', kyb: 'Business Verification (KYB)', plan: 'Membership Plan' };
+        const ORDER_LABELS = { kyc: 'KYC Verification', kyb: 'KYB Verification', plan: 'Membership Plan' };
         function orderForTx(tx) { return tx && tx.hash ? orderByHash[String(tx.hash).toLowerCase()] || null : null; }
         function setFilter(filter) { currentFilter = filter; document.querySelectorAll('.filter-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === filter)); currentPage = 1; renderTransactions(); }
         function goToPage(page) { currentPage = page; renderTransactions(); document.getElementById('txContent').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
