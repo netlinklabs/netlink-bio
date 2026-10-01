@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Changed
+- **Printed report: Rupiah conversion inside the three income cards.** Order revenue, Swap commission and Total income now show the amount in rupiah under the dollar figure (same IDR rate as the Netlink Pay volume table, the rate is also written in the note under the cards). If the rate cannot be loaded the rupiah line is simply left out. The admin Overview already showed rupiah under these tiles. Only `admin.html` changed (new `.rp-kpi em` print style), no SQL, no new Tailwind classes.
+
+### Changed
 - **Printed report: charts always cover the whole period, and the API figure is now "Availability".** The yearly report always draws 12 bars (Jan to Dec) and the monthly report one bar per day of that month (28 to 31); months or days that have not happened yet are empty, no bar (done in the browser by `padPeriod()` in `admin.html`, the SQL is unchanged). In the API requests section "Success rate" is replaced by "Availability (no server error)" = (all requests minus 5xx) / all requests, the usual uptime measure, because 4xx are mostly bots or links that do not exist and made the old figure look like a failure (83.8% became about 99%). Nothing is removed: the 4xx count is still printed in the note under the cards, with the definition written out, and the on-screen Overview still shows all errors. The rule is the same for every report, past and future. Only `admin.html` changed, no SQL, no new Tailwind classes. Checked with mock data in headless Chromium (12 labelled bars for the year, 31 for October).
 
 ### Changed
