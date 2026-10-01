@@ -120,6 +120,7 @@
         #printReport .rp-kpi { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; }
         #printReport .rp-kpi b { display: block; font-size: 13pt; }
         #printReport .rp-kpi span { display: block; font-size: 8pt; color: #475569; }
+        #printReport .rp-kpi em { display: block; font-style: normal; font-size: 8.5pt; font-weight: 600; color: #1d4ed8; margin-top: 2px; }
         #printReport table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 8px; }
         #printReport th { text-align: left; font-size: 8.5pt; color: #475569; border-bottom: 1px solid #94a3b8; padding: 3px 4px; }
         #printReport td { font-size: 9pt; padding: 3px 4px; border-bottom: 1px solid #e2e8f0; word-break: break-word; }
@@ -468,7 +469,8 @@
             const order = Number(f.revenue_in_range) || 0;
             const overall = v.send.usd + v.receive.usd + v.swap.usd;
             const netTotal = v.send.net + v.receive.net + v.swap.net;
-            const kpi = (val, l) => `<div class="rp-kpi"><b>${val}</b><span>${esc(l)}</span></div>`;
+            const kpi = (val, l, sub) => `<div class="rp-kpi"><b>${val}</b><span>${esc(l)}</span>${sub ? `<em>${esc(sub)}</em>` : ''}</div>`;
+            const rp = (usd) => (idr ? 'Rp ' + Math.round(usd * idr).toLocaleString('id-ID') : '');
             const tiers = ['basic', 'silver', 'gold', 'platinum'].filter((t) => t !== 'platinum' || u.tiers.platinum);
             const meter = (name, used, limit) => { const pc = limit ? (used / limit) * 100 : 0; return `<div style="font-size:9pt"><b>${esc(name)}</b>: ${fmtBytes(used)} of ${fmtBytes(limit)} (${pc < 0.1 && used ? '<0.1' : pc.toFixed(1)}%)</div><div class="rp-meter"><div style="width:${Math.min(100, Math.max(used ? 1 : 0, pc)).toFixed(1)}%"></div></div>`; };
             const volRow = (name, usd, n) => `<tr><td>${esc(name)}</td><td class="n">${fmtUsd(usd)}</td><td class="n">${idr ? 'Rp ' + Math.round(usd * idr).toLocaleString('id-ID') : '-'}</td><td class="n">${esc(n)}</td></tr>`;
@@ -484,9 +486,9 @@
                 <div class="rp-run">Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report · ${esc(label)}</div>
 
                 <div class="rp-sec"><h2>Finance and income</h2><div class="rp-kpis">
-                    ${kpi(fmtUsd(order), 'Order revenue (paid USDC, tests excluded)')}${kpi(fee ? fmtUsd(fee.usd) : '-', 'Swap commission')}${kpi(fee ? fmtUsd(order + fee.usd) : '-', 'Total income')}${kpi(fee ? fmtN(fee.swaps) : '-', 'Swaps with commission')}</div>
+                    ${kpi(fmtUsd(order), 'Order revenue (paid USDC, tests excluded)', rp(order))}${kpi(fee ? fmtUsd(fee.usd) : '-', 'Swap commission', fee ? rp(fee.usd) : '')}${kpi(fee ? fmtUsd(order + fee.usd) : '-', 'Total income', fee ? rp(order + fee.usd) : '')}${kpi(fee ? fmtN(fee.swaps) : '-', 'Swaps with commission')}</div>
                     <div class="rp-kpis">${kpi(fmtN(f.orders_in_range), 'Orders in period')}${kpi(fmtN(f.paid_in_range), 'Paid orders')}${kpi(fmtN(f.audit_in_range), 'Audit log entries')}</div>
-                    <div class="rp-note">Order revenue is USDC paid for orders. Swap commission is the fee received on the Netlink fee wallet on Polygon (${esc(FEE_WALLET_SHORT)}), read from the blockchain; only transfers that belong to a swap made in Netlink Pay are counted${p.fee_unmatched ? ` (${fmtN(p.fee_unmatched)} other incoming transfers in this period are left out)` : ''}. USDC counts 1:1, POL uses the price at generation time${polUsd ? '' : ' (unavailable, POL is left out)'}. Amounts are what was received, before any costs.${fee ? ` Commission received: ${fee.pol.toFixed(2)} POL and ${fmtUsd(fee.usdc)} in USDC.` : ''}${fee ? '' : ' Swap commission has not been synced from the blockchain yet, it is read once a day.'}</div>
+                    <div class="rp-note">Order revenue is USDC paid for orders. Swap commission is the fee received on the Netlink fee wallet on Polygon (${esc(FEE_WALLET_SHORT)}), read from the blockchain; only transfers that belong to a swap made in Netlink Pay are counted${p.fee_unmatched ? ` (${fmtN(p.fee_unmatched)} other incoming transfers in this period are left out)` : ''}. USDC counts 1:1, POL uses the price at generation time${polUsd ? '' : ' (unavailable, POL is left out)'}. Amounts are what was received, before any costs.${idr ? ` Rupiah at 1 USD = Rp ${Math.round(idr).toLocaleString('id-ID')}.` : ''}${fee ? ` Commission received: ${fee.pol.toFixed(2)} POL and ${fmtUsd(fee.usdc)} in USDC.` : ''}${fee ? '' : ' Swap commission has not been synced from the blockchain yet, it is read once a day.'}</div>
                     ${printBars('Order revenue per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Order revenue', values: f.series_revenue, color: S1 }], fmtUsd)}
                     ${fee ? printBars('Swap commission per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Swap commission', values: fee.series, color: S2 }], fmtUsd) : ''}
                     ${fee ? printBars('Total income per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Total income', values: fee.series.map((x, i) => x + (Number(f.series_revenue[i]) || 0)), color: S3 }], fmtUsd) : ''}</div>
