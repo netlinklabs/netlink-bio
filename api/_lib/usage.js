@@ -130,26 +130,52 @@ async function alchemyMonth(key, monthStart) {
 }
 
 // Sequence Analytics API (https://docs.sequence.xyz/api-references/analytics/overview).
-// Needs a Secret API Access Key: SEQUENCE_SECRET_API_KEY, or TRAILS_API_KEY as a fallback (same
-// Sequence project). Each figure is fetched on its own, so one rejected endpoint (for example
-// one locked on the current plan) only hides that figure. Cached for 10 minutes.
-const SEQ_BASE = 'https://api.sequence.app/rpc/Analytics/';
+// Needs a Secret API key: SEQUENCE_SECRET_API_KEY (an "Admin API Secret Key" from Sequence Builder,
+// Settings, API Keys), or TRAILS_API_KEY as a fallback (same Sequence project, usually rejected).
+// The docs disagree on the host and the auth header (api.sequence.build vs api.sequence.app,
+// "authorization: BEARER" vs "X-Access-Key"), so the first call tries each combination and the
+// working one is reused for the other figures. When nothing works, the admin page shows the HTTP
+// status and Sequence's own error text (never the key). Each figure is fetched on its own. A
+// success is cached for 10 minutes, a failure for 1 minute so a fixed key shows up quickly.
+const SEQ_HOSTS = ['https://api.sequence.build', 'https://api.sequence.app'];
 const SEQ_PROJECT_ID = Number(process.env.SEQUENCE_PROJECT_ID) || 49724;
-let seqCache = { at: 0, data: null };
+let seqCache = { at: 0, ttl: 0, data: null };
+let seqRoute = null; // { host, auth } that worked last time
 
-async function seqCall(key, endpoint, filter) {
+const seqHeaders = (auth, key) =>
+  auth === 'x-access-key'
+    ? { 'Content-Type': 'application/json', 'X-Access-Key': key }
+    : { 'Content-Type': 'application/json', Authorization: `BEARER ${key}` };
+
+async function seqOnce(host, auth, key, endpoint, filter) {
   try {
-    const r = await fetch(SEQ_BASE + endpoint, {
+    const r = await fetch(`${host}/rpc/Analytics/${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `BEARER ${key}`, 'X-Access-Key': key },
+      headers: seqHeaders(auth, key),
       body: JSON.stringify({ filter: { projectId: SEQ_PROJECT_ID, ...filter } }),
     });
-    if (r.status === 401 || r.status === 403) return { denied: true };
-    if (!r.ok) return { error: true };
-    return { data: await r.json() };
+    if (r.ok) return { ok: true, data: await r.json() };
+    let msg = '';
+    try { const j = await r.json(); msg = String(j.msg || j.message || j.error || j.cause || '').slice(0, 120); } catch { /* not json */ }
+    return { ok: false, status: r.status, msg };
   } catch {
-    return { error: true };
+    return { ok: false, status: 0, msg: 'network error' };
   }
+}
+
+async function seqCall(key, endpoint, filter, firstCall = false) {
+  const routes = seqRoute && !firstCall
+    ? [seqRoute]
+    : SEQ_HOSTS.flatMap((host) => ['x-access-key', 'bearer'].map((auth) => ({ host, auth })));
+  let last = { status: 0, msg: 'no attempt' };
+  for (const route of routes) {
+    const r = await seqOnce(route.host, route.auth, key, endpoint, filter);
+    if (r.ok) { seqRoute = route; return { data: r.data }; }
+    last = r;
+    // a bad key will not get better on another host; but an unknown route or a network error might
+    if (r.status !== 404 && r.status !== 0 && r.status !== 401 && r.status !== 403) break;
+  }
+  return { fail: { status: last.status, msg: last.msg } };
 }
 
 const sumChart = (arr) => (Array.isArray(arr) ? arr.reduce((a, c) => a + (Number(c?.value) || 0), 0) : null);
@@ -158,26 +184,35 @@ const lastValue = (arr) => (Array.isArray(arr) && arr.length ? Number(arr[arr.le
 export async function sequenceStats() {
   const key = process.env.SEQUENCE_SECRET_API_KEY || process.env.TRAILS_API_KEY;
   if (!key) return { configured: false };
-  if (seqCache.data && Date.now() - seqCache.at < 10 * 60 * 1000) return seqCache.data;
+  if (seqCache.data && Date.now() - seqCache.at < seqCache.ttl) return seqCache.data;
 
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = today.slice(0, 8) + '01';
   const yearAgo = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
-  const [walletsTotal, walletsMonthly, txMonthly, compute] = await Promise.all([
-    seqCall(key, 'WalletsTotal', { startDate: yearAgo, endDate: today }),
+  // First call finds a working host and header, the others reuse it.
+  const walletsTotal = await seqCall(key, 'WalletsTotal', { startDate: yearAgo, endDate: today }, true);
+  // No route worked for the first call (bad key, wrong host): the others would fail the same way.
+  const skip = walletsTotal.fail && (walletsTotal.fail.status === 401 || walletsTotal.fail.status === 403 || walletsTotal.fail.status === 0);
+  const [walletsMonthly, txMonthly, compute] = skip ? [walletsTotal, walletsTotal, walletsTotal] : await Promise.all([
     seqCall(key, 'WalletsMonthly', { startDate: monthStart, endDate: today, dateInterval: 'MONTH' }),
     seqCall(key, 'WalletsTxnSentMonthly', { startDate: monthStart, endDate: today, dateInterval: 'MONTH' }),
     seqCall(key, 'TotalCompute', { startDate: monthStart, endDate: today }),
   ]);
-  const part = (r, pick) => (r.denied ? { status: 'denied' } : r.error ? { status: 'error' } : { status: 'ok', value: pick(r.data) });
+  const part = (r, pick) => {
+    if (r.data) return { status: 'ok', value: pick(r.data) };
+    const f = r.fail || {};
+    return { status: f.status === 401 || f.status === 403 ? 'denied' : 'error', http: f.status, detail: f.msg || '' };
+  };
   const out = {
     configured: true,
+    key_source: process.env.SEQUENCE_SECRET_API_KEY ? 'SEQUENCE_SECRET_API_KEY' : 'TRAILS_API_KEY',
     wallets_total: part(walletsTotal, (d) => lastValue(d.walletStats)),
     wallets_active_month: part(walletsMonthly, (d) => lastValue(d.walletStats)),
     wallets_with_tx_month: part(txMonthly, (d) => lastValue(d.walletStats)),
     compute_month: part(compute, (d) => sumChart(d.computeStats)),
   };
-  seqCache = { at: Date.now(), data: out };
+  const allOk = [out.wallets_total, out.wallets_active_month, out.wallets_with_tx_month, out.compute_month].every((x) => x.status === 'ok');
+  seqCache = { at: Date.now(), ttl: allOk ? 10 * 60 * 1000 : 60 * 1000, data: out };
   return out;
 }
 

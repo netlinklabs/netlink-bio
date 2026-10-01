@@ -712,8 +712,8 @@
         function seqTile(label, part, sub) {
             if (!part) return tile('n/a', label, 'Not loaded');
             if (part.status === 'ok') return tile(part.value === null ? 'n/a' : fmtN(part.value), label, sub);
-            if (part.status === 'denied') return tile('Locked', label, 'Needs a Secret API Access Key or a higher plan');
-            return tile('n/a', label, 'Could not load');
+            const why = `HTTP ${part.http || 'error'}${part.detail ? ': ' + esc(part.detail) : ''}`;
+            return tile(part.status === 'denied' ? 'Locked' : 'n/a', label, why);
         }
 
         function usageHtml(u) {
@@ -753,7 +753,7 @@
             if (!q) h += '<p class="text-xs text-muted mb-2">Sequence figures could not be loaded.</p>';
             else if (!q.configured) h += '<p class="text-xs text-muted mb-2">Not configured. Add SEQUENCE_SECRET_API_KEY in Vercel to show wallets and usage from the Sequence Analytics API.</p>';
             else {
-                h += `<div class="tiles">${seqTile('Wallets (all time)', q.wallets_total)}${seqTile('Active wallets, this month', q.wallets_active_month)}${seqTile('Wallets with a transaction, this month', q.wallets_with_tx_month)}${seqTile('Compute, this month', q.compute_month, 'Sequence usage unit')}</div>`;
+                h += `<p class="text-xs text-muted mb-2">Key in use: ${esc(q.key_source || 'unknown')}</p><div class="tiles">${seqTile('Wallets (all time)', q.wallets_total)}${seqTile('Active wallets, this month', q.wallets_active_month)}${seqTile('Wallets with a transaction, this month', q.wallets_with_tx_month)}${seqTile('Compute, this month', q.compute_month, 'Sequence usage unit')}</div>`;
             }
             h += '<p class="text-xs text-muted mb-2">Plan limits are constants in api/_lib/usage.js. Sequence usage charts in its own dashboard need a paid plan, so the figures here come from its Analytics API when the key allows it.</p>';
             return h;
