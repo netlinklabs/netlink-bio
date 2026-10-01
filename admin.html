@@ -511,8 +511,8 @@
                     ${volSeries ? printBars('Transaction volume per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Volume', values: volSeries, color: S2 }], fmtUsd) : ''}</div>
 
                 <div class="rp-sec"><h2>API requests</h2><div class="rp-kpis">
-                    ${kpi(fmtN(a.total), 'Requests')}${kpi(a.total ? (((a.total - a.errors) / a.total) * 100).toFixed(1) + '%' : '-', 'Success rate')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}</div>
-                    <div class="rp-note">Not found or invalid requests (4xx): ${fmtN(Math.max(0, a.errors - a.server_errors))}, mostly links that do not exist. Server errors (5xx) are failures on the platform side.</div>
+                    ${kpi(fmtN(a.total), 'Requests')}${kpi(a.total ? (((a.total - a.server_errors) / a.total) * 100).toFixed(1) + '%' : '-', 'Availability (no server error)')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}</div>
+                    <div class="rp-note">Availability is the share of requests answered without a server error (5xx). Not found or invalid requests (4xx): ${fmtN(Math.max(0, a.errors - a.server_errors))}, mostly links that do not exist, are counted separately. Server errors (5xx) are failures on the platform side.</div>
                     ${a.by_endpoint.length ? `<table><thead><tr><th>Endpoint</th><th class="n">Requests</th><th class="n">Server errors</th></tr></thead><tbody>${a.by_endpoint.map((e) => `<tr><td>${esc(e.endpoint)}</td><td class="n">${fmtN(e.total)}</td><td class="n">${fmtN(e.server_errors || 0)}</td></tr>`).join('')}</tbody></table>` : '<div class="rp-note">No API requests counted in this period. Counting started when the feature was released.</div>'}
                     ${printBars('Requests per ' + (d.unit === 'month' ? 'month' : 'day'), d.api_buckets, d.unit === 'month' ? 'month' : 'day', [{ name: 'Requests', values: a.series_total, color: S1 }])}</div>
 
@@ -525,13 +525,42 @@
             </div>`;
         }
 
+        // Calendar reports always show the whole period: 12 months for a year, every day for a month.
+        // The overview only returns buckets up to today, so the rest is padded with zeros (no bar).
+        function padPeriod(d, kind, period) {
+            const pad2 = (n) => String(n).padStart(2, '0');
+            let full, apiFull;
+            if (kind === 'year') {
+                full = Array.from({ length: 12 }, (_, i) => `${period}-${pad2(i + 1)}-01T00:00`);
+                apiFull = full.map((b) => b.slice(0, 10));
+            } else {
+                const y = Number(period.slice(0, 4)), m = Number(period.slice(5, 7));
+                const days = new Date(y, m, 0).getDate();
+                full = Array.from({ length: days }, (_, i) => `${period}-${pad2(i + 1)}T00:00`);
+                apiFull = full.map((b) => b.slice(0, 10));
+            }
+            const fit = (arr, oldB, newB) => { const at = new Map(oldB.map((b, i) => [b, i])); return newB.map((b) => { const i = at.get(b); return i === undefined ? 0 : Number(arr?.[i]) || 0; }); };
+            const oldB = d.buckets, oldA = d.api_buckets;
+            if (!oldB || oldB.length >= full.length) return d;
+            d.users.series_new = fit(d.users.series_new, oldB, full);
+            d.users.series_kyc = fit(d.users.series_kyc, oldB, full);
+            if (d.users.series_total) d.users.series_total = fit(d.users.series_total, oldB, full);
+            d.pay.series_tx = fit(d.pay.series_tx, oldB, full);
+            d.finance.series_orders = fit(d.finance.series_orders, oldB, full);
+            d.finance.series_revenue = fit(d.finance.series_revenue, oldB, full);
+            d.api.series_total = fit(d.api.series_total, oldA, apiFull);
+            d.buckets = full;
+            d.api_buckets = apiFull;
+            return d;
+        }
+
         async function printReport(kind, period) {
             const [d, polUsd, idr] = await Promise.all([
                 api('admin-overview', { query: `&range=${encodeURIComponent(kind)}&period=${encodeURIComponent(period)}` }),
                 fetchPolUsd(), fetchIdrRate(),
             ]);
             const label = kind === 'month' ? period : period;
-            $('printReport').innerHTML = reportHtml(d, kind, period, polUsd, idr, currentProfileName);
+            $('printReport').innerHTML = reportHtml(padPeriod(d, kind, period), kind, period, polUsd, idr, currentProfileName);
             const prevTitle = document.title;
             document.title = `Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report ${label}`;
             const restore = () => { document.title = prevTitle; $('printReport').innerHTML = ''; window.removeEventListener('afterprint', restore); };
