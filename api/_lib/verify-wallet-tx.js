@@ -14,6 +14,8 @@
 // Needs the migration in `wallet_tx_onchain_verification` (adds onchain_*
 // columns). Env: SUPABASE_SERVICE_ROLE_KEY, ALCHEMY_API_KEY.
 
+import { trackAlchemy } from './usage.js';
+
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 
 // eth_getTransactionReceipt costs 20 CU and the free plan allows about 500 CU per second, so a
@@ -59,11 +61,13 @@ export async function getReceipts(alchemyKey, hashes) {
     }));
     let res;
     for (let attempt = 0; ; attempt++) {
+      const payload = JSON.stringify(body);
       res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: payload,
       });
+      trackAlchemy(payload, res);
       if (res.status !== 429 || attempt >= 2) break;
       await sleep(2000 * (attempt + 1)); // rate limited: back off and try the same batch again
     }

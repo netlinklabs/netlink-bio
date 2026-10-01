@@ -18,6 +18,7 @@ const ORDER_STATUSES = ['awaiting_payment', 'underpaid', 'paid', 'expired', 'lat
 const SETTLEABLE = ['awaiting_payment', 'underpaid', 'expired', 'late_payment'];
 
 import { sendMail, invoiceMail } from './mailer.js';
+import { usageSummary } from './usage.js';
 const SAMPLE_ADDR = '0x0000000000000000000000000000000000000000';
 
 const READ_ROLES = ['super_admin', 'finance', 'support', 'kyc_reviewer'];
@@ -26,6 +27,7 @@ const FINANCE_ROLES = ['super_admin', 'finance'];
 const ACTION_ROLES = {
   'admin-me': null, // any signed-in user; returns an empty role list for non-admins
   'admin-overview': FINANCE_ROLES,
+  'admin-usage': FINANCE_ROLES,
   'admin-orders': READ_ROLES,
   'admin-order': READ_ROLES,
   'admin-payments': FINANCE_ROLES,
@@ -172,6 +174,13 @@ export async function handleAdmin(action, req, res, user, ctx) {
     data.limits = { db_bytes: 500 * 1024 * 1024, storage_bytes: 1024 * 1024 * 1024, plan: 'Supabase Free' };
     if (data.pay) data.pay.onchain = await onchainSummary(SUPABASE_URL, SERVICE_ROLE_KEY);
     return res.status(200).json(data);
+  }
+
+  // ---------------------------------------------------------- admin-usage
+  // Third party usage against plan limits (api/_lib/usage.js). Not range based, and kept out of
+  // the printable report. Each source fails on its own (null), so one problem hides one tile only.
+  if (action === 'admin-usage') {
+    return res.status(200).json(await usageSummary());
   }
 
   // ---------------------------------------------------------- admin-orders
