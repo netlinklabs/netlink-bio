@@ -41,7 +41,7 @@ const RELAYER_FEE_ADDRESS = '0x7e08701cc9194ef4ffd82421dd0d986d1b43d521';
 const PER_ROUND = 30;        // rows per round
 // alchemy_getAssetTransfers costs 150 compute units per query and the free plan allows roughly
 // 500 CU per second, so a big batch gets HTTP 429. Send few queries at a time with a pause.
-const QUERY_BATCH = 3;       // transfer queries per Alchemy HTTP request
+const QUERY_BATCH = 2;       // transfer queries per Alchemy HTTP request (2 x 150 CU, about 270 CU/s with the pause)
 const PAUSE_MS = 1100;       // pause between those requests
 const BUDGET_MS = 90000;     // stop starting new work after this long (cron has maxDuration 120s)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
