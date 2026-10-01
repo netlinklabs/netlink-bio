@@ -126,13 +126,33 @@
         #printReport .n { text-align: right; }
         #printReport .rp-chart { border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; break-inside: avoid; }
         #printReport .rp-chart h3 { font-size: 9pt; font-weight: 600; margin: 0 0 2px; }
-        #printReport .rp-chart svg { width: 100%; height: 95px; display: block; }
+        #printReport .rp-chart svg { width: 100%; height: 80px; display: block; }
         #printReport .rp-legend { font-size: 8pt; color: #475569; margin-bottom: 2px; }
         #printReport .rp-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin: 0 4px 0 8px; }
         #printReport .rp-meter { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 2px 0 6px; }
         #printReport .rp-meter > div { height: 100%; background: #2a78d6; }
         #printReport .rp-note { font-size: 8pt; color: #64748b; margin: 2px 0 6px; }
-        #printReport .rp-foot { border-top: 1px solid #cbd5e1; padding-top: 6px; font-size: 8pt; color: #64748b; }
+        #printReport .rp-foot { border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 6px; font-size: 7.5pt; line-height: 1.35; color: #64748b; }
+        /* Cover page: one full A4 page, the report starts on the next one */
+        #printReport .rp-cover { height: 268mm; display: flex; flex-direction: column; break-after: page; page-break-after: always; }
+        #printReport .rp-cover .bar { height: 6mm; background: linear-gradient(90deg, #1d4ed8, #3b82f6); border-radius: 2px; }
+        #printReport .rp-cover .top { display: flex; align-items: center; justify-content: space-between; margin-top: 14mm; }
+        #printReport .rp-cover .top img { width: 22mm; height: 22mm; }
+        #printReport .rp-cover .tag { font-size: 9pt; font-weight: 700; letter-spacing: .16em; color: #1d4ed8; border: 1px solid #93c5fd; border-radius: 999px; padding: 3px 12px; }
+        #printReport .rp-cover .mid { margin-top: 38mm; }
+        #printReport .rp-cover h1 { font-size: 34pt; line-height: 1.1; font-weight: 800; margin: 0 0 6mm; letter-spacing: -.01em; }
+        #printReport .rp-cover .subtitle { font-size: 15pt; font-weight: 600; color: #1d4ed8; margin: 0 0 8mm; }
+        #printReport .rp-cover .rule { width: 30mm; height: 2px; background: #3b82f6; margin-bottom: 8mm; }
+        #printReport .rp-cover .desc { font-size: 11pt; line-height: 1.55; color: #334155; max-width: 140mm; margin: 0; }
+        #printReport .rp-cover .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 10mm; margin-top: 18mm; max-width: 150mm; }
+        #printReport .rp-cover .meta span { display: block; font-size: 8pt; text-transform: uppercase; letter-spacing: .08em; color: #64748b; }
+        #printReport .rp-cover .meta b { display: block; font-size: 11pt; margin-top: 1mm; }
+        #printReport .rp-cover .toc { margin-top: 16mm; }
+        #printReport .rp-cover .toc h2 { font-size: 9pt; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin: 0 0 2mm; font-weight: 700; }
+        #printReport .rp-cover .toc ol { margin: 0; padding-left: 5mm; font-size: 10.5pt; line-height: 1.7; color: #1e293b; }
+        #printReport .rp-cover .bottom { margin-top: auto; border-top: 1px solid #cbd5e1; padding-top: 4mm; font-size: 8.5pt; color: #475569; line-height: 1.5; }
+        #printReport .rp-cover .bottom b { color: #0f172a; }
+        #printReport .rp-run { font-size: 8.5pt; color: #64748b; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 12px; }
         @media print {
             @page { size: A4; margin: 12mm; }
             html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; min-height: 0 !important; }
@@ -384,6 +404,30 @@
             return `<div class="rp-chart"><h3>${esc(title)}</h3>${legend}<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#cbd5e1"/>${bars}${ax}</svg></div>`;
         }
 
+        // First page of the printed report. Plain text only (no user data), all English.
+        function reportCover(kind, label, period_, partial, stamp, who) {
+            const title = `Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report`;
+            const sections = ['Finance', 'Users', 'Netlink Pay', 'API requests', 'Storage'];
+            return `<section class="rp-cover">
+                <div class="bar"></div>
+                <div class="top"><img src="/assets/netlinkbio-icon.png" alt="Netlink"><span class="tag">INTERNAL REPORT</span></div>
+                <div class="mid">
+                    <h1>${esc(title)}</h1>
+                    <p class="subtitle">Platform, Finance and Netlink Pay Performance</p>
+                    <div class="rule"></div>
+                    <p class="desc">A summary of finance, users, Netlink Pay activity, API usage and storage for the selected period. Figures are taken from Netlink's own records, and Netlink Pay transactions are checked daily against the Polygon blockchain.</p>
+                </div>
+                <div class="meta">
+                    <div><span>Period</span><b>${esc(label)}</b><div class="rp-note">${esc(period_)}</div></div>
+                    <div><span>Status</span><b>${partial ? 'Period still running' : 'Closed period'}</b></div>
+                    <div><span>Generated</span><b>${esc(stamp)}</b></div>
+                    <div><span>Prepared by</span><b>${who ? '@' + esc(who) : 'Netlink admin'}</b></div>
+                </div>
+                <div class="toc"><h2>In this report</h2><ol>${sections.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></div>
+                <div class="bottom"><b>Unaudited.</b> Figures come from Netlink's own records. Prepared for internal use. May be shared with prospective investors and partners to evaluate or carry out cooperation with Netlink. Please use it only for that purpose and do not share it further without Netlink's written permission.</div>
+            </section>`;
+        }
+
         function reportHtml(d, kind, period, polUsd, idr, who) {
             const u = d.users, p = d.pay, f = d.finance, a = d.api, st = d.storage, lim = d.limits;
             const label = kind === 'month'
@@ -405,7 +449,8 @@
             const partial = kind === 'month' ? period === new Date().toISOString().slice(0, 7) : Number(period) === now.getFullYear();
 
             return `<div class="rp">
-                <div class="rp-head"><img src="/assets/netlinkbio-icon.png" alt="Netlink"><div><h1>Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report</h1><div class="sub">${esc(label)} · ${esc(period_)}${partial ? ' · period still running' : ''}</div><div class="sub">Generated ${esc(stamp)}${who ? ' by @' + esc(who) : ''}</div></div></div>
+                ${reportCover(kind, label, period_, partial, stamp, who)}
+                <div class="rp-run">Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report · ${esc(label)}</div>
 
                 <div class="rp-sec"><h2>Finance</h2><div class="rp-kpis">
                     ${kpi(fmtN(f.orders_in_range), 'Orders in period')}${kpi(fmtUsd(order), 'Paid USDC (tests excluded)')}${kpi(fmtN(f.paid_in_range), 'Paid orders')}${kpi(fmtN(f.audit_in_range), 'Audit log entries')}</div>
@@ -435,9 +480,10 @@
 
                 <div class="rp-sec"><h2>Storage (${esc(lim.plan)})</h2>
                     ${meter('Database', st.db_bytes, lim.db_bytes)}${meter('File storage', st.storage_bytes, lim.storage_bytes)}
-                    <div class="rp-note">Storage is the level at generation time, as a percent of the plan quota.</div></div>
+                    <div class="rp-note">Storage is the level at generation time, as a percent of the plan quota.</div>
+                <div class="rp-foot">Prepared by Netlink for internal use. May be shared with prospective investors and partners to evaluate or carry out cooperation with Netlink. Please use it only for that purpose and do not share it further without Netlink's written permission. Unaudited. Figures come from Netlink's own records.</div></div>
 
-                <div class="rp-foot">Netlink, internal report. Confidential. Do not share outside the team.</div>
+
             </div>`;
         }
 
@@ -702,18 +748,22 @@
         // counted by our own server (see api/_lib/usage.js); compare with the Alchemy dashboard.
         let usageCache = { at: 0, data: null };
 
-        function usageMeter(label, used, limit, usedText, note) {
+        function usageMeter(label, used, limit, usedText, note, limitHint) {
             const pct = limit ? (used / limit) * 100 : 0;
             const cls = pct >= 90 ? 'crit' : pct >= 70 ? 'warn' : '';
-            const hint = pct >= 90 ? ' (plan upgrade needed soon)' : pct >= 70 ? ' (start planning an upgrade)' : '';
+            const hint = pct >= 90 ? (limitHint || ' (plan upgrade needed soon)') : pct >= 70 && !limitHint ? ' (start planning an upgrade)' : '';
             return `<div class="mb-3"><div class="flex justify-between text-sm mb-1 gap-2"><span class="text-primary font-semibold">${esc(label)}</span><span class="text-secondary" style="text-align:right">${esc(usedText)} · ${pct > 0 && pct < 0.1 ? '<0.1' : pct.toFixed(1)}%${hint}</span></div><div class="meter"><div class="${cls}" style="width:${Math.min(100, Math.max(used ? 1 : 0, pct)).toFixed(1)}%"></div></div>${note ? `<p class="text-xs text-muted mt-1">${esc(note)}</p>` : ''}</div>`;
         }
 
-        function seqTile(label, part, sub) {
+        // planLocked: the key works (WalletsTotal loaded) but this figure is refused, which means the
+        // endpoint is not part of the current Sequence plan. If the key itself fails, say so instead.
+        function seqTile(label, part, sub, planLocked) {
             if (!part) return tile('n/a', label, 'Not loaded');
             if (part.status === 'ok') return tile(part.value === null ? 'n/a' : fmtN(part.value), label, sub);
-            const why = `HTTP ${part.http || 'error'}${part.detail ? ': ' + esc(part.detail) : ''}`;
-            return tile(part.status === 'denied' ? 'Locked' : 'n/a', label, why);
+            const code = `HTTP ${part.http || 'error'}${part.detail ? ': ' + esc(part.detail) : ''}`;
+            if (part.status === 'denied' && planLocked) return tile('Not on this plan', label, `Needs a higher Sequence plan. ${code}`);
+            if (part.status === 'denied') return tile('Key refused', label, `Check SEQUENCE_SECRET_API_KEY. ${code}`);
+            return tile('n/a', label, code);
         }
 
         function usageHtml(u) {
@@ -728,7 +778,7 @@
                 h += usageMeter('Supabase monthly active users (last 30 days)', u.supabase.mau_30d, L.supabase_mau, `${fmtN(u.supabase.mau_30d)} of ${fmtN(L.supabase_mau)} users`, 'Users who signed in during the last 30 days.');
             }
             if (u.vercel) {
-                h += usageMeter('Vercel serverless functions (Hobby)', u.vercel.functions_used, u.vercel.functions_limit, `${u.vercel.functions_used} of ${u.vercel.functions_limit}`, 'At the limit means a new endpoint has to be added as an action of an existing function.');
+                h += usageMeter('Vercel serverless functions (Hobby)', u.vercel.functions_used, u.vercel.functions_limit, `${u.vercel.functions_used} of ${u.vercel.functions_limit}`, 'At the limit means a new endpoint has to be added as an action of an existing function.', ' (at the limit)');
             }
             h += '</div>';
 
@@ -753,7 +803,9 @@
             if (!q) h += '<p class="text-xs text-muted mb-2">Sequence figures could not be loaded.</p>';
             else if (!q.configured) h += '<p class="text-xs text-muted mb-2">Not configured. Add SEQUENCE_SECRET_API_KEY in Vercel to show wallets and usage from the Sequence Analytics API.</p>';
             else {
-                h += `<p class="text-xs text-muted mb-2">Key in use: ${esc(q.key_source || 'unknown')}</p><div class="tiles">${seqTile('Wallets (all time)', q.wallets_total)}${seqTile('Active wallets, this month', q.wallets_active_month)}${seqTile('Wallets with a transaction, this month', q.wallets_with_tx_month)}${seqTile('Compute, this month', q.compute_month, 'Sequence usage unit')}</div>`;
+                const keyWorks = !!(q.wallets_total && q.wallets_total.status === 'ok');
+                const fallback = q.key_source === 'TRAILS_API_KEY' ? '<p class="text-xs text-muted mb-2">The Trails key is being used as a fallback. Add SEQUENCE_SECRET_API_KEY in Vercel.</p>' : '';
+                h += `${fallback}<div class="tiles">${seqTile('Wallets (all time)', q.wallets_total, '', keyWorks)}${seqTile('Active wallets, this month', q.wallets_active_month, '', keyWorks)}${seqTile('Wallets with a transaction, this month', q.wallets_with_tx_month, '', keyWorks)}${seqTile('Compute, this month', q.compute_month, 'Sequence usage unit', keyWorks)}</div>`;
             }
             h += '<p class="text-xs text-muted mb-2">Plan limits are constants in api/_lib/usage.js. Sequence usage charts in its own dashboard need a paid plan, so the figures here come from its Analytics API when the key allows it.</p>';
             return h;
