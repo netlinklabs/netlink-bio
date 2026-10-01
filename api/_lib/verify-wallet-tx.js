@@ -16,7 +16,12 @@
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 
-const RPC_BATCH = 100;   // receipts per Alchemy batch request
+// eth_getTransactionReceipt costs 20 CU and the free plan allows about 500 CU per second, so a
+// batch of 100 (2000 CU) in one request is a burst that gets rate limited (HTTP 429). Small
+// batches with a pause stay near 300 CU per second.
+const RPC_BATCH = 10;    // receipts per Alchemy batch request
+const RPC_PAUSE_MS = 700; // pause between batches
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const BATCH_SIZE = 150;  // rows per run (keeps one cron run well under the function time limit)
 const MAX_ATTEMPTS = 5;  // stop retrying a row after this many failed checks
 const IN_CHUNK = 100;    // ids per PostgREST in.(...) filter (keeps URLs short)
@@ -45,15 +50,23 @@ export async function sb(key, path, options = {}) {
 export async function getReceipts(alchemyKey, hashes) {
   const url = `https://polygon-mainnet.g.alchemy.com/v2/${alchemyKey}`;
   const out = {};
-  for (const group of chunk(hashes, RPC_BATCH)) {
+  const groups = chunk(hashes, RPC_BATCH);
+  for (let gi = 0; gi < groups.length; gi++) {
+    const group = groups[gi];
+    if (gi > 0) await sleep(RPC_PAUSE_MS);
     const body = group.map((h, i) => ({
       jsonrpc: '2.0', id: i, method: 'eth_getTransactionReceipt', params: [h],
     }));
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    let res;
+    for (let attempt = 0; ; attempt++) {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.status !== 429 || attempt >= 2) break;
+      await sleep(2000 * (attempt + 1)); // rate limited: back off and try the same batch again
+    }
     if (!res.ok) throw new Error(`Alchemy HTTP ${res.status}`);
     const data = await res.json();
     if (!Array.isArray(data)) throw new Error('Alchemy: unexpected batch response');
