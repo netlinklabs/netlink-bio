@@ -185,7 +185,11 @@ export async function handleAdmin(action, req, res, user, ctx) {
       if (g.ok) {
         const gd = await g.json();
         if (data.users) data.users.series_total = gd.users_cum || null;
-        if (data.pay) data.pay.tx_volume_series = gd.tx_volume || null;
+        if (data.pay) {
+          data.pay.tx_volume_series = gd.tx_volume || null;
+          data.pay.fee_income = gd.fee_synced ? gd.fee_income || [] : null; // null = not synced yet
+          data.pay.fee_unmatched = gd.fee_unmatched || 0;
+        }
       } else console.error('admin_growth_series failed', g.status);
     } catch (e) { console.error('admin_growth_series error', e.message); }
     return res.status(200).json(data);

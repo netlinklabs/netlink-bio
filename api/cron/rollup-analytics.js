@@ -21,10 +21,14 @@
 //     recorded amount with the on-chain transfers (api/_lib/verify-wallet-amount.js).
 //     They run after the rollup and never affect it. `?job=verify-wallet-tx`
 //     runs only these two, for manual backfill.
+//   - syncFeeIncome(): copies the swap commission arriving on the fee wallet into
+//     swap_fee_income (api/_lib/sync-fee-income.js). Part of the same wallet jobs, so the
+//     same `?job=verify-wallet-tx` call also runs it (this is how the first backfill is done).
 
 import { sendMail, getUserEmail, reminderMail } from '../_lib/mailer.js';
 import { verifyWalletTx } from '../_lib/verify-wallet-tx.js';
 import { checkWalletTxAmounts } from '../_lib/verify-wallet-amount.js';
+import { syncFeeIncome } from '../_lib/sync-fee-income.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -43,6 +47,13 @@ async function runWalletJobs() {
   } catch (err) {
     console.error('verify-wallet-amount failed', err);
     out.amounts = { error: 'failed' };
+  }
+  // Swap commission received on the fee wallet (api/_lib/sync-fee-income.js), for the printed report.
+  try {
+    out.fees = await syncFeeIncome();
+  } catch (err) {
+    console.error('sync-fee-income failed', err);
+    out.fees = { error: 'failed' };
   }
   return out;
 }
@@ -66,7 +77,7 @@ export default async function handler(req, res) {
   // Manual run of the wallet checks only (no rollup, no reminders).
   if (req.query.job === 'verify-wallet-tx') {
     const out = await runWalletJobs();
-    const failed = out.verify.error || out.amounts.error;
+    const failed = out.verify.error || out.amounts.error || out.fees.error;
     res.status(failed ? 500 : 200).json({ ok: !failed, job: 'verify-wallet-tx', ...out });
     return;
   }

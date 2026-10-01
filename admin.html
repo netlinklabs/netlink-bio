@@ -405,6 +405,23 @@
             return `<div class="rp-chart"><h3>${esc(title)}</h3>${legend}<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#cbd5e1"/>${bars}${ax}</svg></div>`.replace('</h3>', `</h3><div class="rp-max">Highest bar: ${esc((fmt || fmtN)(max))}</div>`);
         }
 
+
+        // Swap commission received on the fee wallet (rows from admin_growth_series: bucket, asset, n, amount)
+        const FEE_WALLET_SHORT = '0x7A7c...Ef89';
+        function feeSummary(rows, buckets, polUsd) {
+            if (!Array.isArray(rows)) return null;
+            const idx = new Map(buckets.map((b, i) => [b, i]));
+            const series = buckets.map(() => 0);
+            let usdc = 0, pol = 0, swaps = 0;
+            for (const r of rows) {
+                const i = idx.get(r.b); if (i === undefined) continue;
+                const amt = Number(r.amount) || 0;
+                if (r.asset === 'USDC') { usdc += amt; series[i] += amt; swaps += Number(r.n) || 0; }
+                else if (r.asset === 'POL') { pol += amt; if (polUsd) series[i] += amt * polUsd; swaps += Number(r.n) || 0; }
+            }
+            return { usdc, pol, swaps, series, usd: usdc + (polUsd ? pol * polUsd : 0) };
+        }
+
         // Volume (USD) per bucket from the per bucket rows, same rules as computeVolume
         function volumeSeries(rows, buckets, polUsd) {
             const idx = new Map(buckets.map((b, i) => [b, i]));
@@ -418,7 +435,7 @@
         // First page of the printed report. Plain text only (no user data), all English.
         function reportCover(kind, label, period_, partial, stamp, who) {
             const title = `Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report`;
-            const sections = ['Finance', 'Users', 'Netlink Pay', 'API requests', 'Storage'];
+            const sections = ['Finance', 'Users', 'Netlink Pay', 'Swap commission', 'API requests', 'Storage'];
             return `<section class="rp-cover">
                 <div class="bar"></div>
                 <div class="top"><img src="/assets/netlinkbio-icon.png" alt="Netlink"><span class="tag">INTERNAL REPORT</span></div>
@@ -458,6 +475,7 @@
             const S1 = '#2a78d6', S2 = '#1baf7a';
             const volSeries = p.tx_volume_series ? volumeSeries(p.tx_volume_series, d.buckets, polUsd) : null;
             const per = d.unit === 'month' ? 'month' : 'day';
+            const fee = feeSummary(p.fee_income, d.buckets, polUsd);
             const period_ = `${fmtDay(d.period_start)} to ${fmtDay(d.period_end)}`;
             const partial = kind === 'month' ? period === new Date().toISOString().slice(0, 7) : Number(period) === now.getFullYear();
 
@@ -487,6 +505,11 @@
                     <div class="rp-note">${netTotal ? 'NET moved: ' + fmtN(netTotal) + ' NET, not valued in USD (no market price). ' : ''}${v.polMissing ? 'POL price was unavailable, POL amounts are left out. ' : ''}USDC counts 1:1, POL uses the price at generation time, a swap uses its USDC side. IDR rate: ${idr ? '1 USD = Rp ' + Math.round(idr).toLocaleString('id-ID') : 'unavailable'}. Total is Send + Receive + Swap; a transfer between two Netlink users appears in both Send and Receive, and Order paid from Netlink Pay is also inside Send.</div>
                     ${printBars('Transactions per ' + per, d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: S1 }])}
                     ${volSeries ? printBars('Transaction volume per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Volume', values: volSeries, color: S2 }], fmtUsd) : ''}</div>
+
+                <div class="rp-sec"><h2>Swap commission</h2>${fee ? `<div class="rp-kpis">
+                    ${kpi(fmtUsd(fee.usd), 'Commission in period')}${kpi(fmtN(fee.swaps), 'Swaps with commission')}${kpi(fmtUsd(fee.usdc), 'Received as USDC')}${kpi(fee.pol.toFixed(2) + ' POL', 'Received as POL')}</div>
+                    <div class="rp-note">Commission received on the Netlink fee wallet on Polygon (${esc(FEE_WALLET_SHORT)}), read from the blockchain. Only transfers that belong to a swap made in Netlink Pay are counted${p.fee_unmatched ? ` (${fmtN(p.fee_unmatched)} other incoming transfers in this period are left out)` : ''}. USDC counts 1:1, POL uses the price at generation time${polUsd ? '' : ' (unavailable, POL is left out)'}. This is the amount received, before any costs.</div>
+                    ${printBars('Swap commission per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Commission', values: fee.series, color: S2 }], fmtUsd)}` : '<div class="rp-note">Swap commission has not been synced from the blockchain yet. It is read once a day, so it appears in the next report.</div>'}</div>
 
                 <div class="rp-sec"><h2>API requests</h2><div class="rp-kpis">
                     ${kpi(fmtN(a.total), 'Requests')}${kpi(a.total ? (((a.total - a.errors) / a.total) * 100).toFixed(1) + '%' : '-', 'Success rate')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}</div>
