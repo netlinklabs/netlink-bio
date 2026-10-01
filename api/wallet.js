@@ -8,6 +8,7 @@
 // consolidation only, not a behavior change.
 
 import { withStats } from './_lib/stats.js';
+import { trackAlchemy } from './_lib/usage.js';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
@@ -55,15 +56,17 @@ async function balanceRpcBatchCall(requests) {
 
   for (let attempt = 1; attempt <= BALANCE_MAX_ATTEMPTS; attempt++) {
     try {
+      const body = JSON.stringify(requests);
       const res = await fetchWithTimeout(
         ALCHEMY_RPC_URL,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requests),
+          body,
         },
         BALANCE_RPC_TIMEOUT_MS
       );
+      trackAlchemy(body, res);
 
       if (!res.ok) throw new Error(`Alchemy RPC request failed: ${res.status}`);
 
@@ -157,11 +160,13 @@ async function transactionsRpcBatchCall(requests, retries = 3) {
   let lastErr;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      const body = JSON.stringify(requests);
       const res = await fetch(ALCHEMY_RPC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requests),
+        body,
       });
+      trackAlchemy(body, res);
       if (!res.ok) throw new Error(`Alchemy RPC request failed: ${res.status}`);
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error('Unexpected non-batch response from Alchemy');
@@ -320,16 +325,18 @@ async function handleGas(req, res) {
   }
 
   try {
+    const receiptBody = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'eth_getTransactionReceipt',
+      params: [hash],
+    });
     const apiRes = await fetch(ALCHEMY_RPC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'eth_getTransactionReceipt',
-        params: [hash],
-      }),
+      body: receiptBody,
     });
+    trackAlchemy(receiptBody, apiRes);
     const data = await apiRes.json();
     const receipt = data.result;
 

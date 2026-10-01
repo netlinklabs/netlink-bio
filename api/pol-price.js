@@ -5,6 +5,7 @@
 // Reuses the same ALCHEMY_API_KEY already used by api/wallet.js.
 
 import { withStats } from './_lib/stats.js';
+import { trackAlchemyMetric } from './_lib/usage.js';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_PRICES_URL = `https://api.g.alchemy.com/prices/v1/${ALCHEMY_API_KEY}/tokens/by-symbol?symbols=POL`;
@@ -32,6 +33,7 @@ async function fetchPolPrice() {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const res = await fetchWithTimeout(ALCHEMY_PRICES_URL, {}, REQUEST_TIMEOUT_MS);
+      trackAlchemyMetric('prices/tokens/by-symbol', res);
       if (!res.ok) throw new Error(`Alchemy Prices API request failed: ${res.status}`);
 
       const data = await res.json();

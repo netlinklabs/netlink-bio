@@ -27,6 +27,7 @@
 // Needs the migration `wallet_tx_amount_check`. Env: SUPABASE_SERVICE_ROLE_KEY, ALCHEMY_API_KEY.
 
 import { sb, chunk, getReceipts } from './verify-wallet-tx.js';
+import { trackAlchemy } from './usage.js';
 
 const NET = '0x0e893b239094a5c573373d44cf1c7d03576b95cb';
 const USDC = '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359';
@@ -130,11 +131,13 @@ async function transferBatch(alchemyKey, queries) {
 }
 
 async function transferBatchOnce(alchemyKey, queries) {
+  const payload = JSON.stringify(queries);
   const res = await fetch(`https://polygon-mainnet.g.alchemy.com/v2/${alchemyKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(queries),
+    body: payload,
   });
+  trackAlchemy(payload, res);
   if (res.status === 429) throw new RateLimited('Alchemy HTTP 429');
   if (!res.ok) throw new Error(`Alchemy HTTP ${res.status}`);
   const data = await res.json();

@@ -690,9 +690,89 @@
                 ${meterRow('Database', st.db_bytes, lim.db_bytes)}${meterRow('File storage', st.storage_bytes, lim.storage_bytes)}
                 <p class="text-xs text-muted">Percent of the plan quota. Bandwidth and monthly active users are not shown here.</p></div>`;
 
+            h += '<div id="usageBlock"></div>';
             $('overview').innerHTML = h;
+            loadUsage();
             $('overview').querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.go)));
             fillVolume(d);
+        }
+
+        // ---------- usage and limits (third party APIs against plan limits) ----------
+        // Shown on screen only, never in the printed report. Alchemy compute units are an estimate
+        // counted by our own server (see api/_lib/usage.js); compare with the Alchemy dashboard.
+        let usageCache = { at: 0, data: null };
+
+        function usageMeter(label, used, limit, usedText, note) {
+            const pct = limit ? (used / limit) * 100 : 0;
+            const cls = pct >= 90 ? 'crit' : pct >= 70 ? 'warn' : '';
+            const hint = pct >= 90 ? ' (plan upgrade needed soon)' : pct >= 70 ? ' (start planning an upgrade)' : '';
+            return `<div class="mb-3"><div class="flex justify-between text-sm mb-1 gap-2"><span class="text-primary font-semibold">${esc(label)}</span><span class="text-secondary" style="text-align:right">${esc(usedText)} · ${pct > 0 && pct < 0.1 ? '<0.1' : pct.toFixed(1)}%${hint}</span></div><div class="meter"><div class="${cls}" style="width:${Math.min(100, Math.max(used ? 1 : 0, pct)).toFixed(1)}%"></div></div>${note ? `<p class="text-xs text-muted mt-1">${esc(note)}</p>` : ''}</div>`;
+        }
+
+        function seqTile(label, part, sub) {
+            if (!part) return tile('n/a', label, 'Not loaded');
+            if (part.status === 'ok') return tile(part.value === null ? 'n/a' : fmtN(part.value), label, sub);
+            if (part.status === 'denied') return tile('Locked', label, 'Needs a Secret API Access Key or a higher plan');
+            return tile('n/a', label, 'Could not load');
+        }
+
+        function usageHtml(u) {
+            if (!u) return '';
+            const L = u.limits || {};
+            let h = '<div class="ov-title">Usage and limits</div>';
+            h += '<div class="card chart-card">';
+            if (u.alchemy) {
+                h += usageMeter('Alchemy compute units, this month (UTC)', u.alchemy.cu, L.alchemy_cu_month, `${fmtN(u.alchemy.cu)} of ${fmtN(L.alchemy_cu_month)} CU`, 'Estimate counted by our server. Compare with the Alchemy dashboard.');
+            }
+            if (u.supabase) {
+                h += usageMeter('Supabase monthly active users (last 30 days)', u.supabase.mau_30d, L.supabase_mau, `${fmtN(u.supabase.mau_30d)} of ${fmtN(L.supabase_mau)} users`, 'Users who signed in during the last 30 days.');
+            }
+            if (u.vercel) {
+                h += usageMeter('Vercel serverless functions (Hobby)', u.vercel.functions_used, u.vercel.functions_limit, `${u.vercel.functions_used} of ${u.vercel.functions_limit}`, 'At the limit means a new endpoint has to be added as an action of an existing function.');
+            }
+            h += '</div>';
+
+            h += '<div class="tiles">';
+            if (u.alchemy) {
+                h += tile(fmtN(u.alchemy.rate_limited), 'Alchemy rate limit hits (429)', u.alchemy.last_rate_limited_day ? `Last on ${esc(u.alchemy.last_rate_limited_day)}. Peak limit is ${fmtN(L.alchemy_cu_per_second)} CU per second.` : `None this month. Peak limit is ${fmtN(L.alchemy_cu_per_second)} CU per second.`, { alert: u.alchemy.rate_limited > 0 });
+                h += tile(fmtN(u.alchemy.requests), 'Alchemy requests, this month', 'Counted by our server');
+            }
+            if (u.didit) h += tile(fmtN(u.didit.sessions_month), 'Didit sessions, this month', `${fmtN(u.didit.sessions_total)} in total (billed per session)`);
+            if (u.netlink_pay) {
+                h += tile(fmtN(u.netlink_pay.wallets_connected), 'Wallets connected', 'Netlink Pay accounts with a wallet');
+                h += tile(fmtN(u.netlink_pay.tx_month), 'Netlink Pay transactions, this month', `${fmtN(u.netlink_pay.tx_total)} in total`);
+            }
+            h += '</div>';
+
+            if (u.alchemy && u.alchemy.by_method && u.alchemy.by_method.length) {
+                h += `<details class="tbl"><summary>Alchemy by method (estimated CU)</summary><table class="mini"><tbody>${u.alchemy.by_method.map((m) => `<tr><td class="mono">${esc(m.method)}</td><td class="n">${fmtN(m.n)} calls</td><td class="n">${fmtN(m.cu)} CU</td></tr>`).join('')}</tbody></table></details>`;
+            }
+
+            h += '<div class="ov-title">Sequence</div>';
+            const q = u.sequence;
+            if (!q) h += '<p class="text-xs text-muted mb-2">Sequence figures could not be loaded.</p>';
+            else if (!q.configured) h += '<p class="text-xs text-muted mb-2">Not configured. Add SEQUENCE_SECRET_API_KEY in Vercel to show wallets and usage from the Sequence Analytics API.</p>';
+            else {
+                h += `<div class="tiles">${seqTile('Wallets (all time)', q.wallets_total)}${seqTile('Active wallets, this month', q.wallets_active_month)}${seqTile('Wallets with a transaction, this month', q.wallets_with_tx_month)}${seqTile('Compute, this month', q.compute_month, 'Sequence usage unit')}</div>`;
+            }
+            h += '<p class="text-xs text-muted mb-2">Plan limits are constants in api/_lib/usage.js. Sequence usage charts in its own dashboard need a paid plan, so the figures here come from its Analytics API when the key allows it.</p>';
+            return h;
+        }
+
+        async function loadUsage() {
+            const box = $('usageBlock');
+            if (!box) return;
+            try {
+                if (!usageCache.data || Date.now() - usageCache.at > 60000) {
+                    box.innerHTML = '<div class="ov-title">Usage and limits</div><p class="text-xs text-muted mb-2">Loading...</p>';
+                    usageCache = { at: Date.now(), data: await api('admin-usage') };
+                }
+                const again = $('usageBlock');
+                if (again) again.innerHTML = usageHtml(usageCache.data);
+            } catch (err) {
+                const again = $('usageBlock');
+                if (again) again.innerHTML = '<div class="ov-title">Usage and limits</div><p class="text-xs text-muted mb-2">Could not load usage figures.</p>';
+            }
         }
 
         async function loadOverview() {

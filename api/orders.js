@@ -28,6 +28,7 @@ import { notifyUser } from './_lib/notify.js';
 import { emailUser, emailAdmin, invoiceMail, receiptMail, adminPaidMail, getUserEmail } from './_lib/mailer.js';
 import { handleAdmin, isAdminAction } from './_lib/admin.js';
 import { withStats } from './_lib/stats.js';
+import { trackAlchemy } from './_lib/usage.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -250,10 +251,7 @@ async function handleCancel(req, res, user) {
 
 // Pull the latest incoming native USDC transfers to the finance wallet.
 async function fetchIncomingTransfers() {
-  const r = await fetch(ALCHEMY_RPC_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const transfersBody = JSON.stringify({
       jsonrpc: '2.0',
       id: 1,
       method: 'alchemy_getAssetTransfers',
@@ -266,8 +264,13 @@ async function fetchIncomingTransfers() {
         order: 'desc',
         maxCount: '0x64',
       }],
-    }),
+    });
+  const r = await fetch(ALCHEMY_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: transfersBody,
   });
+  trackAlchemy(transfersBody, r);
   const data = await r.json();
   if (data.error) throw new Error(data.error.message);
 
