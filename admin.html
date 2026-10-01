@@ -634,7 +634,13 @@
                 ${tile(fmtN(oc.pending), 'Waiting to be verified', 'Checked once a day')}
                 ${tile(fmtN(oc.flagged), 'Flagged', 'Not found or reverted on-chain', { alert: oc.flagged > 0 })}
                 ${tile(fmtN(oc.not_seen), 'Wallet not seen', 'Confirmed on-chain, wallet not in receipt')}
-            </div><p class="text-xs text-muted mb-2">Verified means the transaction exists and succeeded on Polygon. It does not check the amount, and it is not limited to the selected range. Smart wallet and internal transfers may show as wallet not seen.</p>`;
+            </div>
+            <div class="tiles">
+                ${tile(fmtN(oc.amount_match) + ' / ' + fmtN(oc.verified), 'Amount matches on-chain', (oc.verified ? Math.round((oc.amount_match / oc.verified) * 100) : 0) + '% of verified transactions', { wide: true })}
+                ${tile(fmtN(oc.amount_mismatch), 'Amount mismatch', 'Recorded amount differs from on-chain', { alert: oc.amount_mismatch > 0 })}
+                ${tile(fmtN(oc.amount_unchecked), 'Amount not confirmed', 'Swap, older wallet or no transfer found')}
+                ${tile(fmtN(oc.amount_pending), 'Amount not checked yet', 'Checked once a day')}
+            </div><p class="text-xs text-muted mb-2">Verified means the transaction exists and succeeded on Polygon. The amount check compares the recorded amount with the on-chain transfers of that transaction. Swaps, and transfers from a wallet the user has since replaced, can stay not confirmed. A mismatch needs a manual look. Figures are all time, not limited to the selected range. Smart wallet and internal transfers may show as wallet not seen.</p>`;
         }
 
         function renderOverview(d) {
