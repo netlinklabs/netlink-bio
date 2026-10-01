@@ -12,8 +12,16 @@
 // rejected (an earlier version skipped the check in that case, which left
 // the endpoint open to anyone). CRON_SECRET is set in Vercel's production
 // env vars (2026-09-27).
+//
+// This one function also runs the other daily jobs, because the Vercel Hobby
+// plan caps api/ at 12 functions and that cap is reached:
+//   - sendReminders(): day-2 payment reminders (below)
+//   - verifyWalletTx(): marks wallet_transactions rows as verified on-chain
+//     (api/_lib/verify-wallet-tx.js). Runs after the rollup and never affects
+//     it. `?job=verify-wallet-tx` runs only this job, for manual backfill.
 
 import { sendMail, getUserEmail, reminderMail } from '../_lib/mailer.js';
+import { verifyWalletTx } from '../_lib/verify-wallet-tx.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -31,6 +39,17 @@ export default async function handler(req, res) {
   }
   if (!SERVICE_ROLE_KEY) {
     res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' });
+    return;
+  }
+
+  // Manual run of the wallet verification only (no rollup, no reminders).
+  if (req.query.job === 'verify-wallet-tx') {
+    try {
+      res.status(200).json({ ok: true, job: 'verify-wallet-tx', ...(await verifyWalletTx()) });
+    } catch (err) {
+      console.error('verify-wallet-tx failed', err);
+      res.status(500).json({ error: 'Verification run failed' });
+    }
     return;
   }
 
@@ -55,7 +74,15 @@ export default async function handler(req, res) {
       return;
     }
     const reminders = await sendReminders();
-    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders });
+    // Isolated: a failure here is reported in the response but never fails the rollup.
+    let walletVerify;
+    try {
+      walletVerify = await verifyWalletTx();
+    } catch (err) {
+      console.error('verify-wallet-tx failed', err);
+      walletVerify = { error: 'failed' };
+    }
+    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders, walletVerify });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || String(err) });
