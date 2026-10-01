@@ -50,6 +50,38 @@ function cleanNote(v, max = 500) {
   return String(v || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
 }
 
+// Exact row count of public.wallet_transactions for a PostgREST filter (HEAD request, no rows
+// transferred). Used for the on-chain verification summary in the admin overview.
+async function countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, filter) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?select=id&${filter}`, {
+    method: 'HEAD',
+    headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, Prefer: 'count=exact' },
+  });
+  if (!r.ok) throw new Error(`count failed ${r.status}`);
+  const m = /\/(\d+)$/.exec(r.headers.get('content-range') || '');
+  if (!m) throw new Error('count missing');
+  return Number(m[1]);
+}
+
+// All-time summary of the daily on-chain check (api/_lib/verify-wallet-tx.js). `flagged` is
+// rows that hit MAX_ATTEMPTS there (not found on Polygon, or reverted on-chain). Returns null
+// on any error so a problem here never breaks the rest of the overview.
+async function onchainSummary(SUPABASE_URL, SERVICE_ROLE_KEY) {
+  try {
+    const ok = 'status=eq.success';
+    const [total, verified, flagged, notSeen] = await Promise.all([
+      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, ok),
+      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, `${ok}&onchain_verified=eq.true`),
+      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, `${ok}&onchain_verified=eq.false&onchain_check_attempts=gte.5`),
+      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, `${ok}&onchain_verified=eq.true&onchain_check_note=ilike.*not%20seen*`),
+    ]);
+    return { total, verified, flagged, not_seen: notSeen, pending: Math.max(0, total - verified - flagged) };
+  } catch (err) {
+    console.error('onchain summary failed', err.message);
+    return null;
+  }
+}
+
 export async function handleAdmin(action, req, res, user, ctx) {
   const { db, toMicro, fromMicro, SUPABASE_URL, SERVICE_ROLE_KEY } = ctx;
   res.setHeader('Cache-Control', 'no-store');
@@ -128,6 +160,7 @@ export async function handleAdmin(action, req, res, user, ctx) {
     }
     const data = await rows.json();
     data.limits = { db_bytes: 500 * 1024 * 1024, storage_bytes: 1024 * 1024 * 1024, plan: 'Supabase Free' };
+    if (data.pay) data.pay.onchain = await onchainSummary(SUPABASE_URL, SERVICE_ROLE_KEY);
     return res.status(200).json(data);
   }
 
