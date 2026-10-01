@@ -615,7 +615,7 @@
 
         const tile = (v, l, s, opts = {}) => {
             const tag = opts.go ? 'button' : 'div';
-            return `<${tag} class="card tile${opts.alert ? ' alert' : ''}"${opts.go ? ` data-go="${opts.go}"` : ''}><div class="v text-primary">${v}</div><div class="l">${esc(l)}</div>${s ? `<div class="s">${s}</div>` : ''}</${tag}>`;
+            return `<${tag} class="card tile${opts.alert ? ' alert' : ''}"${opts.go ? ` data-go="${opts.go}"` : ''}${opts.wide ? ' style="grid-column: 1 / -1"' : ''}><div class="v text-primary">${v}</div><div class="l">${esc(l)}</div>${s ? `<div class="s">${s}</div>` : ''}</${tag}>`;
         };
 
         function meterRow(label, used, limit) {
@@ -623,6 +623,18 @@
             const cls = pct >= 90 ? 'crit' : pct >= 70 ? 'warn' : '';
             const note = pct >= 90 ? ' (almost full)' : pct >= 70 ? ' (getting full)' : '';
             return `<div class="mb-3"><div class="flex justify-between text-sm mb-1"><span class="text-primary font-semibold">${esc(label)}</span><span class="text-secondary">${fmtBytes(used)} of ${fmtBytes(limit)} · ${pct < 0.1 && used ? '<0.1' : pct.toFixed(1)}%${note}</span></div><div class="meter"><div class="${cls}" style="width:${Math.min(100, Math.max(used ? 1 : 0, pct)).toFixed(1)}%"></div></div></div>`;
+        }
+
+        // All-time summary of the daily on-chain check of recorded transactions (null when unavailable).
+        function onchainHtml(oc) {
+            if (!oc) return '';
+            const pct = oc.total ? Math.round((oc.verified / oc.total) * 100) : 0;
+            return `<div class="tiles">
+                ${tile(fmtN(oc.verified) + ' / ' + fmtN(oc.total), 'Verified on-chain', pct + '% of successful transactions, all time', { wide: true })}
+                ${tile(fmtN(oc.pending), 'Waiting to be verified', 'Checked once a day')}
+                ${tile(fmtN(oc.flagged), 'Flagged', 'Not found or reverted on-chain', { alert: oc.flagged > 0 })}
+                ${tile(fmtN(oc.not_seen), 'Wallet not seen', 'Confirmed on-chain, wallet not in receipt')}
+            </div><p class="text-xs text-muted mb-2">Verified means the transaction exists and succeeded on Polygon. It does not check the amount, and it is not limited to the selected range. Smart wallet and internal transfers may show as wallet not seen.</p>`;
         }
 
         function renderOverview(d) {
@@ -640,8 +652,9 @@
             </div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
 
             h += `<div class="ov-title">Users</div><div class="tiles">
+                ${tile(fmtN(u.total), 'Total users', 'All accounts, KYC verified or not', { wide: true })}
                 ${tile(fmtN(u.kyc), 'KYC verified', fmtN(u.kyc_in_range) + ' new, ' + rangeName)}
-                ${tile(fmtN(u.non_kyc), 'Not KYC verified', fmtN(u.total) + ' users in total')}
+                ${tile(fmtN(u.non_kyc), 'Not KYC verified', (u.total ? 100 - kycPct : 0).toFixed(0) + '% of users')}
                 ${tile(fmtN(u.new_in_range), 'New users, ' + rangeName, '')}
                 ${tile(kycPct.toFixed(0) + '%', 'KYC rate', '')}
             </div>
@@ -654,7 +667,7 @@
                 ${tile(fmtN(p.wallets), 'Wallets connected', fmtN(u.total ? (p.wallets / u.total) * 100 : 0) + '% of users')}
                 ${tile(fmtN(p.tx_in_range), 'Transactions, ' + rangeName, fmtN(p.tx_total) + ' in total')}
                 <div class="card tile" style="grid-column: span 2"><div class="l">Transaction types, ${esc(rangeName)}</div><div class="s text-secondary" style="font-size:13px;margin-top:4px">${types || 'No transactions'}</div></div>
-            </div><div id="volBlock"><p class="text-xs text-muted mb-2">Loading volume...</p></div>${chartHtml('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: 'var(--series-1)' }])}
+            </div><div id="volBlock"><p class="text-xs text-muted mb-2">Loading volume...</p></div>${onchainHtml(p.onchain)}${chartHtml('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: 'var(--series-1)' }])}
             <p class="text-xs text-muted mb-2">Counts transactions recorded by Netlink Pay. Transfers made outside the app are not included.</p>`;
 
             const rate = a.total ? ((a.errors / a.total) * 100).toFixed(1) : '0.0';
