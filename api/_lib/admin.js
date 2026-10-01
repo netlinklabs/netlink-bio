@@ -173,6 +173,21 @@ export async function handleAdmin(action, req, res, user, ctx) {
     const data = await rows.json();
     data.limits = { db_bytes: 500 * 1024 * 1024, storage_bytes: 1024 * 1024 * 1024, plan: 'Supabase Free' };
     if (data.pay) data.pay.onchain = await onchainSummary(SUPABASE_URL, SERVICE_ROLE_KEY);
+    // Growth series for the printed report charts (total users per bucket, volume rows per bucket).
+    // Optional: if this call fails the overview still loads and the report skips those two charts.
+    try {
+      const unit = data.unit === 'hour' || data.unit === 'month' ? data.unit : 'day';
+      const g = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_growth_series`, {
+        method: 'POST',
+        headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_unit: unit, p_buckets: data.buckets || [] }),
+      });
+      if (g.ok) {
+        const gd = await g.json();
+        if (data.users) data.users.series_total = gd.users_cum || null;
+        if (data.pay) data.pay.tx_volume_series = gd.tx_volume || null;
+      } else console.error('admin_growth_series failed', g.status);
+    } catch (e) { console.error('admin_growth_series error', e.message); }
     return res.status(200).json(data);
   }
 
