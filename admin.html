@@ -127,6 +127,7 @@
         #printReport .rp-chart { border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; break-inside: avoid; }
         #printReport .rp-chart h3 { font-size: 9pt; font-weight: 600; margin: 0 0 2px; }
         #printReport .rp-chart svg { width: 100%; height: 80px; display: block; }
+        #printReport .rp-max { font-size: 7.5pt; color: #64748b; margin: 0 0 1px; }
         #printReport .rp-legend { font-size: 8pt; color: #475569; margin-bottom: 2px; }
         #printReport .rp-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin: 0 4px 0 8px; }
         #printReport .rp-meter { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 2px 0 6px; }
@@ -386,7 +387,7 @@
         }
 
         // Static bars for print (no hover, fixed light colors)
-        function printBars(title, buckets, unit, series) {
+        function printBars(title, buckets, unit, series, fmt) {
             const W = 600, H = 95, L = 4, R = 4, T = 6, B = 16;
             const n = buckets.length || 1;
             const max = Math.max(1, ...series.flatMap((s) => s.values.map(Number)));
@@ -398,10 +399,20 @@
                 const h = Math.max(2, (v / max) * (H - T - B));
                 bars += `<rect x="${(L + i * slot + gap / 2 + k * (bw + 1)).toFixed(1)}" y="${(H - B - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="${s.color}"/>`;
             }));
-            const step = Math.max(1, Math.ceil(n / 8));
+            const step = n <= 12 ? 1 : Math.max(1, Math.ceil(n / 8));
             buckets.forEach((b, i) => { if (i % step === 0 || (i === n - 1 && (n - 1) % step >= Math.ceil(step / 2))) ax += `<text x="${(L + i * slot + slot / 2).toFixed(1)}" y="${H - 3}" text-anchor="middle" font-size="9" fill="#64748b">${esc(bucketLabel(b, unit))}</text>`; });
             const legend = series.length > 1 ? `<div class="rp-legend">${series.map((s) => `<i style="background:${s.color}"></i>${esc(s.name)}`).join('')}</div>` : '';
-            return `<div class="rp-chart"><h3>${esc(title)}</h3>${legend}<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#cbd5e1"/>${bars}${ax}</svg></div>`;
+            return `<div class="rp-chart"><h3>${esc(title)}</h3>${legend}<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#cbd5e1"/>${bars}${ax}</svg></div>`.replace('</h3>', `</h3><div class="rp-max">Highest bar: ${esc((fmt || fmtN)(max))}</div>`);
+        }
+
+        // Volume (USD) per bucket from the per bucket rows, same rules as computeVolume
+        function volumeSeries(rows, buckets, polUsd) {
+            const idx = new Map(buckets.map((b, i) => [b, i]));
+            const out = buckets.map(() => 0);
+            const per = buckets.map(() => []);
+            for (const r of rows || []) { const i = idx.get(r.b); if (i !== undefined) per[i].push(r); }
+            per.forEach((rs, i) => { const v = computeVolume(rs, polUsd); out[i] = v.send.usd + v.receive.usd + v.swap.usd; });
+            return out;
         }
 
         // First page of the printed report. Plain text only (no user data), all English.
@@ -445,6 +456,8 @@
             const meter = (name, used, limit) => { const pc = limit ? (used / limit) * 100 : 0; return `<div style="font-size:9pt"><b>${esc(name)}</b>: ${fmtBytes(used)} of ${fmtBytes(limit)} (${pc < 0.1 && used ? '<0.1' : pc.toFixed(1)}%)</div><div class="rp-meter"><div style="width:${Math.min(100, Math.max(used ? 1 : 0, pc)).toFixed(1)}%"></div></div>`; };
             const volRow = (name, usd, n) => `<tr><td>${esc(name)}</td><td class="n">${fmtUsd(usd)}</td><td class="n">${idr ? 'Rp ' + Math.round(usd * idr).toLocaleString('id-ID') : '-'}</td><td class="n">${esc(n)}</td></tr>`;
             const S1 = '#2a78d6', S2 = '#1baf7a';
+            const volSeries = p.tx_volume_series ? volumeSeries(p.tx_volume_series, d.buckets, polUsd) : null;
+            const per = d.unit === 'month' ? 'month' : 'day';
             const period_ = `${fmtDay(d.period_start)} to ${fmtDay(d.period_end)}`;
             const partial = kind === 'month' ? period === new Date().toISOString().slice(0, 7) : Number(period) === now.getFullYear();
 
@@ -454,7 +467,7 @@
 
                 <div class="rp-sec"><h2>Finance</h2><div class="rp-kpis">
                     ${kpi(fmtN(f.orders_in_range), 'Orders in period')}${kpi(fmtUsd(order), 'Paid USDC (tests excluded)')}${kpi(fmtN(f.paid_in_range), 'Paid orders')}${kpi(fmtN(f.audit_in_range), 'Audit log entries')}</div>
-                    ${printBars('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: S1 }])}</div>
+                    ${printBars('Revenue per ' + per + ' (paid USDC)', d.buckets, d.unit, [{ name: 'Revenue', values: f.series_revenue, color: S1 }], fmtUsd)}</div>
 
                 <div class="rp-sec"><h2>Users</h2><div class="rp-kpis">
                     ${kpi(fmtN(u.total), 'Users in total')}${kpi(fmtN(u.new_in_range), 'New users in period')}${kpi(fmtN(u.kyc) + ' / ' + fmtN(u.non_kyc), 'KYC verified / not verified')}${kpi(fmtN(u.kyc_in_range), 'KYC verified in period')}</div>
@@ -464,6 +477,7 @@
                         return `<tr><td>${t ? esc(TIER_LABEL[t]) : ''}</td><td class="n">${t ? fmtN(u.tiers[t] || 0) : ''}</td><td></td><td>${c ? esc(`${i + 1}. ${countryName(c.code)} (${c.code})`) : ''}</td><td class="n">${c ? fmtN(c.count) : ''}</td></tr>`;
                     }).join('')}</tbody></table>
                     ${u.country_unknown ? `<div class="rp-note">${fmtN(u.country_unknown)} users have not set a country. Plan, KYC and country figures are as of ${esc(stamp)}.</div>` : `<div class="rp-note">Plan, KYC and country figures are as of ${esc(stamp)}.</div>`}
+                    ${u.series_total ? printBars('Total users at the end of each ' + per, d.buckets, d.unit, [{ name: 'Total users', values: u.series_total, color: S1 }]) : ''}
                     ${printBars('New users and KYC verified', d.buckets, d.unit, [{ name: 'New users', values: u.series_new, color: S1 }, { name: 'KYC verified', values: u.series_kyc, color: S2 }])}</div>
 
                 <div class="rp-sec"><h2>Netlink Pay</h2><div class="rp-kpis">
@@ -471,7 +485,8 @@
                     <table><thead><tr><th>Volume</th><th class="n">USD</th><th class="n">IDR</th><th class="n">Transactions</th></tr></thead><tbody>
                     ${volRow('Total, all', overall, fmtN(v.send.n + v.receive.n + v.swap.n))}${volRow('Send', v.send.usd, fmtN(v.send.n))}${volRow('Receive', v.receive.usd, fmtN(v.receive.n))}${volRow('Swap', v.swap.usd, fmtN(v.swap.n))}${volRow('Order', order, fmtN(f.paid_in_range) + ' orders')}</tbody></table>
                     <div class="rp-note">${netTotal ? 'NET moved: ' + fmtN(netTotal) + ' NET, not valued in USD (no market price). ' : ''}${v.polMissing ? 'POL price was unavailable, POL amounts are left out. ' : ''}USDC counts 1:1, POL uses the price at generation time, a swap uses its USDC side. IDR rate: ${idr ? '1 USD = Rp ' + Math.round(idr).toLocaleString('id-ID') : 'unavailable'}. Total is Send + Receive + Swap; a transfer between two Netlink users appears in both Send and Receive, and Order paid from Netlink Pay is also inside Send.</div>
-                    ${printBars('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: S1 }])}</div>
+                    ${printBars('Transactions per ' + per, d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: S1 }])}
+                    ${volSeries ? printBars('Transaction volume per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Volume', values: volSeries, color: S2 }], fmtUsd) : ''}</div>
 
                 <div class="rp-sec"><h2>API requests</h2><div class="rp-kpis">
                     ${kpi(fmtN(a.total), 'Requests')}${kpi(a.total ? (((a.total - a.errors) / a.total) * 100).toFixed(1) + '%' : '-', 'Success rate')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}</div>
