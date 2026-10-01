@@ -17,6 +17,9 @@
 //   unchecked  could not be confirmed: no transfer found (for example the user has since moved
 //              to another wallet), swaps that do not line up, unknown token. Never an accusation.
 //
+// Alchemy rate limit (HTTP 429): small batches with a pause, retry with back-off; if it persists the
+// run stops cleanly (rateLimited: true) and the rows stay unchecked for the next run.
+//
 // Known limits: tolerance is max(0.01, 0.5%) (2% for swaps, whose output comes from a quote);
 // the Sequence relayer fee transfer is ignored, as in api/wallet.js; amounts are compared as
 // numbers, which is fine at these sizes.
@@ -35,9 +38,13 @@ const TOKEN_INFO = {
 // bundle a small separate POL transfer to it, which is not part of what the user sent.
 const RELAYER_FEE_ADDRESS = '0x7e08701cc9194ef4ffd82421dd0d986d1b43d521';
 
-const PER_ROUND = 30;        // rows per round (2 Alchemy transfer queries each)
-const QUERY_BATCH = 50;      // transfer queries per Alchemy HTTP request
-const BUDGET_MS = 30000;     // stop starting new rounds after this long (cron has maxDuration 60s)
+const PER_ROUND = 30;        // rows per round
+// alchemy_getAssetTransfers costs 150 compute units per query and the free plan allows roughly
+// 500 CU per second, so a big batch gets HTTP 429. Send few queries at a time with a pause.
+const QUERY_BATCH = 3;       // transfer queries per Alchemy HTTP request
+const PAUSE_MS = 1100;       // pause between those requests
+const BUDGET_MS = 90000;     // stop starting new work after this long (cron has maxDuration 120s)
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export const within = (a, b, rel = 0.005) =>
   Math.abs(a - b) <= Math.max(0.01, rel * Math.max(Math.abs(a), Math.abs(b)));
@@ -109,15 +116,31 @@ export function evaluateRow(row, legs) {
   return { status: 'mismatch', note: `Recorded ${fmt(amount)} ${row.token}, on-chain ${r.values.map(fmt).join(' + ')}`.slice(0, 200) };
 }
 
+class RateLimited extends Error {}
+
 async function transferBatch(alchemyKey, queries) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await transferBatchOnce(alchemyKey, queries);
+    } catch (err) {
+      if (!(err instanceof RateLimited) || attempt >= 2) throw err;
+      await sleep(2000 * (attempt + 1)); // back off, then try the same queries again
+    }
+  }
+}
+
+async function transferBatchOnce(alchemyKey, queries) {
   const res = await fetch(`https://polygon-mainnet.g.alchemy.com/v2/${alchemyKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(queries),
   });
+  if (res.status === 429) throw new RateLimited('Alchemy HTTP 429');
   if (!res.ok) throw new Error(`Alchemy HTTP ${res.status}`);
   const data = await res.json();
   if (!Array.isArray(data)) throw new Error('Alchemy: unexpected batch response');
+  // a rate limit can also come back inside the batch body
+  if (data.some((r) => r?.error?.code === 429)) throw new RateLimited('Alchemy HTTP 429 (in batch)');
   return new Map(data.map((r) => [r.id, r]));
 }
 
@@ -128,7 +151,7 @@ export async function checkWalletTxAmounts() {
   if (!alchemyKey) throw new Error('ALCHEMY_API_KEY is not configured');
 
   const deadline = Date.now() + BUDGET_MS;
-  const totals = { checked: 0, match: 0, mismatch: 0, unchecked: 0, retryLater: 0, complete: false };
+  const totals = { checked: 0, match: 0, mismatch: 0, unchecked: 0, retryLater: 0, rateLimited: false, complete: false };
   const skip = new Set(); // ids that hit a transient problem this run; retried on the next run
 
   while (Date.now() < deadline) {
@@ -150,37 +173,52 @@ export async function checkWalletTxAmounts() {
 
     const receipts = await getReceipts(alchemyKey, rows.map((r) => r.hash));
 
-    // Two transfer queries per row (wallet as sender, wallet as receiver), in the tx's block.
+    // Only the direction that matters: send and export look at what the wallet sent, receive at
+    // what it received, swap at both. Identical queries (same wallet, block, direction) are shared.
     const queries = [];
-    const results = []; // { row, wallet, outId, inId } or { row, early: {status, note} }
+    const queryIds = new Map(); // "dir|wallet|block" -> id
+    const want = (dir, wallet, block) => {
+      const k = `${dir}|${wallet}|${block}`;
+      if (!queryIds.has(k)) {
+        const id = queries.length + 1;
+        const base = { fromBlock: block, toBlock: block, category: ['external', 'internal', 'erc20'], withMetadata: false, excludeZeroValue: true };
+        queries.push({ jsonrpc: '2.0', id, method: 'alchemy_getAssetTransfers', params: [{ ...base, [dir === 'out' ? 'fromAddress' : 'toAddress']: wallet }] });
+        queryIds.set(k, id);
+      }
+      return queryIds.get(k);
+    };
+    const results = []; // { row, wallet, ids } or { row, early: {status, note} }
     for (const row of rows) {
       const wallet = walletByOwner[row.owner_id];
       const rc = receipts[row.hash]?.receipt;
       if (!wallet) { results.push({ row, early: { status: 'unchecked', note: 'No wallet address on the profile' } }); continue; }
       if (!rc || !rc.blockNumber) { skip.add(row.id); totals.retryLater++; continue; }
-      const base = { fromBlock: rc.blockNumber, toBlock: rc.blockNumber, category: ['external', 'internal', 'erc20'], withMetadata: false, excludeZeroValue: true };
-      const outId = queries.length + 1;
-      queries.push({ jsonrpc: '2.0', id: outId, method: 'alchemy_getAssetTransfers', params: [{ ...base, fromAddress: wallet }] });
-      const inId = queries.length + 1;
-      queries.push({ jsonrpc: '2.0', id: inId, method: 'alchemy_getAssetTransfers', params: [{ ...base, toAddress: wallet }] });
-      results.push({ row, wallet, outId, inId });
+      const dirs = row.type === 'swap' ? ['out', 'in'] : row.type === 'receive' ? ['in'] : ['out'];
+      results.push({ row, wallet, ids: dirs.map((d) => want(d, wallet, rc.blockNumber)) });
     }
 
     const byId = new Map();
+    let limited = false;
     for (const group of chunk(queries, QUERY_BATCH)) {
-      // ids are unique across the round, so merging the maps is safe
-      for (const [id, r] of await transferBatch(alchemyKey, group)) byId.set(id, r);
+      if (Date.now() > deadline) break; // out of time: unanswered rows are retried next run
+      try {
+        for (const [id, r] of await transferBatch(alchemyKey, group)) byId.set(id, r);
+      } catch (err) {
+        if (err instanceof RateLimited) { limited = true; break; }
+        throw err;
+      }
+      await sleep(PAUSE_MS);
     }
+    if (limited) totals.rateLimited = true;
 
     const outcomes = new Map(); // "status|note" -> ids
     for (const item of results) {
       let outcome = item.early;
       if (!outcome) {
-        const o = byId.get(item.outId);
-        const i = byId.get(item.inId);
-        const bad = !o || !i || o.error || i.error || o.result?.pageKey || i.result?.pageKey;
+        const rs = item.ids.map((id) => byId.get(id));
+        const bad = rs.some((r) => !r || r.error || r.result?.pageKey);
         if (bad) { skip.add(item.row.id); totals.retryLater++; continue; }
-        const transfers = [...(o.result?.transfers || []), ...(i.result?.transfers || [])];
+        const transfers = rs.flatMap((r) => r.result?.transfers || []);
         outcome = evaluateRow(item.row, legsFor(transfers, item.row.hash, item.wallet));
       }
       const k = `${outcome.status}|${outcome.note}`;
@@ -198,6 +236,7 @@ export async function checkWalletTxAmounts() {
         await sb(key, `wallet_transactions?id=in.(${group.join(',')})`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(patch) });
       }
     }
+    if (limited) break; // still rate limited after retries: stop, the next run continues
   }
   return totals;
 }
