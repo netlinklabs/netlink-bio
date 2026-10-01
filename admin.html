@@ -65,8 +65,8 @@
         .kv > span:last-child { text-align: right; min-width: 0; word-break: break-all; }
 
         /* Overview */
-        :root { --series-1: #2a78d6; --series-2: #1baf7a; --grid: rgba(100,116,139,0.18); --meter-bg: rgba(100,116,139,0.18); --warn: #b45309; --crit: #dc2626; }
-        html.dark { --series-1: #3987e5; --series-2: #199e70; --warn: #fbbf24; --crit: #f87171; }
+        :root { --series-1: #2a78d6; --series-2: #1baf7a; --series-3: #7c5cdb; --grid: rgba(100,116,139,0.18); --meter-bg: rgba(100,116,139,0.18); --warn: #b45309; --crit: #dc2626; }
+        html.dark { --series-1: #3987e5; --series-2: #199e70; --series-3: #9b82e8; --warn: #fbbf24; --crit: #f87171; }
         .range-btn { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #64748b; border: 1px solid rgba(100,116,139,0.3); }
         .range-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
         .ov-title { font-size: 13px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: #64748b; margin: 20px 0 8px; }
@@ -604,6 +604,28 @@
         const fmtUsd = (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const fmtIdr = (usd, rate) => (rate ? '≈ Rp ' + Math.round(usd * rate).toLocaleString('id-ID') : '');
 
+        // Income = order revenue + swap commission (received on the fee wallet, read from Polygon by the daily job)
+        function fillIncome(d, polUsd, idr, order) {
+            const box = $('incomeBlock'); if (!box) return;
+            const fee = feeSummary(d.pay.fee_income, d.buckets, polUsd);
+            const tl = (usd, label, sub) => `<div class="card tile"><div class="v text-primary">${fmtUsd(usd)}</div><div class="l">${esc(label)}</div>${idr ? `<div class="s">${esc(fmtIdr(usd, idr))}</div>` : ''}${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>`;
+            const rev = d.finance.series_revenue.map(Number);
+            const per = d.unit === 'month' ? 'month' : d.unit === 'hour' ? 'hour' : 'day';
+            if (!fee) {
+                box.innerHTML = `<p class="text-xs text-muted mb-2">Swap commission has not been synced from the blockchain yet. The daily job reads it once a day.</p>`;
+                return;
+            }
+            box.innerHTML = `<div class="tiles">
+                ${tl(order, 'Order revenue', fmtN(d.finance.paid_in_range) + ' paid orders')}
+                ${tl(fee.usd, 'Swap commission', fmtN(fee.swaps) + ' swaps, ' + fee.pol.toFixed(2) + ' POL + ' + fmtUsd(fee.usdc))}
+                ${tl(order + fee.usd, 'Total income', '')}
+            </div>
+            ${chartHtml('Order revenue per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Order revenue', values: rev, color: 'var(--series-1)' }], fmtUsd)}
+            ${chartHtml('Swap commission per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Swap commission', values: fee.series, color: 'var(--series-2)' }], fmtUsd)}
+            ${chartHtml('Total income per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Total income', values: fee.series.map((x, i) => x + (rev[i] || 0)), color: 'var(--series-3)' }], fmtUsd)}
+            <p class="text-xs text-muted mb-2">Swap commission is the fee received on the Netlink fee wallet on Polygon (${esc(FEE_WALLET_SHORT)}). Only transfers that belong to a swap made in Netlink Pay are counted${d.pay.fee_unmatched ? ' (' + fmtN(d.pay.fee_unmatched) + ' other incoming transfers are left out)' : ''}. USDC counts 1:1, POL uses the current price. Amounts are what was received, before any costs.</p>`;
+        }
+
         async function fillVolume(d) {
             const box = $('volBlock'); if (!box) return;
             const [polUsd, idr] = await Promise.all([fetchPolUsd(), fetchIdrRate()]);
@@ -612,6 +634,7 @@
             const order = Number(d.finance.revenue_in_range) || 0;
             const overall = v.send.usd + v.receive.usd + v.swap.usd;
             const netTotal = v.send.net + v.receive.net + v.swap.net;
+            fillIncome(d, polUsd, idr, order);
             const vt = (usd, label, sub, wide) => `<div class="card tile"${wide ? ' style="grid-column: 1 / -1"' : ''}><div class="v text-primary">${fmtUsd(usd)}</div><div class="l">${esc(label)}</div><div class="s">${esc(fmtIdr(usd, idr))}</div>${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>`;
             box.innerHTML = `<div class="tiles">
                 ${vt(overall, 'Total volume, all', fmtN(v.send.n + v.receive.n + v.swap.n) + ' transactions', true)}
@@ -739,7 +762,7 @@
                 ${tile('$' + Number(f.revenue_in_range).toFixed(2), 'Paid USDC, ' + rangeName, fmtN(f.paid_in_range) + ' paid orders (tests excluded)', { go: 'payments' })}
                 ${tile(fmtN(f.unmatched_payments), 'Payments to review', f.awaiting ? fmtN(f.awaiting) + ' orders awaiting payment' : 'Nothing waiting', { go: 'payments', alert: f.unmatched_payments > 0 })}
                 ${has('super_admin') ? tile(fmtN(f.audit_in_range), 'Audit log entries, ' + rangeName, '', { go: 'audit' }) : tile(fmtN(f.awaiting), 'Awaiting payment', '')}
-            </div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
+            </div><div id="incomeBlock"><p class="text-xs text-muted mb-2">Loading income...</p></div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
 
             h += `<div class="ov-title">Users</div><div class="tiles">
                 ${tile(fmtN(u.total), 'Total users', 'All accounts, KYC verified or not', { wide: true })}
