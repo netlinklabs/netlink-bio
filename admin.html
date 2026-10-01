@@ -65,8 +65,8 @@
         .kv > span:last-child { text-align: right; min-width: 0; word-break: break-all; }
 
         /* Overview */
-        :root { --series-1: #2a78d6; --series-2: #1baf7a; --grid: rgba(100,116,139,0.18); --meter-bg: rgba(100,116,139,0.18); --warn: #b45309; --crit: #dc2626; }
-        html.dark { --series-1: #3987e5; --series-2: #199e70; --warn: #fbbf24; --crit: #f87171; }
+        :root { --series-1: #2a78d6; --series-2: #1baf7a; --series-3: #7c5cdb; --grid: rgba(100,116,139,0.18); --meter-bg: rgba(100,116,139,0.18); --warn: #b45309; --crit: #dc2626; }
+        html.dark { --series-1: #3987e5; --series-2: #199e70; --series-3: #9b82e8; --warn: #fbbf24; --crit: #f87171; }
         .range-btn { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #64748b; border: 1px solid rgba(100,116,139,0.3); }
         .range-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
         .ov-title { font-size: 13px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: #64748b; margin: 20px 0 8px; }
@@ -435,7 +435,7 @@
         // First page of the printed report. Plain text only (no user data), all English.
         function reportCover(kind, label, period_, partial, stamp, who) {
             const title = `Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report`;
-            const sections = ['Finance', 'Users', 'Netlink Pay', 'Swap commission', 'API requests', 'Storage'];
+            const sections = ['Finance and income', 'Users', 'Netlink Pay', 'API requests', 'Storage'];
             return `<section class="rp-cover">
                 <div class="bar"></div>
                 <div class="top"><img src="/assets/netlinkbio-icon.png" alt="Netlink"><span class="tag">INTERNAL REPORT</span></div>
@@ -472,7 +472,7 @@
             const tiers = ['basic', 'silver', 'gold', 'platinum'].filter((t) => t !== 'platinum' || u.tiers.platinum);
             const meter = (name, used, limit) => { const pc = limit ? (used / limit) * 100 : 0; return `<div style="font-size:9pt"><b>${esc(name)}</b>: ${fmtBytes(used)} of ${fmtBytes(limit)} (${pc < 0.1 && used ? '<0.1' : pc.toFixed(1)}%)</div><div class="rp-meter"><div style="width:${Math.min(100, Math.max(used ? 1 : 0, pc)).toFixed(1)}%"></div></div>`; };
             const volRow = (name, usd, n) => `<tr><td>${esc(name)}</td><td class="n">${fmtUsd(usd)}</td><td class="n">${idr ? 'Rp ' + Math.round(usd * idr).toLocaleString('id-ID') : '-'}</td><td class="n">${esc(n)}</td></tr>`;
-            const S1 = '#2a78d6', S2 = '#1baf7a';
+            const S1 = '#2a78d6', S2 = '#1baf7a', S3 = '#7c5cdb';
             const volSeries = p.tx_volume_series ? volumeSeries(p.tx_volume_series, d.buckets, polUsd) : null;
             const per = d.unit === 'month' ? 'month' : 'day';
             const fee = feeSummary(p.fee_income, d.buckets, polUsd);
@@ -483,9 +483,13 @@
                 ${reportCover(kind, label, period_, partial, stamp, who)}
                 <div class="rp-run">Netlink ${kind === 'month' ? 'Monthly' : 'Yearly'} Report · ${esc(label)}</div>
 
-                <div class="rp-sec"><h2>Finance</h2><div class="rp-kpis">
-                    ${kpi(fmtN(f.orders_in_range), 'Orders in period')}${kpi(fmtUsd(order), 'Paid USDC (tests excluded)')}${kpi(fmtN(f.paid_in_range), 'Paid orders')}${kpi(fmtN(f.audit_in_range), 'Audit log entries')}</div>
-                    ${printBars('Revenue per ' + per + ' (paid USDC)', d.buckets, d.unit, [{ name: 'Revenue', values: f.series_revenue, color: S1 }], fmtUsd)}</div>
+                <div class="rp-sec"><h2>Finance and income</h2><div class="rp-kpis">
+                    ${kpi(fmtUsd(order), 'Order revenue (paid USDC, tests excluded)')}${kpi(fee ? fmtUsd(fee.usd) : '-', 'Swap commission')}${kpi(fee ? fmtUsd(order + fee.usd) : '-', 'Total income')}${kpi(fee ? fmtN(fee.swaps) : '-', 'Swaps with commission')}</div>
+                    <div class="rp-kpis">${kpi(fmtN(f.orders_in_range), 'Orders in period')}${kpi(fmtN(f.paid_in_range), 'Paid orders')}${kpi(fmtN(f.audit_in_range), 'Audit log entries')}</div>
+                    <div class="rp-note">Order revenue is USDC paid for orders. Swap commission is the fee received on the Netlink fee wallet on Polygon (${esc(FEE_WALLET_SHORT)}), read from the blockchain; only transfers that belong to a swap made in Netlink Pay are counted${p.fee_unmatched ? ` (${fmtN(p.fee_unmatched)} other incoming transfers in this period are left out)` : ''}. USDC counts 1:1, POL uses the price at generation time${polUsd ? '' : ' (unavailable, POL is left out)'}. Amounts are what was received, before any costs.${fee ? ` Commission received: ${fee.pol.toFixed(2)} POL and ${fmtUsd(fee.usdc)} in USDC.` : ''}${fee ? '' : ' Swap commission has not been synced from the blockchain yet, it is read once a day.'}</div>
+                    ${printBars('Order revenue per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Order revenue', values: f.series_revenue, color: S1 }], fmtUsd)}
+                    ${fee ? printBars('Swap commission per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Swap commission', values: fee.series, color: S2 }], fmtUsd) : ''}
+                    ${fee ? printBars('Total income per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Total income', values: fee.series.map((x, i) => x + (Number(f.series_revenue[i]) || 0)), color: S3 }], fmtUsd) : ''}</div>
 
                 <div class="rp-sec"><h2>Users</h2><div class="rp-kpis">
                     ${kpi(fmtN(u.total), 'Users in total')}${kpi(fmtN(u.new_in_range), 'New users in period')}${kpi(fmtN(u.kyc) + ' / ' + fmtN(u.non_kyc), 'KYC verified / not verified')}${kpi(fmtN(u.kyc_in_range), 'KYC verified in period')}</div>
@@ -505,11 +509,6 @@
                     <div class="rp-note">${netTotal ? 'NET moved: ' + fmtN(netTotal) + ' NET, not valued in USD (no market price). ' : ''}${v.polMissing ? 'POL price was unavailable, POL amounts are left out. ' : ''}USDC counts 1:1, POL uses the price at generation time, a swap uses its USDC side. IDR rate: ${idr ? '1 USD = Rp ' + Math.round(idr).toLocaleString('id-ID') : 'unavailable'}. Total is Send + Receive + Swap; a transfer between two Netlink users appears in both Send and Receive, and Order paid from Netlink Pay is also inside Send.</div>
                     ${printBars('Transactions per ' + per, d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: S1 }])}
                     ${volSeries ? printBars('Transaction volume per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Volume', values: volSeries, color: S2 }], fmtUsd) : ''}</div>
-
-                <div class="rp-sec"><h2>Swap commission</h2>${fee ? `<div class="rp-kpis">
-                    ${kpi(fmtUsd(fee.usd), 'Commission in period')}${kpi(fmtN(fee.swaps), 'Swaps with commission')}${kpi(fmtUsd(fee.usdc), 'Received as USDC')}${kpi(fee.pol.toFixed(2) + ' POL', 'Received as POL')}</div>
-                    <div class="rp-note">Commission received on the Netlink fee wallet on Polygon (${esc(FEE_WALLET_SHORT)}), read from the blockchain. Only transfers that belong to a swap made in Netlink Pay are counted${p.fee_unmatched ? ` (${fmtN(p.fee_unmatched)} other incoming transfers in this period are left out)` : ''}. USDC counts 1:1, POL uses the price at generation time${polUsd ? '' : ' (unavailable, POL is left out)'}. This is the amount received, before any costs.</div>
-                    ${printBars('Swap commission per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Commission', values: fee.series, color: S2 }], fmtUsd)}` : '<div class="rp-note">Swap commission has not been synced from the blockchain yet. It is read once a day, so it appears in the next report.</div>'}</div>
 
                 <div class="rp-sec"><h2>API requests</h2><div class="rp-kpis">
                     ${kpi(fmtN(a.total), 'Requests')}${kpi(a.total ? (((a.total - a.errors) / a.total) * 100).toFixed(1) + '%' : '-', 'Success rate')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}</div>
@@ -605,6 +604,28 @@
         const fmtUsd = (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const fmtIdr = (usd, rate) => (rate ? '≈ Rp ' + Math.round(usd * rate).toLocaleString('id-ID') : '');
 
+        // Income = order revenue + swap commission (received on the fee wallet, read from Polygon by the daily job)
+        function fillIncome(d, polUsd, idr, order) {
+            const box = $('incomeBlock'); if (!box) return;
+            const fee = feeSummary(d.pay.fee_income, d.buckets, polUsd);
+            const tl = (usd, label, sub) => `<div class="card tile"><div class="v text-primary">${fmtUsd(usd)}</div><div class="l">${esc(label)}</div>${idr ? `<div class="s">${esc(fmtIdr(usd, idr))}</div>` : ''}${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>`;
+            const rev = d.finance.series_revenue.map(Number);
+            const per = d.unit === 'month' ? 'month' : d.unit === 'hour' ? 'hour' : 'day';
+            if (!fee) {
+                box.innerHTML = `<p class="text-xs text-muted mb-2">Swap commission has not been synced from the blockchain yet. The daily job reads it once a day.</p>`;
+                return;
+            }
+            box.innerHTML = `<div class="tiles">
+                ${tl(order, 'Order revenue', fmtN(d.finance.paid_in_range) + ' paid orders')}
+                ${tl(fee.usd, 'Swap commission', fmtN(fee.swaps) + ' swaps, ' + fee.pol.toFixed(2) + ' POL + ' + fmtUsd(fee.usdc))}
+                ${tl(order + fee.usd, 'Total income', '')}
+            </div>
+            ${chartHtml('Order revenue per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Order revenue', values: rev, color: 'var(--series-1)' }], fmtUsd)}
+            ${chartHtml('Swap commission per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Swap commission', values: fee.series, color: 'var(--series-2)' }], fmtUsd)}
+            ${chartHtml('Total income per ' + per + ' (USD)', d.buckets, d.unit, [{ name: 'Total income', values: fee.series.map((x, i) => x + (rev[i] || 0)), color: 'var(--series-3)' }], fmtUsd)}
+            <p class="text-xs text-muted mb-2">Swap commission is the fee received on the Netlink fee wallet on Polygon (${esc(FEE_WALLET_SHORT)}). Only transfers that belong to a swap made in Netlink Pay are counted${d.pay.fee_unmatched ? ' (' + fmtN(d.pay.fee_unmatched) + ' other incoming transfers are left out)' : ''}. USDC counts 1:1, POL uses the current price. Amounts are what was received, before any costs.</p>`;
+        }
+
         async function fillVolume(d) {
             const box = $('volBlock'); if (!box) return;
             const [polUsd, idr] = await Promise.all([fetchPolUsd(), fetchIdrRate()]);
@@ -613,6 +634,7 @@
             const order = Number(d.finance.revenue_in_range) || 0;
             const overall = v.send.usd + v.receive.usd + v.swap.usd;
             const netTotal = v.send.net + v.receive.net + v.swap.net;
+            fillIncome(d, polUsd, idr, order);
             const vt = (usd, label, sub, wide) => `<div class="card tile"${wide ? ' style="grid-column: 1 / -1"' : ''}><div class="v text-primary">${fmtUsd(usd)}</div><div class="l">${esc(label)}</div><div class="s">${esc(fmtIdr(usd, idr))}</div>${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>`;
             box.innerHTML = `<div class="tiles">
                 ${vt(overall, 'Total volume, all', fmtN(v.send.n + v.receive.n + v.swap.n) + ' transactions', true)}
@@ -740,7 +762,7 @@
                 ${tile('$' + Number(f.revenue_in_range).toFixed(2), 'Paid USDC, ' + rangeName, fmtN(f.paid_in_range) + ' paid orders (tests excluded)', { go: 'payments' })}
                 ${tile(fmtN(f.unmatched_payments), 'Payments to review', f.awaiting ? fmtN(f.awaiting) + ' orders awaiting payment' : 'Nothing waiting', { go: 'payments', alert: f.unmatched_payments > 0 })}
                 ${has('super_admin') ? tile(fmtN(f.audit_in_range), 'Audit log entries, ' + rangeName, '', { go: 'audit' }) : tile(fmtN(f.awaiting), 'Awaiting payment', '')}
-            </div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
+            </div><div id="incomeBlock"><p class="text-xs text-muted mb-2">Loading income...</p></div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
 
             h += `<div class="ov-title">Users</div><div class="tiles">
                 ${tile(fmtN(u.total), 'Total users', 'All accounts, KYC verified or not', { wide: true })}
