@@ -16,7 +16,7 @@
     { "path": "/api/cron/rollup-analytics", "schedule": "10 0 * * *" }
   ],
   "functions": {
-    "api/cron/rollup-analytics.js": { "maxDuration": 60 },
+    "api/cron/rollup-analytics.js": { "maxDuration": 120 },
     "api/bio.js": { "includeFiles": "node_modules/web-bot-auth/**" },
     "api/cv.js": { "includeFiles": "node_modules/web-bot-auth/**" },
     "api/landing.js": { "includeFiles": "node_modules/web-bot-auth/**" },
