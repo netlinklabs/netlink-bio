@@ -421,7 +421,7 @@
                     <div><span>Period</span><b>${esc(label)}</b><div class="rp-note">${esc(period_)}</div></div>
                     <div><span>Status</span><b>${partial ? 'Period still running' : 'Closed period'}</b></div>
                     <div><span>Generated</span><b>${esc(stamp)}</b></div>
-                    <div><span>Prepared by</span><b>${who ? '@' + esc(who) : 'Netlink admin'}</b></div>
+                    <div><span>Prepared by</span><b>${who ? esc(who) : 'Netlink admin'}</b></div>
                 </div>
                 <div class="toc"><h2>In this report</h2><ol>${sections.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></div>
                 <div class="bottom"><b>Unaudited.</b> Figures come from Netlink's own records. Prepared for internal use. May be shared with prospective investors and partners to evaluate or carry out cooperation with Netlink. Please use it only for that purpose and do not share it further without Netlink's written permission.</div>
@@ -474,8 +474,9 @@
                     ${printBars('Transactions', d.buckets, d.unit, [{ name: 'Transactions', values: p.series_tx, color: S1 }])}</div>
 
                 <div class="rp-sec"><h2>API requests</h2><div class="rp-kpis">
-                    ${kpi(fmtN(a.total), 'Requests')}${kpi(fmtN(a.errors), 'Errors (4xx and 5xx)')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}${kpi((a.total ? (a.errors / a.total) * 100 : 0).toFixed(1) + '%', 'Error rate')}</div>
-                    ${a.by_endpoint.length ? `<table><thead><tr><th>Endpoint</th><th class="n">Requests</th><th class="n">Errors</th><th class="n">Error rate</th></tr></thead><tbody>${a.by_endpoint.map((e) => `<tr><td>${esc(e.endpoint)}</td><td class="n">${fmtN(e.total)}</td><td class="n">${fmtN(e.errors)}</td><td class="n">${e.total ? ((e.errors / e.total) * 100).toFixed(1) : '0.0'}%</td></tr>`).join('')}</tbody></table>` : '<div class="rp-note">No API requests counted in this period. Counting started when the feature was released.</div>'}
+                    ${kpi(fmtN(a.total), 'Requests')}${kpi(a.total ? (((a.total - a.errors) / a.total) * 100).toFixed(1) + '%' : '-', 'Success rate')}${kpi(fmtN(a.server_errors), 'Server errors (5xx)')}</div>
+                    <div class="rp-note">Not found or invalid requests (4xx): ${fmtN(Math.max(0, a.errors - a.server_errors))}, mostly links that do not exist. Server errors (5xx) are failures on the platform side.</div>
+                    ${a.by_endpoint.length ? `<table><thead><tr><th>Endpoint</th><th class="n">Requests</th><th class="n">Server errors</th></tr></thead><tbody>${a.by_endpoint.map((e) => `<tr><td>${esc(e.endpoint)}</td><td class="n">${fmtN(e.total)}</td><td class="n">${fmtN(e.server_errors || 0)}</td></tr>`).join('')}</tbody></table>` : '<div class="rp-note">No API requests counted in this period. Counting started when the feature was released.</div>'}
                     ${printBars('Requests per ' + (d.unit === 'month' ? 'month' : 'day'), d.api_buckets, d.unit === 'month' ? 'month' : 'day', [{ name: 'Requests', values: a.series_total, color: S1 }])}</div>
 
                 <div class="rp-sec"><h2>Storage (${esc(lim.plan)})</h2>
@@ -1050,7 +1051,7 @@
                     .eq('id', currentUser.id).single();
                 if (window.NetlinkNav && profile) NetlinkNav.init({ activePage: null, profile, supabaseClient, userId: currentUser.id });
 
-                currentProfileName = profile?.username || '';
+                currentProfileName = (profile?.display_name || '').trim() || profile?.username || '';
                 const me = await api('admin-me');
                 roles = me.roles || [];
                 $('authGate').style.display = 'none';
