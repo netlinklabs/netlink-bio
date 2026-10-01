@@ -21,13 +21,13 @@ const BATCH_SIZE = 150;  // rows per run (keeps one cron run well under the func
 const MAX_ATTEMPTS = 5;  // stop retrying a row after this many failed checks
 const IN_CHUNK = 100;    // ids per PostgREST in.(...) filter (keeps URLs short)
 
-const chunk = (arr, n) => {
+export const chunk = (arr, n) => {
   const out = [];
   for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
   return out;
 };
 
-async function sb(key, path, options = {}) {
+export async function sb(key, path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...options,
     headers: {
@@ -42,7 +42,7 @@ async function sb(key, path, options = {}) {
 }
 
 // Returns { [hash]: { receipt } | { error } }
-async function getReceipts(alchemyKey, hashes) {
+export async function getReceipts(alchemyKey, hashes) {
   const url = `https://polygon-mainnet.g.alchemy.com/v2/${alchemyKey}`;
   const out = {};
   for (const group of chunk(hashes, RPC_BATCH)) {

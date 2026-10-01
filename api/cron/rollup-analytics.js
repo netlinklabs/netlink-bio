@@ -17,14 +17,35 @@
 // plan caps api/ at 12 functions and that cap is reached:
 //   - sendReminders(): day-2 payment reminders (below)
 //   - verifyWalletTx(): marks wallet_transactions rows as verified on-chain
-//     (api/_lib/verify-wallet-tx.js). Runs after the rollup and never affects
-//     it. `?job=verify-wallet-tx` runs only this job, for manual backfill.
+//     (api/_lib/verify-wallet-tx.js), then checkWalletTxAmounts() compares the
+//     recorded amount with the on-chain transfers (api/_lib/verify-wallet-amount.js).
+//     They run after the rollup and never affect it. `?job=verify-wallet-tx`
+//     runs only these two, for manual backfill.
 
 import { sendMail, getUserEmail, reminderMail } from '../_lib/mailer.js';
 import { verifyWalletTx } from '../_lib/verify-wallet-tx.js';
+import { checkWalletTxAmounts } from '../_lib/verify-wallet-amount.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Each step is isolated: one failing never hides or blocks the other.
+async function runWalletJobs() {
+  const out = {};
+  try {
+    out.verify = await verifyWalletTx();
+  } catch (err) {
+    console.error('verify-wallet-tx failed', err);
+    out.verify = { error: 'failed' };
+  }
+  try {
+    out.amounts = await checkWalletTxAmounts();
+  } catch (err) {
+    console.error('verify-wallet-amount failed', err);
+    out.amounts = { error: 'failed' };
+  }
+  return out;
+}
 
 export default async function handler(req, res) {
   const cronSecret = process.env.CRON_SECRET;
@@ -42,14 +63,11 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Manual run of the wallet verification only (no rollup, no reminders).
+  // Manual run of the wallet checks only (no rollup, no reminders).
   if (req.query.job === 'verify-wallet-tx') {
-    try {
-      res.status(200).json({ ok: true, job: 'verify-wallet-tx', ...(await verifyWalletTx()) });
-    } catch (err) {
-      console.error('verify-wallet-tx failed', err);
-      res.status(500).json({ error: 'Verification run failed' });
-    }
+    const out = await runWalletJobs();
+    const failed = out.verify.error || out.amounts.error;
+    res.status(failed ? 500 : 200).json({ ok: !failed, job: 'verify-wallet-tx', ...out });
     return;
   }
 
@@ -75,14 +93,8 @@ export default async function handler(req, res) {
     }
     const reminders = await sendReminders();
     // Isolated: a failure here is reported in the response but never fails the rollup.
-    let walletVerify;
-    try {
-      walletVerify = await verifyWalletTx();
-    } catch (err) {
-      console.error('verify-wallet-tx failed', err);
-      walletVerify = { error: 'failed' };
-    }
-    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders, walletVerify });
+    const walletChecks = await runWalletJobs();
+    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders, walletChecks });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || String(err) });

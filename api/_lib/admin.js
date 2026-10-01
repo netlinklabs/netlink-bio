@@ -63,19 +63,29 @@ async function countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, filter) {
   return Number(m[1]);
 }
 
-// All-time summary of the daily on-chain check (api/_lib/verify-wallet-tx.js). `flagged` is
-// rows that hit MAX_ATTEMPTS there (not found on Polygon, or reverted on-chain). Returns null
-// on any error so a problem here never breaks the rest of the overview.
+// All-time summary of the daily on-chain checks (api/_lib/verify-wallet-tx.js and
+// api/_lib/verify-wallet-amount.js). `flagged` is rows that hit MAX_ATTEMPTS there (not found on
+// Polygon, or reverted on-chain). The amount_* figures count verified rows by the result of the
+// amount comparison; amount_pending is verified rows not compared yet. Returns null on any error
+// so a problem here never breaks the rest of the overview.
 async function onchainSummary(SUPABASE_URL, SERVICE_ROLE_KEY) {
   try {
     const ok = 'status=eq.success';
-    const [total, verified, flagged, notSeen] = await Promise.all([
-      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, ok),
-      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, `${ok}&onchain_verified=eq.true`),
-      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, `${ok}&onchain_verified=eq.false&onchain_check_attempts=gte.5`),
-      countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, `${ok}&onchain_verified=eq.true&onchain_check_note=ilike.*not%20seen*`),
+    const count = (f) => countWalletTx(SUPABASE_URL, SERVICE_ROLE_KEY, f);
+    const [total, verified, flagged, notSeen, amountMatch, amountMismatch, amountUnchecked] = await Promise.all([
+      count(ok),
+      count(`${ok}&onchain_verified=eq.true`),
+      count(`${ok}&onchain_verified=eq.false&onchain_check_attempts=gte.5`),
+      count(`${ok}&onchain_verified=eq.true&onchain_check_note=ilike.*not%20seen*`),
+      count(`${ok}&onchain_amount_status=eq.match`),
+      count(`${ok}&onchain_amount_status=eq.mismatch`),
+      count(`${ok}&onchain_amount_status=eq.unchecked`),
     ]);
-    return { total, verified, flagged, not_seen: notSeen, pending: Math.max(0, total - verified - flagged) };
+    return {
+      total, verified, flagged, not_seen: notSeen, pending: Math.max(0, total - verified - flagged),
+      amount_match: amountMatch, amount_mismatch: amountMismatch, amount_unchecked: amountUnchecked,
+      amount_pending: Math.max(0, verified - amountMatch - amountMismatch - amountUnchecked),
+    };
   } catch (err) {
     console.error('onchain summary failed', err.message);
     return null;
