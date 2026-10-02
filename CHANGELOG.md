@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Changed
+- **OG image: the top-right icon + "Netlink.bio" text is replaced by the official logo image (`/assets/netlinkbio-darkBG.png`, 1300x400).** Rendered at 220x68 px (same 1300:400 ratio, about 18% of the 1200px card width) so it stays readable when WhatsApp/Facebook shrink the card to a ~300px thumbnail. Applies to bio and CV cards, for all tiers. `api/og.js` loads the logo from the site's own origin as a data URI; if the fetch fails it falls back to the previous icon + text, so the card never breaks.
+
 ### Added
 - **Bio share image (OG) now uses the header banner as a darkened background for Silver and Gold.** `api/og.js` loads the banner (only for `type=bio`, only when tier is Silver/Gold and the URL is inside our public `banners` bucket, max 1MB, JPEG/PNG/WebP), draws it as a cover background and adds a flat 55% black overlay so the white text stays readable on any image. Any problem (wrong tier, foreign URL, failed fetch) falls back to the existing teal-to-blue gradient. Basic users and CV cards render byte-for-byte as before (verified by comparing old and new output). `api/bio.js` adds `&v=<banner upload timestamp>` to the `og:image` URL only when an effective banner exists, so social platforms and the CDN fetch a fresh image after a banner change; Basic URLs are unchanged. JSON-LD intentionally not changed (the banner is decoration, not identity).
 
