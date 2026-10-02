@@ -6,7 +6,11 @@
 import { ImageResponse } from '@vercel/og';
 import { OG_LOGO_DATA_URI } from './_lib/og-logo.js';
 
-export const config = { runtime: 'edge' };
+// Pinned to Sydney: the profile, banner and avatar all live in Supabase
+// (ap-southeast-2). Rendering near the data makes each fetch take ~10ms
+// instead of a long round trip from a US/EU edge, so a cold render finishes
+// well inside WhatsApp's and opengraph.to's crawler timeouts.
+export const config = { runtime: 'edge', regions: ['syd1'] };
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
