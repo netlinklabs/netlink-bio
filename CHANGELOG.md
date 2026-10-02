@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Fixed
+- **OG image: Meta's Sharing Debugger kept showing "image broken" for a banner image that already renders fine.** Server logs showed Meta re-scraped the page but did not request `/api/og` at all, so it was reusing its cached failure for that image URL (an earlier cold render took 2.3s). `OG_RENDER_VERSION` in `api/bio.js` bumped to 5, so the `og:image` URL is new and Meta must fetch it again. No change to the image itself.
+
+### Fixed
 - **OG image: uncached renders were too slow for Meta's scraper (it hit `/api/og` 5 times in a row, all MISS, and "Scrape Again" failed again after the JPEG change).** A banner card took about 1.1s of CPU locally (resvg scaling a photo), several times that on a Vercel function. In `api/og.js` the photo is now processed by `sharp` (cover-crop to 1200x630, darkened to 45% brightness, the same look as the 55% black overlay) and the Satori card is drawn on a transparent background, then composited over it: about 0.39s locally (was 1.1s), 103KB. The verified check is an inline SVG instead of the emoji, which `@vercel/og` fetched from a CDN on every cold render. A corrupt banner falls back to the gradient with a 30s cache. Each render logs `[og-timing]` (stage timings in ms) so real Vercel durations are visible in runtime logs.
 
 ### Fixed
