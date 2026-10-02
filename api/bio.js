@@ -440,9 +440,12 @@ ${isDemoProfile(profile.username)
   .bio-banner { width:100%; aspect-ratio:3 / 1; overflow:hidden; background:var(--nl-placeholder); }
   .bio-banner img { width:100%; height:100%; object-fit:cover; display:block; }
   body.has-banner .page-topbar { position:absolute; top:0; left:0; right:0; z-index:5; max-width:none; }
-  body.has-banner .topbar-logo { width:36px; height:36px; border-radius:50%; justify-content:center; background:var(--nl-card); box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+  /* Circle buttons over the banner: card color at 50% opacity, per theme. */
+  body.has-banner { --nl-topbar-btn-bg: rgba(255,255,255,0.5); }
+  body.has-banner.theme-dark { --nl-topbar-btn-bg: rgba(30,41,59,0.5); }
+  body.has-banner .topbar-logo { width:36px; height:36px; border-radius:50%; justify-content:center; background:var(--nl-topbar-btn-bg); box-shadow:0 1px 3px rgba(0,0,0,0.25); }
   body.has-banner .topbar-logo img { width:22px; height:22px; border-radius:0; }
-  body.has-banner .topbar-share-btn { box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+  body.has-banner .topbar-share-btn { background:var(--nl-topbar-btn-bg); box-shadow:0 1px 3px rgba(0,0,0,0.25); }
   @media (min-width:1025px) {
     .bio-banner { max-width:480px; margin:0 auto; }
     body.has-banner .page-topbar { max-width:480px; margin:0 auto; }
