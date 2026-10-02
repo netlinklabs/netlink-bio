@@ -77,6 +77,8 @@
         .tpl-thumb.base-dark { background: #0f172a; border-color: #334155; }
         .tpl-thumb.base-dark .dot, .tpl-thumb.base-dark .bar { background: #475569; }
         .tpl-thumb.base-dark .bar.short { background: #334155; }
+        .tpl-notice { font-size: 12px; line-height: 1.45; padding: 10px 12px; border-radius: 12px; margin-bottom: 12px; background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.3); }
+        html.dark .tpl-notice { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
         .tpl-tier { position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; }
         .tpl-tier.silver { background: rgba(148,163,184,0.2); color: #475569; }
         .tpl-tier.gold { background: rgba(245,158,11,0.18); color: #b45309; }
@@ -136,6 +138,7 @@
         <div class="card rounded-2xl p-4 lg:p-6 mb-4">
             <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="layout-template" class="w-4 h-4 text-purple-500"></i> Templates</h3>
             <p id="templateIntro" class="text-xs text-muted mb-3"></p>
+            <p id="templateNotice" class="tpl-notice hidden" role="status"></p>
             <div id="templateGrid" class="grid grid-cols-2 gap-3"></div>
         </div>
     </main>
@@ -272,19 +275,31 @@
             const selectedTemplate = currentProfile?.template_id || null;
             const theme = currentTheme();
             const tier = userTier();
+
+            // A saved template the plan no longer allows (or an unknown id) is
+            // not rendered on the public page, which falls back to the base
+            // look. Mirror that here: highlight the active base look and say why.
+            const savedTpl = selectedTemplate ? TEMPLATES.find((t) => t.id === selectedTemplate) : null;
+            const templateUnavailable = !!selectedTemplate && (!savedTpl || !canUseTemplate(savedTpl));
+            const baseActive = !selectedTemplate || templateUnavailable;
+            const notice = document.getElementById('templateNotice');
+            notice.textContent = templateUnavailable
+                ? 'Your previous template' + (savedTpl ? ' (' + savedTpl.name + ')' : '') + ' is not available on your plan, so your page uses the standard ' + (theme === 'dark' ? 'Dark' : 'Light') + ' look. Pick a look or a template below.'
+                : '';
+            notice.classList.toggle('hidden', !templateUnavailable);
             document.getElementById('templateIntro').textContent =
                 (tier === 'gold' ? 'All Silver and Gold templates are unlocked for you.' : 'Silver templates are unlocked for you. Upgrade to Gold to unlock more.')
                 + ' Templates use your current look (' + (theme === 'dark' ? 'Dark' : 'Light') + ').';
 
             const baseCards = ['light', 'dark'].map((t) => `
-                <button type="button" class="tpl-card ${!selectedTemplate && theme === t ? 'selected' : ''}" data-id="base-${t}" onclick="selectBaseTheme('${t}')">
+                <button type="button" class="tpl-card ${baseActive && theme === t ? 'selected' : ''}" data-id="base-${t}" onclick="selectBaseTheme('${t}')">
                     <span class="tpl-check">&#10003;</span>
                     <div class="tpl-thumb base-${t}"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
                     <span class="text-sm font-medium text-primary">${t === 'dark' ? 'Dark' : 'Light'}</span>
                 </button>`).join('');
 
             const templateCards = TEMPLATES.filter(canUseTemplate).map((t) => `
-                <button type="button" class="tpl-card ${selectedTemplate === t.id ? 'selected' : ''}" data-id="${t.id}" onclick="selectTemplate('${t.id}')">
+                <button type="button" class="tpl-card ${!templateUnavailable && selectedTemplate === t.id ? 'selected' : ''}" data-id="${t.id}" onclick="selectTemplate('${t.id}')">
                     <span class="tpl-check">&#10003;</span>
                     <span class="tpl-tier ${t.tier}">${TIER_LABEL[t.tier]}</span>
                     <div class="tpl-thumb"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
