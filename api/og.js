@@ -48,6 +48,7 @@ const LOGO_H = Math.round(LOGO_W * 400 / 1300); // 68, keeps the 1300:400 ratio
 // Shared by the banner and avatar prefetch: short timeout so a slow image
 // host cannot make the whole card miss WhatsApp's crawler deadline.
 const IMG_FETCH_TIMEOUT_MS = 2500;
+const BANNER_FETCH_TIMEOUT_MS = 3000;
 
 function toDataUri(buf, type) {
   const bytes = new Uint8Array(buf);
@@ -77,21 +78,36 @@ async function loadAvatar(url) {
 
 // Fetch the banner and return it as a data URI, or '' on any problem so the
 // card falls back to the normal gradient instead of failing to render.
+// True when this profile should get a banner background (same checks as
+// loadBannerDataUri) so a missing result can be recognised as a failure.
+function wantsBanner(profile) {
+  return !!profile && BANNER_TIERS.includes(profile.tier) && (profile.banner_url || '').startsWith(BANNER_URL_PREFIX);
+}
+
+async function fetchBannerOnce(url) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(BANNER_FETCH_TIMEOUT_MS) });
+  if (!res.ok) return '';
+  const type = (res.headers.get('content-type') || '').split(';')[0].trim();
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return '';
+  const buf = await res.arrayBuffer();
+  if (buf.byteLength === 0 || buf.byteLength > BANNER_MAX_BYTES) return '';
+  return toDataUri(buf, type);
+}
+
 async function loadBannerDataUri(profile) {
-  try {
-    if (!profile || !BANNER_TIERS.includes(profile.tier)) return '';
-    const url = profile.banner_url || '';
-    if (!url.startsWith(BANNER_URL_PREFIX)) return '';
-    const res = await fetch(url, { signal: AbortSignal.timeout(IMG_FETCH_TIMEOUT_MS) });
-    if (!res.ok) return '';
-    const type = (res.headers.get('content-type') || '').split(';')[0].trim();
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return '';
-    const buf = await res.arrayBuffer();
-    if (buf.byteLength === 0 || buf.byteLength > BANNER_MAX_BYTES) return '';
-    return toDataUri(buf, type);
-  } catch (e) {
-    return '';
+  if (!wantsBanner(profile)) return '';
+  const url = profile.banner_url;
+  // One retry, but only after a fast failure (network blip). A timeout is not
+  // retried: that would push the response past the crawler's own deadline.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const started = Date.now();
+    try {
+      const out = await fetchBannerOnce(url);
+      if (out) return out;
+    } catch (e) { /* fall through to retry decision */ }
+    if (Date.now() - started > 1000) break;
   }
+  return '';
 }
 
 async function fetchProfile(username) {
@@ -124,6 +140,10 @@ export default async function handler(req) {
     loadAvatar(profile?.avatar_url || ''),
   ]);
   const logo = OG_LOGO_DATA_URI;
+  // A profile that should have a banner but rendered without one is a degraded
+  // card (image host slow or failing). @vercel/og would cache it for a year as
+  // immutable, pinning the gradient; give it a short cache instead.
+  const degraded = type === 'bio' && wantsBanner(profile) && !banner;
 
   return new ImageResponse(
     h('div', {
@@ -182,6 +202,9 @@ export default async function handler(req) {
           : h('div', { style: { fontSize: 32, color: 'rgba(255,255,255,0.88)', marginTop: 14, display: 'flex' } }, subtitle)
       )
     ),
-    { width: 1200, height: 630 }
+    {
+      width: 1200, height: 630,
+      ...(degraded ? { headers: { 'cache-control': 'public, max-age=30, s-maxage=30, no-transform' } } : {}),
+    }
   );
 }
