@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Fixed
+- **OG image: a render that failed to load the banner stayed cached as the old gradient card.** `@vercel/og` caches every response for a year (`immutable`), including a degraded card made when the banner fetch failed or timed out once, so WhatsApp/opengraph.to sometimes kept getting the gradient version for a Gold/Silver profile. In `api/og.js`: the banner fetch is retried once after a fast failure (timeout raised to 3s, no retry after a timeout), and if a profile that should have a banner still renders without it, the response gets `Cache-Control: public, max-age=30, s-maxage=30` instead of the 1-year immutable one. Basic, CV, and normal renders keep the long cache. `OG_RENDER_VERSION` in `api/bio.js` bumped to 3 so URLs that already cached a degraded card are replaced.
+
+### Fixed
 - **OG image: first (uncached) render could take 1.6s+, so opengraph.to flagged "og:image is broken" intermittently and WhatsApp sometimes showed no image.** Vercel runtime logs showed every `/api/og` request returned 200 (no errors), but cache misses were slow. `api/og.js` is now pinned to `syd1` (`regions: ['syd1']`), next to the Supabase project (`ap-southeast-2`) that holds the profile, banner and avatar, instead of rendering in whichever region is nearest the crawler.
 
 ### Fixed

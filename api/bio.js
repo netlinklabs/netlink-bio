@@ -233,7 +233,7 @@ async function handler(req, res) {
   const ogVersionMatch = bannerUrl && bannerUrl.match(/[?&]t=(\d+)/);
   // OG_RENDER_VERSION: bump when the OG card design/behaviour changes, so every
   // profile gets a fresh URL (WhatsApp and others cache a failed fetch for days).
-  const OG_RENDER_VERSION = 2;
+  const OG_RENDER_VERSION = 3;
   const ogVersion = `&r=${OG_RENDER_VERSION}` + (ogVersionMatch ? `&v=${ogVersionMatch[1]}` : '');
   const ogImageUrl = `https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio${ogVersion}`;
 
