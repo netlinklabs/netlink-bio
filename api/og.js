@@ -9,8 +9,8 @@
 // to Supabase) in vercel.json.
 
 import { OG_LOGO_DATA_URI } from './_lib/og-logo.js';
+import { SUPABASE_URL, computeBadgeLabel, wantsBanner, computeOgHash, ogStorageUrl, hasOgColumns } from './_lib/og-shared.js';
 
-const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
 
 // Small helper so we can build the element tree without a JSX build step.
@@ -18,23 +18,8 @@ function h(type, props, ...children) {
   return { type, props: { ...props, children: children.length <= 1 ? children[0] : children } };
 }
 
-// Single highest-priority badge label for the OG image -- Business takes
-// priority over personal identity, matching the two examples specified.
-// When a badge applies, it REPLACES the @username / job-title subtitle
-// line entirely (not shown alongside it).
-function computeBadgeLabel(profile) {
-  if (!profile) return null;
-  if (profile.business_verified_at) return 'Verified Business';
-  if (profile.identity_verified_at) return 'Verified Profile';
-  if (profile.is_black_badge) return 'Netlink Special';
-  return null;
-}
-
-// Header banner (Silver+) is only used for the bio card. Same rules as
-// effectiveBannerUrl() in api/bio.js: tier must still be Silver/Gold and the
-// URL must point at our own public banners bucket.
-const BANNER_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/banners/`;
-const BANNER_TIERS = ['silver', 'gold'];
+// computeBadgeLabel() and wantsBanner() live in ./_lib/og-shared.js (shared with
+// api/bio.js, which needs the same hash).
 const BANNER_MAX_BYTES = 1024 * 1024;
 
 // Brand logo (white wordmark on transparent background, 1300x400) used at
@@ -72,13 +57,6 @@ async function loadAvatar(url) {
   } catch (e) {
     return url;
   }
-}
-
-// True when this profile should get a banner background (Silver/Gold and a URL
-// inside our own banners bucket), so a missing result can be recognised as a
-// failure rather than "no banner".
-function wantsBanner(profile) {
-  return !!profile && BANNER_TIERS.includes(profile.tier) && (profile.banner_url || '').startsWith(BANNER_URL_PREFIX);
 }
 
 async function fetchBannerOnce(url) {
@@ -133,71 +111,143 @@ const CACHE_OK = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=6
 // A card that lost its banner (host slow/failing) must not be pinned in caches.
 const CACHE_DEGRADED = 'public, max-age=30, s-maxage=30';
 
+// Renders the card for a profile and returns the finished image plus what the
+// caller needs for caching/storing decisions. `ms` collects stage timings.
+async function renderCard(profile, type, ms) {
+  const lap = (k, since) => { ms[k] = Date.now() - since; };
+  const displayName = profile?.display_name || profile?.username || 'Netlink.bio';
+  const subtitle = type === 'cv'
+    ? (profile?.cv_data?.title || 'View Professional CV')
+    : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
+  const badgeLabel = computeBadgeLabel(profile);
+
+  // Dynamic imports: @vercel/og is ESM-only and this file may be transpiled
+  // to CommonJS by the platform.
+  const sharp = (await import('sharp')).default;
+
+  // Banner (bio card only) and avatar are fetched in parallel.
+  let t = Date.now();
+  const [bannerBg, avatar] = await Promise.all([
+    type === 'bio' ? loadBannerBackground(profile, sharp) : null,
+    loadAvatar(profile?.avatar_url || ''),
+  ]);
+  lap('assets', t);
+  const degraded = type === 'bio' && wantsBanner(profile) && !bannerBg;
+
+  // With a banner the card is drawn on a transparent background and
+  // composited over the photo by sharp; otherwise it carries the gradient.
+  t = Date.now();
+  const { ImageResponse } = await import('@vercel/og');
+  const element = buildCard({ transparent: !!bannerBg, avatar, logo: OG_LOGO_DATA_URI, displayName, subtitle, badgeLabel });
+  const png = Buffer.from(await new ImageResponse(element, { width: 1200, height: 630 }).arrayBuffer());
+  lap('satori', t);
+
+  let body = png;
+  let contentType = 'image/png';
+  let cache = degraded ? CACHE_DEGRADED : CACHE_OK;
+  t = Date.now();
+  try {
+    const base = bannerBg
+      ? sharp(bannerBg).composite([{ input: png }])
+      : sharp(png).flatten({ background: '#1D4ED8' });
+    body = await base
+      .jpeg({ quality: 80, mozjpeg: false, chromaSubsampling: '4:2:0' })
+      .toBuffer();
+    contentType = 'image/jpeg';
+  } catch (e) {
+    console.error('[og] jpeg conversion failed, sending PNG', e && e.message);
+    cache = CACHE_DEGRADED;
+  }
+  lap('jpeg', t);
+  return { body, contentType, cache, degraded, banner: !!bannerBg };
+}
+
+// Pre-render: renders the bio card once and keeps the JPEG in the public `og`
+// bucket ({user_id}/{hash}.jpg), then records it on profiles.og_image_url /
+// og_image_hash so api/bio.js can point og:image at the static file. Triggered
+// in the background by api/bio.js (?store=1) when the stored image is missing
+// or out of date. Needs SUPABASE_SERVICE_ROLE_KEY. Returns a short status
+// string for the logs. A degraded card (banner failed to load) is never stored.
+async function storeOgImage(username) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return 'no-service-key';
+  const profile = await fetchProfile(username);
+  if (!profile || !hasOgColumns(profile)) return 'no-profile-or-columns';
+
+  const hash = computeOgHash(profile);
+  const url = ogStorageUrl(profile.id, hash);
+  if (profile.og_image_hash === hash && profile.og_image_url === url) return 'current';
+
+  const r = await renderCard(profile, 'bio', {});
+  if (r.degraded || r.contentType !== 'image/jpeg') return 'degraded';
+
+  const auth = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+  const up = await fetch(`${SUPABASE_URL}/storage/v1/object/og/${profile.id}/${hash}.jpg`, {
+    method: 'POST',
+    headers: { ...auth, 'Content-Type': 'image/jpeg', 'x-upsert': 'true', 'cache-control': 'max-age=31536000' },
+    body: r.body,
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!up.ok) {
+    console.error('[og-store] upload failed', up.status, (await up.text()).slice(0, 200));
+    return 'upload-failed';
+  }
+
+  const patch = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${profile.id}`, {
+    method: 'PATCH',
+    headers: { ...auth, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify({ og_image_url: url, og_image_hash: hash }),
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!patch.ok) {
+    console.error('[og-store] profile update failed', patch.status, (await patch.text()).slice(0, 200));
+    return 'profile-update-failed';
+  }
+
+  // Remove the previous image so the bucket holds one file per profile.
+  const old = profile.og_image_hash;
+  if (old && old !== hash && /^[0-9a-f]{16}$/.test(old)) {
+    try {
+      await fetch(`${SUPABASE_URL}/storage/v1/object/og/${profile.id}/${old}.jpg`, {
+        method: 'DELETE', headers: auth, signal: AbortSignal.timeout(5000),
+      });
+    } catch (e) { /* leftover file is harmless */ }
+  }
+  return 'stored';
+}
+
 export default async function handler(req, res) {
   const t0 = Date.now();
   const ms = {};
-  const lap = (k, since) => { ms[k] = Date.now() - since; };
   try {
     const { searchParams } = new URL(req.url, 'https://netlink.bio');
     const username = (searchParams.get('username') || '').toLowerCase().trim();
     const type = searchParams.get('type') === 'cv' ? 'cv' : 'bio';
 
+    // Background pre-render request from api/bio.js. Never cached.
+    if (searchParams.get('store') === '1') {
+      const status = (type === 'bio' && username) ? await storeOgImage(username) : 'skipped';
+      console.log('[og-store] ' + JSON.stringify({ u: username, status, ms: Date.now() - t0 }));
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-store');
+      res.end(JSON.stringify({ status }));
+      return;
+    }
+
     let t = Date.now();
     const profile = username ? await fetchProfile(username) : null;
-    lap('profile', t);
+    ms.profile = Date.now() - t;
 
-    const displayName = profile?.display_name || profile?.username || 'Netlink.bio';
-    const subtitle = type === 'cv'
-      ? (profile?.cv_data?.title || 'View Professional CV')
-      : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
-    const badgeLabel = computeBadgeLabel(profile);
-
-    // Dynamic imports: @vercel/og is ESM-only and this file may be transpiled
-    // to CommonJS by the platform.
-    const sharp = (await import('sharp')).default;
-
-    // Banner (bio card only) and avatar are fetched in parallel.
-    t = Date.now();
-    const [bannerBg, avatar] = await Promise.all([
-      type === 'bio' ? loadBannerBackground(profile, sharp) : null,
-      loadAvatar(profile?.avatar_url || ''),
-    ]);
-    lap('assets', t);
-    const degraded = type === 'bio' && wantsBanner(profile) && !bannerBg;
-
-    // With a banner the card is drawn on a transparent background and
-    // composited over the photo by sharp; otherwise it carries the gradient.
-    t = Date.now();
-    const { ImageResponse } = await import('@vercel/og');
-    const element = buildCard({ transparent: !!bannerBg, avatar, logo: OG_LOGO_DATA_URI, displayName, subtitle, badgeLabel });
-    const png = Buffer.from(await new ImageResponse(element, { width: 1200, height: 630 }).arrayBuffer());
-    lap('satori', t);
-
-    let body = png;
-    let contentType = 'image/png';
-    let cache = degraded ? CACHE_DEGRADED : CACHE_OK;
-    t = Date.now();
-    try {
-      const base = bannerBg
-        ? sharp(bannerBg).composite([{ input: png }])
-        : sharp(png).flatten({ background: '#1D4ED8' });
-      body = await base
-        .jpeg({ quality: 80, mozjpeg: false, chromaSubsampling: '4:2:0' })
-        .toBuffer();
-      contentType = 'image/jpeg';
-    } catch (e) {
-      console.error('[og] jpeg conversion failed, sending PNG', e && e.message);
-      cache = CACHE_DEGRADED;
-    }
-    lap('jpeg', t);
-    lap('total', t0);
-    console.log('[og-timing] ' + JSON.stringify({ u: username, type, banner: !!bannerBg, kb: Math.round(body.length / 1024), ms }));
+    const r = await renderCard(profile, type, ms);
+    ms.total = Date.now() - t0;
+    console.log('[og-timing] ' + JSON.stringify({ u: username, type, banner: r.banner, kb: Math.round(r.body.length / 1024), ms }));
 
     res.statusCode = 200;
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Length', String(body.length));
-    res.setHeader('Cache-Control', cache);
-    res.end(body);
+    res.setHeader('Content-Type', r.contentType);
+    res.setHeader('Content-Length', String(r.body.length));
+    res.setHeader('Cache-Control', r.cache);
+    res.end(r.body);
   } catch (e) {
     // Never leave a crawler with an error: send the static brand image.
     console.error('[og] render failed, redirecting to static image', e && e.message);

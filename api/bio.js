@@ -10,6 +10,8 @@ import { escapeHtml, notFoundPage } from './_lib/html.js';
 import { isDemoProfile } from './_lib/demo-profiles.js';
 import { recordEvent } from './_lib/analytics.js';
 import { withStats } from './_lib/stats.js';
+import { waitUntil } from '@vercel/functions';
+import { OG_RENDER_VERSION, hasOgColumns, currentStoredOgUrl } from './_lib/og-shared.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -231,11 +233,21 @@ async function handler(req, res) {
   // /api/og for a long time, so the banner's upload timestamp (?t=...) is
   // passed along. Empty for Basic, so their OG URL stays exactly as before.
   const ogVersionMatch = bannerUrl && bannerUrl.match(/[?&]t=(\d+)/);
-  // OG_RENDER_VERSION: bump when the OG card design/behaviour changes, so every
-  // profile gets a fresh URL (WhatsApp and others cache a failed fetch for days).
-  const OG_RENDER_VERSION = 5;
+  // OG_RENDER_VERSION (in _lib/og-shared.js): bump when the OG card design or
+  // behaviour changes, so every profile gets a fresh URL (WhatsApp and others
+  // cache a failed fetch for days).
   const ogVersion = `&r=${OG_RENDER_VERSION}` + (ogVersionMatch ? `&v=${ogVersionMatch[1]}` : '');
-  const ogImageUrl = `https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio${ogVersion}`;
+  const ogDynamicUrl = `https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio${ogVersion}`;
+  // Pre-rendered image: when the og bucket holds a current JPEG for this
+  // profile, point og:image straight at it (instant for crawlers, no render).
+  // Otherwise use the dynamic URL and ask /api/og to generate the stored image
+  // in the background, so the next share is static. hasOgColumns() keeps this
+  // inert until profiles_bio_public exposes og_image_hash / og_image_url.
+  const ogStoredUrl = currentStoredOgUrl(profile);
+  const ogImageUrl = ogStoredUrl || ogDynamicUrl;
+  if (!ogStoredUrl && hasOgColumns(profile)) {
+    waitUntil(fetch(`${ogDynamicUrl}&store=1`, { signal: AbortSignal.timeout(20000) }).catch(() => {}));
+  }
 
   const youtubeUrl = profile.youtube_url || '';
   const youtubeTitle = profile.youtube_title || 'Watch my video';

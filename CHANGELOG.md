@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Changed
+- **OG image is now pre-rendered and stored, so crawlers get a static file.** Meta and X still failed intermittently because every uncached `/api/og` request rendered the card from scratch (X sent 9 simultaneous requests, each rendering, 1.3 to 2.2s each under CPU contention). The finished JPEG is now kept in the public Supabase bucket `og` as `{user_id}/{hash}.jpg`, recorded in the new `profiles.og_image_url` and `profiles.og_image_hash` columns. `api/bio.js` uses the stored file as `og:image` when the hash still matches the profile (name, avatar, banner, badge, design version); otherwise it keeps the dynamic `/api/og` URL and triggers generation in the background (`waitUntil`, `/api/og?...&store=1`, uses `SUPABASE_SERVICE_ROLE_KEY`). Changing name, avatar, banner or badge changes the hash, the next profile view regenerates the image, and the old file is deleted. A card that lost its banner is never stored. The stored URL must equal `{bucket}/{user_id}/{hash}.jpg`, so editing the column cannot point `og:image` elsewhere. Shared code (hash, badge label, banner rule, `OG_RENDER_VERSION`) moved to `api/_lib/og-shared.js`. Needs the database step (bucket, two columns, and the two columns added to the `profiles_bio_public` view); until the view exposes them the code does nothing new.
+
 ### Fixed
 - **OG image: Meta's Sharing Debugger kept showing "image broken" for a banner image that already renders fine.** Server logs showed Meta re-scraped the page but did not request `/api/og` at all, so it was reusing its cached failure for that image URL (an earlier cold render took 2.3s). `OG_RENDER_VERSION` in `api/bio.js` bumped to 5, so the `og:image` URL is new and Meta must fetch it again. No change to the image itself.
 
