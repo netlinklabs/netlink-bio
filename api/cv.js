@@ -41,20 +41,20 @@ function computeBadges(profile) {
   if (profile.is_black_badge) {
     badges.push({
       color: 'black', label: 'Netlink Special',
-      message: 'Awarded directly by the Netlink.bio team as special recognition.',
+      message: 'Awarded directly by the Netlink team as special recognition.',
       date: null,
     });
   }
   // Gold Verified Business stays a Gold/Platinum perk. Identity (KYC) is green for every tier.
   if (profile.business_verified_at) {
     if (tierEligible) {
-      badges.push({ color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink.bio team.", date: profile.business_verified_at });
+      badges.push({ color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink team.", date: profile.business_verified_at });
     } else if (!profile.identity_verified_at) {
-      badges.push({ color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.business_verified_at });
+      badges.push({ color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink team.", date: profile.business_verified_at });
     }
   }
   if (profile.identity_verified_at) {
-    badges.push({ color: 'green', label: 'Verified Profile', message: "This profile's identity has been verified by the Netlink.bio team.", date: profile.identity_verified_at });
+    badges.push({ color: 'green', label: 'Verified Profile', message: "This profile's identity has been verified by the Netlink team.", date: profile.identity_verified_at });
   }
   return badges;
 }
@@ -249,9 +249,9 @@ async function handler(req, res) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(displayName)}${title ? ` — ${escapeHtml(title)}` : ''} | CV — Netlink.bio</title>
-<meta name="description" content="${escapeHtml(summary || `${displayName}'s CV on Netlink.bio`)}">
-<meta property="og:title" content="${escapeHtml(displayName)} — CV">
+<title>${escapeHtml(displayName)}${title ? `, ${escapeHtml(title)}` : ''} | CV | Netlink</title>
+<meta name="description" content="${escapeHtml(summary || `${displayName}'s CV on Netlink`)}">
+<meta property="og:title" content="${escapeHtml(displayName)} | CV">
 <meta property="og:description" content="${escapeHtml(summary)}">
 <meta property="og:image" content="https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=cv">
 <meta property="og:image:width" content="1200">
@@ -370,7 +370,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 </head>
 <body>
   <div class="cv-container">
-    <a href="https://netlink.bio" class="cv-corner-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
+    <a href="https://netlink.bio" class="cv-corner-logo" title="Netlink"><img src="/assets/netlinkbio-icon.png" alt="Netlink"></a>
     <div class="cv-column left-column">
       <div class="profile-header">
         <div class="profile-avatar">
@@ -401,7 +401,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   ${badgeModalsHtml(profile)}
   <script>
     function shareCv(event) {
-      const shareData = { title: ${JSON.stringify(displayName + ' — CV')}, url: ${JSON.stringify(pageUrl)} };
+      const shareData = { title: ${JSON.stringify(displayName + ' | CV')}, url: ${JSON.stringify(pageUrl)} };
       if (navigator.share) {
         navigator.share(shareData).catch(() => {});
       } else {
