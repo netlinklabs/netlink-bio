@@ -7,6 +7,12 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Fixed
+- **Bio share preview (WhatsApp): OG image sometimes missing, only title and description showed.** The first render of `/api/og` was too slow for WhatsApp's crawler (sequential fetches: profile, banner, then the logo from our own domain; the avatar was fetched by Satori with no limit). Now the logo is embedded in code (`api/_lib/og-logo.js`, 440x135 PNG, about 12KB, no network call), and the banner and avatar are prefetched in parallel with a 2.5s timeout each (avatar falls back to its original URL on any problem, banner falls back to the gradient). Card size stays around 150KB.
+
+### Changed
+- **`api/bio.js` head: OG image URL now carries a render version (`&r=2`) for every profile, plus `&v=<banner timestamp>` when a banner exists.** Bumping `OG_RENDER_VERSION` forces social platforms to refetch (they cache failed fetches for days). Added `og:image:type`, `og:image:alt`, `og:site_name` (Netlink), `twitter:image`, `<link rel="canonical">` and `apple-touch-icon` (flagged by opengraph.to).
+
 ### Changed
 - **OG image: the top-right icon + "Netlink.bio" text is replaced by the official logo image (`/assets/netlinkbio-darkBG.png`, 1300x400).** Rendered at 220x68 px (same 1300:400 ratio, about 18% of the 1200px card width) so it stays readable when WhatsApp/Facebook shrink the card to a ~300px thumbnail. Applies to bio and CV cards, for all tiers. `api/og.js` loads the logo from the site's own origin as a data URI; if the fetch fails it falls back to the previous icon + text, so the card never breaks.
 
