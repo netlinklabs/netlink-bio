@@ -434,6 +434,10 @@ ${isDemoProfile(profile.username)
   .topbar-share-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--nl-card); box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: none; cursor: pointer; color: var(--nl-share-btn-text); flex-shrink: 0; }
   .bio-banner { width:100%; aspect-ratio:3 / 1; border-radius:16px; overflow:hidden; margin:0 0 16px; background:var(--nl-placeholder); }
   .bio-banner img { width:100%; height:100%; object-fit:cover; display:block; }
+  .wrap.has-banner .bio-banner { margin-bottom:0; }
+  /* With a banner, the avatar sits half over the banner's bottom edge. The ring
+     uses the page background so it separates cleanly in Light and Dark. */
+  .wrap.has-banner .avatar, .wrap.has-banner .avatar-fallback { position:relative; z-index:1; margin-top:-48px; border:4px solid var(--nl-bg); }
   .avatar { width:96px; height:96px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; background:var(--nl-placeholder); }
   .avatar-fallback { width:96px; height:96px; border-radius:50%; margin:0 auto 16px; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:36px; font-weight:700; }
   h1 { text-align:center; font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 4px; }
@@ -539,7 +543,7 @@ ${isDemoProfile(profile.username)
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
     </button>
   </header>
-  <div class="wrap">
+  <div class="wrap${bannerUrl ? ' has-banner' : ''}">
     ${bannerUrl ? `<div class="bio-banner"><img src="${escapeHtml(bannerUrl)}" alt="" width="1500" height="500"></div>` : ''}
     ${avatar
       ? `<img class="avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`

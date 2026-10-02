@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Changed
+- **Public bio page: avatar now overlaps the header banner by 50%.** When a profile has a banner, the 96px avatar moves up so exactly half of it sits over the banner's bottom edge (`margin-top:-48px`, `.wrap.has-banner`), and everything below it moves up too. The avatar gets a 4px ring in the page background color so it separates cleanly in Light and Dark. Applies to the initial-letter fallback avatar as well. Profiles without a banner render exactly as before. Change is in `api/bio.js` only.
+
 ### Fixed
 - **template.html: banner preview showed a broken image icon when no banner was set.** `.banner-frame img { display:block }` overrode the `hidden` class on the empty `<img>`. Removed the `display` rule so `hidden` works again. The empty state now shows the recommendation (landscape image, 1500 x 500 px, 3:1, JPG/PNG/WebP, up to 10MB).
 
