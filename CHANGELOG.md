@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Fixed
+- **template.html: a saved template the plan no longer allows now shows a notice and highlights the active base look.** Example: a Gold user on a Gold template drops to Silver. The public page already falls back to the standard look (`api/bio.js` ignores templates the tier does not qualify for), but the gallery showed no selected card at all. Now the gallery shows an amber notice ("Your previous template (Gold 3) is not available on your plan, so your page uses the standard Dark look. Pick a look or a template below.") and selects the Light or Dark card that matches `theme_preset`, the same look the page renders. The same applies to an unknown template id (notice without the name). Clicking the highlighted base card clears the stale `template_id`. No new Tailwind classes (CSS in the page `<style>`), so `shared/tailwind.css` is unchanged. Change is in `template.html` only.
+
 ### Changed
 - **template.html: the single "Default" card is replaced by two base looks, Light and Dark, side by side in the first row.** Picking Light or Dark saves `profiles.theme_preset` and clears `template_id` in one update (same as the base looks Basic users get from the Choose Template modal in `dashboard.html`). Picking a template only saves `template_id`, so templates are applied on top of the current Light/Dark setting, and the intro line under "Templates" shows which look is in use. The selected card is the template if one is set, otherwise the Light or Dark card matching `theme_preset`. Failed saves revert the selection and show a toast. `theme_preset` is now read on load. No new Tailwind classes, so `shared/tailwind.css` is unchanged. Change is in `template.html` only.
 
