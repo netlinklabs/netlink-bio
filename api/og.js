@@ -4,6 +4,7 @@
 // Runs on Vercel's Edge Runtime (required by @vercel/og / Satori).
 
 import { ImageResponse } from '@vercel/og';
+import { OG_LOGO_DATA_URI } from './_lib/og-logo.js';
 
 export const config = { runtime: 'edge' };
 
@@ -37,25 +38,36 @@ const BANNER_MAX_BYTES = 1024 * 1024;
 // Brand logo (white wordmark on transparent background, 1300x400) used at
 // top-right. Rendered at 220x68 (about 18% of the 1200px card): it stays
 // legible when WhatsApp/Facebook shrink the card to a ~300px thumbnail.
-const LOGO_PATH = '/assets/netlinkbio-darkBG.png';
 const LOGO_W = 220;
 const LOGO_H = Math.round(LOGO_W * 400 / 1300); // 68, keeps the 1300:400 ratio
 
-async function loadLogoDataUri(origin) {
+// Shared by the banner and avatar prefetch: short timeout so a slow image
+// host cannot make the whole card miss WhatsApp's crawler deadline.
+const IMG_FETCH_TIMEOUT_MS = 2500;
+
+function toDataUri(buf, type) {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return `data:${type};base64,${btoa(bin)}`;
+}
+
+// Avatar prefetched in parallel with the banner. On any problem returns the
+// original URL so Satori behaves exactly as before.
+async function loadAvatar(url) {
+  if (!url) return '';
   try {
-    const res = await fetch(origin + LOGO_PATH);
-    if (!res.ok) return '';
+    const res = await fetch(url, { signal: AbortSignal.timeout(IMG_FETCH_TIMEOUT_MS) });
+    if (!res.ok) return url;
     const type = (res.headers.get('content-type') || '').split(';')[0].trim();
-    if (type !== 'image/png') return '';
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.length === 0 || bytes.length > 512 * 1024) return '';
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += 0x8000) {
-      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-    }
-    return `data:image/png;base64,${btoa(bin)}`;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return url;
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength === 0 || buf.byteLength > 2 * 1024 * 1024) return url;
+    return toDataUri(buf, type);
   } catch (e) {
-    return '';
+    return url;
   }
 }
 
@@ -66,18 +78,13 @@ async function loadBannerDataUri(profile) {
     if (!profile || !BANNER_TIERS.includes(profile.tier)) return '';
     const url = profile.banner_url || '';
     if (!url.startsWith(BANNER_URL_PREFIX)) return '';
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(IMG_FETCH_TIMEOUT_MS) });
     if (!res.ok) return '';
     const type = (res.headers.get('content-type') || '').split(';')[0].trim();
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return '';
     const buf = await res.arrayBuffer();
     if (buf.byteLength === 0 || buf.byteLength > BANNER_MAX_BYTES) return '';
-    const bytes = new Uint8Array(buf);
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += 0x8000) {
-      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-    }
-    return `data:${type};base64,${btoa(bin)}`;
+    return toDataUri(buf, type);
   } catch (e) {
     return '';
   }
@@ -94,21 +101,25 @@ async function fetchProfile(username) {
 }
 
 export default async function handler(req) {
-  const { searchParams, origin } = new URL(req.url);
+  const { searchParams } = new URL(req.url);
   const username = (searchParams.get('username') || '').toLowerCase().trim();
   const type = searchParams.get('type') === 'cv' ? 'cv' : 'bio';
 
   const profile = username ? await fetchProfile(username) : null;
 
   const displayName = profile?.display_name || profile?.username || 'Netlink.bio';
-  const avatar = profile?.avatar_url || '';
   const subtitle = type === 'cv'
     ? (profile?.cv_data?.title || 'View Professional CV')
     : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
   const badgeLabel = computeBadgeLabel(profile);
   // Bio card only; Basic and CV keep the gradient background.
-  const banner = type === 'bio' ? await loadBannerDataUri(profile) : '';
-  const logo = await loadLogoDataUri(origin);
+  // Banner and avatar are fetched in parallel (was sequential, plus a logo
+  // fetch): the first render is what WhatsApp's crawler waits for.
+  const [banner, avatar] = await Promise.all([
+    type === 'bio' ? loadBannerDataUri(profile) : '',
+    loadAvatar(profile?.avatar_url || ''),
+  ]);
+  const logo = OG_LOGO_DATA_URI;
 
   return new ImageResponse(
     h('div', {

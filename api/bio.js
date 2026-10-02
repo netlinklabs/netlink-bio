@@ -231,7 +231,11 @@ async function handler(req, res) {
   // /api/og for a long time, so the banner's upload timestamp (?t=...) is
   // passed along. Empty for Basic, so their OG URL stays exactly as before.
   const ogVersionMatch = bannerUrl && bannerUrl.match(/[?&]t=(\d+)/);
-  const ogVersion = ogVersionMatch ? `&v=${ogVersionMatch[1]}` : '';
+  // OG_RENDER_VERSION: bump when the OG card design/behaviour changes, so every
+  // profile gets a fresh URL (WhatsApp and others cache a failed fetch for days).
+  const OG_RENDER_VERSION = 2;
+  const ogVersion = `&r=${OG_RENDER_VERSION}` + (ogVersionMatch ? `&v=${ogVersionMatch[1]}` : '');
+  const ogImageUrl = `https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio${ogVersion}`;
 
   const youtubeUrl = profile.youtube_url || '';
   const youtubeTitle = profile.youtube_title || 'Watch my video';
@@ -375,13 +379,19 @@ async function handler(req, res) {
 
 <meta property="og:title" content="${escapeHtml(displayName)} — Netlink.bio">
 <meta property="og:description" content="${escapeHtml(bio)}">
-<meta property="og:image" content="https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio${ogVersion}">
+<meta property="og:image" content="${escapeHtml(ogImageUrl)}">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${escapeHtml(displayName)} on Netlink">
+<meta property="og:site_name" content="Netlink">
 <meta property="og:url" content="${pageUrl}">
 <meta property="og:type" content="profile">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${escapeHtml(ogImageUrl)}">
+<link rel="canonical" href="${pageUrl}">
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+<link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
 ${isDemoProfile(profile.username)
   // Demo/mockup profile (api/_lib/demo-profiles.js): keep it out of search
   // indexes and don't describe it to crawlers/AI as a real Person.
