@@ -17,6 +17,7 @@
   ],
   "functions": {
     "api/cron/rollup-analytics.js": { "maxDuration": 120 },
+    "api/og.js": { "regions": ["syd1"], "includeFiles": "node_modules/@vercel/og/dist/**", "maxDuration": 15 },
     "api/bio.js": { "includeFiles": "node_modules/web-bot-auth/**" },
     "api/cv.js": { "includeFiles": "node_modules/web-bot-auth/**" },
     "api/landing.js": { "includeFiles": "node_modules/web-bot-auth/**" },

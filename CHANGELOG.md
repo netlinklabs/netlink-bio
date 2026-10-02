@@ -8,6 +8,11 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Fixed
+- **OG image for Silver/Gold profiles with a photo banner was rejected by WhatsApp and Meta ("image could not be processed").** `@vercel/og` only outputs PNG, and a PNG of a photo is about 1MB+ (measured on production), far above what WhatsApp and Meta's scraper accept reliably (Meta's debugger fell back to the tiny site icon; the crawler hit `/api/og` five times in a row). `api/og.js` now runs on the Node runtime, renders the card as before, then converts it to JPEG with `sharp` (about 20-70KB in local tests, quality 80). Basic cards are about 16KB as JPEG. Region stays Sydney, now set in `vercel.json` (`functions["api/og.js"].regions`, plus `includeFiles` for the `@vercel/og` wasm/font files and `maxDuration` 15). If the render itself fails, the function redirects to `/assets/netlink-og.png` instead of returning an error.
+- **OG image cache:** headers are now set by us: `max-age=3600, s-maxage=86400, stale-while-revalidate=604800` (was 1 year `immutable`, so a changed name or avatar never refreshed). A degraded card (banner missing) or a JPEG fallback gets a 30s cache.
+- `api/bio.js`: `og:image:type` is now `image/jpeg`; `OG_RENDER_VERSION` bumped to 4. New dependency: `sharp`.
+
+### Fixed
 - **OG image: a render that failed to load the banner stayed cached as the old gradient card.** `@vercel/og` caches every response for a year (`immutable`), including a degraded card made when the banner fetch failed or timed out once, so WhatsApp/opengraph.to sometimes kept getting the gradient version for a Gold/Silver profile. In `api/og.js`: the banner fetch is retried once after a fast failure (timeout raised to 3s, no retry after a timeout), and if a profile that should have a banner still renders without it, the response gets `Cache-Control: public, max-age=30, s-maxage=30` instead of the 1-year immutable one. Basic, CV, and normal renders keep the long cache. `OG_RENDER_VERSION` in `api/bio.js` bumped to 3 so URLs that already cached a degraded card are replaced.
 
 ### Fixed

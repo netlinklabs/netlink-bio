@@ -1,16 +1,14 @@
 // api/og.js
 // Dynamically generates the Open Graph preview image shown when a
 // bio or CV link is shared on Facebook, WhatsApp, Telegram, etc.
-// Runs on Vercel's Edge Runtime (required by @vercel/og / Satori).
+//
+// Node runtime (not Edge): @vercel/og (Satori + resvg) only outputs PNG, and a
+// PNG of a photo banner is ~1MB+, which WhatsApp and Meta's scraper reject or
+// time out on ("image could not be processed"). We render the PNG, then
+// convert it to JPEG with sharp (~100-200KB). Region is pinned to Sydney (next
+// to Supabase) in vercel.json.
 
-import { ImageResponse } from '@vercel/og';
 import { OG_LOGO_DATA_URI } from './_lib/og-logo.js';
-
-// Pinned to Sydney: the profile, banner and avatar all live in Supabase
-// (ap-southeast-2). Rendering near the data makes each fetch take ~10ms
-// instead of a long round trip from a US/EU edge, so a cold render finishes
-// well inside WhatsApp's and opengraph.to's crawler timeouts.
-export const config = { runtime: 'edge', regions: ['syd1'] };
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -120,33 +118,70 @@ async function fetchProfile(username) {
   return rows[0] || null;
 }
 
-export default async function handler(req) {
-  const { searchParams } = new URL(req.url);
-  const username = (searchParams.get('username') || '').toLowerCase().trim();
-  const type = searchParams.get('type') === 'cv' ? 'cv' : 'bio';
+const FALLBACK_IMAGE = '/assets/netlink-og.png';
+const CACHE_OK = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
+// A card that lost its banner (host slow/failing) must not be pinned in caches.
+const CACHE_DEGRADED = 'public, max-age=30, s-maxage=30';
 
-  const profile = username ? await fetchProfile(username) : null;
+export default async function handler(req, res) {
+  try {
+    const { searchParams } = new URL(req.url, 'https://netlink.bio');
+    const username = (searchParams.get('username') || '').toLowerCase().trim();
+    const type = searchParams.get('type') === 'cv' ? 'cv' : 'bio';
 
-  const displayName = profile?.display_name || profile?.username || 'Netlink.bio';
-  const subtitle = type === 'cv'
-    ? (profile?.cv_data?.title || 'View Professional CV')
-    : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
-  const badgeLabel = computeBadgeLabel(profile);
-  // Bio card only; Basic and CV keep the gradient background.
-  // Banner and avatar are fetched in parallel (was sequential, plus a logo
-  // fetch): the first render is what WhatsApp's crawler waits for.
-  const [banner, avatar] = await Promise.all([
-    type === 'bio' ? loadBannerDataUri(profile) : '',
-    loadAvatar(profile?.avatar_url || ''),
-  ]);
-  const logo = OG_LOGO_DATA_URI;
-  // A profile that should have a banner but rendered without one is a degraded
-  // card (image host slow or failing). @vercel/og would cache it for a year as
-  // immutable, pinning the gradient; give it a short cache instead.
-  const degraded = type === 'bio' && wantsBanner(profile) && !banner;
+    const profile = username ? await fetchProfile(username) : null;
 
-  return new ImageResponse(
-    h('div', {
+    const displayName = profile?.display_name || profile?.username || 'Netlink.bio';
+    const subtitle = type === 'cv'
+      ? (profile?.cv_data?.title || 'View Professional CV')
+      : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
+    const badgeLabel = computeBadgeLabel(profile);
+    // Banner and avatar are fetched in parallel; bio card only for the banner.
+    const [banner, avatar] = await Promise.all([
+      type === 'bio' ? loadBannerDataUri(profile) : '',
+      loadAvatar(profile?.avatar_url || ''),
+    ]);
+    const logo = OG_LOGO_DATA_URI;
+    const degraded = type === 'bio' && wantsBanner(profile) && !banner;
+
+    // Dynamic imports: @vercel/og is ESM-only and this file may be transpiled
+    // to CommonJS by the platform.
+    const { ImageResponse } = await import('@vercel/og');
+    const element = buildCard({ banner, avatar, logo, displayName, subtitle, badgeLabel });
+    const png = Buffer.from(await new ImageResponse(element, { width: 1200, height: 630 }).arrayBuffer());
+
+    let body = png;
+    let contentType = 'image/png';
+    let cache = degraded ? CACHE_DEGRADED : CACHE_OK;
+    try {
+      const sharp = (await import('sharp')).default;
+      body = await sharp(png)
+        .flatten({ background: '#1D4ED8' })
+        .jpeg({ quality: 80, mozjpeg: true, chromaSubsampling: '4:2:0' })
+        .toBuffer();
+      contentType = 'image/jpeg';
+    } catch (e) {
+      console.error('[og] jpeg conversion failed, sending PNG', e && e.message);
+      cache = CACHE_DEGRADED;
+    }
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', String(body.length));
+    res.setHeader('Cache-Control', cache);
+    res.end(body);
+  } catch (e) {
+    // Never leave a crawler with an error: send the static brand image.
+    console.error('[og] render failed, redirecting to static image', e && e.message);
+    res.statusCode = 302;
+    res.setHeader('Location', FALLBACK_IMAGE);
+    res.setHeader('Cache-Control', CACHE_DEGRADED);
+    res.end();
+  }
+}
+
+function buildCard({ banner, avatar, logo, displayName, subtitle, badgeLabel }) {
+  return h('div', {
       style: {
         height: '100%', width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center',
         padding: '0 90px', background: 'linear-gradient(135deg, #2DD4BF 0%, #1D4ED8 100%)', position: 'relative',
@@ -201,10 +236,5 @@ export default async function handler(req) {
             )
           : h('div', { style: { fontSize: 32, color: 'rgba(255,255,255,0.88)', marginTop: 14, display: 'flex' } }, subtitle)
       )
-    ),
-    {
-      width: 1200, height: 630,
-      ...(degraded ? { headers: { 'cache-control': 'public, max-age=30, s-maxage=30, no-transform' } } : {}),
-    }
-  );
+    );
 }
