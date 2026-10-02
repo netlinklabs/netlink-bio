@@ -74,38 +74,48 @@ async function loadAvatar(url) {
   }
 }
 
-// Fetch the banner and return it as a data URI, or '' on any problem so the
-// card falls back to the normal gradient instead of failing to render.
-// True when this profile should get a banner background (same checks as
-// loadBannerDataUri) so a missing result can be recognised as a failure.
+// True when this profile should get a banner background (Silver/Gold and a URL
+// inside our own banners bucket), so a missing result can be recognised as a
+// failure rather than "no banner".
 function wantsBanner(profile) {
   return !!profile && BANNER_TIERS.includes(profile.tier) && (profile.banner_url || '').startsWith(BANNER_URL_PREFIX);
 }
 
 async function fetchBannerOnce(url) {
   const res = await fetch(url, { signal: AbortSignal.timeout(BANNER_FETCH_TIMEOUT_MS) });
-  if (!res.ok) return '';
+  if (!res.ok) return null;
   const type = (res.headers.get('content-type') || '').split(';')[0].trim();
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return '';
-  const buf = await res.arrayBuffer();
-  if (buf.byteLength === 0 || buf.byteLength > BANNER_MAX_BYTES) return '';
-  return toDataUri(buf, type);
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return null;
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length === 0 || buf.length > BANNER_MAX_BYTES) return null;
+  return buf;
 }
 
-async function loadBannerDataUri(profile) {
-  if (!wantsBanner(profile)) return '';
+// Returns the banner as a ready-to-use 1200x630 background (cover-cropped and
+// darkened by 55%, same look as a flat 55% black overlay), or null on any
+// problem so the card falls back to the gradient. The photo is processed with
+// sharp, NOT by Satori/resvg: resvg scaling a photo cost ~1s of CPU per render.
+async function loadBannerBackground(profile, sharp) {
+  if (!wantsBanner(profile)) return null;
   const url = profile.banner_url;
+  let raw = null;
   // One retry, but only after a fast failure (network blip). A timeout is not
   // retried: that would push the response past the crawler's own deadline.
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 2 && !raw; attempt++) {
     const started = Date.now();
-    try {
-      const out = await fetchBannerOnce(url);
-      if (out) return out;
-    } catch (e) { /* fall through to retry decision */ }
-    if (Date.now() - started > 1000) break;
+    try { raw = await fetchBannerOnce(url); } catch (e) { /* retry decision below */ }
+    if (!raw && Date.now() - started > 1000) break;
   }
-  return '';
+  if (!raw) return null;
+  try {
+    return await sharp(raw)
+      .resize(1200, 630, { fit: 'cover', position: 'centre' })
+      .modulate({ brightness: 0.45 })
+      .toBuffer();
+  } catch (e) {
+    console.error('[og] banner decode failed', e && e.message);
+    return null;
+  }
 }
 
 async function fetchProfile(username) {
@@ -124,46 +134,64 @@ const CACHE_OK = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=6
 const CACHE_DEGRADED = 'public, max-age=30, s-maxage=30';
 
 export default async function handler(req, res) {
+  const t0 = Date.now();
+  const ms = {};
+  const lap = (k, since) => { ms[k] = Date.now() - since; };
   try {
     const { searchParams } = new URL(req.url, 'https://netlink.bio');
     const username = (searchParams.get('username') || '').toLowerCase().trim();
     const type = searchParams.get('type') === 'cv' ? 'cv' : 'bio';
 
+    let t = Date.now();
     const profile = username ? await fetchProfile(username) : null;
+    lap('profile', t);
 
     const displayName = profile?.display_name || profile?.username || 'Netlink.bio';
     const subtitle = type === 'cv'
       ? (profile?.cv_data?.title || 'View Professional CV')
       : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
     const badgeLabel = computeBadgeLabel(profile);
-    // Banner and avatar are fetched in parallel; bio card only for the banner.
-    const [banner, avatar] = await Promise.all([
-      type === 'bio' ? loadBannerDataUri(profile) : '',
-      loadAvatar(profile?.avatar_url || ''),
-    ]);
-    const logo = OG_LOGO_DATA_URI;
-    const degraded = type === 'bio' && wantsBanner(profile) && !banner;
 
     // Dynamic imports: @vercel/og is ESM-only and this file may be transpiled
     // to CommonJS by the platform.
+    const sharp = (await import('sharp')).default;
+
+    // Banner (bio card only) and avatar are fetched in parallel.
+    t = Date.now();
+    const [bannerBg, avatar] = await Promise.all([
+      type === 'bio' ? loadBannerBackground(profile, sharp) : null,
+      loadAvatar(profile?.avatar_url || ''),
+    ]);
+    lap('assets', t);
+    const degraded = type === 'bio' && wantsBanner(profile) && !bannerBg;
+
+    // With a banner the card is drawn on a transparent background and
+    // composited over the photo by sharp; otherwise it carries the gradient.
+    t = Date.now();
     const { ImageResponse } = await import('@vercel/og');
-    const element = buildCard({ banner, avatar, logo, displayName, subtitle, badgeLabel });
+    const element = buildCard({ transparent: !!bannerBg, avatar, logo: OG_LOGO_DATA_URI, displayName, subtitle, badgeLabel });
     const png = Buffer.from(await new ImageResponse(element, { width: 1200, height: 630 }).arrayBuffer());
+    lap('satori', t);
 
     let body = png;
     let contentType = 'image/png';
     let cache = degraded ? CACHE_DEGRADED : CACHE_OK;
+    t = Date.now();
     try {
-      const sharp = (await import('sharp')).default;
-      body = await sharp(png)
-        .flatten({ background: '#1D4ED8' })
-        .jpeg({ quality: 80, mozjpeg: true, chromaSubsampling: '4:2:0' })
+      const base = bannerBg
+        ? sharp(bannerBg).composite([{ input: png }])
+        : sharp(png).flatten({ background: '#1D4ED8' });
+      body = await base
+        .jpeg({ quality: 80, mozjpeg: false, chromaSubsampling: '4:2:0' })
         .toBuffer();
       contentType = 'image/jpeg';
     } catch (e) {
       console.error('[og] jpeg conversion failed, sending PNG', e && e.message);
       cache = CACHE_DEGRADED;
     }
+    lap('jpeg', t);
+    lap('total', t0);
+    console.log('[og-timing] ' + JSON.stringify({ u: username, type, banner: !!bannerBg, kb: Math.round(body.length / 1024), ms }));
 
     res.statusCode = 200;
     res.setHeader('Content-Type', contentType);
@@ -180,26 +208,20 @@ export default async function handler(req, res) {
   }
 }
 
-function buildCard({ banner, avatar, logo, displayName, subtitle, badgeLabel }) {
+// Inline check icon (replaces the emoji, which @vercel/og fetched from a CDN on
+// every cold render).
+const CHECK_ICON = 'data:image/svg+xml;base64,' + Buffer.from(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34"><rect width="34" height="34" rx="8" fill="#22c55e"/><path d="M9 17.5l5.5 5.5L25 11.5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+).toString('base64');
+
+function buildCard({ transparent, avatar, logo, displayName, subtitle, badgeLabel }) {
   return h('div', {
       style: {
         height: '100%', width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center',
-        padding: '0 90px', background: 'linear-gradient(135deg, #2DD4BF 0%, #1D4ED8 100%)', position: 'relative',
+        padding: '0 90px', position: 'relative',
+        ...(transparent ? {} : { background: 'linear-gradient(135deg, #2DD4BF 0%, #1D4ED8 100%)' }),
       },
     },
-      // Silver/Gold banner as cover background, darkened (flat 55% black) so
-      // the white text stays readable on any image.
-      banner
-        ? h('img', {
-            src: banner, width: 1200, height: 630,
-            style: { position: 'absolute', top: 0, left: 0, width: 1200, height: 630, objectFit: 'cover' },
-          })
-        : null,
-      banner
-        ? h('div', {
-            style: { position: 'absolute', top: 0, left: 0, width: 1200, height: 630, background: 'rgba(0,0,0,0.55)', display: 'flex' },
-          })
-        : null,
       // Logo, top-right with breathing room (not flush against the corner).
       // Falls back to the old icon + text if the image cannot be loaded.
       logo
@@ -231,7 +253,7 @@ function buildCard({ banner, avatar, logo, displayName, subtitle, badgeLabel }) 
         h('div', { style: { fontSize: 62, fontWeight: 800, color: 'white', lineHeight: 1.1, display: 'flex' } }, displayName),
         badgeLabel
           ? h('div', { style: { display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, fontSize: 32, fontWeight: 700, color: 'white' } },
-              h('span', { style: { display: 'flex', fontSize: 34 } }, '✅'),
+              h('img', { src: CHECK_ICON, width: 34, height: 34 }),
               h('span', { style: { display: 'flex' } }, badgeLabel)
             )
           : h('div', { style: { fontSize: 32, color: 'rgba(255,255,255,0.88)', marginTop: 14, display: 'flex' } }, subtitle)
