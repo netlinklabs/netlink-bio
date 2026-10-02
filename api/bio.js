@@ -600,7 +600,7 @@ ${isDemoProfile(profile.username)
 
     ${showWatermark(profile) ? `
     <div class="footer">
-      <a href="/">netlink.bio, build your page free</a>
+      <a href="/">Netlink | Build Your Page Free</a>
     </div>` : ''}
     <div class="legal-footer">
       <a href="/privacy-policy" target="_blank" rel="noopener">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio" target="_blank" rel="noopener">Report</a>

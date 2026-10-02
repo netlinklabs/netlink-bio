@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Changed
+- **Bio and CV footer link now reads "Netlink | Build Your Page Free"** (was "netlink.bio, build your page free"). Matches the branding rule (brand is "Netlink", "netlink.bio" is a URL only). Same link (`/`) and same visibility rule (hidden for Gold+ users who turn the footer link off). The business page watermark stays "Made with Netlink" (a paid feature there). Files: `api/bio.js`, `api/cv.js`.
+
 ### Fixed
 - **"Made with Netlink.bio" watermark text now matches the other pages.** `api/landing.js` already says "Made with Netlink" (brand rule: "Netlink.bio" is a URL only). Updated the same text in `page-builder.html` (watermark link) and the Gold+ setting description in `privacy.html`. The link target (`https://netlink.bio`) is unchanged. Not changed here (same rule, out of scope): the logo `alt` in `page-builder.html` and the `<title>` in `privacy.html` still say "Netlink.bio".
 
