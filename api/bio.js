@@ -432,9 +432,22 @@ ${isDemoProfile(profile.username)
   .topbar-logo { display: flex; align-items: center; }
   .topbar-logo img { width: 36px; height: 36px; border-radius: 8px; display: block; }
   .topbar-share-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--nl-card); box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: none; cursor: pointer; color: var(--nl-share-btn-text); flex-shrink: 0; }
-  .bio-banner { width:100%; aspect-ratio:3 / 1; border-radius:16px; overflow:hidden; margin:0 0 16px; background:var(--nl-placeholder); }
+  /* Header banner (only rendered for Silver+ with a banner). Flush to the top
+     of the page, no radius. Phones and tablets: full viewport width. Desktop:
+     same width as the content column. The logo and share button float over it
+     with circle backgrounds so they stay readable on any image. */
+  body.has-banner { position:relative; }
+  .bio-banner { width:100%; aspect-ratio:3 / 1; overflow:hidden; background:var(--nl-placeholder); }
   .bio-banner img { width:100%; height:100%; object-fit:cover; display:block; }
-  .wrap.has-banner .bio-banner { margin-bottom:0; }
+  body.has-banner .page-topbar { position:absolute; top:0; left:0; right:0; z-index:5; max-width:none; }
+  body.has-banner .topbar-logo { width:36px; height:36px; border-radius:50%; justify-content:center; background:var(--nl-card); box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+  body.has-banner .topbar-logo img { width:22px; height:22px; border-radius:0; }
+  body.has-banner .topbar-share-btn { box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+  @media (min-width:1025px) {
+    .bio-banner { max-width:480px; margin:0 auto; }
+    body.has-banner .page-topbar { max-width:480px; margin:0 auto; }
+  }
+  .wrap.has-banner { padding-top:0; }
   /* With a banner, the avatar sits half over the banner's bottom edge. The ring
      uses the page background so it separates cleanly in Light and Dark. */
   .wrap.has-banner .avatar, .wrap.has-banner .avatar-fallback { position:relative; z-index:1; margin-top:-48px; border:4px solid var(--nl-bg); }
@@ -536,15 +549,15 @@ ${isDemoProfile(profile.username)
   .donate-modal-box .wallet-note { color:#a1a1aa; }
 </style>
 </head>
-<body class="theme-${themePreset}${templateId ? ` tpl-${templateId}` : ''}">
+<body class="theme-${themePreset}${templateId ? ` tpl-${templateId}` : ''}${bannerUrl ? ' has-banner' : ''}">
   <header class="page-topbar">
     <a href="https://netlink.bio" class="topbar-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
     <button type="button" class="topbar-share-btn" onclick="shareProfile(event)" title="Share this page">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
     </button>
   </header>
+  ${bannerUrl ? `<div class="bio-banner"><img src="${escapeHtml(bannerUrl)}" alt="" width="1500" height="500"></div>` : ''}
   <div class="wrap${bannerUrl ? ' has-banner' : ''}">
-    ${bannerUrl ? `<div class="bio-banner"><img src="${escapeHtml(bannerUrl)}" alt="" width="1500" height="500"></div>` : ''}
     ${avatar
       ? `<img class="avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`
       : `<div class="avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`}
