@@ -55,20 +55,20 @@ function computeBadges(profile) {
   if (profile.is_black_badge) {
     badges.push({
       color: 'black', label: 'Netlink Special',
-      message: 'Awarded directly by the Netlink.bio team as special recognition.',
+      message: 'Awarded directly by the Netlink team as special recognition.',
       date: null,
     });
   }
   // Gold Verified Business stays a Gold/Platinum perk. Identity (KYC) is green for every tier.
   if (profile.business_verified_at) {
     if (tierEligible) {
-      badges.push({ color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink.bio team.", date: profile.business_verified_at });
+      badges.push({ color: 'gold', label: 'Verified Business', message: "This business's registration has been manually verified by the Netlink team.", date: profile.business_verified_at });
     } else if (!profile.identity_verified_at) {
-      badges.push({ color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink.bio team.", date: profile.business_verified_at });
+      badges.push({ color: 'silver', label: 'Previously Verified', message: "This profile's identity was previously verified by the Netlink team.", date: profile.business_verified_at });
     }
   }
   if (profile.identity_verified_at) {
-    badges.push({ color: 'green', label: 'Verified Profile', message: "This profile's identity has been verified by the Netlink.bio team.", date: profile.identity_verified_at });
+    badges.push({ color: 'green', label: 'Verified Profile', message: "This profile's identity has been verified by the Netlink team.", date: profile.identity_verified_at });
   }
   return badges;
 }
@@ -203,7 +203,7 @@ async function handler(req, res) {
     if (!profiles.length) {
       res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
         title: 'Profile not found',
-        heading: `@${escapeHtml(username)} isn't on Netlink.bio`,
+        heading: `@${escapeHtml(username)} isn't on Netlink`,
         message: 'This profile doesn’t exist or may have been removed.',
       }));
       return;
@@ -581,7 +581,7 @@ ${isDemoProfile(profile.username)
 </head>
 <body class="theme-${themePreset}${templateId ? ` tpl-${templateId}` : ''}${bannerUrl ? ' has-banner' : ''}">
   <header class="page-topbar">
-    <a href="https://netlink.bio" class="topbar-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
+    <a href="https://netlink.bio" class="topbar-logo" title="Netlink"><img src="/assets/netlinkbio-icon.png" alt="Netlink"></a>
     <button type="button" class="topbar-share-btn" onclick="shareProfile(event)" title="Share this page">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
     </button>

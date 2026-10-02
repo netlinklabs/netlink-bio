@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Fixed
+- **Branding and em dash rules in the public bio, CV and business pages (`api/bio.js`, `api/cv.js`, `api/landing.js`).** User-facing text wrote the brand as "Netlink.bio" and used em dashes. Now: badge modal messages ("verified by the Netlink team", bio and CV), the bio 404 heading ("isn't on Netlink"), the top logo `title`/`alt` (bio and CV), the CV `<title>` ("Name, Job title | CV | Netlink"), CV description ("...'s CV on Netlink"), CV `og:title` and share title ("Name | CV"), the business page `<title>` ("Name, tagline | Netlink") and description, and the "Made with Netlink" watermark. The watermark link and other URLs still point to netlink.bio (URL only, not a brand). Code comments are unchanged.
+
+### Fixed
 - **Bio page `<title>`, `og:title` and description fallback broke the branding and em dash rules.** They read "Name (@user) — Netlink.bio", "Name — Netlink.bio" and "...'s links, on Netlink.bio" (brand written as "Netlink.bio", and an em dash in user-facing text). Now "Name | Netlink" (the @username is no longer in the title), "Name | Netlink" and "...'s links on Netlink" in `api/bio.js`. Social previews pick up the new title when the platform next re-scrapes the page. Not changed here (same rule, out of scope): "Netlink.bio" in the badge modal messages, the 404 heading and the top bar logo `title`/`alt` in `api/bio.js`, and the `<title>` tags in `api/cv.js` and `api/landing.js`.
 
 ### Changed

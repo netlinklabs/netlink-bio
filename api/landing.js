@@ -552,8 +552,8 @@ function nextLightbox() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(businessName)}${tagline ? ` — ${escapeHtml(tagline)}` : ''} | Netlink.bio</title>
-<meta name="description" content="${escapeHtml(desc || `${businessName} on Netlink.bio`)}">
+<title>${escapeHtml(businessName)}${tagline ? `, ${escapeHtml(tagline)}` : ''} | Netlink</title>
+<meta name="description" content="${escapeHtml(desc || `${businessName} on Netlink`)}">
 <meta property="og:title" content="${escapeHtml(businessName)}">
 <meta property="og:description" content="${escapeHtml(desc || tagline)}">
 ${c.logoImage ? `<meta property="og:image" content="${escapeHtml(c.logoImage)}">` : ''}
@@ -577,7 +577,7 @@ ${hoursHtml}
 ${contactHtml}
 <footer class="page-footer">
 <div class="section-inner">
-${showWatermark(page) ? `<a href="https://netlink.bio" target="_blank" rel="noopener">Made with Netlink.bio</a>` : ''}
+${showWatermark(page) ? `<a href="https://netlink.bio" target="_blank" rel="noopener">Made with Netlink</a>` : ''}
 <div class="legal-footer">
 <a href="/privacy-policy" target="_blank" rel="noopener">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio" target="_blank" rel="noopener">Report</a>
 </div>
