@@ -155,6 +155,34 @@ function extractYouTubeId(url) {
   return m ? m[1] : null;
 }
 
+// Template Gallery (Silver and Gold only). Keep ids and tiers in sync with the
+// bio_templates table and TEMPLATES in template.html. Templates are
+// placeholders for now: each one only adds a `tpl-<id>` class to <body>, so
+// the visual design can be added per template later without touching logic.
+const TEMPLATE_TIERS = {
+  'silver-01': 'silver', 'silver-02': 'silver', 'silver-03': 'silver', 'silver-04': 'silver',
+  'gold-01': 'gold', 'gold-02': 'gold', 'gold-03': 'gold',
+  'gold-04': 'gold', 'gold-05': 'gold', 'gold-06': 'gold',
+};
+const TIER_RANK = { basic: 0, silver: 1, gold: 2 };
+const BANNER_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/banners/`;
+
+// Returns the template id only if it exists AND the owner's current tier still
+// qualifies (covers downgrades after the template was chosen). Otherwise null.
+function effectiveTemplateId(profile) {
+  const id = profile.template_id;
+  const need = id && TEMPLATE_TIERS[id];
+  if (!need) return null;
+  return (TIER_RANK[profile.tier] || 0) >= TIER_RANK[need] ? id : null;
+}
+
+// Header banner is Silver+ and must point at our own banners bucket.
+function effectiveBannerUrl(profile) {
+  if ((TIER_RANK[profile.tier] || 0) < TIER_RANK.silver) return '';
+  const url = profile.banner_url || '';
+  return url.startsWith(BANNER_URL_PREFIX) ? url : '';
+}
+
 async function supabaseGet(path) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
@@ -197,6 +225,8 @@ async function handler(req, res) {
   const showDonate = profile.show_donate === true && !!walletAddress;
   const iconShape = profile.link_icon_shape === 'rounded' ? 'rounded' : 'circle';
   const themePreset = profile.theme_preset === 'dark' ? 'dark' : 'light';
+  const templateId = effectiveTemplateId(profile);
+  const bannerUrl = effectiveBannerUrl(profile);
 
   const youtubeUrl = profile.youtube_url || '';
   const youtubeTitle = profile.youtube_title || 'Watch my video';
@@ -402,6 +432,8 @@ ${isDemoProfile(profile.username)
   .topbar-logo { display: flex; align-items: center; }
   .topbar-logo img { width: 36px; height: 36px; border-radius: 8px; display: block; }
   .topbar-share-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--nl-card); box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: none; cursor: pointer; color: var(--nl-share-btn-text); flex-shrink: 0; }
+  .bio-banner { width:100%; aspect-ratio:3 / 1; border-radius:16px; overflow:hidden; margin:0 0 16px; background:var(--nl-placeholder); }
+  .bio-banner img { width:100%; height:100%; object-fit:cover; display:block; }
   .avatar { width:96px; height:96px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; background:var(--nl-placeholder); }
   .avatar-fallback { width:96px; height:96px; border-radius:50%; margin:0 auto 16px; background:linear-gradient(135deg,#14b8a6,#0d9488); display:flex; align-items:center; justify-content:center; color:white; font-size:36px; font-weight:700; }
   h1 { text-align:center; font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 4px; }
@@ -500,7 +532,7 @@ ${isDemoProfile(profile.username)
   .donate-modal-box .wallet-note { color:#a1a1aa; }
 </style>
 </head>
-<body class="theme-${themePreset}">
+<body class="theme-${themePreset}${templateId ? ` tpl-${templateId}` : ''}">
   <header class="page-topbar">
     <a href="https://netlink.bio" class="topbar-logo" title="Netlink.bio"><img src="/assets/netlinkbio-icon.png" alt="Netlink.bio"></a>
     <button type="button" class="topbar-share-btn" onclick="shareProfile(event)" title="Share this page">
@@ -508,6 +540,7 @@ ${isDemoProfile(profile.username)
     </button>
   </header>
   <div class="wrap">
+    ${bannerUrl ? `<div class="bio-banner"><img src="${escapeHtml(bannerUrl)}" alt="" width="1500" height="500"></div>` : ''}
     ${avatar
       ? `<img class="avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(displayName)}">`
       : `<div class="avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`}

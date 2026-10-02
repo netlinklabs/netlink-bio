@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <!-- PAGE-TYPE: app -->
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Template Gallery - Netlink</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=11">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.460.0" defer></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .bg-surface { background: #f1f5f9; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+        .hover-surface:hover { background: rgba(0,0,0,0.03); }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .bg-surface { background: #0f172a !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+        html.dark .hover-surface:hover { background: rgba(255,255,255,0.05) !important; }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.error { background: #dc2626; }
+
+        .gallery-hero { background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); border-radius: 20px; position: relative; overflow: hidden; }
+        .gallery-hero::before { content: ''; position: absolute; top: -40%; right: -20%; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+
+        /* Banner preview: always 3:1, same ratio the public bio page uses. */
+        .banner-frame { width: 100%; aspect-ratio: 3 / 1; border-radius: 14px; overflow: hidden; background: #e2e8f0; border: 1px dashed rgba(100,116,139,0.45); display: flex; align-items: center; justify-content: center; }
+        html.dark .banner-frame { background: #0f172a; }
+        .banner-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .tpl-card { border: 2px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 10px; text-align: center; transition: border-color 0.15s, transform 0.15s; background: transparent; cursor: pointer; position: relative; }
+        html.dark .tpl-card { border-color: rgba(255,255,255,0.08); }
+        .tpl-card:hover { transform: translateY(-2px); }
+        .tpl-card.selected { border-color: #3b82f6; }
+        .tpl-thumb { height: 84px; border-radius: 10px; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-bottom: 8px; }
+        html.dark .tpl-thumb { background: #0f172a; border-color: rgba(255,255,255,0.08); }
+        .tpl-thumb .dot { width: 24px; height: 24px; border-radius: 50%; background: #cbd5e1; }
+        .tpl-thumb .bar { width: 52px; height: 6px; border-radius: 4px; background: #cbd5e1; }
+        .tpl-thumb .bar.short { width: 36px; background: #e2e8f0; }
+        html.dark .tpl-thumb .dot, html.dark .tpl-thumb .bar { background: #334155; }
+        .tpl-tier { position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; }
+        .tpl-tier.silver { background: rgba(148,163,184,0.2); color: #475569; }
+        .tpl-tier.gold { background: rgba(245,158,11,0.18); color: #b45309; }
+        html.dark .tpl-tier.silver { color: #cbd5e1; }
+        html.dark .tpl-tier.gold { color: #fbbf24; }
+        .tpl-check { position: absolute; top: 6px; left: 6px; width: 18px; height: 18px; border-radius: 50%; background: #3b82f6; color: white; display: none; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
+        .tpl-card.selected .tpl-check { display: flex; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading Template Gallery...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Saved!</div>
+
+    <main class="px-4 pt-4 pb-24 lg:px-8 max-w-2xl mx-auto">
+        <a href="dashboard" class="inline-flex items-center gap-1 text-sm text-secondary hover:text-primary transition mb-3">
+            <i data-lucide="chevron-right" class="w-4 h-4 rotate-180"></i> Back to Dashboard
+        </a>
+
+        <!-- Hero -->
+        <div class="gallery-hero p-6 mb-4 text-white relative">
+            <div class="relative z-10">
+                <p class="text-white/70 text-xs font-medium mb-1 flex items-center gap-1.5"><i data-lucide="layout-template" class="w-3.5 h-3.5"></i> Template Gallery</p>
+                <h1 class="text-xl font-bold">Make your page yours</h1>
+                <p class="text-white/70 text-xs mt-2">Pick a template and add a header banner for your public Netlink page.</p>
+                <p id="tierPill" class="inline-block mt-3 text-[11px] font-semibold bg-white/20 rounded-full px-3 py-1"></p>
+            </div>
+        </div>
+
+        <!-- Header banner -->
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+            <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="camera" class="w-4 h-4 text-blue-500"></i> Header Banner</h3>
+            <p class="text-xs text-muted mb-3">Shown at the top of your public page. Wide images work best (3:1). We crop and compress it for you.</p>
+
+            <div class="banner-frame mb-3" id="bannerFrame">
+                <span id="bannerEmpty" class="text-xs text-muted">No banner yet</span>
+                <img id="bannerImg" class="hidden" alt="Header banner preview">
+            </div>
+
+            <div class="flex gap-2">
+                <label for="bannerInput" id="bannerUploadLabel" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm text-center cursor-pointer">Upload Banner</label>
+                <input id="bannerInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleBannerUpload(event)">
+                <button id="bannerRemoveBtn" type="button" onclick="removeBanner()" class="hidden px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition text-sm" aria-label="Remove banner"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+            <p id="bannerStatus" class="text-xs text-muted mt-2 hidden"></p>
+        </div>
+
+        <!-- Templates -->
+        <div class="card rounded-2xl p-4 lg:p-6 mb-4">
+            <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="layout-template" class="w-4 h-4 text-purple-500"></i> Templates</h3>
+            <p id="templateIntro" class="text-xs text-muted mb-3"></p>
+            <div id="templateGrid" class="grid grid-cols-2 gap-3"></div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Placeholder templates. Keep ids and tiers in sync with the
+        // bio_templates table (the DB trigger validates template_id against
+        // it) and with TEMPLATE_TIERS in api/bio.js. Real designs come later,
+        // so every template currently renders with the same base look.
+        // Silver users see only 'silver' templates. Gold users see all.
+        const TEMPLATES = [
+            { id: 'silver-01', name: 'Silver 1', tier: 'silver' },
+            { id: 'silver-02', name: 'Silver 2', tier: 'silver' },
+            { id: 'silver-03', name: 'Silver 3', tier: 'silver' },
+            { id: 'silver-04', name: 'Silver 4', tier: 'silver' },
+            { id: 'gold-01', name: 'Gold 1', tier: 'gold' },
+            { id: 'gold-02', name: 'Gold 2', tier: 'gold' },
+            { id: 'gold-03', name: 'Gold 3', tier: 'gold' },
+            { id: 'gold-04', name: 'Gold 4', tier: 'gold' },
+            { id: 'gold-05', name: 'Gold 5', tier: 'gold' },
+            { id: 'gold-06', name: 'Gold 6', tier: 'gold' },
+        ];
+        const TIER_RANK = { basic: 0, silver: 1, gold: 2 };
+        const TIER_LABEL = { silver: 'Silver', gold: 'Gold' };
+        const BANNER_WIDTH = 1500;
+        const BANNER_HEIGHT = 500;
+        const BANNER_MAX_BYTES = 300 * 1024;
+        const BANNER_MAX_INPUT_BYTES = 10 * 1024 * 1024;
+
+        let currentUser = null;
+        let currentProfile = null;
+
+        function showAuthError(msg) {
+            document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
+        }
+        window.addEventListener('error', (e) => showAuthError(e.message));
+        window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
+
+        function showToast(message, isError) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.toggle('error', !!isError);
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function userTier() {
+            const t = currentProfile?.tier || 'basic';
+            return TIER_RANK[t] !== undefined ? t : 'basic';
+        }
+
+        function canUseTemplate(tpl) {
+            return TIER_RANK[userTier()] >= TIER_RANK[tpl.tier];
+        }
+
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login'; return; }
+                currentUser = session.user;
+
+                const { data, error: profileError } = await supabaseClient
+                    .from('profiles')
+                    .select('username, display_name, avatar_url, tier, local_currency, identity_verified_at, business_verified_at, template_id, banner_url')
+                    .eq('id', currentUser.id)
+                    .single();
+                if (profileError) throw profileError;
+                currentProfile = data;
+
+                // Template Gallery is Silver and Gold only.
+                if (userTier() === 'basic') { window.location.replace('plans'); return; }
+
+                if (window.NetlinkNav) {
+                    NetlinkNav.init({ activePage: null, profile: data, supabaseClient: supabaseClient, userId: currentUser.id });
+                }
+                if (window.NetlinkAppLock) {
+                    NetlinkAppLock.setContext({ supabaseClient: supabaseClient, userId: currentUser.id, userEmail: currentUser.email });
+                }
+
+                renderPage();
+                document.getElementById('authGate').style.display = 'none';
+                if (window.lucide) lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        function renderPage() {
+            const tier = userTier();
+            document.getElementById('tierPill').textContent = TIER_LABEL[tier] + ' plan';
+            document.getElementById('templateIntro').textContent = tier === 'gold'
+                ? 'All Silver and Gold templates are unlocked for you.'
+                : 'Silver templates are unlocked for you. Upgrade to Gold to unlock more.';
+            renderBanner();
+            renderTemplates();
+        }
+
+        // ---------------- Templates ----------------
+
+        function renderTemplates() {
+            const selected = currentProfile?.template_id || null;
+            const grid = document.getElementById('templateGrid');
+            const cards = [{ id: null, name: 'Default', tier: null }]
+                .concat(TEMPLATES.filter(canUseTemplate));
+            grid.innerHTML = cards.map((t) => `
+                <button type="button" class="tpl-card ${selected === t.id ? 'selected' : ''}" data-id="${t.id || ''}" onclick="selectTemplate(${t.id ? `'${t.id}'` : 'null'})">
+                    <span class="tpl-check">&#10003;</span>
+                    ${t.tier ? `<span class="tpl-tier ${t.tier}">${TIER_LABEL[t.tier]}</span>` : ''}
+                    <div class="tpl-thumb"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
+                    <span class="text-sm font-medium text-primary">${t.name}</span>
+                </button>`).join('');
+        }
+
+        async function selectTemplate(id) {
+            if (id) {
+                const tpl = TEMPLATES.find((t) => t.id === id);
+                if (!tpl || !canUseTemplate(tpl)) { showToast('This template is not available on your plan', true); return; }
+            }
+            const previous = currentProfile.template_id || null;
+            if (previous === id) return;
+            currentProfile.template_id = id;
+            renderTemplates();
+            const { error } = await supabaseClient.from('profiles').update({ template_id: id }).eq('id', currentUser.id);
+            if (error) {
+                console.error(error);
+                currentProfile.template_id = previous;
+                renderTemplates();
+                showToast('Could not save template. Please try again.', true);
+                return;
+            }
+            showToast(id ? 'Template applied' : 'Default template restored');
+        }
+
+        // ---------------- Banner ----------------
+
+        function renderBanner() {
+            const url = currentProfile?.banner_url || '';
+            const img = document.getElementById('bannerImg');
+            const empty = document.getElementById('bannerEmpty');
+            if (url) {
+                img.src = url;
+                img.classList.remove('hidden');
+                empty.classList.add('hidden');
+            } else {
+                img.removeAttribute('src');
+                img.classList.add('hidden');
+                empty.classList.remove('hidden');
+            }
+            document.getElementById('bannerRemoveBtn').classList.toggle('hidden', !url);
+            document.getElementById('bannerUploadLabel').textContent = url ? 'Replace Banner' : 'Upload Banner';
+        }
+
+        function setBannerStatus(text) {
+            const el = document.getElementById('bannerStatus');
+            el.textContent = text || '';
+            el.classList.toggle('hidden', !text);
+        }
+
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+                img.src = url;
+            });
+        }
+
+        function canvasToJpeg(canvas, quality) {
+            return new Promise((resolve, reject) => {
+                canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', quality);
+            });
+        }
+
+        // Center-crop to 3:1, scale to 1500x500, then lower JPEG quality
+        // until the file is under the size budget (bucket limit is 500KB).
+        async function prepareBanner(file) {
+            const img = await loadImage(file);
+            const targetRatio = BANNER_WIDTH / BANNER_HEIGHT;
+            let sw = img.width, sh = img.height;
+            if (sw / sh > targetRatio) { sw = Math.round(sh * targetRatio); } else { sh = Math.round(sw / targetRatio); }
+            const sx = Math.round((img.width - sw) / 2);
+            const sy = Math.round((img.height - sh) / 2);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = BANNER_WIDTH; canvas.height = BANNER_HEIGHT;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, BANNER_WIDTH, BANNER_HEIGHT);
+
+            let quality = 0.85;
+            let blob = await canvasToJpeg(canvas, quality);
+            while (blob.size > BANNER_MAX_BYTES && quality > 0.5) {
+                quality = Math.max(0.5, quality - 0.1);
+                blob = await canvasToJpeg(canvas, quality);
+            }
+            return blob;
+        }
+
+        async function handleBannerUpload(event) {
+            const input = event.target;
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { showToast('Please choose a JPG, PNG or WebP image', true); return; }
+            if (file.size > BANNER_MAX_INPUT_BYTES) { showToast('Image is too large. Max 10MB.', true); return; }
+
+            setBannerStatus('Compressing and uploading...');
+            try {
+                const blob = await prepareBanner(file);
+                const path = `${currentUser.id}/banner.jpg`;
+                const { error: uploadError } = await supabaseClient.storage.from('banners').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+                if (uploadError) throw uploadError;
+
+                const { data: publicUrlData } = supabaseClient.storage.from('banners').getPublicUrl(path);
+                const bannerUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+                const { error: updateError } = await supabaseClient.from('profiles').update({ banner_url: bannerUrl }).eq('id', currentUser.id);
+                if (updateError) throw updateError;
+
+                currentProfile.banner_url = bannerUrl;
+                renderBanner();
+                setBannerStatus('');
+                showToast('Banner updated');
+            } catch (err) {
+                console.error(err);
+                setBannerStatus('Upload failed. Please try a different image.');
+            }
+        }
+
+        async function removeBanner() {
+            if (!currentProfile?.banner_url) return;
+            const previous = currentProfile.banner_url;
+            const { error } = await supabaseClient.from('profiles').update({ banner_url: null }).eq('id', currentUser.id);
+            if (error) {
+                console.error(error);
+                currentProfile.banner_url = previous;
+                showToast('Could not remove banner. Please try again.', true);
+                return;
+            }
+            currentProfile.banner_url = null;
+            renderBanner();
+            // Best effort cleanup of the stored file. The profile row is the source of truth.
+            await supabaseClient.storage.from('banners').remove([`${currentUser.id}/banner.jpg`]);
+            showToast('Banner removed');
+        }
+
+        window.selectTemplate = selectTemplate;
+        window.handleBannerUpload = handleBannerUpload;
+        window.removeBanner = removeBanner;
+
+        // lucide loads with `defer`, so wait for DOMContentLoaded (which
+        // always fires after deferred scripts finish) before the first call.
+        document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+        checkAuth();
+    </script>
+
+    <script src="/shared/account-menu.js?v=4"></script>
+    <script src="/shared/nav.js?v=6"></script>
+    <script src="/shared/app-lock.js?v=3"></script>
+</body>
+</html>

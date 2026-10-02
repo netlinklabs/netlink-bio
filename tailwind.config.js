@@ -22,6 +22,7 @@ module.exports = {
     './recovery.html',
     './reset-password.html',
     './reward.html',
+    './template.html',
     './tx.html',
     './shared/nav.js',
     './shared/app-lock.js',
