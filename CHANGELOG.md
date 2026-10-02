@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Fixed
+- **"Made with Netlink.bio" watermark text now matches the other pages.** `api/landing.js` already says "Made with Netlink" (brand rule: "Netlink.bio" is a URL only). Updated the same text in `page-builder.html` (watermark link) and the Gold+ setting description in `privacy.html`. The link target (`https://netlink.bio`) is unchanged. Not changed here (same rule, out of scope): the logo `alt` in `page-builder.html` and the `<title>` in `privacy.html` still say "Netlink.bio".
+
+### Fixed
 - **Branding and em dash rules in the public bio, CV and business pages (`api/bio.js`, `api/cv.js`, `api/landing.js`).** User-facing text wrote the brand as "Netlink.bio" and used em dashes. Now: badge modal messages ("verified by the Netlink team", bio and CV), the bio 404 heading ("isn't on Netlink"), the top logo `title`/`alt` (bio and CV), the CV `<title>` ("Name, Job title | CV | Netlink"), CV description ("...'s CV on Netlink"), CV `og:title` and share title ("Name | CV"), the business page `<title>` ("Name, tagline | Netlink") and description, and the "Made with Netlink" watermark. The watermark link and other URLs still point to netlink.bio (URL only, not a brand). Code comments are unchanged.
 
 ### Fixed
