@@ -27,6 +27,37 @@ function computeBadgeLabel(profile) {
   return null;
 }
 
+// Header banner (Silver+) is only used for the bio card. Same rules as
+// effectiveBannerUrl() in api/bio.js: tier must still be Silver/Gold and the
+// URL must point at our own public banners bucket.
+const BANNER_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/banners/`;
+const BANNER_TIERS = ['silver', 'gold'];
+const BANNER_MAX_BYTES = 1024 * 1024;
+
+// Fetch the banner and return it as a data URI, or '' on any problem so the
+// card falls back to the normal gradient instead of failing to render.
+async function loadBannerDataUri(profile) {
+  try {
+    if (!profile || !BANNER_TIERS.includes(profile.tier)) return '';
+    const url = profile.banner_url || '';
+    if (!url.startsWith(BANNER_URL_PREFIX)) return '';
+    const res = await fetch(url);
+    if (!res.ok) return '';
+    const type = (res.headers.get('content-type') || '').split(';')[0].trim();
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return '';
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength === 0 || buf.byteLength > BANNER_MAX_BYTES) return '';
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return `data:${type};base64,${btoa(bin)}`;
+  } catch (e) {
+    return '';
+  }
+}
+
 async function fetchProfile(username) {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/profiles_bio_public?username=eq.${encodeURIComponent(username)}&select=*`,
@@ -50,6 +81,8 @@ export default async function handler(req) {
     ? (profile?.cv_data?.title || 'View Professional CV')
     : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
   const badgeLabel = computeBadgeLabel(profile);
+  // Bio card only; Basic and CV keep the gradient background.
+  const banner = type === 'bio' ? await loadBannerDataUri(profile) : '';
 
   return new ImageResponse(
     h('div', {
@@ -58,6 +91,19 @@ export default async function handler(req) {
         padding: '0 90px', background: 'linear-gradient(135deg, #2DD4BF 0%, #1D4ED8 100%)', position: 'relative',
       },
     },
+      // Silver/Gold banner as cover background, darkened (flat 55% black) so
+      // the white text stays readable on any image.
+      banner
+        ? h('img', {
+            src: banner, width: 1200, height: 630,
+            style: { position: 'absolute', top: 0, left: 0, width: 1200, height: 630, objectFit: 'cover' },
+          })
+        : null,
+      banner
+        ? h('div', {
+            style: { position: 'absolute', top: 0, left: 0, width: 1200, height: 630, background: 'rgba(0,0,0,0.55)', display: 'flex' },
+          })
+        : null,
       // Logo, top-right with breathing room (not flush against the corner)
       h('div', { style: { position: 'absolute', top: 56, right: 64, display: 'flex', alignItems: 'center' } },
         h('div', {
