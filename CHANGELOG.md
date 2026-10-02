@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Changed
+- **Public bio page: header banner is now flush to the top of the page with no radius.** Phones and tablets: full viewport width (3:1). Desktop (1025px and up): same width as the content column (480px), centered. The Netlink logo and the share button now float over the banner, each on a circle background (`var(--nl-card)`, white in Light and dark slate in Dark) so they stay readable on any image. The banner moved out of `.wrap`, `.wrap.has-banner` has no top padding so the avatar still overlaps the banner by exactly 50%, and `<body>` gets `has-banner`. All new rules are scoped to `has-banner`, which is only added when a banner renders (Silver+ with a valid banner URL), so Basic profiles are unchanged: markup is identical to before (ignoring whitespace) and screenshots are pixel-identical at 390, 820 and 1440px. Change is in `api/bio.js` only.
+
+### Changed
 - **Public bio page: avatar now overlaps the header banner by 50%.** When a profile has a banner, the 96px avatar moves up so exactly half of it sits over the banner's bottom edge (`margin-top:-48px`, `.wrap.has-banner`), and everything below it moves up too. The avatar gets a 4px ring in the page background color so it separates cleanly in Light and Dark. Applies to the initial-letter fallback avatar as well. Profiles without a banner render exactly as before. Change is in `api/bio.js` only.
 
 ### Fixed
