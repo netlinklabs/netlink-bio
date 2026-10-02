@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Added
+- **Bio share image (OG) now uses the header banner as a darkened background for Silver and Gold.** `api/og.js` loads the banner (only for `type=bio`, only when tier is Silver/Gold and the URL is inside our public `banners` bucket, max 1MB, JPEG/PNG/WebP), draws it as a cover background and adds a flat 55% black overlay so the white text stays readable on any image. Any problem (wrong tier, foreign URL, failed fetch) falls back to the existing teal-to-blue gradient. Basic users and CV cards render byte-for-byte as before (verified by comparing old and new output). `api/bio.js` adds `&v=<banner upload timestamp>` to the `og:image` URL only when an effective banner exists, so social platforms and the CDN fetch a fresh image after a banner change; Basic URLs are unchanged. JSON-LD intentionally not changed (the banner is decoration, not identity).
+
 ### Fixed
 - **template.html: a saved template the plan no longer allows now shows a notice and highlights the active base look.** Example: a Gold user on a Gold template drops to Silver. The public page already falls back to the standard look (`api/bio.js` ignores templates the tier does not qualify for), but the gallery showed no selected card at all. Now the gallery shows an amber notice ("Your previous template (Gold 3) is not available on your plan, so your page uses the standard Dark look. Pick a look or a template below.") and selects the Light or Dark card that matches `theme_preset`, the same look the page renders. The same applies to an unknown template id (notice without the name). Clicking the highlighted base card clears the stale `template_id`. No new Tailwind classes (CSS in the page `<style>`), so `shared/tailwind.css` is unchanged. Change is in `template.html` only.
 

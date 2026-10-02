@@ -227,6 +227,11 @@ async function handler(req, res) {
   const themePreset = profile.theme_preset === 'dark' ? 'dark' : 'light';
   const templateId = effectiveTemplateId(profile);
   const bannerUrl = effectiveBannerUrl(profile);
+  // Cache-buster for the OG image: social platforms and the CDN cache
+  // /api/og for a long time, so the banner's upload timestamp (?t=...) is
+  // passed along. Empty for Basic, so their OG URL stays exactly as before.
+  const ogVersionMatch = bannerUrl && bannerUrl.match(/[?&]t=(\d+)/);
+  const ogVersion = ogVersionMatch ? `&v=${ogVersionMatch[1]}` : '';
 
   const youtubeUrl = profile.youtube_url || '';
   const youtubeTitle = profile.youtube_title || 'Watch my video';
@@ -370,7 +375,7 @@ async function handler(req, res) {
 
 <meta property="og:title" content="${escapeHtml(displayName)} — Netlink.bio">
 <meta property="og:description" content="${escapeHtml(bio)}">
-<meta property="og:image" content="https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio">
+<meta property="og:image" content="https://netlink.bio/api/og?username=${encodeURIComponent(profile.username)}&type=bio${ogVersion}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="${pageUrl}">
