@@ -70,6 +70,13 @@
         .tpl-thumb .bar { width: 52px; height: 6px; border-radius: 4px; background: #cbd5e1; }
         .tpl-thumb .bar.short { width: 36px; background: #e2e8f0; }
         html.dark .tpl-thumb .dot, html.dark .tpl-thumb .bar { background: #334155; }
+        /* Light and Dark base looks: fixed colors, independent of the page theme. */
+        .tpl-thumb.base-light { background: #f8fafc; border-color: #e2e8f0; }
+        .tpl-thumb.base-light .dot, .tpl-thumb.base-light .bar { background: #cbd5e1; }
+        .tpl-thumb.base-light .bar.short { background: #e2e8f0; }
+        .tpl-thumb.base-dark { background: #0f172a; border-color: #334155; }
+        .tpl-thumb.base-dark .dot, .tpl-thumb.base-dark .bar { background: #475569; }
+        .tpl-thumb.base-dark .bar.short { background: #334155; }
         .tpl-tier { position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; }
         .tpl-tier.silver { background: rgba(148,163,184,0.2); color: #475569; }
         .tpl-tier.gold { background: rgba(245,158,11,0.18); color: #b45309; }
@@ -220,7 +227,7 @@
 
                 const { data, error: profileError } = await supabaseClient
                     .from('profiles')
-                    .select('username, display_name, avatar_url, tier, local_currency, identity_verified_at, business_verified_at, template_id, banner_url')
+                    .select('username, display_name, avatar_url, tier, local_currency, identity_verified_at, business_verified_at, template_id, banner_url, theme_preset')
                     .eq('id', currentUser.id)
                     .single();
                 if (profileError) throw profileError;
@@ -248,34 +255,68 @@
         function renderPage() {
             const tier = userTier();
             document.getElementById('tierPill').textContent = TIER_LABEL[tier] + ' plan';
-            document.getElementById('templateIntro').textContent = tier === 'gold'
-                ? 'All Silver and Gold templates are unlocked for you.'
-                : 'Silver templates are unlocked for you. Upgrade to Gold to unlock more.';
             renderBanner();
             renderTemplates();
         }
 
         // ---------------- Templates ----------------
 
+        function currentTheme() {
+            return currentProfile?.theme_preset === 'dark' ? 'dark' : 'light';
+        }
+
+        // First row: the two base looks (Light, Dark). They are the standard
+        // look every plan has, and picking one clears the template.
+        // Templates are applied on top of the current Light/Dark setting.
         function renderTemplates() {
-            const selected = currentProfile?.template_id || null;
-            const grid = document.getElementById('templateGrid');
-            const cards = [{ id: null, name: 'Default', tier: null }]
-                .concat(TEMPLATES.filter(canUseTemplate));
-            grid.innerHTML = cards.map((t) => `
-                <button type="button" class="tpl-card ${selected === t.id ? 'selected' : ''}" data-id="${t.id || ''}" onclick="selectTemplate(${t.id ? `'${t.id}'` : 'null'})">
+            const selectedTemplate = currentProfile?.template_id || null;
+            const theme = currentTheme();
+            const tier = userTier();
+            document.getElementById('templateIntro').textContent =
+                (tier === 'gold' ? 'All Silver and Gold templates are unlocked for you.' : 'Silver templates are unlocked for you. Upgrade to Gold to unlock more.')
+                + ' Templates use your current look (' + (theme === 'dark' ? 'Dark' : 'Light') + ').';
+
+            const baseCards = ['light', 'dark'].map((t) => `
+                <button type="button" class="tpl-card ${!selectedTemplate && theme === t ? 'selected' : ''}" data-id="base-${t}" onclick="selectBaseTheme('${t}')">
                     <span class="tpl-check">&#10003;</span>
-                    ${t.tier ? `<span class="tpl-tier ${t.tier}">${TIER_LABEL[t.tier]}</span>` : ''}
+                    <div class="tpl-thumb base-${t}"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
+                    <span class="text-sm font-medium text-primary">${t === 'dark' ? 'Dark' : 'Light'}</span>
+                </button>`).join('');
+
+            const templateCards = TEMPLATES.filter(canUseTemplate).map((t) => `
+                <button type="button" class="tpl-card ${selectedTemplate === t.id ? 'selected' : ''}" data-id="${t.id}" onclick="selectTemplate('${t.id}')">
+                    <span class="tpl-check">&#10003;</span>
+                    <span class="tpl-tier ${t.tier}">${TIER_LABEL[t.tier]}</span>
                     <div class="tpl-thumb"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
                     <span class="text-sm font-medium text-primary">${t.name}</span>
                 </button>`).join('');
+
+            document.getElementById('templateGrid').innerHTML = baseCards + templateCards;
+        }
+
+        // Light or Dark card: saves theme_preset and clears template_id.
+        async function selectBaseTheme(theme) {
+            const prevTheme = currentProfile.theme_preset || 'light';
+            const prevTemplate = currentProfile.template_id || null;
+            if (!prevTemplate && currentTheme() === theme) return;
+            currentProfile.theme_preset = theme;
+            currentProfile.template_id = null;
+            renderTemplates();
+            const { error } = await supabaseClient.from('profiles').update({ theme_preset: theme, template_id: null }).eq('id', currentUser.id);
+            if (error) {
+                console.error(error);
+                currentProfile.theme_preset = prevTheme;
+                currentProfile.template_id = prevTemplate;
+                renderTemplates();
+                showToast('Could not save your look. Please try again.', true);
+                return;
+            }
+            showToast(theme === 'dark' ? 'Dark look applied' : 'Light look applied');
         }
 
         async function selectTemplate(id) {
-            if (id) {
-                const tpl = TEMPLATES.find((t) => t.id === id);
-                if (!tpl || !canUseTemplate(tpl)) { showToast('This template is not available on your plan', true); return; }
-            }
+            const tpl = TEMPLATES.find((t) => t.id === id);
+            if (!tpl || !canUseTemplate(tpl)) { showToast('This template is not available on your plan', true); return; }
             const previous = currentProfile.template_id || null;
             if (previous === id) return;
             currentProfile.template_id = id;
@@ -288,7 +329,7 @@
                 showToast('Could not save template. Please try again.', true);
                 return;
             }
-            showToast(id ? 'Template applied' : 'Default template restored');
+            showToast('Template applied');
         }
 
         // ---------------- Banner ----------------
@@ -529,6 +570,7 @@
         }
 
         window.selectTemplate = selectTemplate;
+        window.selectBaseTheme = selectBaseTheme;
         window.handleBannerFile = handleBannerFile;
         window.closeCropModal = closeCropModal;
         window.saveCroppedBanner = saveCroppedBanner;

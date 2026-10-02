@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Changed
+- **template.html: the single "Default" card is replaced by two base looks, Light and Dark, side by side in the first row.** Picking Light or Dark saves `profiles.theme_preset` and clears `template_id` in one update (same as the base looks Basic users get from the Choose Template modal in `dashboard.html`). Picking a template only saves `template_id`, so templates are applied on top of the current Light/Dark setting, and the intro line under "Templates" shows which look is in use. The selected card is the template if one is set, otherwise the Light or Dark card matching `theme_preset`. Failed saves revert the selection and show a toast. `theme_preset` is now read on load. No new Tailwind classes, so `shared/tailwind.css` is unchanged. Change is in `template.html` only.
+
+### Changed
 - **Public bio page: logo and share button backgrounds over the banner are now 50% opaque.** Light: `rgba(255,255,255,0.5)`, Dark: `rgba(30,41,59,0.5)` via `--nl-topbar-btn-bg`, scoped to `body.has-banner` (profiles without a banner are unchanged). Change is in `api/bio.js` only.
 
 ### Changed
