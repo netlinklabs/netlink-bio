@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Fixed
+- **OG image: first (uncached) render could take 1.6s+, so opengraph.to flagged "og:image is broken" intermittently and WhatsApp sometimes showed no image.** Vercel runtime logs showed every `/api/og` request returned 200 (no errors), but cache misses were slow. `api/og.js` is now pinned to `syd1` (`regions: ['syd1']`), next to the Supabase project (`ap-southeast-2`) that holds the profile, banner and avatar, instead of rendering in whichever region is nearest the crawler.
+
+### Fixed
 - **Bio share preview (WhatsApp): OG image sometimes missing, only title and description showed.** The first render of `/api/og` was too slow for WhatsApp's crawler (sequential fetches: profile, banner, then the logo from our own domain; the avatar was fetched by Satori with no limit). Now the logo is embedded in code (`api/_lib/og-logo.js`, 440x135 PNG, about 12KB, no network call), and the banner and avatar are prefetched in parallel with a 2.5s timeout each (avatar falls back to its original URL on any problem, banner falls back to the gradient). Card size stays around 150KB.
 
 ### Changed
