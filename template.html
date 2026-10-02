@@ -8,7 +8,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Template Gallery - Netlink</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-    <link rel="stylesheet" href="/shared/tailwind.css?v=11">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=12">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.460.0" defer></script>
     <style>
@@ -44,7 +44,21 @@
         /* Banner preview: always 3:1, same ratio the public bio page uses. */
         .banner-frame { width: 100%; aspect-ratio: 3 / 1; border-radius: 14px; overflow: hidden; background: #e2e8f0; border: 1px dashed rgba(100,116,139,0.45); display: flex; align-items: center; justify-content: center; }
         html.dark .banner-frame { background: #0f172a; }
-        .banner-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .banner-frame img { width: 100%; height: 100%; object-fit: cover; }
+        .banner-empty { text-align: center; padding: 0 16px; }
+
+        /* Crop modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #ffffff; border-radius: 20px; max-width: 520px; width: 100%; padding: 20px; max-height: 92vh; overflow-y: auto; }
+        html.dark .modal-box { background: #1e293b; }
+        .crop-stage { position: relative; width: 100%; aspect-ratio: 3 / 1; border-radius: 12px; overflow: hidden; background: #0f172a; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+        .crop-stage.dragging { cursor: grabbing; }
+        .crop-stage img { position: absolute; left: 0; top: 0; max-width: none; max-height: none; pointer-events: none; will-change: transform; }
+        .crop-stage::after { content: ''; position: absolute; inset: 0; border: 2px solid rgba(255,255,255,0.85); border-radius: 12px; pointer-events: none; }
+        .progress-track { height: 8px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+        html.dark .progress-track { background: #0f172a; }
+        .progress-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.15s linear; }
 
         .tpl-card { border: 2px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 10px; text-align: center; transition: border-color 0.15s, transform 0.15s; background: transparent; cursor: pointer; position: relative; }
         html.dark .tpl-card { border-color: rgba(255,255,255,0.08); }
@@ -93,19 +107,22 @@
         <!-- Header banner -->
         <div class="card rounded-2xl p-4 lg:p-6 mb-4">
             <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="camera" class="w-4 h-4 text-blue-500"></i> Header Banner</h3>
-            <p class="text-xs text-muted mb-3">Shown at the top of your public page. Wide images work best (3:1). We crop and compress it for you.</p>
+            <p class="text-xs text-muted mb-3">Shown at the top of your public page. Choose a landscape image, then adjust the crop before uploading.</p>
 
             <div class="banner-frame mb-3" id="bannerFrame">
-                <span id="bannerEmpty" class="text-xs text-muted">No banner yet</span>
+                <div id="bannerEmpty" class="banner-empty">
+                    <i data-lucide="camera" class="w-5 h-5 text-muted mx-auto mb-1"></i>
+                    <p class="text-xs font-medium text-secondary">No banner yet</p>
+                    <p class="text-[11px] text-muted mt-0.5">Recommended: landscape image, 1500 x 500 px (3:1). JPG, PNG or WebP, up to 10MB.</p>
+                </div>
                 <img id="bannerImg" class="hidden" alt="Header banner preview">
             </div>
 
             <div class="flex gap-2">
                 <label for="bannerInput" id="bannerUploadLabel" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm text-center cursor-pointer">Upload Banner</label>
-                <input id="bannerInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleBannerUpload(event)">
+                <input id="bannerInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleBannerFile(event)">
                 <button id="bannerRemoveBtn" type="button" onclick="removeBanner()" class="hidden px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition text-sm" aria-label="Remove banner"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-            <p id="bannerStatus" class="text-xs text-muted mt-2 hidden"></p>
         </div>
 
         <!-- Templates -->
@@ -115,6 +132,28 @@
             <div id="templateGrid" class="grid grid-cols-2 gap-3"></div>
         </div>
     </main>
+
+    <!-- Crop + upload modal -->
+    <div id="cropModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 class="font-bold text-primary text-base mb-1">Crop your banner</h3>
+            <p class="text-xs text-muted mb-3">Drag the image to reposition it. Use the slider to zoom.</p>
+            <div id="cropStage" class="crop-stage mb-3"><img id="cropImg" alt="Banner crop"></div>
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-xs text-muted">Zoom</span>
+                <input id="cropZoom" type="range" min="1" max="4" step="0.01" value="1" class="flex-1" style="accent-color:#3b82f6" aria-label="Zoom">
+            </div>
+            <div id="uploadProgressWrap" class="hidden mb-4">
+                <div class="flex items-center justify-between text-xs text-muted mb-1"><span id="uploadProgressLabel">Uploading...</span><span id="uploadProgressPct">0%</span></div>
+                <div class="progress-track"><div id="uploadProgressFill" class="progress-fill"></div></div>
+            </div>
+            <p id="cropError" class="hidden text-xs text-red-500 mb-3"></p>
+            <div class="flex gap-2">
+                <button id="cropCancelBtn" type="button" onclick="closeCropModal()" class="flex-1 py-2.5 border border-subtle text-secondary font-medium rounded-xl transition text-sm hover-surface">Cancel</button>
+                <button id="cropSaveBtn" type="button" onclick="saveCroppedBanner()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm disabled:opacity-60">Crop and Upload</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -271,45 +310,142 @@
             document.getElementById('bannerUploadLabel').textContent = url ? 'Replace Banner' : 'Upload Banner';
         }
 
-        function setBannerStatus(text) {
-            const el = document.getElementById('bannerStatus');
-            el.textContent = text || '';
-            el.classList.toggle('hidden', !text);
-        }
-
-        function loadImage(file) {
-            return new Promise((resolve, reject) => {
-                const url = URL.createObjectURL(file);
-                const img = new Image();
-                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
-                img.src = url;
-            });
-        }
-
         function canvasToJpeg(canvas, quality) {
             return new Promise((resolve, reject) => {
                 canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', quality);
             });
         }
 
-        // Center-crop to 3:1, scale to 1500x500, then lower JPEG quality
-        // until the file is under the size budget (bucket limit is 500KB).
-        async function prepareBanner(file) {
-            const img = await loadImage(file);
-            const targetRatio = BANNER_WIDTH / BANNER_HEIGHT;
-            let sw = img.width, sh = img.height;
-            if (sw / sh > targetRatio) { sw = Math.round(sh * targetRatio); } else { sh = Math.round(sw / targetRatio); }
-            const sx = Math.round((img.width - sw) / 2);
-            const sy = Math.round((img.height - sh) / 2);
+        // ---- Crop modal state ----
+        // The stage is always 3:1. The image is scaled so it always covers the
+        // stage ("cover" scale x zoom) and can be dragged but never leaves a gap.
+        const crop = { objectUrl: null, natW: 0, natH: 0, minScale: 1, scale: 1, x: 0, y: 0, stageW: 0, stageH: 0, busy: false, dragging: false, lastX: 0, lastY: 0 };
 
+        function handleBannerFile(event) {
+            const input = event.target;
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { showToast('Please choose a JPG, PNG or WebP image', true); return; }
+            if (file.size > BANNER_MAX_INPUT_BYTES) { showToast('Image is too large. Max 10MB.', true); return; }
+            openCropModal(file);
+        }
+
+        function openCropModal(file) {
+            if (crop.objectUrl) URL.revokeObjectURL(crop.objectUrl);
+            crop.objectUrl = URL.createObjectURL(file);
+            setCropError('');
+            setUploadProgress(null);
+            document.getElementById('cropZoom').value = 1;
+            const img = document.getElementById('cropImg');
+            img.onload = () => {
+                crop.natW = img.naturalWidth; crop.natH = img.naturalHeight;
+                const stage = document.getElementById('cropStage');
+                crop.stageW = stage.clientWidth; crop.stageH = stage.clientHeight;
+                crop.minScale = Math.max(crop.stageW / crop.natW, crop.stageH / crop.natH);
+                crop.scale = crop.minScale;
+                crop.x = (crop.stageW - crop.natW * crop.scale) / 2;
+                crop.y = (crop.stageH - crop.natH * crop.scale) / 2;
+                applyCrop();
+            };
+            img.onerror = () => { closeCropModal(true); showToast('Could not read this image. Try another one.', true); };
+            document.getElementById('cropModal').classList.add('open');
+            img.src = crop.objectUrl;
+        }
+
+        function closeCropModal(force) {
+            if (crop.busy && !force) return;
+            document.getElementById('cropModal').classList.remove('open');
+            if (crop.objectUrl) { URL.revokeObjectURL(crop.objectUrl); crop.objectUrl = null; }
+            document.getElementById('cropImg').removeAttribute('src');
+        }
+
+        function clampCrop() {
+            const w = crop.natW * crop.scale, h = crop.natH * crop.scale;
+            crop.x = Math.min(0, Math.max(crop.stageW - w, crop.x));
+            crop.y = Math.min(0, Math.max(crop.stageH - h, crop.y));
+        }
+
+        function applyCrop() {
+            clampCrop();
+            const img = document.getElementById('cropImg');
+            img.style.width = (crop.natW * crop.scale) + 'px';
+            img.style.height = (crop.natH * crop.scale) + 'px';
+            img.style.transform = `translate(${crop.x}px, ${crop.y}px)`;
+        }
+
+        function setZoom(zoom) {
+            // Zoom around the center of the stage.
+            const cx = (crop.stageW / 2 - crop.x) / crop.scale;
+            const cy = (crop.stageH / 2 - crop.y) / crop.scale;
+            crop.scale = crop.minScale * zoom;
+            crop.x = crop.stageW / 2 - cx * crop.scale;
+            crop.y = crop.stageH / 2 - cy * crop.scale;
+            applyCrop();
+        }
+
+        function setCropError(text) {
+            const el = document.getElementById('cropError');
+            el.textContent = text || '';
+            el.classList.toggle('hidden', !text);
+        }
+
+        // pct: 0..100, or null to hide the bar. label: optional text.
+        function setUploadProgress(pct, label) {
+            const wrap = document.getElementById('uploadProgressWrap');
+            wrap.classList.toggle('hidden', pct === null);
+            if (pct === null) return;
+            const rounded = Math.round(pct);
+            document.getElementById('uploadProgressFill').style.width = rounded + '%';
+            document.getElementById('uploadProgressPct').textContent = rounded + '%';
+            if (label) document.getElementById('uploadProgressLabel').textContent = label;
+        }
+
+        function setCropBusy(busy) {
+            crop.busy = busy;
+            document.getElementById('cropSaveBtn').disabled = busy;
+            document.getElementById('cropCancelBtn').disabled = busy;
+            document.getElementById('cropZoom').disabled = busy;
+        }
+
+        (function initCropGestures() {
+            const stage = document.getElementById('cropStage');
+            const zoom = document.getElementById('cropZoom');
+            stage.addEventListener('pointerdown', (e) => {
+                if (crop.busy) return;
+                crop.dragging = true; crop.lastX = e.clientX; crop.lastY = e.clientY;
+                stage.setPointerCapture(e.pointerId);
+                stage.classList.add('dragging');
+            });
+            stage.addEventListener('pointermove', (e) => {
+                if (!crop.dragging) return;
+                crop.x += e.clientX - crop.lastX; crop.y += e.clientY - crop.lastY;
+                crop.lastX = e.clientX; crop.lastY = e.clientY;
+                applyCrop();
+            });
+            const stop = () => { crop.dragging = false; stage.classList.remove('dragging'); };
+            stage.addEventListener('pointerup', stop);
+            stage.addEventListener('pointercancel', stop);
+            stage.addEventListener('wheel', (e) => {
+                if (crop.busy) return;
+                e.preventDefault();
+                const next = Math.min(4, Math.max(1, parseFloat(zoom.value) - e.deltaY * 0.002));
+                zoom.value = next; setZoom(next);
+            }, { passive: false });
+            zoom.addEventListener('input', () => setZoom(parseFloat(zoom.value)));
+        })();
+
+        // Render the visible crop area to a 1500x500 JPEG under the size budget.
+        async function renderCroppedBlob() {
+            const img = document.getElementById('cropImg');
+            const sx = -crop.x / crop.scale, sy = -crop.y / crop.scale;
+            const sw = crop.stageW / crop.scale, sh = crop.stageH / crop.scale;
             const canvas = document.createElement('canvas');
             canvas.width = BANNER_WIDTH; canvas.height = BANNER_HEIGHT;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, sx, sy, sw, sh, 0, 0, BANNER_WIDTH, BANNER_HEIGHT);
-
             let quality = 0.85;
             let blob = await canvasToJpeg(canvas, quality);
             while (blob.size > BANNER_MAX_BYTES && quality > 0.5) {
@@ -319,34 +455,59 @@
             return blob;
         }
 
-        async function handleBannerUpload(event) {
-            const input = event.target;
-            const file = input.files && input.files[0];
-            input.value = '';
-            if (!file) return;
-            if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { showToast('Please choose a JPG, PNG or WebP image', true); return; }
-            if (file.size > BANNER_MAX_INPUT_BYTES) { showToast('Image is too large. Max 10MB.', true); return; }
+        // supabase-js does not report upload progress, so call the Storage REST
+        // endpoint directly with XHR. Same auth as the SDK (user JWT + apikey).
+        async function uploadBannerWithProgress(path, blob, onProgress) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) throw new Error('Your session expired. Please sign in again.');
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `${SUPABASE_URL}/storage/v1/object/banners/${path}`);
+                xhr.setRequestHeader('Authorization', 'Bearer ' + session.access_token);
+                xhr.setRequestHeader('apikey', SUPABASE_KEY);
+                xhr.setRequestHeader('x-upsert', 'true');
+                xhr.setRequestHeader('cache-control', 'max-age=3600');
+                xhr.setRequestHeader('Content-Type', 'image/jpeg');
+                xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress((e.loaded / e.total) * 100); };
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) { resolve(); return; }
+                    let msg = 'Upload failed (' + xhr.status + ')';
+                    try { const body = JSON.parse(xhr.responseText); if (body.message) msg = body.message; } catch (e) { /* keep default */ }
+                    reject(new Error(msg));
+                };
+                xhr.onerror = () => reject(new Error('Network error. Check your connection and try again.'));
+                xhr.send(blob);
+            });
+        }
 
-            setBannerStatus('Compressing and uploading...');
+        async function saveCroppedBanner() {
+            if (crop.busy) return;
+            setCropError('');
+            setCropBusy(true);
             try {
-                const blob = await prepareBanner(file);
+                setUploadProgress(0, 'Preparing image...');
+                const blob = await renderCroppedBlob();
                 const path = `${currentUser.id}/banner.jpg`;
-                const { error: uploadError } = await supabaseClient.storage.from('banners').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
-                if (uploadError) throw uploadError;
+                setUploadProgress(0, 'Uploading...');
+                await uploadBannerWithProgress(path, blob, (pct) => setUploadProgress(pct * 0.95, 'Uploading...'));
 
+                setUploadProgress(97, 'Saving...');
                 const { data: publicUrlData } = supabaseClient.storage.from('banners').getPublicUrl(path);
                 const bannerUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
-
                 const { error: updateError } = await supabaseClient.from('profiles').update({ banner_url: bannerUrl }).eq('id', currentUser.id);
                 if (updateError) throw updateError;
 
+                setUploadProgress(100, 'Done');
                 currentProfile.banner_url = bannerUrl;
                 renderBanner();
-                setBannerStatus('');
+                setCropBusy(false);
+                closeCropModal();
                 showToast('Banner updated');
             } catch (err) {
                 console.error(err);
-                setBannerStatus('Upload failed. Please try a different image.');
+                setUploadProgress(null);
+                setCropError('Upload failed: ' + (err.message || 'Please try a different image.'));
+                setCropBusy(false);
             }
         }
 
@@ -368,7 +529,9 @@
         }
 
         window.selectTemplate = selectTemplate;
-        window.handleBannerUpload = handleBannerUpload;
+        window.handleBannerFile = handleBannerFile;
+        window.closeCropModal = closeCropModal;
+        window.saveCroppedBanner = saveCroppedBanner;
         window.removeBanner = removeBanner;
 
         // lucide loads with `defer`, so wait for DOMContentLoaded (which
