@@ -57,6 +57,7 @@
     .billing-toggle { display: inline-flex; padding: 3px; gap: 2px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 100px; margin-bottom: var(--space-4); }
     /* Invisible twin of .billing-toggle (same buttons, so same height) on the Basic card, so price, note and feature list line up across all three cards on desktop */
     .billing-spacer { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid transparent; border-radius: 100px; margin-bottom: var(--space-4); visibility: hidden; pointer-events: none; }
+    @media (max-width: 767px) { .billing-spacer { display: none; } }
     .billing-tab { border: none; background: transparent; cursor: pointer; font-family: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); padding: 7px 14px; border-radius: 100px; display: flex; align-items: center; gap: 6px; transition: background var(--transition-fast, 0.15s), color var(--transition-fast, 0.15s); }
     .billing-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .billing-tab .save-badge { background: rgba(22, 198, 200, 0.15); color: var(--color-primary-dark, var(--color-primary)); font-size: 0.6875rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
@@ -123,7 +124,8 @@
             <ul class="plan-features">
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 20 links in Bio</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 1 video card</li>
-              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Usernames of 5+ characters</li>
+              <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Video layouts</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 5+ character usernames</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 2 template choices</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Professional CV</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Netlink Pay wallet</li>
@@ -146,8 +148,9 @@
             <p class="plan-note">Billed monthly in USDC</p>
             <ul class="plan-features">
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 30 links in Bio</li>
-              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Up to 5 video cards, 3 layouts</li>
-              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Usernames of 4+ characters</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Up to 5 video cards</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 3 video layouts</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 4+ character usernames</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Template Gallery (Silver)</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Professional CV</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Netlink Pay wallet</li>
@@ -170,14 +173,15 @@
             <p class="plan-note">Billed monthly in USDC</p>
             <ul class="plan-features">
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 50 links in Bio</li>
-              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Up to 13 video cards, 3 layouts</li>
-              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Usernames of 3+ characters</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Up to 13 video cards</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 3 video layouts</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 3+ character usernames</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Template Gallery (Gold)</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Professional CV</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Netlink Pay wallet</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Click analytics</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Landing Page</li>
-              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Hide footer link (toggle in settings)</li>
+              <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Hide footer link (toggle)</li>
             </ul>
             <button type="button" class="plan-cta cta-gold">Checkout Gold</button>
           </article>
