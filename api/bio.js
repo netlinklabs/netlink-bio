@@ -198,7 +198,7 @@ async function handler(req, res) {
   const username = (req.query.username || '').toLowerCase().trim();
   if (!username) { res.status(400).send('Missing username'); return; }
 
-  let profile, links;
+  let profile, links, videos = [];
   try {
     const profiles = await supabaseGet(`profiles_bio_public?username=eq.${encodeURIComponent(username)}&select=*`);
     if (!profiles.length) {
@@ -211,6 +211,15 @@ async function handler(req, res) {
     }
     profile = profiles[0];
     links = await supabaseGet(`links?user_id=eq.${profile.id}&is_active=eq.true&select=*&order=position.asc`);
+    // Video cards live in profile_videos. A failure here must never take the
+    // whole page down (e.g. table not migrated yet), so fall back to the
+    // legacy single youtube_* columns.
+    try {
+      videos = await supabaseGet(`profile_videos?user_id=eq.${profile.id}&select=*&order=position.asc`);
+    } catch (videoErr) {
+      console.error(videoErr);
+      videos = profile.youtube_url ? [{ url: profile.youtube_url, title: profile.youtube_title, is_featured: false }] : [];
+    }
   } catch (err) {
     console.error(err);
     res.status(500).send('Something went wrong loading this profile.');
@@ -249,11 +258,6 @@ async function handler(req, res) {
   if (!ogStoredUrl && hasOgColumns(profile)) {
     waitUntil(fetch(`${ogDynamicUrl}&store=1`, { signal: AbortSignal.timeout(20000) }).catch(() => {}));
   }
-
-  const youtubeUrl = profile.youtube_url || '';
-  const youtubeTitle = profile.youtube_title || 'Watch my video';
-  const youtubeId = extractYouTubeId(youtubeUrl);
-  const showYoutubeThumb = profile.show_youtube_thumbnail !== false;
 
   // ---- JSON-LD (schema.org/Person) ----
   // @id must be byte-identical to the one api/cv.js emits for the same
@@ -309,24 +313,46 @@ async function handler(req, res) {
   }
   const contactIconsHtml = contactIcons.length ? `<div class="contact-row">${contactIcons.join('')}</div>` : '';
 
-  // ---- YouTube section (single video, thumbnail toggle) ----
-  let youtubeHtml = '';
-  if (youtubeUrl) {
-    if (showYoutubeThumb && youtubeId) {
-      youtubeHtml = `
-      <a class="youtube-frame" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener" onclick="trackClick(null)">
-        <img src="https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg" alt="${escapeHtml(youtubeTitle)}" class="youtube-thumb">
-        <span class="youtube-play">&#9658;</span>
-        <span class="youtube-caption">${escapeHtml(youtubeTitle)}</span>
-      </a>`;
-    } else {
-      youtubeHtml = `
-      <a href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(null)">
+  // ---- Video cards (Basic 1, Silver 5, Gold 13) ----
+  // Limits mirror the enforce_video_limit() DB trigger; slicing here also
+  // covers downgrades (extra videos are hidden, not deleted).
+  const VIDEO_LIMITS = { basic: 1, silver: 5, gold: 13, platinum: 13 };
+  const videoLimit = VIDEO_LIMITS[profile.tier] ?? 1;
+  const visibleVideos = (videos || []).filter((v) => v && v.url).slice(0, videoLimit);
+  // Layout choice is Silver+; Basic and single-video profiles are always standard.
+  const videoLayout = (profile.tier !== 'basic' && visibleVideos.length > 1 && ['grid', 'flexible'].includes(profile.video_layout))
+    ? profile.video_layout : 'standard';
+  // Which cards span the full width: none in standard (single column anyway),
+  // none in grid, only the featured one in flexible.
+  const featuredIndex = videoLayout === 'flexible' ? visibleVideos.findIndex((v) => v.is_featured === true) : -1;
+
+  const videoCardsHtml = visibleVideos.map((v, i) => {
+    const vidId = extractYouTubeId(v.url);
+    const vidTitle = (v.title || '').trim() || 'Watch my video';
+    if (!vidId) {
+      // Not a recognizable YouTube link: show as a regular link card.
+      return `
+      <a href="${escapeHtml(v.url)}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(null)">
         <span class="link-icon ${iconShape}">${iconHtml('youtube')}</span>
-        <span class="link-text"><span class="link-title">${escapeHtml(youtubeTitle)}</span></span>
+        <span class="link-text"><span class="link-title">${escapeHtml(vidTitle)}</span></span>
       </a>`;
     }
-  }
+    const meta = v.channel_name ? `YouTube &middot; ${escapeHtml(v.channel_name)}` : 'YouTube';
+    return `
+      <div class="vid-card${i === featuredIndex ? ' vid-full' : ''}">
+        <button type="button" class="vid-thumb" aria-label="Play video: ${escapeHtml(vidTitle)}" onclick="playVideo(this, ${JSON.stringify(vidId)})">
+          <img src="https://i.ytimg.com/vi/${vidId}/hq720.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${vidId}/hqdefault.jpg'">
+          <span class="vid-play">&#9658;</span>
+          <span class="vid-overlay">
+            <span class="vid-title">${escapeHtml(vidTitle)}</span>
+            <span class="vid-meta">${meta}</span>
+          </span>
+        </button>
+      </div>`;
+  }).join('\n');
+  const youtubeHtml = videoCardsHtml
+    ? `<div class="vid-wrap vid-${videoLayout}">${videoCardsHtml}</div>`
+    : '';
 
   // ---- Links list ----
   const linksHtml = links.map((l) => `
@@ -514,10 +540,27 @@ ${isDemoProfile(profile.username)
   .contact-icon { width:38px; height:38px; border-radius:50%; background:var(--nl-icon-bg); border:1px solid var(--nl-icon-border); display:flex; align-items:center; justify-content:center; text-decoration:none; padding:9px; }
   .contact-icon .brand-svg { width:100%; height:100%; }
   .bio { text-align:center; color:var(--nl-text-muted-2); font-size:14px; margin:0 0 20px; line-height:1.5; white-space:pre-wrap; }
-  .youtube-frame { position:relative; display:block; border-radius:16px; overflow:hidden; margin-bottom:12px; box-shadow:0 10px 25px rgba(0,0,0,0.12); border:1px solid var(--nl-border); }
-  .youtube-thumb { width:100%; display:block; }
-  .youtube-play { position:absolute; top:40%; left:50%; transform:translate(-50%,-50%); width:56px; height:56px; background:rgba(0,0,0,0.55); border-radius:50%; color:white; font-size:20px; display:flex; align-items:center; justify-content:center; }
-  .youtube-caption { display:block; padding:10px 14px; font-size:13px; font-weight:600; background:var(--nl-card); color:var(--nl-text); }
+  /* Video cards: 16:9 thumbnail, bottom gradient overlay, plays inline */
+  .vid-wrap { display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px; }
+  .vid-wrap.vid-grid, .vid-wrap.vid-flexible { grid-template-columns:1fr 1fr; }
+  .vid-card { position:relative; min-width:0; border-radius:16px; overflow:hidden; background:#000; box-shadow:0 10px 25px rgba(0,0,0,0.12); border:1px solid var(--nl-border); }
+  .vid-card.vid-full, .vid-card.playing { grid-column:1 / -1; }
+  .vid-thumb { position:relative; display:block; width:100%; aspect-ratio:16 / 9; padding:0; margin:0; border:0; background:#000; cursor:pointer; overflow:hidden; font:inherit; color:#fff; }
+  .vid-thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .vid-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:52px; height:52px; background:rgba(0,0,0,0.55); border-radius:50%; color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center; padding-left:3px; box-sizing:border-box; }
+  .vid-overlay { position:absolute; left:0; right:0; bottom:0; display:flex; flex-direction:column; gap:2px; padding:32px 14px 12px; text-align:left; background:linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0) 100%); }
+  .vid-title { font-weight:700; font-size:14px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .vid-meta { font-size:12px; opacity:0.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .vid-card iframe { display:block; width:100%; aspect-ratio:16 / 9; border:0; }
+  /* Half-width cards get slightly smaller type and play button */
+  .vid-grid .vid-card:not(.vid-full):not(.playing) .vid-play,
+  .vid-flexible .vid-card:not(.vid-full):not(.playing) .vid-play { width:38px; height:38px; font-size:14px; }
+  .vid-grid .vid-card:not(.vid-full):not(.playing) .vid-overlay,
+  .vid-flexible .vid-card:not(.vid-full):not(.playing) .vid-overlay { padding:24px 10px 8px; }
+  .vid-grid .vid-card:not(.vid-full):not(.playing) .vid-title,
+  .vid-flexible .vid-card:not(.vid-full):not(.playing) .vid-title { font-size:12px; }
+  .vid-grid .vid-card:not(.vid-full):not(.playing) .vid-meta,
+  .vid-flexible .vid-card:not(.vid-full):not(.playing) .vid-meta { font-size:10px; }
   .link-card { display:flex; align-items:center; gap:12px; background:var(--nl-card); border:1px solid var(--nl-border); border-radius:16px; padding:14px 16px; margin-bottom:12px; text-decoration:none; color:var(--nl-text); transition:transform .15s; width:100%; text-align:left; cursor:pointer; font:inherit; }
   .link-card:hover { transform:translateY(-2px); border-color:#14b8a6; }
   .link-icon { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--nl-icon-bg); border:1px solid var(--nl-icon-border); padding:8px; }
@@ -623,6 +666,18 @@ ${isDemoProfile(profile.username)
       } else {
         fetch('/api/track-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
       }
+    }
+
+    function playVideo(btn, id) {
+      trackClick(null);
+      const card = btn.parentNode;
+      const frame = document.createElement('iframe');
+      frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0&playsinline=1';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      frame.allowFullscreen = true;
+      frame.title = 'YouTube video player';
+      card.classList.add('playing');
+      card.replaceChild(frame, btn);
     }
 
     function shareProfile(event) {
