@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Fixed
+- **Video cards did nothing when tapped on the bio page.** The play button was rendered as `onclick="playVideo(this, "ID")"`: `JSON.stringify` produced double quotes inside a double-quoted HTML attribute, which broke the attribute, so the click handler never ran. The YouTube id now goes in a `data-vid` attribute and `playVideo(btn)` reads it, so there is no quoting to break. File: `api/bio.js`.
+
+### Fixed
 - **Old video still showed on the bio page while the dashboard showed 0 videos.** The new `profile_videos` table was created without SELECT/INSERT/UPDATE/DELETE privileges for `anon` and `authenticated`, so every read failed with "permission denied". `dashboard.html` therefore listed 0 videos, and `api/bio.js` hit its fallback and kept rendering the legacy `youtube_url`/`youtube_title` columns. Fixed in production with `grant select ... to anon, authenticated` and `grant insert, update, delete ... to authenticated` (applied as migration `profile_videos_grants`), and added to `supabase/migrations/20261003_profile_videos.sql` for the record. No code change needed. Same root cause, second part: `authenticated` only has UPDATE on an allowlist of `profiles` columns, and the new `video_layout` column was not on it, so tapping 2 Columns or Flexible showed "Failed to save layout". Fixed with `grant update (video_layout) on public.profiles to authenticated` (migration `profiles_video_layout_update_grant`). `tier` stays locked.
 
 ### Added
