@@ -32,6 +32,9 @@ create policy "Users can delete own videos" on public.profile_videos for delete 
 alter table public.profiles
   add column video_layout text not null default 'standard'
   check (video_layout in ('standard', 'grid', 'flexible'));
+-- `authenticated` only has UPDATE on an allowlist of profiles columns (tier etc.
+-- are locked), so every new user-editable column needs its own grant.
+grant update (video_layout) on public.profiles to authenticated;
 
 -- 3) Tier limit on video count (Basic 1, Silver 5, Gold/Platinum 13)
 create or replace function public.enforce_video_limit()
