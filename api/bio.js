@@ -340,7 +340,7 @@ async function handler(req, res) {
     const meta = v.channel_name ? `YouTube &middot; ${escapeHtml(v.channel_name)}` : 'YouTube';
     return `
       <div class="vid-card${i === featuredIndex ? ' vid-full' : ''}">
-        <button type="button" class="vid-thumb" aria-label="Play video: ${escapeHtml(vidTitle)}" onclick="playVideo(this, ${JSON.stringify(vidId)})">
+        <button type="button" class="vid-thumb" aria-label="Play video: ${escapeHtml(vidTitle)}" data-vid="${vidId}" onclick="playVideo(this)">
           <img src="https://i.ytimg.com/vi/${vidId}/hq720.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${vidId}/hqdefault.jpg'">
           <span class="vid-play">&#9658;</span>
           <span class="vid-overlay">
@@ -668,7 +668,9 @@ ${isDemoProfile(profile.username)
       }
     }
 
-    function playVideo(btn, id) {
+    function playVideo(btn) {
+      const id = btn.dataset.vid;
+      if (!id) return;
       trackClick(null);
       const card = btn.parentNode;
       const frame = document.createElement('iframe');
