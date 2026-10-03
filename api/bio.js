@@ -12,6 +12,7 @@ import { recordEvent } from './_lib/analytics.js';
 import { withStats } from './_lib/stats.js';
 import { waitUntil } from '@vercel/functions';
 import { OG_RENDER_VERSION, hasOgColumns, currentStoredOgUrl } from './_lib/og-shared.js';
+import { templateCss } from './_lib/bio-templates.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -158,9 +159,9 @@ function extractYouTubeId(url) {
 }
 
 // Template Gallery (Silver and Gold only). Keep ids and tiers in sync with the
-// bio_templates table and TEMPLATES in template.html. Templates are
-// placeholders for now: each one only adds a `tpl-<id>` class to <body>, so
-// the visual design can be added per template later without touching logic.
+// bio_templates table and TEMPLATES in template.html. Each template adds a
+// `tpl-<id>` class to <body>; its design lives in api/_lib/bio-templates.js
+// (templateCss), injected at the end of the page <style>.
 const TEMPLATE_TIERS = {
   'silver-01': 'silver', 'silver-02': 'silver', 'silver-03': 'silver', 'silver-04': 'silver',
   'gold-01': 'gold', 'gold-02': 'gold', 'gold-03': 'gold',
@@ -577,6 +578,7 @@ ${isDemoProfile(profile.username)
   .donate-modal-box .wallet-address { background:rgba(255,255,255,0.08); color:#d4d4d8; }
   .donate-modal-box .copy-btn { background:#D6D6DA; color:#1c1c1e; font-weight:700; }
   .donate-modal-box .wallet-note { color:#a1a1aa; }
+  ${templateCss(templateId)}
 </style>
 </head>
 <body class="theme-${themePreset}${templateId ? ` tpl-${templateId}` : ''}${bannerUrl ? ' has-banner' : ''}">

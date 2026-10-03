@@ -86,6 +86,14 @@
         html.dark .tpl-tier.gold { color: #fbbf24; }
         .tpl-check { position: absolute; top: 6px; left: 6px; width: 18px; height: 18px; border-radius: 50%; background: #3b82f6; color: white; display: none; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
         .tpl-card.selected .tpl-check { display: flex; }
+        /* Per-template preview (Silver and Gold). Colors come from the inline
+           --t* variables set in templateThumbStyle(). The "html" prefix keeps
+           these above the generic dark-mode .tpl-thumb rules. */
+        html .tpl-thumb.tpl-art { background: var(--tb); border-color: var(--tbc); gap: 5px; overflow: hidden; }
+        html .tpl-thumb.tpl-art .dot { width: 22px; height: 22px; background: var(--ta); }
+        html .tpl-thumb.tpl-art .mini { width: 70%; height: 11px; background: var(--tc); border: var(--tbw, 1px) solid var(--tbc); border-left: var(--tlw, var(--tbw, 1px)) solid var(--tl, var(--tbc)); border-radius: var(--tr); box-shadow: var(--ts, none); }
+        .tpl-desc { display: block; font-size: 11px; line-height: 1.3; color: #64748b; margin-top: 2px; }
+        html.dark .tpl-desc { color: #94a3b8; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -171,22 +179,36 @@
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Placeholder templates. Keep ids and tiers in sync with the
+        // Template Gallery. Keep ids and tiers in sync with the
         // bio_templates table (the DB trigger validates template_id against
-        // it) and with TEMPLATE_TIERS in api/bio.js. Real designs come later,
-        // so every template currently renders with the same base look.
+        // it), with TEMPLATE_TIERS in api/bio.js and with the CSS in
+        // api/_lib/bio-templates.js. `thumb` only drives the small preview here:
+        // b = background, c = card, bd = card border, r = card radius,
+        // s = card shadow, a = avatar dot, bw/l/lw = border width and left accent.
+        // Basic has the plain Light and Dark looks, Silver adds colored static
+        // designs, Gold adds animated premium designs.
         // Silver users see only 'silver' templates. Gold users see all.
         const TEMPLATES = [
-            { id: 'silver-01', name: 'Silver 1', tier: 'silver' },
-            { id: 'silver-02', name: 'Silver 2', tier: 'silver' },
-            { id: 'silver-03', name: 'Silver 3', tier: 'silver' },
-            { id: 'silver-04', name: 'Silver 4', tier: 'silver' },
-            { id: 'gold-01', name: 'Gold 1', tier: 'gold' },
-            { id: 'gold-02', name: 'Gold 2', tier: 'gold' },
-            { id: 'gold-03', name: 'Gold 3', tier: 'gold' },
-            { id: 'gold-04', name: 'Gold 4', tier: 'gold' },
-            { id: 'gold-05', name: 'Gold 5', tier: 'gold' },
-            { id: 'gold-06', name: 'Gold 6', tier: 'gold' },
+            { id: 'silver-01', name: 'Ocean', desc: 'Cool blue, soft shadows', tier: 'silver',
+              thumb: { b: 'linear-gradient(180deg,#e0f2fe,#ecfeff)', c: '#fff', bd: 'rgba(14,116,144,.25)', r: '6px', s: '0 3px 6px -3px rgba(14,116,144,.6)', a: '#38bdf8' } },
+            { id: 'silver-02', name: 'Sunset', desc: 'Warm pink, pill cards', tier: 'silver',
+              thumb: { b: 'linear-gradient(160deg,#fff1eb,#ffe4ec)', c: '#fff', bd: 'rgba(244,63,94,.25)', r: '99px', s: '0 3px 6px -3px rgba(244,63,94,.6)', a: '#fb7185' } },
+            { id: 'silver-03', name: 'Forest', desc: 'Fresh green, accent bar', tier: 'silver',
+              thumb: { b: 'linear-gradient(180deg,#dcfce7,#f7fee7)', c: '#fff', bd: 'rgba(22,101,52,.2)', r: '3px', s: '0 3px 6px -3px rgba(22,101,52,.5)', a: '#22c55e', l: '#22c55e', lw: '4px' } },
+            { id: 'silver-04', name: 'Paper Pop', desc: 'Bold outlines, hard shadows', tier: 'silver',
+              thumb: { b: 'radial-gradient(rgba(17,24,39,.25) 1px,transparent 1px) 0 0/8px 8px,#fef9c3', c: '#fff', bd: '#111827', bw: '2px', r: '3px', s: '2px 2px 0 #111827', a: '#facc15' } },
+            { id: 'gold-01', name: 'Aurora', desc: 'Moving light, frosted glass', tier: 'gold',
+              thumb: { b: 'radial-gradient(circle at 20% 20%,rgba(56,189,248,.8),transparent 55%),radial-gradient(circle at 80% 30%,rgba(167,139,250,.85),transparent 55%),radial-gradient(circle at 55% 95%,rgba(52,211,153,.7),transparent 55%),#f5f3ff', c: 'rgba(255,255,255,.65)', bd: 'rgba(255,255,255,.9)', r: '6px', s: '0 3px 8px -3px rgba(76,29,149,.5)', a: '#fff' } },
+            { id: 'gold-02', name: 'Midnight Gold', desc: 'Black and gold, shining name', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#1a1405,#0a0a0a)', c: '#151515', bd: '#d4af37', r: '5px', s: '0 0 8px -2px rgba(212,175,55,.8)', a: '#d4af37' } },
+            { id: 'gold-03', name: 'Neon Grid', desc: 'Glowing neon on a grid', tier: 'gold',
+              thumb: { b: 'linear-gradient(rgba(34,211,238,.2) 1px,transparent 1px) 0 0/10px 10px,linear-gradient(90deg,rgba(34,211,238,.2) 1px,transparent 1px) 0 0/10px 10px,#05060f', c: '#0b1020', bd: '#22d3ee', r: '4px', s: '0 0 8px rgba(34,211,238,.8)', a: '#22d3ee' } },
+            { id: 'gold-04', name: 'Royal Glass', desc: 'Jewel gradient, floating glow', tier: 'gold',
+              thumb: { b: 'linear-gradient(135deg,#6d28d9,#be185d)', c: 'rgba(255,255,255,.25)', bd: 'rgba(255,255,255,.5)', r: '8px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-05', name: 'Rose Gold', desc: 'Polished metal, spinning border', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#fff1ec,#ffe4de)', c: '#fff', bd: '#e8a598', bw: '2px', r: '7px', s: '0 3px 8px -3px rgba(217,142,130,.9)', a: '#e8a598' } },
+            { id: 'gold-06', name: 'Holographic', desc: 'Iridescent, rainbow border', tier: 'gold',
+              thumb: { b: 'linear-gradient(120deg,#fbc2eb,#a6c1ee,#c2ffd8,#ffd6a5)', c: '#fff', bd: '#a18cd1', bw: '2px', r: '6px', s: '0 3px 8px -3px rgba(161,140,209,.9)', a: '#fff' } },
         ];
         const TIER_RANK = { basic: 0, silver: 1, gold: 2 };
         const TIER_LABEL = { silver: 'Silver', gold: 'Gold' };
@@ -268,6 +290,15 @@
             return currentProfile?.theme_preset === 'dark' ? 'dark' : 'light';
         }
 
+        function templateThumbStyle(th) {
+            const parts = ['--tb:' + th.b, '--tc:' + th.c, '--tbc:' + th.bd, '--tr:' + th.r, '--ta:' + th.a];
+            if (th.bw) parts.push('--tbw:' + th.bw);
+            if (th.s) parts.push('--ts:' + th.s);
+            if (th.l) parts.push('--tl:' + th.l);
+            if (th.lw) parts.push('--tlw:' + th.lw);
+            return parts.join(';');
+        }
+
         // First row: the two base looks (Light, Dark). They are the standard
         // look every plan has, and picking one clears the template.
         // Templates are applied on top of the current Light/Dark setting.
@@ -296,14 +327,16 @@
                     <span class="tpl-check">&#10003;</span>
                     <div class="tpl-thumb base-${t}"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
                     <span class="text-sm font-medium text-primary">${t === 'dark' ? 'Dark' : 'Light'}</span>
+                    <span class="tpl-desc">Standard look</span>
                 </button>`).join('');
 
             const templateCards = TEMPLATES.filter(canUseTemplate).map((t) => `
                 <button type="button" class="tpl-card ${!templateUnavailable && selectedTemplate === t.id ? 'selected' : ''}" data-id="${t.id}" onclick="selectTemplate('${t.id}')">
                     <span class="tpl-check">&#10003;</span>
                     <span class="tpl-tier ${t.tier}">${TIER_LABEL[t.tier]}</span>
-                    <div class="tpl-thumb"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
+                    <div class="tpl-thumb tpl-art" style="${templateThumbStyle(t.thumb)}"><div class="dot"></div><div class="mini"></div><div class="mini"></div></div>
                     <span class="text-sm font-medium text-primary">${t.name}</span>
+                    <span class="tpl-desc">${t.desc}</span>
                 </button>`).join('');
 
             document.getElementById('templateGrid').innerHTML = baseCards + templateCards;
