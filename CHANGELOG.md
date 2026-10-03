@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Fixed
+- **`plans.html` spacing and wrapping fixes.** (1) On mobile the invisible Monthly/Annual spacer in the Basic card left a big gap between "Basic" and "$0"; it is now hidden below 768px, where the cards are stacked and need no alignment. (2) On desktop some rows wrapped to two lines and pushed the lists out of line, so the copy is shorter: "Up to 5 / 13 video cards", "5+ / 4+ / 3+ character usernames", "Hide footer link (toggle)" (was "toggle in settings"). The "3 layouts" note moved to its own row, "3 video layouts" (Silver and Gold, shown as unavailable on Basic), so every card has the same 10 rows. Text and CSS only, no Tailwind rebuild.
+
 ### Changed
 - **`plans.html` Basic card now shows "$0 / month" with "Free forever" under it** (was just "Free"). It also gets an invisible copy of the Monthly/Annual toggle (`.billing-spacer`, `aria-hidden`, not clickable), so the plan name, price, note and feature list start at the same height in all three cards on desktop. The Basic-only `.plan-price` margin override was removed because the new note line now provides that spacing. Text and layout only, no Tailwind rebuild.
 
