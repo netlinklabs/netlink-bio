@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Changed
+- **`plans.html` now shows the minimum username length per tier.** Basic "Usernames of 5+ characters", Silver "Usernames of 4+ characters", Gold "Usernames of 3+ characters", placed under the video cards line in each plan card. Matches the real rules: `min_slug_length_for_tier()` and the `enforce_username_length()` trigger in Supabase, and `requiredTierForLength()` in `dashboard.html` (Platinum, min 2, is paused so it is not listed). Max length is 25 for every tier. Text only, no Tailwind rebuild.
+
 ### Fixed
 - **Video cards did nothing when tapped on the bio page.** The play button was rendered as `onclick="playVideo(this, "ID")"`: `JSON.stringify` produced double quotes inside a double-quoted HTML attribute, which broke the attribute, so the click handler never ran. The YouTube id now goes in a `data-vid` attribute and `playVideo(btn)` reads it, so there is no quoting to break. File: `api/bio.js`.
 
