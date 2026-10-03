@@ -1,5 +1,5 @@
 -- Multi-video cards (Basic 1, Silver 5, Gold 13) + layout choice (Silver/Gold).
--- DRAFT: review before applying to production.
+-- Applied to production 2026-10-03 (grants were added in a follow-up, see below).
 
 -- 1) Videos table (public read like `links`, owner-only writes)
 create table public.profile_videos (
@@ -15,6 +15,12 @@ create table public.profile_videos (
 create index profile_videos_user_pos_idx on public.profile_videos (user_id, position);
 -- Only one featured video per profile
 create unique index profile_videos_one_featured_idx on public.profile_videos (user_id) where is_featured;
+
+-- Table privileges: tables created through a migration do not get SELECT/INSERT/
+-- UPDATE/DELETE for the API roles automatically. Without these, every request
+-- fails with "permission denied" even though the RLS policies below allow it.
+grant select on public.profile_videos to anon, authenticated;
+grant insert, update, delete on public.profile_videos to authenticated;
 
 alter table public.profile_videos enable row level security;
 create policy "Videos are viewable by everyone" on public.profile_videos for select using (true);
