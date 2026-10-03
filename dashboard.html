@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <title>Netlink.bio - Dashboard</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
-    <link rel="stylesheet" href="/shared/tailwind.css?v=12">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=13">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.460.0" defer></script>
     <style>
@@ -270,29 +270,43 @@
                     </div>
                 </div>
 
-                <!-- Video Link -->
+                <!-- Video Cards (Basic 1, Silver 5, Gold 13) -->
                 <div class="pt-4 border-t border-subtle">
                     <div class="border border-subtle rounded-xl overflow-hidden">
                         <button onclick="toggleAccordion('accYoutube')" class="w-full flex items-center justify-between p-4 bg-surface hover-surface transition">
-                            <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="youtube" class="w-4 h-4 text-red-500"></i> Video Link</span>
+                            <span class="font-semibold text-primary text-sm flex items-center gap-2"><i data-lucide="youtube" class="w-4 h-4 text-red-500"></i> Video Cards <span id="videoCountLabel" class="text-xs font-normal text-muted"></span></span>
                             <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="accYoutubeChevron"></i>
                         </button>
                         <div id="accYoutube" class="accordion-body px-4 pb-4">
-                            <p class="text-xs text-muted mb-3 mt-4">Free plan: 1 video link.</p>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="text-sm font-medium text-secondary block mb-1.5">Video Title</label>
-                                    <input id="youtubeTitleInput" type="text" placeholder="e.g. Watch my latest video" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                            <p class="text-xs text-muted mb-3 mt-4">Basic: 1 video. Silver: up to 5. Gold: up to 13. Videos play right on your bio page.</p>
+
+                            <!-- Layout picker (Silver and Gold, shown once more than 1 video is allowed) -->
+                            <div id="videoLayoutBox" class="hidden mb-4">
+                                <label class="text-sm font-medium text-secondary block mb-1.5">Layout</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button type="button" data-video-layout="standard" onclick="setVideoLayout('standard')" class="video-layout-btn px-2 py-2 border border-subtle bg-surface rounded-lg text-xs font-medium text-primary transition">Standard</button>
+                                    <button type="button" data-video-layout="grid" onclick="setVideoLayout('grid')" class="video-layout-btn px-2 py-2 border border-subtle bg-surface rounded-lg text-xs font-medium text-primary transition">2 Columns</button>
+                                    <button type="button" data-video-layout="flexible" onclick="setVideoLayout('flexible')" class="video-layout-btn px-2 py-2 border border-subtle bg-surface rounded-lg text-xs font-medium text-primary transition">Flexible</button>
                                 </div>
+                                <p id="videoLayoutHint" class="text-xs text-muted mt-1.5"></p>
+                            </div>
+
+                            <div id="videoList" class="space-y-2"></div>
+                            <p id="videoListEmpty" class="text-xs text-muted py-2">No videos yet.</p>
+
+                            <!-- Add video -->
+                            <div id="videoAddBox" class="space-y-3 mt-4">
                                 <div>
                                     <label class="text-sm font-medium text-secondary block mb-1.5">YouTube Link</label>
-                                    <input id="profileYoutube" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                                    <input id="videoUrlInput" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                                 </div>
-                                <label class="flex items-center gap-2 text-sm text-secondary">
-                                    <input id="youtubeThumbToggle" type="checkbox" class="rounded"> Show video thumbnail (otherwise shown as a regular link card)
-                                </label>
+                                <div>
+                                    <label class="text-sm font-medium text-secondary block mb-1.5">Video Title (optional)</label>
+                                    <input id="videoTitleInput" type="text" maxlength="150" placeholder="Leave empty to use the YouTube title" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                                </div>
+                                <button id="videoAddBtn" onclick="addVideo()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Add video</button>
                             </div>
-                            <button id="youtubeSaveBtn" onclick="saveYoutube()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
+                            <p id="videoLimitNote" class="hidden text-xs text-muted mt-4">Video limit reached for your plan. <a href="plans" class="text-blue-500 hover:underline">See plans</a></p>
                         </div>
                     </div>
                 </div>
@@ -613,7 +627,7 @@
                 <li class="flex justify-between"><span>At least 1 link added</span><span class="text-muted">20</span></li>
                 <li class="flex justify-between"><span>Description filled</span><span class="text-muted">20</span></li>
                 <li class="flex justify-between"><span>Display name filled</span><span class="text-muted">15</span></li>
-                <li class="flex justify-between"><span>Video link added</span><span class="text-muted">15</span></li>
+                <li class="flex justify-between"><span>At least 1 video added</span><span class="text-muted">15</span></li>
                 <li class="flex justify-between"><span>Country selected</span><span class="text-muted">10</span></li>
                 <li class="flex justify-between"><span>A contact method (email/WhatsApp/Telegram)</span><span class="text-muted">10</span></li>
                 <li class="flex justify-between"><span>Profile photo uploaded</span><span class="text-muted">10</span></li>
@@ -704,6 +718,9 @@
         let showDonateDirty = false;
         let showCountryDirty = false;
         const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
+        // Keep in sync with enforce_video_limit() in the DB and VIDEO_LIMITS in api/bio.js
+        const VIDEO_LIMITS = { basic: 1, silver: 5, gold: 13, platinum: 13 };
+        let currentVideos = [];
 
         // ==========================================
         // AUTH GATE — FIX untuk race condition setelah redirect Google OAuth
@@ -887,6 +904,7 @@
         async function loadDashboardData() {
             await loadProfile();
             await loadLinks();
+            await loadVideos();
             await loadLandingPageCard();
             updateProfileCompletion();
             // Deep links from analytics.html's AI readiness checklist
@@ -957,10 +975,6 @@ window.openNetlinkPay = openNetlinkPay;
 
             document.getElementById('profileBio').value = data.bio || '';
             document.getElementById('profileBioCount').textContent = (data.bio || '').length + '/500';
-
-            document.getElementById('youtubeTitleInput').value = data.youtube_title || '';
-            document.getElementById('profileYoutube').value = data.youtube_url || '';
-            document.getElementById('youtubeThumbToggle').checked = data.show_youtube_thumbnail !== false;
 
             document.getElementById('walletAddressInput').value = data.wallet_address || '';
             if (window.renderWalletAddressUI) window.renderWalletAddressUI(data.wallet_address || '', false);
@@ -1228,17 +1242,177 @@ window.openNetlinkPay = openNetlinkPay;
             });
         }
 
-        async function saveYoutube() {
-            await withSaving('youtubeSaveBtn', async () => {
-                const { error } = await supabaseClient.from('profiles').update({
-                    youtube_title: document.getElementById('youtubeTitleInput').value.trim() || null,
-                    youtube_url: document.getElementById('profileYoutube').value.trim() || null,
-                    show_youtube_thumbnail: document.getElementById('youtubeThumbToggle').checked,
-                }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to save video link'); return; }
-                showToast('Video link saved');
-          await loadProfile();
+        // ==========================================
+        // VIDEO CARDS (Basic 1, Silver 5, Gold 13)
+        // ==========================================
+        function extractYouTubeId(url) {
+            const m = (url || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+            return m ? m[1] : null;
+        }
+
+        async function loadVideos() {
+            const { data, error } = await supabaseClient.from('profile_videos').select('*').eq('user_id', currentUser.id).order('position', { ascending: true });
+            if (error) { console.error('Failed to load videos:', error); currentVideos = []; }
+            else currentVideos = data || [];
+            renderVideos();
+        }
+
+        // Title and channel name come from YouTube's free oEmbed endpoint (no API key).
+        // Falls back to noembed.com if the browser blocks the direct call. Returns null
+        // when neither works; the user's own title is then used as is.
+        async function fetchVideoMeta(url) {
+            const endpoints = [
+                'https://www.youtube.com/oembed?format=json&url=',
+                'https://noembed.com/embed?url=',
+            ];
+            for (const base of endpoints) {
+                try {
+                    const res = await fetch(base + encodeURIComponent(url));
+                    if (!res.ok) continue;
+                    const json = await res.json();
+                    if (json && (json.title || json.author_name)) {
+                        return { title: json.title || '', channel: json.author_name || '' };
+                    }
+                } catch (e) { /* try the next endpoint */ }
+            }
+            return null;
+        }
+
+        function videoLayoutHintText(layout) {
+            if (layout === 'grid') return 'Two columns. With an odd number of videos, the last one sits alone on the left.';
+            if (layout === 'flexible') return 'Pick one Featured video (star) to show full width. The rest use two columns. No featured video means all use two columns.';
+            return 'One video per row, in the order below.';
+        }
+
+        function renderVideos() {
+            const tier = currentProfile?.tier || 'basic';
+            const limit = VIDEO_LIMITS[tier] ?? 1;
+            const layout = (tier !== 'basic' && ['grid', 'flexible'].includes(currentProfile?.video_layout)) ? currentProfile.video_layout : 'standard';
+            const list = document.getElementById('videoList');
+            if (!list) return;
+
+            document.getElementById('videoCountLabel').textContent = `${currentVideos.length}/${limit}`;
+            document.getElementById('videoListEmpty').classList.toggle('hidden', currentVideos.length > 0);
+
+            // Layout picker only matters when more than 1 video is allowed
+            document.getElementById('videoLayoutBox').classList.toggle('hidden', limit <= 1);
+            document.querySelectorAll('.video-layout-btn').forEach(btn => {
+                const active = btn.dataset.videoLayout === layout;
+                btn.classList.toggle('ring-2', active);
+                btn.classList.toggle('ring-blue-500', active);
+                btn.classList.toggle('border-blue-500', active);
             });
+            document.getElementById('videoLayoutHint').textContent = videoLayoutHintText(layout);
+
+            // Add form vs limit note
+            const full = currentVideos.length >= limit;
+            document.getElementById('videoAddBox').classList.toggle('hidden', full);
+            document.getElementById('videoLimitNote').classList.toggle('hidden', !full || tier === 'gold' || tier === 'platinum');
+
+            list.innerHTML = '';
+            currentVideos.forEach((v, index) => {
+                const id = extractYouTubeId(v.url);
+                const thumb = id ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : '';
+                const div = document.createElement('div');
+                div.className = 'link-item rounded-xl p-2.5 flex items-center gap-3';
+                div.innerHTML = `
+                    <div class="w-16 h-9 rounded-md overflow-hidden bg-surface shrink-0">${thumb ? `<img src="${thumb}" alt="" class="w-full h-full object-cover">` : ''}</div>
+                    <div class="flex-1 min-w-0">
+                        <input type="text" maxlength="150" value="${escapeHtml(v.title || '')}" placeholder="Video title" onchange="updateVideoTitle('${v.id}', this.value)" class="w-full px-2 py-1 border border-subtle bg-surface rounded-md text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <p class="text-xs text-muted truncate mt-0.5">${escapeHtml(v.channel_name || 'YouTube')}</p>
+                    </div>
+                    <div class="flex items-center gap-0.5">
+                        ${layout === 'flexible' ? `<button onclick="toggleVideoFeatured('${v.id}')" title="Featured" class="p-1.5 hover-surface rounded-lg transition"><i data-lucide="star" class="w-4 h-4 ${v.is_featured ? 'text-yellow-500' : 'text-secondary'}"></i></button>` : ''}
+                        <button onclick="moveVideo(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-up" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="moveVideo(${index}, 1)" ${index === currentVideos.length - 1 ? 'disabled' : ''} class="p-1.5 hover-surface rounded-lg disabled:opacity-30 transition"><i data-lucide="chevron-down" class="w-4 h-4 text-secondary"></i></button>
+                        <button onclick="deleteVideo('${v.id}')" class="p-1.5 hover-surface rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            if (window.lucide) lucide.createIcons();
+            if (typeof updateProfileCompletion === 'function') updateProfileCompletion();
+        }
+
+        async function addVideo() {
+            const tier = currentProfile?.tier || 'basic';
+            const limit = VIDEO_LIMITS[tier] ?? 1;
+            const url = document.getElementById('videoUrlInput').value.trim();
+            const typedTitle = document.getElementById('videoTitleInput').value.trim();
+            if (currentVideos.length >= limit) { showToast('Video limit reached for your plan'); return; }
+            if (!extractYouTubeId(url)) { showToast('Please enter a valid YouTube link'); return; }
+
+            await withSaving('videoAddBtn', async () => {
+                const meta = await fetchVideoMeta(url);
+                const title = typedTitle || (meta && meta.title) || null;
+                const channel = (meta && meta.channel) || null;
+                const nextPosition = currentVideos.reduce((max, v) => Math.max(max, v.position || 0), -1) + 1;
+                const { error } = await supabaseClient.from('profile_videos').insert({
+                    user_id: currentUser.id, url, title, channel_name: channel, position: nextPosition,
+                });
+                if (error) { console.error(error); showToast(error.message || 'Failed to add video'); return; }
+                document.getElementById('videoUrlInput').value = '';
+                document.getElementById('videoTitleInput').value = '';
+                showToast('Video added');
+                await loadVideos();
+            });
+        }
+
+        async function updateVideoTitle(id, value) {
+            const title = value.trim() || null;
+            const { error } = await supabaseClient.from('profile_videos').update({ title }).eq('id', id).eq('user_id', currentUser.id);
+            if (error) { console.error(error); showToast('Failed to save title'); return; }
+            const v = currentVideos.find(x => x.id === id);
+            if (v) v.title = title;
+            showToast('Title saved');
+        }
+
+        async function deleteVideo(id) {
+            if (!confirm('Remove this video?')) return;
+            const { error } = await supabaseClient.from('profile_videos').delete().eq('id', id).eq('user_id', currentUser.id);
+            if (error) { console.error(error); showToast('Failed to remove video'); return; }
+            showToast('Video removed');
+            await loadVideos();
+        }
+
+        async function moveVideo(index, direction) {
+            const otherIndex = index + direction;
+            if (otherIndex < 0 || otherIndex >= currentVideos.length) return;
+            const a = currentVideos[index];
+            const b = currentVideos[otherIndex];
+            [currentVideos[index], currentVideos[otherIndex]] = [b, a];
+            renderVideos();
+            const [r1, r2] = await Promise.all([
+                supabaseClient.from('profile_videos').update({ position: b.position }).eq('id', a.id),
+                supabaseClient.from('profile_videos').update({ position: a.position }).eq('id', b.id),
+            ]);
+            if (r1.error || r2.error) { showToast('Failed to reorder videos'); await loadVideos(); return; }
+            const tmp = a.position; a.position = b.position; b.position = tmp;
+        }
+
+        // Only one video can be featured. Tapping the featured one again clears it.
+        async function toggleVideoFeatured(id) {
+            const target = currentVideos.find(v => v.id === id);
+            if (!target) return;
+            const makeFeatured = !target.is_featured;
+            // Clear the old one first (unique index allows a single featured row per profile)
+            const clear = await supabaseClient.from('profile_videos').update({ is_featured: false }).eq('user_id', currentUser.id).eq('is_featured', true);
+            if (clear.error) { console.error(clear.error); showToast('Failed to update featured video'); return; }
+            if (makeFeatured) {
+                const set = await supabaseClient.from('profile_videos').update({ is_featured: true }).eq('id', id).eq('user_id', currentUser.id);
+                if (set.error) { console.error(set.error); showToast('Failed to update featured video'); await loadVideos(); return; }
+            }
+            await loadVideos();
+        }
+
+        async function setVideoLayout(layout) {
+            const tier = currentProfile?.tier || 'basic';
+            if (tier === 'basic') { showToast('Video layouts are available from the Silver plan'); return; }
+            const { error } = await supabaseClient.from('profiles').update({ video_layout: layout }).eq('id', currentUser.id);
+            if (error) { console.error(error); showToast('Failed to save layout'); return; }
+            currentProfile.video_layout = layout;
+            renderVideos();
+            showToast('Video layout saved');
         }
 
         const CV_DEFAULT = { title: '', location: '', summary: '', skills: [], education: [], languages: [], experience: [], projects: [], certifications: [] };
@@ -1585,7 +1759,7 @@ window.openNetlinkPay = openNetlinkPay;
                 [!!val('profileCountryCode'), 10],
                 [!!(val('profileEmail') || val('profileWhatsapp') || val('profileTelegram')), 10],
                 [currentLinks.length > 0, 20],
-                [!!val('profileYoutube'), 15],
+                [currentVideos.length > 0, 15],
             ];
             const pct = items.reduce((sum, [done, weight]) => sum + (done ? weight : 0), 0);
             renderAiScore('bio', pct);
