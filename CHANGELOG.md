@@ -8,6 +8,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 ## [Unreleased]
 
 ### Changed
+- **`plans.html` Basic card now shows "$0 / month" with "Free forever" under it** (was just "Free"). It also gets an invisible copy of the Monthly/Annual toggle (`.billing-spacer`, `aria-hidden`, not clickable), so the plan name, price, note and feature list start at the same height in all three cards on desktop. The Basic-only `.plan-price` margin override was removed because the new note line now provides that spacing. Text and layout only, no Tailwind rebuild.
+
+### Changed
 - **`plans.html` now shows the minimum username length per tier.** Basic "Usernames of 5+ characters", Silver "Usernames of 4+ characters", Gold "Usernames of 3+ characters", placed under the video cards line in each plan card. Matches the real rules: `min_slug_length_for_tier()` and the `enforce_username_length()` trigger in Supabase, and `requiredTierForLength()` in `dashboard.html` (Platinum, min 2, is paused so it is not listed). Max length is 25 for every tier. Text only, no Tailwind rebuild.
 
 ### Fixed
