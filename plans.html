@@ -43,8 +43,7 @@
     /* BASIC — thin black border, dark badge */
     .plan-card.tier-basic { border: 1.5px solid #1a1a1a; }
     .plan-card.tier-basic .plan-badge { background: #1a1a1a; color: #fff; }
-    .plan-card.tier-basic .plan-price { margin-bottom: var(--space-4); }
-
+    
     /* SILVER — metallic silver border + badge */
     .plan-card.tier-silver { border: 2px solid #9CA3AF; box-shadow: 0 10px 32px rgba(148, 163, 184, 0.20); }
     .plan-card.tier-silver .plan-badge { background: linear-gradient(135deg, #E5E7EB, #9CA3AF); color: #1f2937; }
@@ -56,6 +55,8 @@
     .plan-name { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-2); }
 
     .billing-toggle { display: inline-flex; padding: 3px; gap: 2px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 100px; margin-bottom: var(--space-4); }
+    /* Invisible twin of .billing-toggle (same buttons, so same height) on the Basic card, so price, note and feature list line up across all three cards on desktop */
+    .billing-spacer { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid transparent; border-radius: 100px; margin-bottom: var(--space-4); visibility: hidden; pointer-events: none; }
     .billing-tab { border: none; background: transparent; cursor: pointer; font-family: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); padding: 7px 14px; border-radius: 100px; display: flex; align-items: center; gap: 6px; transition: background var(--transition-fast, 0.15s), color var(--transition-fast, 0.15s); }
     .billing-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .billing-tab .save-badge { background: rgba(22, 198, 200, 0.15); color: var(--color-primary-dark, var(--color-primary)); font-size: 0.6875rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
@@ -116,7 +117,9 @@
           <article class="plan-card tier-basic">
             <span class="plan-badge">Free Forever</span>
             <h2 class="plan-name">Basic</h2>
-            <p class="plan-price">Free</p>
+            <div class="billing-spacer" aria-hidden="true"><button type="button" class="billing-tab active" tabindex="-1" disabled>Monthly</button><button type="button" class="billing-tab" tabindex="-1" disabled>Annual <span class="save-badge">-17%</span></button></div>
+            <p class="plan-price"><span class="price-amount">$0</span> <span class="price-suffix">/ month</span></p>
+            <p class="plan-note">Free forever</p>
             <ul class="plan-features">
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 20 links in Bio</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 1 video card</li>
