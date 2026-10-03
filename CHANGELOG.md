@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Changed
+- **Template Gallery button for Basic users now reads "Upgrade" (was "Silver+").** Shown next to the lock icon in the Choose Layout modal of `dashboard.html`. Clearer than "Silver+". The hint below ("Available from the Silver plan. See plans") is unchanged so users can still open `plans` to see each tier's price.
+
 ### Added
 - **Template designs for the Template Gallery (4 Silver, 6 Gold).** Each template now has a real design, with a Light and a Dark variant that follows the owner's look. Basic keeps the plain Light/Dark look, Silver adds static colored designs (Ocean, Sunset, Forest, Paper Pop), Gold adds premium animated designs (Aurora, Midnight Gold, Neon Grid, Royal Glass, Rose Gold, Holographic). CSS lives in the new `api/_lib/bio-templates.js` (`templateCss(id)`), injected at the end of the page `<style>` in `api/bio.js` for the active template only. Animations are disabled for `prefers-reduced-motion`. Template ids and tiers are unchanged, so no DB migration is needed. `template.html` now shows a unique preview and a one-line description per template (names changed from "Silver 1" etc. to the design names). Tier gating is unchanged (Basic none, Silver Silver only, Gold all). Not verified in a real browser yet: please check each template on a phone in Light and Dark.
 
