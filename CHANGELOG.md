@@ -7,6 +7,9 @@ older entries in older-dated files) if what you're looking for isn't below.
 
 ## [Unreleased]
 
+### Added
+- **Template designs for the Template Gallery (4 Silver, 6 Gold).** Each template now has a real design, with a Light and a Dark variant that follows the owner's look. Basic keeps the plain Light/Dark look, Silver adds static colored designs (Ocean, Sunset, Forest, Paper Pop), Gold adds premium animated designs (Aurora, Midnight Gold, Neon Grid, Royal Glass, Rose Gold, Holographic). CSS lives in the new `api/_lib/bio-templates.js` (`templateCss(id)`), injected at the end of the page `<style>` in `api/bio.js` for the active template only. Animations are disabled for `prefers-reduced-motion`. Template ids and tiers are unchanged, so no DB migration is needed. `template.html` now shows a unique preview and a one-line description per template (names changed from "Silver 1" etc. to the design names). Tier gating is unchanged (Basic none, Silver Silver only, Gold all). Not verified in a real browser yet: please check each template on a phone in Light and Dark.
+
 ### Changed
 - **Bio and CV footer link now reads "Netlink | Build Your Page Free"** (was "netlink.bio, build your page free"). Matches the branding rule (brand is "Netlink", "netlink.bio" is a URL only). Same link (`/`) and same visibility rule (hidden for Gold+ users who turn the footer link off). The business page watermark stays "Made with Netlink" (a paid feature there). Files: `api/bio.js`, `api/cv.js`.
 
