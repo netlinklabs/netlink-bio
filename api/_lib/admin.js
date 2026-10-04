@@ -17,7 +17,7 @@ const UUID_RE = /^[0-9a-f-]{36}$/i;
 const ORDER_STATUSES = ['awaiting_payment', 'underpaid', 'paid', 'expired', 'late_payment', 'cancelled', 'refunded'];
 const SETTLEABLE = ['awaiting_payment', 'underpaid', 'expired', 'late_payment'];
 
-import { sendMail, invoiceMail } from './mailer.js';
+import { sendMail, invoiceMail, getUserEmail, ambassadorStatusMail } from './mailer.js';
 import { usageSummary } from './usage.js';
 const SAMPLE_ADDR = '0x0000000000000000000000000000000000000000';
 
@@ -477,8 +477,21 @@ export async function handleAdmin(action, req, res, user, ctx) {
         body: { status: to, admin_notes: notes },
       });
       if (!moved[0]) return res.status(409).json({ error: 'This application was just changed by someone else. Reload and try again.' });
-      await audit('ambassador_status', null, { application_id: a.id, from: a.status, to, note });
-      return res.status(200).json({ application: adminAmbassador(moved[0], await profileOf()) });
+      const profile = await profileOf();
+      // Approved and rejected also email the applicant (their own auth email).
+      // A failed email never undoes the status change, it is only recorded.
+      let emailed = null;
+      const mail = ambassadorStatusMail(to, {
+        name: (profile?.display_name || profile?.username || '').trim(),
+        countryCode: a.country_code,
+        track: a.track,
+      });
+      if (mail) {
+        const email = await getUserEmail(a.user_id);
+        emailed = email ? await sendMail({ ...mail, to: email }) : false;
+      }
+      await audit('ambassador_status', null, { application_id: a.id, from: a.status, to, note, ...(mail ? { emailed } : {}) });
+      return res.status(200).json({ application: adminAmbassador(moved[0], profile), email_sent: emailed });
     }
 
     if (typeof req.body?.admin_notes === 'string') {
