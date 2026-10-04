@@ -1,4 +1,4 @@
--- DRAFT: NOT APPLIED to production yet. Waiting for approval. This line is removed once it runs.
+-- Applied to production 2026-10-04 (252 -> 274 rows).
 -- Reserve app and public page names in the server-side username list.
 -- reserved_usernames already exists (252 rows) and is enforced by triggers on
 -- profiles.username and landing_pages.slug. This only adds the 22 page names that
