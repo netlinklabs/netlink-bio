@@ -182,7 +182,7 @@
                 <button id="printBtn" type="button" class="print-btn hidden" title="Print or save the report as PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
             </div>
         </div>
-        <p class="text-sm text-muted mb-4">Orders, payments and audit log</p>
+        <p class="text-sm text-muted mb-4">Orders, payments, ambassadors and audit log</p>
 
         <div id="deniedView" class="hidden card rounded-2xl p-5">
             <p class="text-sm text-secondary">You do not have access to this page.</p>
@@ -236,6 +236,23 @@
                 <div id="paymentList" class="card rounded-2xl overflow-hidden"></div>
             </section>
 
+            <!-- Ambassadors -->
+            <section id="tab-ambassadors" class="hidden">
+                <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                    <input id="ambSearch" class="field" placeholder="Search username" maxlength="30" autocomplete="off">
+                    <select id="ambStatus" class="field sm:max-w-[200px]">
+                        <option value="">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="under_review">Under review</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="revoked">Revoked</option>
+                    </select>
+                </div>
+                <p id="ambCounts" class="text-xs text-muted mb-3"></p>
+                <div id="ambList" class="card rounded-2xl overflow-hidden"></div>
+            </section>
+
             <!-- Audit -->
             <section id="tab-audit" class="hidden">
                 <div id="auditList" class="card rounded-2xl overflow-hidden"></div>
@@ -247,6 +264,7 @@
     <div id="printReport" aria-hidden="true"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/shared/countries.js?v=1"></script>
     <script>
         const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -308,6 +326,7 @@
             if (isFinance()) tabs.push({ id: 'overview', label: 'Overview' });
             tabs.push({ id: 'orders', label: 'Orders' });
             if (isFinance()) tabs.push({ id: 'payments', label: 'Payments' });
+            if (has('super_admin', 'support')) tabs.push({ id: 'ambassadors', label: 'Ambassadors' });
             if (has('super_admin')) tabs.push({ id: 'audit', label: 'Audit log' });
             $('tabs').innerHTML = tabs.map((t) => `<button class="tab-btn" data-tab="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
             $('tabs').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -316,11 +335,12 @@
 
         function switchTab(id) {
             activeTab = id;
-            ['overview', 'orders', 'payments', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
+            ['overview', 'orders', 'payments', 'ambassadors', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
             $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
             if (id === 'overview') loadOverview();
             if (id === 'orders') loadOrders();
             if (id === 'payments') loadPayments();
+            if (id === 'ambassadors') loadAmbassadors();
             if (id === 'audit') loadAudit();
         }
 
@@ -1106,6 +1126,147 @@
             btn.disabled = false; btn.textContent = 'Sync from chain';
         });
 
+        // ---------- ambassadors ----------
+        const AMB_STATUS_LABEL = { pending: 'Pending', under_review: 'Under review', approved: 'Approved', rejected: 'Rejected', revoked: 'Revoked' };
+        const AMB_STATUS_CLASS = { pending: 'b-info', under_review: 'b-warn', approved: 'b-ok', rejected: 'b-gray', revoked: 'b-bad' };
+        const AMB_TRACK_LABEL = { growth: 'Growth', content: 'Content', community: 'Community', influence: 'Influence' };
+        const AMB_AUDIENCE_LABEL = { under_1k: 'Under 1,000', '1k_10k': '1,000 to 10,000', '10k_100k': '10,000 to 100,000', over_100k: 'Over 100,000' };
+        // Next steps per status (mirrors AMBASSADOR_FLOW on the server and the database trigger).
+        const AMB_ACTIONS = {
+            pending: [
+                { to: 'under_review', label: 'Start review', text: 'Move this application to under review. A note is required.' },
+                { to: 'rejected', label: 'Reject', text: 'The applicant will see "Not selected". A note is required.', ghost: true },
+            ],
+            under_review: [
+                { to: 'approved', label: 'Approve', text: 'The applicant becomes a Netlink ambassador. A note is required.' },
+                { to: 'rejected', label: 'Reject', text: 'The applicant will see "Not selected". A note is required.', ghost: true },
+            ],
+            approved: [
+                { to: 'revoked', label: 'Revoke status', text: 'Ambassador status ends. This cannot be undone. A note is required.', danger: true },
+            ],
+        };
+        const canReviewAmb = () => has('super_admin');
+
+        function ambCountryName(code) {
+            const hit = (window.NETLINK_COUNTRIES || []).find((c) => c[0] === code);
+            return hit ? hit[1] : (code || '-');
+        }
+        function safeHref(url) { return /^https?:\/\//i.test(String(url || '')) ? String(url) : null; }
+
+        function renderAmbCounts(counts) {
+            if (!counts) return;
+            const open = (counts.pending || 0);
+            const el = $('badge-ambassadors');
+            if (el) el.innerHTML = open ? ` <span class="badge b-warn" style="margin-left:4px">${Number(open)}</span>` : '';
+            $('ambCounts').textContent = Object.keys(AMB_STATUS_LABEL).map((k) => `${AMB_STATUS_LABEL[k]} ${counts[k] || 0}`).join(' · ');
+        }
+
+        async function refreshAmbBadge() {
+            try { const r = await api('admin-ambassadors', { query: '&limit=1' }); renderAmbCounts(r.counts); } catch (e) { /* non-fatal */ }
+        }
+
+        async function loadAmbassadors() {
+            const list = $('ambList');
+            list.innerHTML = '<p class="p-4 text-sm text-muted">Loading...</p>';
+            try {
+                const q = encodeURIComponent($('ambSearch').value.trim());
+                const st = encodeURIComponent($('ambStatus').value);
+                const { applications, counts } = await api('admin-ambassadors', { query: `&q=${q}&status=${st}` });
+                renderAmbCounts(counts);
+                if (!applications.length) { list.innerHTML = '<p class="p-4 text-sm text-muted">No applications found.</p>'; return; }
+                list.innerHTML = applications.map((a) => {
+                    const u = a.user || {};
+                    return `
+                    <button class="row" data-amb="${esc(a.id)}">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-semibold text-primary">${esc(u.username ? '@' + u.username : 'unknown user')}${u.display_name ? ' <span class="text-xs text-muted font-normal">' + esc(u.display_name) + '</span>' : ''}</span>
+                            <span class="badge ${AMB_STATUS_CLASS[a.status] || 'b-gray'}">${esc(AMB_STATUS_LABEL[a.status] || a.status)}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 mt-1 text-xs text-muted">
+                            <span>${esc(typeof netlinkCountryFlag === 'function' ? netlinkCountryFlag(a.country_code) : '')} ${esc(ambCountryName(a.country_code))} · ${esc(AMB_TRACK_LABEL[a.track] || a.track)}</span>
+                            <span>${esc(fmtDate(a.created_at))}</span>
+                        </div>
+                    </button>`;
+                }).join('');
+                list.querySelectorAll('button[data-amb]').forEach((b) => b.addEventListener('click', () => openAmbassador(b.dataset.amb)));
+            } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
+        }
+
+        let ambTimer = null;
+        $('ambSearch').addEventListener('input', () => { clearTimeout(ambTimer); ambTimer = setTimeout(loadAmbassadors, 350); });
+        $('ambStatus').addEventListener('change', loadAmbassadors);
+
+        async function openAmbassador(id) {
+            openModal('<p class="text-sm text-muted">Loading...</p>');
+            try {
+                const d = await api('admin-ambassador', { query: `&id=${encodeURIComponent(id)}` });
+                const a = d.application;
+                const u = a.user || {};
+                const links = (a.social_links || []).map((l) => {
+                    const href = safeHref(l);
+                    return href
+                        ? `<div class="mono"><a href="${esc(href)}" target="_blank" rel="noopener noreferrer nofollow" class="text-blue-500">${esc(l)}</a></div>`
+                        : `<div class="mono">${esc(l)}</div>`;
+                }).join('') || '-';
+                const canAct = canReviewAmb();
+                const actions = canAct ? (AMB_ACTIONS[a.status] || []) : [];
+                openModal(`
+                    <div class="flex items-start justify-between mb-3">
+                        <div><p class="text-base font-bold text-primary">${esc(u.username ? '@' + u.username : 'Unknown user')}</p>
+                        <span class="badge ${AMB_STATUS_CLASS[a.status] || 'b-gray'}">${esc(AMB_STATUS_LABEL[a.status] || a.status)}</span></div>
+                        <button id="closeModalBtn" class="text-muted text-sm" aria-label="Close">Close</button>
+                    </div>
+                    ${kv('Name', esc(u.display_name || '-'))}
+                    ${kv('Email', esc(d.email || '-'))}
+                    ${kv('Net ID', esc(u.net_id || '-'), true)}
+                    ${kv('Referral code', esc(u.referral_code || '-'), true)}
+                    ${kv('Plan', esc(u.tier || '-'))}
+                    ${kv('Identity', esc(u.identity_status || '-'))}
+                    ${kv('Member since', esc(fmtDate(u.joined_at)))}
+                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Application</h4>
+                    ${kv('Season', esc(a.season))}
+                    ${kv('Submitted', esc(fmtDate(a.created_at)))}
+                    ${kv('Last review', esc(fmtDate(a.reviewed_at)))}
+                    ${kv('Country', esc(ambCountryName(a.country_code)) + (a.city ? ', ' + esc(a.city) : ''))}
+                    ${kv('Track', esc(AMB_TRACK_LABEL[a.track] || a.track))}
+                    ${kv('Audience', esc(AMB_AUDIENCE_LABEL[a.audience_size] || a.audience_size))}
+                    ${kv('Links', links)}
+                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Why they want to apply</h4>
+                    <p class="text-sm text-secondary" style="white-space:pre-wrap">${esc(a.motivation)}</p>
+                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">How they would contribute</h4>
+                    <p class="text-sm text-secondary" style="white-space:pre-wrap">${esc(a.contribution_plan)}</p>
+                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Admin notes (private)</h4>
+                    <textarea id="ambNotes" class="field" rows="4" maxlength="2000" ${canAct ? '' : 'readonly'}></textarea>
+                    ${canAct ? '<div class="mt-2"><button id="ambSaveNotes" class="btn btn-ghost">Save notes</button></div>' : ''}
+                    ${actions.length ? `<div class="mt-4 flex gap-2 flex-wrap">${actions.map((x, i) => `<button class="btn${x.danger ? ' btn-danger' : x.ghost ? ' btn-ghost' : ''}" data-act="${i}">${esc(x.label)}</button>`).join('')}</div>` : ''}
+                `);
+                $('ambNotes').value = a.admin_notes || '';
+                $('closeModalBtn').addEventListener('click', closeModal);
+                if (canAct) {
+                    $('ambSaveNotes').addEventListener('click', async () => {
+                        const btn = $('ambSaveNotes'); btn.disabled = true;
+                        try { await api('admin-ambassador-update', { method: 'POST', body: { id: a.id, admin_notes: $('ambNotes').value } }); showToast('Notes saved'); }
+                        catch (err) { showToast(err.message, true); }
+                        btn.disabled = false;
+                    });
+                }
+                $('modalBox').querySelectorAll('button[data-act]').forEach((b) => b.addEventListener('click', () => {
+                    const act = actions[Number(b.dataset.act)];
+                    askNote({
+                        title: act.label,
+                        text: act.text,
+                        confirm: act.label,
+                        run: async (note) => {
+                            await api('admin-ambassador-update', { method: 'POST', body: { id: a.id, status: act.to, note } });
+                            showToast('Application updated');
+                            openAmbassador(a.id);
+                            loadAmbassadors();
+                        },
+                    });
+                }));
+            } catch (err) { openModal(`<p class="text-sm text-red-500 mb-3">${esc(err.message)}</p><button id="closeModalBtn" class="btn btn-ghost">Close</button>`); $('closeModalBtn').addEventListener('click', closeModal); }
+        }
+
         // ---------- audit ----------
         async function loadAudit() {
             const list = $('auditList');
@@ -1120,6 +1281,7 @@
                     if (d.amount) bits.push('Amount: ' + d.amount);
                     if (d.order_status) bits.push('Order: ' + d.order_status);
                     if (d.transfers_seen !== undefined) bits.push(`Seen ${d.transfers_seen}, changed ${d.orders_changed}`);
+                    if (d.to) bits.push(`Application: ${d.from} to ${d.to}`);
                     return `<div class="row"><div class="flex justify-between text-sm"><span class="font-semibold text-primary">${esc(e.action)}</span><span class="text-xs text-muted">${esc(fmtDate(e.created_at))}</span></div><div class="text-xs text-muted">${esc(String(e.admin))} (${esc(e.role)})${bits.length ? ' · ' + esc(bits.join(' · ')) : ''}</div></div>`;
                 }).join('');
             } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
@@ -1153,6 +1315,7 @@
                 if (has('super_admin')) show('testMailBtn', true);
                 buildTabs();
                 setUnmatchedBadge(me.unmatched_payments);
+                if (has('super_admin', 'support')) refreshAmbBadge();
                 if (window.lucide) lucide.createIcons();
             } catch (err) { console.error(err); showAuthError(err.message || String(err)); }
         }
