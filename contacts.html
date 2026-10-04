@@ -38,13 +38,7 @@
         .contact-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.15s; }
         .contact-card:hover { border-color: #0ea5e9; }
         html.dark .contact-card { background: #1e293b; border-color: rgba(255,255,255,0.06); }
-        .contact-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #e2e8f0; flex-shrink: 0; }
         .contact-avatar-fallback { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg,#0ea5e9,#0284c7); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; flex-shrink: 0; }
-        .badge-dot { width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 9px; flex-shrink: 0; }
-        .badge-green { background: #10b981; }
-        .badge-gold { background: #f59e0b; }
-        .badge-black { background: #18181b; }
-        .badge-silver { background: #94a3b8; }
         .reorder-btn { color: #cbd5e1; padding: 6px; display: flex; align-items: center; justify-content: center; border: none; background: none; cursor: pointer; }
         .reorder-btn:hover:not(:disabled) { color: #0ea5e9; }
         .reorder-btn:disabled { opacity: 0.25; cursor: default; }
@@ -55,10 +49,7 @@
         html.dark .modal-box { background: #1e293b; }
         .modal-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
 
-        .mode-tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; color: #64748b; }
-        .mode-tab.active { background: #0ea5e9; color: white; }
-
-        .preview-box { background: #f1f5f9; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .preview-box { background: #f1f5f9; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; }
         html.dark .preview-box { background: #0f172a; }
     </style>
 </head>
@@ -91,54 +82,31 @@
             <button class="modal-close" onclick="closeContactModal()">&times;</button>
             <h3 id="modalTitle" class="font-bold text-primary text-lg mb-4">Add Contact</h3>
 
-            <!-- Add mode: choose NET ID or manual address -->
-            <div id="addModeSection">
-                <div class="flex gap-2 mb-4">
-                    <div id="tabNetId" class="mode-tab active" onclick="switchAddMode('netid')">Via NET ID</div>
-                    <div id="tabManual" class="mode-tab" onclick="switchAddMode('manual')">Manual Address</div>
-                </div>
-            </div>
-
-            <!-- NET ID input + preview -->
-            <div id="netIdSection">
-                <label class="text-xs font-medium text-secondary block mb-1.5">NET ID</label>
-                <input id="inputNetId" type="text" placeholder="NET-12345-67890" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary font-mono" oninput="onNetIdInput()">
-                <p id="netIdStatus" class="text-xs text-muted mt-1.5 hidden"></p>
-                <div id="netIdPreview" class="preview-box hidden">
-                    <img id="previewAvatarImg" class="contact-avatar hidden" alt="">
-                    <div id="previewAvatarFallback" class="contact-avatar-fallback hidden">?</div>
-                    <div class="flex-1 min-w-0">
-                        <p id="previewName" class="text-sm font-semibold text-primary truncate"></p>
-                        <div id="previewBadges" class="flex items-center gap-1 mt-0.5"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Manual address form -->
-            <div id="manualSection" class="hidden">
+            <!-- Add form -->
+            <div id="addSection">
                 <label class="text-xs font-medium text-secondary block mb-1.5">Nickname</label>
-                <input id="inputManualNickname" type="text" placeholder="e.g. Budi Santoso" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-3">
+                <input id="inputNickname" type="text" maxlength="60" placeholder="e.g. Budi Santoso" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-3">
                 <label class="text-xs font-medium text-secondary block mb-1.5">Wallet Address</label>
-                <input id="inputManualAddress" type="text" placeholder="0x..." class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary font-mono">
-                <p class="text-xs text-muted mt-2">External wallet — no live verification, no badges. Double-check the address before saving.</p>
+                <input id="inputAddress" type="text" placeholder="0x..." autocomplete="off" autocapitalize="off" spellcheck="false" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary font-mono">
+                <p class="text-xs text-muted mt-2">Polygon wallet. No live verification. Double-check the address before saving.</p>
             </div>
 
-            <!-- Edit mode: nickname override for existing NET ID contacts -->
+            <!-- Edit form -->
             <div id="editSection" class="hidden">
                 <div class="preview-box mb-3">
-                    <img id="editAvatarImg" class="contact-avatar hidden" alt="">
-                    <div id="editAvatarFallback" class="contact-avatar-fallback hidden">?</div>
+                    <div id="editAvatarFallback" class="contact-avatar-fallback">?</div>
                     <div class="flex-1 min-w-0">
                         <p id="editName" class="text-sm font-semibold text-primary truncate"></p>
                         <p id="editAddress" class="text-xs text-muted font-mono truncate"></p>
                     </div>
                 </div>
-                <label class="text-xs font-medium text-secondary block mb-1.5">Nickname <span class="text-muted">(optional override)</span></label>
-                <input id="inputEditNickname" type="text" placeholder="Leave blank to use their profile name" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary">
+                <label class="text-xs font-medium text-secondary block mb-1.5">Nickname</label>
+                <input id="inputEditNickname" type="text" maxlength="60" placeholder="Nickname" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary">
+                <p class="text-xs text-muted mt-2">To change the address, delete this contact and add a new one.</p>
             </div>
 
             <div class="flex gap-2 mt-5">
-                <button id="deleteContactBtn" onclick="deleteCurrentContact()" class="hidden px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <button id="deleteContactBtn" onclick="deleteCurrentContact()" class="hidden px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-xl transition text-sm" aria-label="Delete contact"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 <button id="saveContactBtn" onclick="saveContact()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save Contact</button>
             </div>
         </div>
@@ -152,11 +120,8 @@
 
         let currentUser = null;
         let currentProfile = null;
-        let contacts = []; // enriched: { id, position, nickname, contact_user_id, manual_address, resolved: {...} }
+        let contacts = []; // { id, position, nickname, manual_address }
         let editingContactId = null;
-        let addMode = 'netid';
-        let netIdCheckToken = 0;
-        let netIdResolved = null; // last successfully resolved NET ID preview
 
         function showAuthError(msg) { document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg; }
         window.addEventListener('error', (e) => showAuthError(e.message));
@@ -174,26 +139,10 @@
             return addr.slice(0, 6) + '...' + addr.slice(-4);
         }
 
-        function sanitizeNetId(raw) {
-            let v = raw.trim().toUpperCase().replace(/[\s-]/g, '');
-            if (v && !v.startsWith('NET')) v = 'NET' + v;
-            return v;
-        }
-
-        function badgeHtml(row) {
-            let html = '';
-            const tierEligible = row.tier === 'gold' || row.tier === 'platinum';
-            if (row.is_black_badge) {
-                html += `<span class="badge-dot badge-black" title="Netlink Special">&#10003;</span><span class="text-[11px] text-muted">Netlink Special</span>`;
-            }
-            if (row.business_verified_at && tierEligible) {
-                html += `<span class="badge-dot badge-gold" title="Verified Business">&#10003;</span><span class="text-[11px] text-muted">Verified Business</span>`;
-            } else if (row.identity_verified_at) {
-                html += `<span class="badge-dot badge-green" title="Verified Profile (KYC)">&#10003;</span><span class="text-[11px] text-muted">Verified Profile (KYC)</span>`;
-            } else if (row.business_verified_at) {
-                html += `<span class="badge-dot badge-silver" title="Previously Verified">&#10003;</span><span class="text-[11px] text-muted">Previously Verified</span>`;
-            }
-            return html;
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
         }
 
         async function checkAuth() {
@@ -226,26 +175,14 @@
             }
         }
 
-        // Contacts are stored lean (just references) -- NET ID contacts'
-        // name/wallet/badges are resolved live via the profiles_bio_public
-        // view (already privacy-filtered) so the list never shows stale data.
         async function loadContacts() {
             const { data, error } = await supabaseClient.from('contacts')
-                .select('*').eq('owner_id', currentUser.id).order('position', { ascending: true });
+                .select('id, position, nickname, manual_address')
+                .eq('owner_id', currentUser.id)
+                .not('manual_address', 'is', null)
+                .order('position', { ascending: true });
             if (error) { console.error(error); showToast('Failed to load contacts'); return; }
-
-            const netIdContactIds = data.filter(c => c.contact_user_id).map(c => c.contact_user_id);
-            let resolvedMap = {};
-            if (netIdContactIds.length > 0) {
-                const { data: profilesData, error: profilesError } = await supabaseClient
-                    .from('profiles_bio_public')
-                    .select('id, display_name, username, avatar_url, wallet_address, tier, is_black_badge, business_verified_at, identity_verified_at')
-                    .in('id', netIdContactIds);
-                if (profilesError) console.error(profilesError);
-                (profilesData || []).forEach(p => { resolvedMap[p.id] = p; });
-            }
-
-            contacts = data.map(c => ({ ...c, resolved: c.contact_user_id ? resolvedMap[c.contact_user_id] : null }));
+            contacts = data || [];
             renderContacts();
         }
 
@@ -256,24 +193,15 @@
             empty.classList.add('hidden');
 
             list.innerHTML = contacts.map((c, idx) => {
-                const isManual = !!c.manual_address;
-                const displayName = c.nickname || c.resolved?.display_name || c.resolved?.username || 'Unknown';
-                const avatar = c.resolved?.avatar_url;
-                const avatarHtml = avatar
-                    ? `<img src="${escapeHtml(avatar)}" class="contact-avatar" alt="">`
-                    : `<div class="contact-avatar-fallback">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`;
-                const badges = isManual
-                    ? `<span class="text-[11px] text-muted">External Wallet</span>`
-                    : (badgeHtml(c.resolved || {}) || `<span class="text-[11px] text-muted">Unverified</span>`);
+                const name = c.nickname || 'Contact';
                 const isFirst = idx === 0;
                 const isLast = idx === contacts.length - 1;
-
                 return `
                 <div class="contact-card" data-id="${c.id}" onclick="openEditModal('${c.id}')">
-                    ${avatarHtml}
+                    <div class="contact-avatar-fallback">${escapeHtml(name.charAt(0).toUpperCase())}</div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-primary truncate">${escapeHtml(displayName)}</p>
-                        <div class="flex items-center gap-1 mt-0.5">${badges}</div>
+                        <p class="text-sm font-semibold text-primary truncate">${escapeHtml(name)}</p>
+                        <p class="text-[11px] text-muted font-mono truncate mt-0.5">${escapeHtml(truncateAddress(c.manual_address))}</p>
                     </div>
                     <div class="flex flex-col" onclick="event.stopPropagation()">
                         <button class="reorder-btn" ${isFirst ? 'disabled' : ''} onclick="moveContact('${c.id}', -1)" aria-label="Move up"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
@@ -282,12 +210,6 @@
                 </div>`;
             }).join('');
             if (window.lucide) lucide.createIcons();
-        }
-
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str || '';
-            return div.innerHTML;
         }
 
         // ---- Arrow reorder ----
@@ -308,96 +230,31 @@
             ]);
         }
 
-        // ---- Add Contact modal ----
+        // ---- Add / Edit modal ----
         function openAddModal() {
             editingContactId = null;
-            netIdResolved = null;
-            addMode = 'netid';
             document.getElementById('modalTitle').textContent = 'Add Contact';
-            document.getElementById('addModeSection').classList.remove('hidden');
+            document.getElementById('addSection').classList.remove('hidden');
             document.getElementById('editSection').classList.add('hidden');
             document.getElementById('deleteContactBtn').classList.add('hidden');
-            document.getElementById('inputNetId').value = '';
-            document.getElementById('inputManualNickname').value = '';
-            document.getElementById('inputManualAddress').value = '';
-            document.getElementById('netIdPreview').classList.add('hidden');
-            document.getElementById('netIdStatus').classList.add('hidden');
-            switchAddMode('netid');
+            document.getElementById('inputNickname').value = '';
+            document.getElementById('inputAddress').value = '';
             document.getElementById('contactModal').classList.add('active');
-        }
-
-        function switchAddMode(mode) {
-            addMode = mode;
-            document.getElementById('tabNetId').classList.toggle('active', mode === 'netid');
-            document.getElementById('tabManual').classList.toggle('active', mode === 'manual');
-            document.getElementById('netIdSection').classList.toggle('hidden', mode !== 'netid');
-            document.getElementById('manualSection').classList.toggle('hidden', mode !== 'manual');
-        }
-
-        async function onNetIdInput() {
-            const myToken = ++netIdCheckToken;
-            const input = document.getElementById('inputNetId');
-            const status = document.getElementById('netIdStatus');
-            const preview = document.getElementById('netIdPreview');
-            const raw = sanitizeNetId(input.value);
-            netIdResolved = null;
-            preview.classList.add('hidden');
-
-            if (!/^NET\d{10}$/.test(raw)) {
-                status.classList.add('hidden');
-                return;
-            }
-
-            status.textContent = 'Looking up...';
-            status.classList.remove('hidden');
-
-            const { data, error } = await supabaseClient.rpc('resolve_net_id', { check_net_id: raw });
-            if (myToken !== netIdCheckToken) return; // a newer input already started
-
-            if (error || !data || data.length === 0) {
-                status.textContent = "Not found, or this user hasn't enabled receiving payments via NET ID.";
-                status.classList.remove('hidden');
-                return;
-            }
-
-            const row = data[0];
-            netIdResolved = row;
-            status.classList.add('hidden');
-
-            const displayName = row.display_name || row.username;
-            const avImg = document.getElementById('previewAvatarImg');
-            const avFallback = document.getElementById('previewAvatarFallback');
-            if (row.avatar_url) { avImg.src = row.avatar_url; avImg.classList.remove('hidden'); avFallback.classList.add('hidden'); }
-            else { avImg.classList.add('hidden'); avFallback.classList.remove('hidden'); avFallback.textContent = displayName.charAt(0).toUpperCase(); }
-            document.getElementById('previewName').textContent = displayName;
-            document.getElementById('previewBadges').innerHTML = badgeHtml(row) || `<span class="text-[11px] text-muted">Unverified</span>`;
-            preview.classList.remove('hidden');
         }
 
         function openEditModal(id) {
             const c = contacts.find(x => x.id === id);
             if (!c) return;
             editingContactId = id;
+            const name = c.nickname || 'Contact';
             document.getElementById('modalTitle').textContent = 'Edit Contact';
-            document.getElementById('addModeSection').classList.add('hidden');
-            document.getElementById('netIdSection').classList.add('hidden');
-            document.getElementById('manualSection').classList.add('hidden');
+            document.getElementById('addSection').classList.add('hidden');
             document.getElementById('editSection').classList.remove('hidden');
             document.getElementById('deleteContactBtn').classList.remove('hidden');
-
-            const isManual = !!c.manual_address;
-            const displayName = c.nickname || c.resolved?.display_name || c.resolved?.username || 'Unknown';
-            const address = isManual ? c.manual_address : (c.resolved?.wallet_address || '');
-
-            const avImg = document.getElementById('editAvatarImg');
-            const avFallback = document.getElementById('editAvatarFallback');
-            if (!isManual && c.resolved?.avatar_url) { avImg.src = c.resolved.avatar_url; avImg.classList.remove('hidden'); avFallback.classList.add('hidden'); }
-            else { avImg.classList.add('hidden'); avFallback.classList.remove('hidden'); avFallback.textContent = displayName.charAt(0).toUpperCase(); }
-            document.getElementById('editName').textContent = displayName;
-            document.getElementById('editAddress').textContent = truncateAddress(address);
+            document.getElementById('editAvatarFallback').textContent = name.charAt(0).toUpperCase();
+            document.getElementById('editName').textContent = name;
+            document.getElementById('editAddress').textContent = truncateAddress(c.manual_address);
             document.getElementById('inputEditNickname').value = c.nickname || '';
-            document.getElementById('inputEditNickname').placeholder = isManual ? 'Required for external wallets' : "Leave blank to use their profile name";
-
             document.getElementById('contactModal').classList.add('active');
         }
 
@@ -412,29 +269,15 @@
 
             try {
                 if (editingContactId) {
-                    const c = contacts.find(x => x.id === editingContactId);
                     const nickname = document.getElementById('inputEditNickname').value.trim();
-                    if (c.manual_address && !nickname) { showToast('Nickname is required for external wallet contacts'); return; }
+                    if (!nickname) { showToast('Nickname is required'); return; }
                     const { error } = await supabaseClient.from('contacts')
-                        .update({ nickname: nickname || null }).eq('id', editingContactId);
+                        .update({ nickname }).eq('id', editingContactId);
                     if (error) throw error;
                     showToast('Contact updated');
-                } else if (addMode === 'netid') {
-                    if (!netIdResolved) { showToast('Enter a valid, discoverable NET ID first'); return; }
-                    const { error } = await supabaseClient.from('contacts').insert({
-                        owner_id: currentUser.id,
-                        contact_user_id: netIdResolved.profile_id,
-                        position: contacts.length,
-                    });
-                    if (error) {
-                        if (error.code === '23505') showToast('This contact is already saved');
-                        else throw error;
-                        return;
-                    }
-                    showToast('Contact added');
                 } else {
-                    const nickname = document.getElementById('inputManualNickname').value.trim();
-                    const address = document.getElementById('inputManualAddress').value.trim();
+                    const nickname = document.getElementById('inputNickname').value.trim();
+                    const address = document.getElementById('inputAddress').value.trim();
                     if (!nickname) { showToast('Nickname is required'); return; }
                     if (!/^0x[a-fA-F0-9]{40}$/.test(address)) { showToast("That doesn't look like a valid wallet address"); return; }
                     const { error } = await supabaseClient.from('contacts').insert({
@@ -467,8 +310,7 @@
             await loadContacts();
         }
 
-        // lucide loads with `defer` now, so wait for DOMContentLoaded (which
-        // always fires after deferred scripts finish) before the first call.
+        // lucide loads with `defer`, so wait for DOMContentLoaded before the first call.
         document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
         checkAuth();
     </script>

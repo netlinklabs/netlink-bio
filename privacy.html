@@ -203,11 +203,6 @@
                 </select>
             </div>
 
-            <p class="privacy-group-title">NET ID Contact</p>
-            <div class="toggle-row">
-                <span class="toggle-label">Discoverable via NET ID (for receiving payments)</span>
-                <input id="toggleNetIdDiscoverable" type="checkbox" class="toggle-switch-input">
-            </div>
 
             <button id="privacySaveBtn" onclick="savePrivacySettings()" class="w-full mt-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save Privacy Settings</button>
         </div>
@@ -347,7 +342,7 @@
         async function loadPrivacySettings() {
             const { data, error } = await supabaseClient
                 .from('profiles')
-                .select('show_donate, show_email_bio, show_phone_bio, show_telegram_bio, show_email_cv, show_phone_cv, receipt_show_display_name, receipt_wallet_display, net_id_discoverable, show_country_bio, tier, hide_footer_link_bio, hide_footer_link_cv, hide_footer_link_landing')
+                .select('show_donate, show_email_bio, show_phone_bio, show_telegram_bio, show_email_cv, show_phone_cv, receipt_show_display_name, receipt_wallet_display, show_country_bio, tier, hide_footer_link_bio, hide_footer_link_cv, hide_footer_link_landing')
                 .eq('id', currentUser.id)
                 .single();
 
@@ -366,7 +361,6 @@
             document.getElementById('togglePhoneCv').checked = data.show_phone_cv !== false;
             document.getElementById('toggleReceiptName').checked = data.receipt_show_display_name !== false;
             document.getElementById('selectReceiptWallet').value = data.receipt_wallet_display || 'short';
-            document.getElementById('toggleNetIdDiscoverable').checked = data.net_id_discoverable === true;
 
             document.getElementById('toggleCountryBio').checked = data.show_country_bio === true;
             showCountryDirty = false;
@@ -424,7 +418,6 @@
                 show_phone_cv: document.getElementById('togglePhoneCv').checked,
                 receipt_show_display_name: document.getElementById('toggleReceiptName').checked,
                 receipt_wallet_display: document.getElementById('selectReceiptWallet').value,
-                net_id_discoverable: document.getElementById('toggleNetIdDiscoverable').checked,
             };
             // Only include show_donate if the user actually touched this
             // toggle this session -- it's also editable from dashboard.html,
