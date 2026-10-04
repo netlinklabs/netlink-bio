@@ -369,6 +369,24 @@
             overflow-anchor: none;
             scroll-margin-top: 80px;
         }
+
+        /* Send / Receive / Buy buttons, same look as pay.html (three buttons here, so
+           horizontal padding is 8px to keep "Receive" on one line on narrow phones).
+           Light theme: elegant dark gray. Dark theme: blue like the main USDC card. */
+        .wallet-action-btn {
+            padding: 10px 8px;
+            line-height: 20px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+            transition: filter 0.15s ease, transform 0.1s ease;
+        }
+        .wallet-action-btn:hover { filter: brightness(1.12); }
+        .wallet-action-btn:active { transform: scale(0.98); }
+        html.dark .wallet-action-btn {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -451,13 +469,13 @@
                     </button>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="openSendModal()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                    <button onclick="openSendModal()" class="wallet-action-btn flex-1 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
                         <i data-lucide="send" class="w-4 h-4"></i> Send
                     </button>
-                    <button onclick="openReceiveModal()" class="flex-1 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                    <button onclick="openReceiveModal()" class="wallet-action-btn flex-1 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
                         <i data-lucide="download" class="w-4 h-4"></i> Receive
                     </button>
-                    <button onclick="scrollToRamp()" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                    <button onclick="scrollToRamp()" class="wallet-action-btn flex-1 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Buy
                     </button>
                 </div>
