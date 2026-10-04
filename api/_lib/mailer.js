@@ -4,6 +4,8 @@
 //
 // Env (Vercel, Production): SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM.
 // Optional: ADMIN_NOTIFY_EMAIL (defaults to SMTP_USER).
+// Optional: SMTP_FROM_COMMUNITY, sender for community mail (community@netlink.bio).
+// When empty, community mail falls back to SMTP_FROM.
 //
 // Rules: a failed email must never break a payment or a webhook. Every send is
 // fire-and-forget through waitUntil and failures are only logged.
@@ -37,12 +39,13 @@ export function esc(s) {
 }
 
 // Sends one email. Resolves true/false, never throws.
-export async function sendMail({ to, subject, html, text }) {
+export async function sendMail({ to, subject, html, text, from, replyTo }) {
   const t = getTransporter();
   if (!t || !to) return false;
   try {
     await t.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: from || process.env.SMTP_FROM || process.env.SMTP_USER,
+      ...(replyTo ? { replyTo } : {}),
       to,
       subject,
       html,
@@ -76,7 +79,7 @@ export async function getUserEmail(userId) {
 
 // ---------------------------------------------------------------- templates
 
-function layout({ preheader, title, intro, rows = [], cta, note }) {
+function layout({ preheader, title, intro, rows = [], after, cta, note, signoff, footer = 'Netlink Finance, netlink.bio', footerNote = 'This is an automated message. Questions? Reply to this email.' }) {
   const rowsHtml = rows.length
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;border:1px solid #e5e7eb;border-radius:10px;border-collapse:separate;">${rows
         .map(
@@ -88,6 +91,10 @@ function layout({ preheader, title, intro, rows = [], cta, note }) {
   const ctaHtml = cta
     ? `<p style="margin:24px 0;"><a href="${esc(cta.url)}" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px;display:inline-block;">${esc(cta.label)}</a></p>`
     : '';
+  const afterHtml = after ? `<p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${esc(after)}</p>` : '';
+  const signoffHtml = signoff
+    ? `<p style="margin:24px 0 0;color:#374151;font-size:14px;line-height:1.6;">Best regards,<br><strong style="color:#111827;">${esc(signoff.name)}</strong><br>${esc(signoff.title)}</p>`
+    : '';
   const noteHtml = note ? `<p style="margin:16px 0 0;color:#6b7280;font-size:13px;line-height:1.5;">${esc(note)}</p>` : '';
   const html = `<!doctype html><html><body style="margin:0;background:#f3f4f6;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(preheader || '')}</span>
@@ -96,16 +103,18 @@ function layout({ preheader, title, intro, rows = [], cta, note }) {
 <tr><td style="padding:20px 28px;background:#0f172a;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.2px;">Netlink</td></tr>
 <tr><td style="padding:28px;">
 <h1 style="margin:0 0 12px;font-size:20px;color:#111827;">${esc(title)}</h1>
-<p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${esc(intro)}</p>
-${rowsHtml}${ctaHtml}${noteHtml}
+<p style="margin:0;color:#374151;font-size:14px;line-height:1.6;white-space:pre-line;">${esc(intro)}</p>
+${rowsHtml}${afterHtml}${ctaHtml}${signoffHtml}${noteHtml}
 </td></tr>
-<tr><td style="padding:18px 28px;background:#f9fafb;color:#9ca3af;font-size:12px;line-height:1.5;">Netlink Finance, netlink.bio<br>This is an automated message. Questions? Reply to this email.</td></tr>
+<tr><td style="padding:18px 28px;background:#f9fafb;color:#9ca3af;font-size:12px;line-height:1.5;">${esc(footer)}<br>${esc(footerNote)}</td></tr>
 </table></td></tr></table></body></html>`;
   const lines = [title, '', intro, ''];
   rows.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+  if (after) lines.push('', after);
   if (cta) lines.push('', `${cta.label}: ${cta.url}`);
+  if (signoff) lines.push('', 'Best regards,', signoff.name, signoff.title);
   if (note) lines.push('', note);
-  lines.push('', 'Netlink Finance, netlink.bio');
+  lines.push('', footer);
   return { html, text: lines.join('\n') };
 }
 
@@ -222,6 +231,44 @@ export function adminPaidMail(o, userEmail) {
         ['Transaction', o.paid_tx_hash || 'n/a'],
       ],
       cta: { label: 'Open admin', url: `${SITE}/admin` },
+    }),
+  };
+}
+
+// Community mail: sent from community@netlink.bio (SMTP_FROM_COMMUNITY).
+const COMMUNITY_REPLY_TO = 'community@netlink.bio';
+const AMBASSADOR_TRACKS = { growth: 'Growth', content: 'Content', community: 'Community', influence: 'Influence' };
+
+function countryName(code) {
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
+// Thank-you email right after an ambassador application is submitted.
+export function ambassadorThanksMail({ name, countryCode, track }) {
+  const community = process.env.SMTP_FROM_COMMUNITY;
+  return {
+    subject: 'Thank you for applying to the Netlink Ambassador Program',
+    ...(community ? { from: community, replyTo: COMMUNITY_REPLY_TO } : {}),
+    ...layout({
+      preheader: 'We received your application.',
+      title: 'Thank you for applying',
+      intro: `Hi ${name || 'there'},\n\nThank you for applying to the Netlink Ambassador Program. We appreciate that you want to help Netlink grow and contribute to its community.`,
+      rows: [
+        ['Application', 'Pilot Season 1'],
+        ['Country', countryName(countryCode)],
+        ['Track', AMBASSADOR_TRACKS[track] || track],
+        ['Status', 'Submitted'],
+      ],
+      after: 'The Netlink team reviews every application manually, based on your bio page, your CV and your answers. If we move forward, we will contact you through your Netlink account. You can check your status at any time.',
+      cta: { label: 'View my application', url: `${SITE}/ambassador` },
+      signoff: { name: 'Alex L Setiawan', title: 'Community & Growth Lead, Netlink' },
+      note: 'Submitting an application does not guarantee approval, and program benefits may change.',
+      footer: 'Netlink Community, netlink.bio',
+      footerNote: 'This is an automated message. You can reply to this email.',
     }),
   };
 }

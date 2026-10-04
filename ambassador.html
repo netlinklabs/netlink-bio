@@ -394,7 +394,23 @@
             }
 
             showToast('Application submitted');
+            sendThanksEmail();
             await loadApplication();
+        }
+
+        // Thank-you email. Fire and forget: the application is already saved,
+        // so a failure here must never show an error to the user.
+        async function sendThanksEmail() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) return;
+                await fetch('/api/orders?action=ambassador-thanks', {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + session.access_token },
+                });
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         // ---------- Data loading ----------
