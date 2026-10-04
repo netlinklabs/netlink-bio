@@ -932,9 +932,12 @@ const TIER_LABEL = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: '
 // collide with existing routes/pages (case-insensitive check -- slugs
 // are already lowercased by sanitizeSlug() before this list is consulted).
 const RESERVED_USERNAMES = [
-'login', 'dashboard', 'pay', 'tx', 'identity', 'contacts', 'privacy',
-'terms', 'investor', 'recovery', 'page-builder', 'privacy-policy',
-'terms-of-use', 'username-policy', 'index', 'ambassador', 'reward', 'checkout',
+'login', 'dashboard', 'pay', 'tx', 'identity', 'contacts', 'privacy', 'terms', 'investor',
+'recovery', 'page-builder', 'privacy-policy', 'terms-of-use', 'username-policy', 'index',
+'ambassador', 'reward', 'checkout', '404', 'about', 'admin', 'analytics', 'business-page', 'card',
+'changelog', 'contact', 'digital-cv', 'faq', 'link-in-bio', 'netlink-pay', 'pay2', 'pay5', 'plans',
+'reset-password', 'template', 'verification', 'api', 'cv', 'page', 'assets', 'shared', 'sitemap',
+'robots', 'manifest', 'llms',
 ];
 let myTier = 'silver'; // safe fallback -- Landing Page requires Silver+
 
