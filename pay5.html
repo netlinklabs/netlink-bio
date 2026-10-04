@@ -1847,8 +1847,7 @@
         };
 
         // ---- Contact Picker ----
-        // Contacts are stored lean (references only) -- resolve live from
-        // profiles_bio_public so a saved contact's wallet is never stale.
+        // Contacts are manual entries (nickname + wallet address).
         window.openContactPicker = async function () {
             const list = document.getElementById('contactPickerList');
             const empty = document.getElementById('contactPickerEmpty');
@@ -1858,18 +1857,11 @@
 
             try {
                 const { data: contactRows, error } = await supabaseClient
-                    .from('contacts').select('*').eq('owner_id', currentUser.id).order('position', { ascending: true });
+                    .from('contacts').select('id, nickname, manual_address, position')
+                    .eq('owner_id', currentUser.id)
+                    .not('manual_address', 'is', null)
+                    .order('position', { ascending: true });
                 if (error) throw error;
-
-                const netIdIds = (contactRows || []).filter(c => c.contact_user_id).map(c => c.contact_user_id);
-                let resolvedMap = {};
-                if (netIdIds.length > 0) {
-                    const { data: profilesData } = await supabaseClient
-                        .from('profiles_bio_public')
-                        .select('id, display_name, username, avatar_url, wallet_address')
-                        .in('id', netIdIds);
-                    (profilesData || []).forEach(p => { resolvedMap[p.id] = p; });
-                }
 
                 if (!contactRows || contactRows.length === 0) {
                     list.innerHTML = '';
@@ -1878,15 +1870,10 @@
                 }
 
                 list.innerHTML = contactRows.map(c => {
-                    const isManual = !!c.manual_address;
-                    const resolved = c.contact_user_id ? resolvedMap[c.contact_user_id] : null;
-                    const displayName = c.nickname || resolved?.display_name || resolved?.username || 'Unknown';
-                    const address = isManual ? c.manual_address : (resolved?.wallet_address || '');
-                    if (!address) return ''; // skip contacts with no resolvable wallet
-                    const avatar = resolved?.avatar_url;
-                    const avatarHtml = avatar
-                        ? `<img src="${escapeAttr(avatar)}" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="">`
-                        : `<div class="w-9 h-9 rounded-full bg-blue-500/15 flex items-center justify-center text-blue-500 font-semibold text-sm flex-shrink-0">${escapeAttr(displayName.charAt(0).toUpperCase())}</div>`;
+                    const address = c.manual_address;
+                    if (!address) return '';
+                    const displayName = c.nickname || 'Contact';
+                    const avatarHtml = `<div class="w-9 h-9 rounded-full bg-blue-500/15 flex items-center justify-center text-blue-500 font-semibold text-sm flex-shrink-0">${escapeAttr(displayName.charAt(0).toUpperCase())}</div>`;
                     return `
                     <button type="button" onclick="selectContactForSend('${escapeAttr(address)}')" class="w-full flex items-center gap-3 p-2.5 hover-surface rounded-xl transition text-left">
                         ${avatarHtml}
