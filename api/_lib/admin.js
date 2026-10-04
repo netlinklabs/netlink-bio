@@ -385,6 +385,7 @@ export async function handleAdmin(action, req, res, user, ctx) {
   // ---------------------------------------------------------- ambassador applications
   const adminAmbassador = (a, p) => ({
     id: a.id,
+    user_id: a.user_id,
     status: a.status,
     season: a.season,
     country_code: a.country_code,
