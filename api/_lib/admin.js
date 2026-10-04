@@ -24,6 +24,19 @@ const SAMPLE_ADDR = '0x0000000000000000000000000000000000000000';
 const READ_ROLES = ['super_admin', 'finance', 'support', 'kyc_reviewer'];
 const FINANCE_ROLES = ['super_admin', 'finance'];
 
+// Ambassador program (public.ambassador_applications). Support can read, only super_admin can review.
+const AMBASSADOR_READ_ROLES = ['super_admin', 'support'];
+const AMBASSADOR_WRITE_ROLES = ['super_admin'];
+const AMBASSADOR_STATUSES = ['pending', 'under_review', 'approved', 'rejected', 'revoked'];
+// Allowed status changes. The database trigger enforces the same flow as a second line of defence.
+const AMBASSADOR_FLOW = {
+  pending: ['under_review', 'rejected'],
+  under_review: ['approved', 'rejected'],
+  approved: ['revoked'],
+  rejected: [],
+  revoked: [],
+};
+
 const ACTION_ROLES = {
   'admin-me': null, // any signed-in user; returns an empty role list for non-admins
   'admin-overview': FINANCE_ROLES,
@@ -35,6 +48,9 @@ const ACTION_ROLES = {
   'admin-link-payment': FINANCE_ROLES,
   'admin-ignore-payment': FINANCE_ROLES,
   'admin-accept-late': FINANCE_ROLES,
+  'admin-ambassadors': AMBASSADOR_READ_ROLES,
+  'admin-ambassador': AMBASSADOR_READ_ROLES,
+  'admin-ambassador-update': AMBASSADOR_WRITE_ROLES,
   'admin-audit': ['super_admin'],
   'admin-test-email': ['super_admin'],
 };
@@ -50,6 +66,11 @@ function clampLimit(v, def = 50, max = 100) {
 
 function cleanNote(v, max = 500) {
   return String(v || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
+}
+
+// Like cleanNote but keeps line breaks (used for the free-text admin notes on an application).
+function cleanMultiline(v, max = 2000) {
+  return String(v || '').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, max);
 }
 
 // Exact row count of public.wallet_transactions for a PostgREST filter (HEAD request, no rows
@@ -351,6 +372,127 @@ export async function handleAdmin(action, req, res, user, ctx) {
     const after = await ctx.settleOrder(order);
     await audit('accept_late', order.id, { payments: moved.map((m) => m.tx_hash), note, order_status: after?.status || order.status });
     return res.status(200).json({ order: adminOrder(after || order, null) });
+  }
+
+  // Status counts for the ambassador tab badge and filter labels (one cheap query).
+  const ambassadorCounts = async () => {
+    const all = await db('ambassador_applications?select=status&limit=1000');
+    const out = Object.fromEntries(AMBASSADOR_STATUSES.map((x) => [x, 0]));
+    all.forEach((r) => { if (out[r.status] !== undefined) out[r.status] += 1; });
+    return out;
+  };
+
+  // ---------------------------------------------------------- ambassador applications
+  const adminAmbassador = (a, p) => ({
+    id: a.id,
+    status: a.status,
+    season: a.season,
+    country_code: a.country_code,
+    city: a.city,
+    track: a.track,
+    social_links: a.social_links || [],
+    audience_size: a.audience_size,
+    motivation: a.motivation,
+    contribution_plan: a.contribution_plan,
+    admin_notes: a.admin_notes || '',
+    created_at: a.created_at,
+    updated_at: a.updated_at,
+    reviewed_at: a.reviewed_at,
+    user: p
+      ? {
+          username: p.username, display_name: p.display_name, net_id: p.net_id, referral_code: p.referral_code,
+          tier: p.tier, identity_status: p.identity_verification_status, joined_at: p.created_at,
+        }
+      : null,
+  });
+  const AMBASSADOR_PROFILE_COLS = 'id,username,display_name,net_id,referral_code,tier,identity_verification_status,created_at';
+
+  // admin-ambassadors: list with optional filters (status, country, username search) and status counts.
+  if (action === 'admin-ambassadors') {
+    const st = AMBASSADOR_STATUSES.includes(req.query.status) ? req.query.status : '';
+    const country = /^[A-Za-z]{2}$/.test(req.query.country || '') ? String(req.query.country).toUpperCase() : '';
+    const q = String(req.query.q || '').replace(/[^A-Za-z0-9_]/g, '').toLowerCase().slice(0, 30);
+    let filter = '';
+    if (st) filter += `&status=eq.${st}`;
+    if (country) filter += `&country_code=eq.${country}`;
+    if (q) {
+      const found = await db(`profiles?username=ilike.*${q}*&select=id&limit=50`);
+      const ids = found.map((p) => p.id);
+      const counts = await ambassadorCounts();
+      if (!ids.length) return res.status(200).json({ applications: [], counts });
+      filter += `&user_id=in.(${ids.join(',')})`;
+    }
+    const [rows, counts] = await Promise.all([
+      db(`ambassador_applications?select=*&order=created_at.desc&limit=${clampLimit(req.query.limit)}${filter}`),
+      ambassadorCounts(),
+    ]);
+    const userIds = [...new Set(rows.map((a) => a.user_id))];
+    const profiles = userIds.length ? await db(`profiles?id=in.(${userIds.join(',')})&select=${AMBASSADOR_PROFILE_COLS}`) : [];
+    const byId = Object.fromEntries(profiles.map((p) => [p.id, p]));
+    return res.status(200).json({ applications: rows.map((a) => adminAmbassador(a, byId[a.user_id])), counts });
+  }
+
+  // admin-ambassador: one application with the applicant's account details.
+  if (action === 'admin-ambassador') {
+    const id = req.query.id;
+    if (!UUID_RE.test(id || '')) return res.status(400).json({ error: 'Invalid application id' });
+    const rows = await db(`ambassador_applications?id=eq.${id}&select=*&limit=1`);
+    const a = rows[0];
+    if (!a) return res.status(404).json({ error: 'Application not found' });
+    const [profiles, authUser] = await Promise.all([
+      db(`profiles?id=eq.${a.user_id}&select=${AMBASSADOR_PROFILE_COLS}&limit=1`),
+      fetch(`${SUPABASE_URL}/auth/v1/admin/users/${a.user_id}`, {
+        headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+      }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    return res.status(200).json({ application: adminAmbassador(a, profiles[0] || null), email: authUser?.email || null });
+  }
+
+  // admin-ambassador-update: (a) change status with a required note, or (b) save the admin notes text.
+  if (action === 'admin-ambassador-update') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const id = req.body?.id;
+    if (!UUID_RE.test(id || '')) return res.status(400).json({ error: 'Invalid application id' });
+    const rows = await db(`ambassador_applications?id=eq.${id}&select=*&limit=1`);
+    const a = rows[0];
+    if (!a) return res.status(404).json({ error: 'Application not found' });
+    const profileOf = async () => (await db(`profiles?id=eq.${a.user_id}&select=${AMBASSADOR_PROFILE_COLS}&limit=1`))[0] || null;
+
+    const to = req.body?.status;
+    if (to) {
+      if (!AMBASSADOR_STATUSES.includes(to)) return res.status(400).json({ error: 'Invalid status' });
+      if (!(AMBASSADOR_FLOW[a.status] || []).includes(to)) {
+        return res.status(409).json({ error: `An application that is ${a.status.replace('_', ' ')} cannot be moved to ${to.replace('_', ' ')}` });
+      }
+      const note = cleanNote(req.body?.note);
+      if (!note) return res.status(400).json({ error: 'A note is required' });
+      const line = `${new Date().toISOString().slice(0, 10)} ${to}: ${note}`;
+      const notes = [a.admin_notes, line].filter(Boolean).join('\n');
+      if (notes.length > 2000) return res.status(400).json({ error: 'The admin notes are full. Shorten them first, then try again.' });
+      // status=eq.<current> keeps the change atomic if two admins act at once.
+      const moved = await db(`ambassador_applications?id=eq.${a.id}&status=eq.${a.status}`, {
+        method: 'PATCH',
+        prefer: 'return=representation',
+        body: { status: to, admin_notes: notes },
+      });
+      if (!moved[0]) return res.status(409).json({ error: 'This application was just changed by someone else. Reload and try again.' });
+      await audit('ambassador_status', null, { application_id: a.id, from: a.status, to, note });
+      return res.status(200).json({ application: adminAmbassador(moved[0], await profileOf()) });
+    }
+
+    if (typeof req.body?.admin_notes === 'string') {
+      const notes = cleanMultiline(req.body.admin_notes, 2000);
+      const saved = await db(`ambassador_applications?id=eq.${a.id}`, {
+        method: 'PATCH',
+        prefer: 'return=representation',
+        body: { admin_notes: notes || null },
+      });
+      if (!saved[0]) return res.status(409).json({ error: 'Could not save the notes' });
+      await audit('ambassador_notes', null, { application_id: a.id, length: notes.length });
+      return res.status(200).json({ application: adminAmbassador(saved[0], await profileOf()) });
+    }
+
+    return res.status(400).json({ error: 'Nothing to update' });
   }
 
   // ---------------------------------------------------------- admin-audit
