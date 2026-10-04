@@ -366,9 +366,21 @@
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        #rampSection {
-            overflow-anchor: none;
-            scroll-margin-top: 80px;
+        /* Send / Receive buttons. Height matches the old py-2.5 + text-sm (40px).
+           Light theme: elegant dark gray. Dark theme: blue like the main USDC card. */
+        .wallet-action-btn {
+            padding: 10px 16px;
+            line-height: 20px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+            transition: filter 0.15s ease, transform 0.1s ease;
+        }
+        .wallet-action-btn:hover { filter: brightness(1.12); }
+        .wallet-action-btn:active { transform: scale(0.98); }
+        html.dark .wallet-action-btn {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
         }
     </style>
 </head>
@@ -451,15 +463,12 @@
                         <i data-lucide="copy" class="w-5 h-5 text-secondary"></i>
                     </button>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="openSendModal()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                <div class="flex items-center gap-3">
+                    <button onclick="openSendModal()" class="wallet-action-btn flex-1 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
                         <i data-lucide="send" class="w-4 h-4"></i> Send
                     </button>
-                    <button onclick="openReceiveModal()" class="flex-1 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                    <button onclick="openReceiveModal()" class="wallet-action-btn flex-1 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
                         <i data-lucide="download" class="w-4 h-4"></i> Receive
-                    </button>
-                    <button onclick="scrollToRamp()" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Buy
                     </button>
                 </div>
                 <div id="walletBalanceLoadingBarPay" class="hidden mt-3 h-1 w-full bg-surface rounded-full overflow-hidden">
@@ -567,22 +576,7 @@
                 <i data-lucide="chevron-right" class="w-4 h-4 text-muted flex-shrink-0"></i>
             </a>
 
-            <!-- Buy Crypto -->
-            <div id="rampSection" class="card rounded-2xl p-4 lg:p-6 mb-5">
-                <div class="flex items-center gap-2 mb-4">
-                    <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
-                        <i data-lucide="credit-card" class="w-4 h-4 text-indigo-500"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-primary text-sm">Buy Crypto</h3>
-                    </div>
-                </div>
-                <div id="rampBlockedState" class="rounded-xl border border-subtle p-6 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <i data-lucide="lock" class="w-8 h-8 text-muted mb-3"></i>
-                    <p class="text-sm font-medium text-primary mb-1">Buy/Sell temporarily unavailable</p>
-                    <p class="text-xs text-muted max-w-xs">Buy/Sell is coming soon. This feature is currently under development. Please check back soon.</p>
-                </div>
-            </div>
+            <!-- Buy Crypto section removed from production (kept in staging: pay5.html) -->
 
             <!-- Transaction History moved to its own page: tx.html -->
             <a href="tx" class="card rounded-2xl mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
@@ -828,7 +822,7 @@
                 <p id="sendTokenBalance" class="text-xs text-muted mb-3">Balance: 0.00</p>
 
                 <div id="gasWarning" class="gas-warning hidden mb-3">
-                    You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>
+                    You need POL for gas fees. Use Receive to deposit POL to your wallet.
                 </div>
 
                 <label class="text-xs font-medium text-secondary block mb-1.5">Recipient address</label>
@@ -1164,10 +1158,6 @@
         function copyWalletAddress() {
             if (!currentWalletAddress) { showToast('No wallet connected'); return; }
             navigator.clipboard.writeText(currentWalletAddress).then(() => showToast('Address copied!'));
-        }
-
-        function scrollToRamp() {
-            document.getElementById('rampSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function formatTokenAmount(value) {
@@ -2135,7 +2125,7 @@
             } else if (window.isGasSponsored === false && polBalance <= 0) {
                 // Confirmed NOT sponsored (mismatched session or a real fee
                 // quote came back) and no POL — block Continue like before.
-                gasWarning.innerHTML = 'You need POL for gas fees. <a href="#" onclick="closeSendModal(); scrollToRamp(); return false;" class="underline font-medium">Buy POL</a>';
+                gasWarning.innerHTML = 'You need POL for gas fees. Use Receive to deposit POL to your wallet.';
                 gasWarning.classList.remove('hidden', 'gas-warning-sponsored');
                 gasWarning.classList.add('gas-warning');
                 continueBtn.disabled = true;
