@@ -1,5 +1,5 @@
 -- Ambassador program, Pilot Season 1: application table only.
--- NOT yet applied to production. Review in the PR, then apply.
+-- Applied to production 2026-10-04.
 -- New table, nothing existing is altered. Reviews are done manually by an admin
 -- (Supabase dashboard / service role); there is no admin UI in this change.
 
