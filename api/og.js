@@ -9,6 +9,7 @@
 // to Supabase) in vercel.json.
 
 import { OG_LOGO_DATA_URI } from './_lib/og-logo.js';
+import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { SUPABASE_URL, computeBadgeLabel, wantsBanner, computeOgHash, ogStorageUrl, hasOgColumns } from './_lib/og-shared.js';
 
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -99,7 +100,7 @@ async function loadBannerBackground(profile, sharp) {
 async function fetchProfile(username) {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/profiles_bio_public?username=eq.${encodeURIComponent(username)}&select=*`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    { headers: supabaseAuthHeaders('profiles_bio_public', SUPABASE_KEY) }
   );
   if (!res.ok) return null;
   const rows = await res.json();

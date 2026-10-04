@@ -15,6 +15,7 @@
 // from attributing a click to an arbitrary user_id.
 
 import { recordEvent } from './_lib/analytics.js';
+import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { withStats } from './_lib/stats.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
@@ -22,7 +23,7 @@ const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
 
 async function supabaseGet(path) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+    headers: supabaseAuthHeaders(path, SUPABASE_KEY),
   });
   if (!res.ok) throw new Error(`Supabase request failed: ${res.status}`);
   return res.json();
