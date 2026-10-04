@@ -25,7 +25,7 @@
 // All amounts are handled as integer micro-USDC (BigInt) to avoid float drift.
 
 import { notifyUser } from './_lib/notify.js';
-import { emailUser, emailAdmin, invoiceMail, receiptMail, adminPaidMail, getUserEmail } from './_lib/mailer.js';
+import { emailUser, emailAdmin, invoiceMail, receiptMail, adminPaidMail, getUserEmail, sendMail, ambassadorThanksMail } from './_lib/mailer.js';
 import { handleAdmin, isAdminAction } from './_lib/admin.js';
 import { withStats } from './_lib/stats.js';
 import { trackAlchemy } from './_lib/usage.js';
@@ -516,6 +516,45 @@ async function handleDiditSession(req, res, user) {
   });
 }
 
+// ---------------------------------------------------------------- action=ambassador-thanks
+
+// Thank-you email after an ambassador application. The recipient is always the
+// signed-in user's own auth email, never an address sent by the client. Each
+// application gets at most one email: thanks_emailed_at is claimed atomically
+// before sending and released again if the send fails.
+async function handleAmbassadorThanks(req, res, user) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!user.email) return res.status(200).json({ sent: false });
+
+  const apps = await db(
+    `ambassador_applications?user_id=eq.${user.id}&season=eq.pilot-1&select=id,country_code,track,status&limit=1`
+  );
+  const app = apps[0];
+  if (!app) return res.status(404).json({ error: 'Application not found' });
+
+  const claimedAt = new Date().toISOString();
+  const claimed = await db(
+    `ambassador_applications?id=eq.${app.id}&status=eq.pending&thanks_emailed_at=is.null&select=id`,
+    { method: 'PATCH', prefer: 'return=representation', body: { thanks_emailed_at: claimedAt } }
+  );
+  if (!claimed[0]) return res.status(200).json({ sent: false });
+
+  const profiles = await db(`profiles?id=eq.${user.id}&select=display_name,username&limit=1`);
+  const name = (profiles[0]?.display_name || profiles[0]?.username || '').trim();
+
+  const ok = await sendMail({
+    ...ambassadorThanksMail({ name, countryCode: app.country_code, track: app.track }),
+    to: user.email,
+  });
+  if (!ok) {
+    await db(`ambassador_applications?id=eq.${app.id}&thanks_emailed_at=eq.${encodeURIComponent(claimedAt)}`, {
+      method: 'PATCH',
+      body: { thanks_emailed_at: null },
+    }).catch((err) => console.error('orders: could not release thanks claim', err));
+  }
+  return res.status(200).json({ sent: ok });
+}
+
 // ---------------------------------------------------------------- dispatcher
 
 async function handler(req, res) {
@@ -543,7 +582,8 @@ async function handler(req, res) {
     if (action === 'check-payment') return await handleCheckPayment(req, res, user);
     if (action === 'cancel') return await handleCancel(req, res, user);
     if (action === 'didit-session') return await handleDiditSession(req, res, user);
-    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, check-payment, cancel, or didit-session)' });
+    if (action === 'ambassador-thanks') return await handleAmbassadorThanks(req, res, user);
+    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, check-payment, cancel, didit-session, or ambassador-thanks)' });
   } catch (err) {
     console.error('orders: unhandled error', err);
     return res.status(500).json({ error: 'Something went wrong. Please try again.' });
