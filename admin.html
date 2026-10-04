@@ -1229,6 +1229,7 @@
                 };
                 // The review is based on the applicant's bio page. Older applications may also have a link typed in.
                 const bioUrl = u.username ? `https://netlink.bio/${u.username}` : null;
+                const cvUrl = u.username ? `https://netlink.bio/cv/${u.username}` : null;
                 const extraLinks = (a.social_links || []).filter((l) => l !== bioUrl).map(linkHtml).join('');
                 const canAct = canReviewAmb();
                 const actions = canAct ? (AMB_ACTIONS[a.status] || []) : [];
@@ -1253,6 +1254,7 @@
                     ${kv('Track', esc(AMB_TRACK_LABEL[a.track] || a.track))}
                     ${kv('Audience', esc(AMB_AUDIENCE_LABEL[a.audience_size] || a.audience_size))}
                     ${kv('Bio page', bioUrl ? linkHtml(bioUrl) : '-')}
+                    ${kv('CV', cvUrl ? linkHtml(cvUrl) : '-')}
                     ${extraLinks ? kv('Link in application', extraLinks) : ''}
                     <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Links on their bio</h4>
                     <div id="ambBioLinks"><p class="text-xs text-muted">Loading...</p></div>
