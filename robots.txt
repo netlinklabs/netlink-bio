@@ -10,6 +10,7 @@ Disallow: /pay4$
 Disallow: /tx$
 Disallow: /card$
 Disallow: /reward$
+Disallow: /ambassador$
 Disallow: /identity$
 Disallow: /recovery$
 Disallow: /reset-password$

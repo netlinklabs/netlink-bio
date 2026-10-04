@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <!-- PAGE-TYPE: app -->
+    <meta charset="UTF-8">
+    <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Ambassador Program - Netlink</title>
+    <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+    <link rel="stylesheet" href="/shared/tailwind.css?v=13">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.460.0" defer></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 16px; padding: 18px; }
+        .text-primary { color: #0f172a; }
+        .text-secondary { color: #475569; }
+        .text-muted { color: #64748b; }
+        .border-subtle { border-color: rgba(0,0,0,0.06); }
+
+        html.dark body { background: #0f172a; color: #e2e8f0; }
+        html.dark .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: none; }
+        html.dark .text-primary { color: #f8fafc !important; }
+        html.dark .text-secondary { color: #94a3b8 !important; }
+        html.dark .text-muted { color: #64748b !important; }
+        html.dark .border-subtle { border-color: rgba(255,255,255,0.05) !important; }
+
+        #authGate { position: fixed; inset: 0; background: #f8fafc; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        html.dark #authGate { background: #0f172a; }
+
+        .toast { position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: white; padding: 12px 24px; border-radius: 100px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 60; font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+        html.dark .toast { background: #e2e8f0; color: #0f172a; }
+
+        /* Page-specific styles (kept here so no Tailwind rebuild is needed) */
+        .amb-stack > * + * { margin-top: 16px; }
+        .amb-h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+        .amb-p { font-size: 13px; line-height: 1.6; }
+        .amb-list { list-style: none; padding: 0; margin: 0; }
+        .amb-list li { font-size: 13px; line-height: 1.55; padding: 6px 0 6px 16px; position: relative; }
+        .amb-list li::before { content: ''; position: absolute; left: 0; top: 13px; width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; }
+        .amb-pill { display: inline-block; font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 100px; }
+        .amb-pill-blue { background: rgba(59,130,246,0.12); color: #2563eb; }
+        .amb-pill-amber { background: rgba(245,158,11,0.15); color: #b45309; }
+        .amb-pill-green { background: rgba(34,197,94,0.15); color: #15803d; }
+        .amb-pill-gray { background: rgba(100,116,139,0.15); color: #475569; }
+        .amb-pill-red { background: rgba(239,68,68,0.12); color: #b91c1c; }
+        html.dark .amb-pill-blue { color: #60a5fa; }
+        html.dark .amb-pill-amber { color: #fbbf24; }
+        html.dark .amb-pill-green { color: #4ade80; }
+        html.dark .amb-pill-gray { color: #94a3b8; }
+        html.dark .amb-pill-red { color: #f87171; }
+
+        .amb-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        html.dark .amb-label { color: #94a3b8; }
+        .amb-hint { font-size: 11px; color: #64748b; margin-top: 4px; }
+        .amb-field { margin-bottom: 16px; }
+        .amb-input, .amb-select, .amb-textarea {
+            width: 100%; font-size: 14px; padding: 10px 12px; border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.12); background: #ffffff; color: #0f172a; outline: none;
+        }
+        .amb-textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+        .amb-input:focus, .amb-select:focus, .amb-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .amb-input[readonly] { background: #f1f5f9; color: #475569; }
+        html.dark .amb-input, html.dark .amb-select, html.dark .amb-textarea { background: #0f172a; color: #f8fafc; border-color: rgba(255,255,255,0.12); }
+        html.dark .amb-input[readonly] { background: #172033; color: #94a3b8; }
+
+        .amb-track { display: block; border: 1px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+        .amb-track input { margin-right: 8px; }
+        .amb-track-title { font-size: 14px; font-weight: 600; }
+        .amb-track-desc { font-size: 12px; margin: 2px 0 0 24px; color: #64748b; }
+        .amb-track.selected { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
+        html.dark .amb-track { border-color: rgba(255,255,255,0.12); }
+        html.dark .amb-track.selected { border-color: #3b82f6; background: rgba(59,130,246,0.12); }
+
+        .amb-link-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .amb-btn { font-size: 14px; font-weight: 600; padding: 11px 18px; border-radius: 12px; border: 0; cursor: pointer; }
+        .amb-btn-primary { background: #2563eb; color: #fff; width: 100%; }
+        .amb-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+        .amb-btn-ghost { background: transparent; color: #2563eb; padding: 6px 4px; font-size: 13px; }
+        .amb-btn-icon { background: rgba(100,116,139,0.15); color: #475569; padding: 0 12px; border-radius: 10px; border: 0; cursor: pointer; font-size: 18px; }
+        .amb-error { font-size: 12px; color: #dc2626; margin-top: 8px; min-height: 16px; }
+        html.dark .amb-error { color: #f87171; }
+        .amb-check { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; line-height: 1.55; }
+        .amb-check input { margin-top: 3px; }
+        .amb-kv { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 13px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .amb-kv:last-child { border-bottom: 0; }
+        html.dark .amb-kv { border-color: rgba(255,255,255,0.05); }
+        .amb-kv span:last-child { text-align: right; word-break: break-word; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="authGate">
+        <div class="flex flex-col items-center gap-3 px-6 text-center">
+            <div id="authSpinner" class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p id="authGateText" class="text-sm text-slate-400">Loading...</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <main class="px-4 pt-4 pb-8 lg:px-8 max-w-xl mx-auto">
+        <div class="mb-6">
+            <div class="flex items-center gap-3 flex-wrap">
+                <h2 class="text-2xl font-bold text-primary tracking-tight">Ambassador Program</h2>
+                <span class="amb-pill amb-pill-blue">Pilot Season 1</span>
+            </div>
+            <p class="text-sm text-muted mt-1">Represent Netlink in your country and help build the community around it.</p>
+        </div>
+
+        <div class="amb-stack">
+            <section class="card">
+                <h3 class="amb-h2 text-primary">What ambassadors do</h3>
+                <p class="amb-p text-secondary">Ambassadors are the official face of Netlink in their country. Pick the track that fits you best. You do not need to recruit people to qualify.</p>
+                <ul class="amb-list text-secondary" style="margin-top: 8px;">
+                    <li><b class="text-primary">Growth:</b> bring new people to Netlink.</li>
+                    <li><b class="text-primary">Content:</b> create tutorials, videos and reviews.</li>
+                    <li><b class="text-primary">Community:</b> run and moderate a local group.</li>
+                    <li><b class="text-primary">Influence:</b> share Netlink with a wide audience.</li>
+                </ul>
+            </section>
+
+            <section class="card">
+                <h3 class="amb-h2 text-primary">How it works</h3>
+                <ul class="amb-list text-secondary">
+                    <li>Any Netlink member can apply. Identity verification is not required.</li>
+                    <li>The Netlink team reviews every application manually, based on your profile and what you share below.</li>
+                    <li>There is no fixed number of ambassadors per country.</li>
+                    <li>Pilot Season 1 benefits are shared directly with approved ambassadors and may change.</li>
+                    <li>Ambassador status is not employment and is not an investment. It can be ended by Netlink at any time.</li>
+                </ul>
+            </section>
+
+            <div id="applicationArea">
+                <section class="card"><p class="text-sm text-muted text-center py-4">Loading your application...</p></section>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/shared/countries.js?v=1"></script>
+    <script src="/shared/nav.js?v=6"></script>
+    <script src="/shared/account-menu.js?v=4"></script>
+    <script>
+        const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const SEASON = 'pilot-1';
+        const MAX_LINKS = 5;
+
+        const TRACKS = [
+            { id: 'growth', title: 'Growth', desc: 'Bring new people to Netlink.' },
+            { id: 'content', title: 'Content', desc: 'Create tutorials, videos and reviews.' },
+            { id: 'community', title: 'Community', desc: 'Run and moderate a local group.' },
+            { id: 'influence', title: 'Influence', desc: 'Share Netlink with a wide audience.' },
+        ];
+        const AUDIENCE = [
+            { id: 'under_1k', label: 'Under 1,000' },
+            { id: '1k_10k', label: '1,000 to 10,000' },
+            { id: '10k_100k', label: '10,000 to 100,000' },
+            { id: 'over_100k', label: 'Over 100,000' },
+        ];
+        const STATUS_VIEW = {
+            pending: { label: 'Submitted', cls: 'amb-pill-blue', text: 'We received your application. It will be picked up for review soon.' },
+            under_review: { label: 'Under Review', cls: 'amb-pill-amber', text: 'The Netlink team is reviewing your application. We will contact you through your Netlink account details.' },
+            approved: { label: 'Approved', cls: 'amb-pill-green', text: 'Congratulations, you are a Netlink ambassador. The team will share the next steps with you directly.' },
+            rejected: { label: 'Not selected', cls: 'amb-pill-gray', text: 'Your application was not selected for this season. Thank you for your interest in Netlink.' },
+            revoked: { label: 'Ended', cls: 'amb-pill-red', text: 'Your ambassador status has ended.' },
+        };
+
+        let currentUser = null;
+        let currentProfile = null;
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str == null ? '' : String(str);
+            return div.innerHTML;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function formatDate(iso) {
+            return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function countryName(code) {
+            const hit = (window.NETLINK_COUNTRIES || []).find(c => c[0] === code);
+            return hit ? hit[1] : (code || '');
+        }
+
+        function labelFor(list, id, key) {
+            const hit = list.find(x => x.id === id);
+            return hit ? hit[key] : id;
+        }
+
+        // ---------- Rendering ----------
+
+        function renderStatusCard(app) {
+            const view = STATUS_VIEW[app.status] || STATUS_VIEW.pending;
+            const links = (app.social_links || []).map(escapeHtml).join('<br>');
+            return `
+                <section class="card">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <h3 class="amb-h2 text-primary" style="margin:0;">Your application</h3>
+                        <span class="amb-pill ${view.cls}">${escapeHtml(view.label)}</span>
+                    </div>
+                    <p class="amb-p text-secondary" style="margin-top:8px;">${escapeHtml(view.text)}</p>
+                    <div style="margin-top:12px;">
+                        <div class="amb-kv"><span class="text-muted">Submitted</span><span class="text-primary">${escapeHtml(formatDate(app.created_at))}</span></div>
+                        <div class="amb-kv"><span class="text-muted">Country</span><span class="text-primary">${escapeHtml(countryName(app.country_code))}${app.city ? ', ' + escapeHtml(app.city) : ''}</span></div>
+                        <div class="amb-kv"><span class="text-muted">Track</span><span class="text-primary">${escapeHtml(labelFor(TRACKS, app.track, 'title'))}</span></div>
+                        <div class="amb-kv"><span class="text-muted">Audience</span><span class="text-primary">${escapeHtml(labelFor(AUDIENCE, app.audience_size, 'label'))}</span></div>
+                        <div class="amb-kv"><span class="text-muted">Links</span><span class="text-primary">${links}</span></div>
+                    </div>
+                </section>`;
+        }
+
+        function renderForm() {
+            const p = currentProfile || {};
+            const countries = (window.NETLINK_COUNTRIES || [])
+                .map(([code, name]) => `<option value="${escapeHtml(code)}"${code === p.country_code ? ' selected' : ''}>${escapeHtml(name)}</option>`)
+                .join('');
+            const tracks = TRACKS.map(t => `
+                <label class="amb-track" data-track="${t.id}">
+                    <input type="radio" name="track" value="${t.id}">
+                    <span class="amb-track-title text-primary">${escapeHtml(t.title)}</span>
+                    <div class="amb-track-desc">${escapeHtml(t.desc)}</div>
+                </label>`).join('');
+            const audience = AUDIENCE.map(a => `<option value="${a.id}">${escapeHtml(a.label)}</option>`).join('');
+
+            return `
+                <section class="card">
+                    <h3 class="amb-h2 text-primary">Apply</h3>
+                    <p class="amb-p text-muted" style="margin-bottom:16px;">Your account details are filled in for you.</p>
+
+                    <form id="ambForm" novalidate>
+                        <div class="amb-field">
+                            <label class="amb-label">Username</label>
+                            <input class="amb-input" type="text" value="${escapeHtml(p.username || '')}" readonly>
+                        </div>
+                        <div class="amb-field">
+                            <label class="amb-label">Net ID</label>
+                            <input class="amb-input" type="text" value="${escapeHtml(p.net_id || '')}" readonly>
+                        </div>
+                        <div class="amb-field">
+                            <label class="amb-label">Referral code</label>
+                            <input class="amb-input" type="text" value="${escapeHtml(p.referral_code || '')}" readonly>
+                        </div>
+
+                        <div class="amb-field">
+                            <label class="amb-label" for="ambCountry">Country</label>
+                            <select class="amb-select" id="ambCountry"><option value="">Select your country</option>${countries}</select>
+                        </div>
+                        <div class="amb-field">
+                            <label class="amb-label" for="ambCity">City (optional)</label>
+                            <input class="amb-input" id="ambCity" type="text" maxlength="100" autocomplete="off">
+                        </div>
+
+                        <div class="amb-field">
+                            <span class="amb-label">Main track</span>
+                            ${tracks}
+                        </div>
+
+                        <div class="amb-field">
+                            <span class="amb-label">Social media links</span>
+                            <div id="ambLinks"></div>
+                            <button type="button" class="amb-btn amb-btn-ghost" id="ambAddLink">+ Add another link</button>
+                            <p class="amb-hint">Add the accounts you would use for Netlink. Up to ${MAX_LINKS} links.</p>
+                        </div>
+
+                        <div class="amb-field">
+                            <label class="amb-label" for="ambAudience">Approximate total audience</label>
+                            <select class="amb-select" id="ambAudience"><option value="">Select a range</option>${audience}</select>
+                        </div>
+
+                        <div class="amb-field">
+                            <label class="amb-label" for="ambMotivation">Why do you want to be a Netlink ambassador?</label>
+                            <textarea class="amb-textarea" id="ambMotivation" maxlength="1500"></textarea>
+                            <p class="amb-hint"><span id="ambMotivationCount">0</span> / 1500 (minimum 20)</p>
+                        </div>
+
+                        <div class="amb-field">
+                            <label class="amb-label" for="ambPlan">How would you contribute in your country?</label>
+                            <textarea class="amb-textarea" id="ambPlan" maxlength="1500"></textarea>
+                            <p class="amb-hint"><span id="ambPlanCount">0</span> / 1500 (minimum 20)</p>
+                        </div>
+
+                        <div class="amb-field">
+                            <label class="amb-check text-secondary">
+                                <input type="checkbox" id="ambTerms">
+                                <span>I understand that benefits may change, ambassador status is not employment or an investment, and Netlink can end it at any time.</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="amb-btn amb-btn-primary" id="ambSubmit">Submit application</button>
+                        <p class="amb-error" id="ambError" role="alert"></p>
+                    </form>
+                </section>`;
+        }
+
+        function addLinkRow(value) {
+            const wrap = document.getElementById('ambLinks');
+            if (wrap.children.length >= MAX_LINKS) return;
+            const row = document.createElement('div');
+            row.className = 'amb-link-row';
+            row.innerHTML = '<input class="amb-input amb-link-input" type="url" maxlength="300" placeholder="https://instagram.com/yourname" autocomplete="off">'
+                + '<button type="button" class="amb-btn-icon" aria-label="Remove link">&times;</button>';
+            row.querySelector('input').value = value || '';
+            row.querySelector('button').addEventListener('click', () => {
+                if (wrap.children.length > 1) { row.remove(); updateAddLinkState(); }
+                else row.querySelector('input').value = '';
+            });
+            wrap.appendChild(row);
+            updateAddLinkState();
+        }
+
+        function updateAddLinkState() {
+            const wrap = document.getElementById('ambLinks');
+            document.getElementById('ambAddLink').style.display = wrap.children.length >= MAX_LINKS ? 'none' : '';
+        }
+
+        function wireForm() {
+            addLinkRow('');
+            document.getElementById('ambAddLink').addEventListener('click', () => addLinkRow(''));
+
+            document.querySelectorAll('.amb-track').forEach(label => {
+                label.addEventListener('change', () => {
+                    document.querySelectorAll('.amb-track').forEach(l => l.classList.remove('selected'));
+                    label.classList.add('selected');
+                });
+            });
+
+            const bindCount = (inputId, countId) => {
+                const input = document.getElementById(inputId);
+                const count = document.getElementById(countId);
+                input.addEventListener('input', () => { count.textContent = String(input.value.length); });
+            };
+            bindCount('ambMotivation', 'ambMotivationCount');
+            bindCount('ambPlan', 'ambPlanCount');
+
+            document.getElementById('ambForm').addEventListener('submit', submitApplication);
+        }
+
+        // ---------- Validation and submit ----------
+
+        function normalizeUrl(raw) {
+            let value = String(raw || '').trim();
+            if (!value) return null;
+            if (!/^https?:\/\//i.test(value)) value = 'https://' + value;
+            try {
+                const url = new URL(value);
+                if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+                if (!url.hostname.includes('.')) return null;
+                return url.toString();
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function collectForm() {
+            const country = document.getElementById('ambCountry').value;
+            const city = document.getElementById('ambCity').value.trim();
+            const trackEl = document.querySelector('input[name="track"]:checked');
+            const audience = document.getElementById('ambAudience').value;
+            const motivation = document.getElementById('ambMotivation').value.trim();
+            const plan = document.getElementById('ambPlan').value.trim();
+            const terms = document.getElementById('ambTerms').checked;
+
+            const rawLinks = Array.from(document.querySelectorAll('.amb-link-input')).map(i => i.value).filter(v => v.trim());
+            const links = [];
+            let badLink = false;
+            rawLinks.forEach(raw => {
+                const url = normalizeUrl(raw);
+                if (!url) badLink = true; else if (!links.includes(url)) links.push(url);
+            });
+
+            if (!country) return { error: 'Please select your country.' };
+            if (!trackEl) return { error: 'Please choose your main track.' };
+            if (badLink) return { error: 'One of your social media links is not a valid web address.' };
+            if (links.length < 1) return { error: 'Please add at least one social media link.' };
+            if (links.join('\n').length > 1500) return { error: 'Your links are too long. Please shorten them.' };
+            if (!audience) return { error: 'Please select your approximate audience.' };
+            if (motivation.length < 20) return { error: 'Please tell us a bit more about why you want to apply (at least 20 characters).' };
+            if (plan.length < 20) return { error: 'Please tell us a bit more about how you would contribute (at least 20 characters).' };
+            if (!terms) return { error: 'Please accept the terms to continue.' };
+
+            return {
+                data: {
+                    user_id: currentUser.id,
+                    season: SEASON,
+                    country_code: country,
+                    city: city || null,
+                    track: trackEl.value,
+                    social_links: links,
+                    audience_size: audience,
+                    motivation,
+                    contribution_plan: plan,
+                    terms_accepted_at: new Date().toISOString(),
+                },
+            };
+        }
+
+        async function submitApplication(event) {
+            event.preventDefault();
+            const errorEl = document.getElementById('ambError');
+            const button = document.getElementById('ambSubmit');
+            errorEl.textContent = '';
+
+            const result = collectForm();
+            if (result.error) { errorEl.textContent = result.error; return; }
+
+            button.disabled = true;
+            button.textContent = 'Submitting...';
+
+            const { error } = await supabaseClient.from('ambassador_applications').insert(result.data);
+
+            if (error) {
+                console.error(error);
+                button.disabled = false;
+                button.textContent = 'Submit application';
+                if (error.code === '23505') {
+                    errorEl.textContent = 'You have already applied for this season.';
+                    await loadApplication();
+                } else {
+                    errorEl.textContent = 'Could not submit your application. Please try again.';
+                }
+                return;
+            }
+
+            showToast('Application submitted');
+            await loadApplication();
+        }
+
+        // ---------- Data loading ----------
+
+        async function loadApplication() {
+            const area = document.getElementById('applicationArea');
+            const { data, error } = await supabaseClient.from('ambassador_applications')
+                .select('id, status, country_code, city, track, social_links, audience_size, created_at')
+                .eq('user_id', currentUser.id)
+                .eq('season', SEASON)
+                .maybeSingle();
+
+            if (error) {
+                console.error(error);
+                area.innerHTML = '<section class="card"><p class="text-sm text-muted text-center py-4">Failed to load your application. Please try again later.</p></section>';
+                return;
+            }
+
+            if (data) {
+                area.innerHTML = renderStatusCard(data);
+            } else {
+                area.innerHTML = renderForm();
+                wireForm();
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function showAuthError(msg) {
+            document.getElementById('authGateText').textContent = 'Something went wrong: ' + msg;
+        }
+
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!session) { window.location.href = 'login'; return; }
+                currentUser = session.user;
+                document.getElementById('authGate').style.display = 'none';
+                await loadProfile();
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || String(err));
+            }
+        }
+
+        async function loadProfile() {
+            const { data, error } = await supabaseClient.from('profiles')
+                .select('username, display_name, avatar_url, tier, net_id, referral_code, country_code, local_currency, business_verified_at, identity_verified_at')
+                .eq('id', currentUser.id).single();
+            if (error) { console.error(error); return; }
+            currentProfile = data;
+            if (window.NetlinkNav) {
+                NetlinkNav.init({
+                    activePage: null,
+                    profile: data,
+                    supabaseClient: supabaseClient,
+                    userId: currentUser.id,
+                });
+            }
+            await loadApplication();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+        checkAuth();
+    </script>
+
+</body>
+</html>
