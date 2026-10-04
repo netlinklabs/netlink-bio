@@ -273,6 +273,60 @@ export function ambassadorThanksMail({ name, countryCode, track }) {
   };
 }
 
+// Sent when an admin approves or rejects an ambassador application.
+// Other status changes (under review, revoked) send nothing on purpose.
+export function ambassadorStatusMail(status, { name, countryCode, track }) {
+  const community = process.env.SMTP_FROM_COMMUNITY;
+  const sender = community ? { from: community, replyTo: COMMUNITY_REPLY_TO } : {};
+  const signoff = { name: 'Alex L Setiawan', title: 'Community & Growth Lead, Netlink' };
+  const footer = { footer: 'Netlink Community, netlink.bio', footerNote: 'This is an automated message. You can reply to this email.' };
+  const hi = `Hi ${name || 'there'},\n\n`;
+
+  if (status === 'approved') {
+    return {
+      subject: 'Welcome to the Netlink Ambassador Program',
+      ...sender,
+      ...layout({
+        preheader: 'Your application was approved.',
+        title: 'Welcome aboard',
+        intro: `${hi}Congratulations! Your application to the Netlink Ambassador Program has been approved. Thank you for wanting to help Netlink grow and contribute to its community.`,
+        rows: [
+          ['Application', 'Pilot Season 1'],
+          ['Country', countryName(countryCode)],
+          ['Track', AMBASSADOR_TRACKS[track] || track],
+          ['Status', 'Approved'],
+        ],
+        after: 'We will contact you with the next steps. You can check your status at any time.',
+        cta: { label: 'View my status', url: `${SITE}/ambassador` },
+        signoff,
+        note: 'Pilot program details and benefits may change. Ambassador status can be ended by the Netlink team at any time.',
+        ...footer,
+      }),
+    };
+  }
+
+  if (status === 'rejected') {
+    return {
+      subject: 'Update on your Netlink Ambassador application',
+      ...sender,
+      ...layout({
+        preheader: 'An update on your application.',
+        title: 'Your application update',
+        intro: `${hi}Thank you for applying to the Netlink Ambassador Program. We appreciate that you wanted to help Netlink grow.`,
+        rows: [
+          ['Application', 'Pilot Season 1'],
+          ['Status', 'Not selected'],
+        ],
+        after: 'After reviewing your application, we are not able to move forward with it in this pilot season. We are keeping the pilot small, so we cannot accept every applicant. You are welcome to keep using Netlink and to share it with your community.',
+        signoff,
+        ...footer,
+      }),
+    };
+  }
+
+  return null;
+}
+
 // ---------------------------------------------------------------- senders
 
 // To the customer, resolved from auth.users by user id.
