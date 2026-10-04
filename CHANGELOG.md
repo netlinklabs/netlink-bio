@@ -7,6 +7,10 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Security
+- **Public views are now read with the service role key (step 1 of 3 for the Supabase "Security Definer View" warnings).** New `api/_lib/public-db.js` (`supabaseAuthHeaders`) picks the key per request: `profiles_bio_public`, `profiles_cv_public` and `landing_pages_public` use `SUPABASE_SERVICE_ROLE_KEY` (server env only, never sent to the browser); every other table keeps the public anon key. Used by `api/bio.js`, `api/cv.js`, `api/landing.js`, `api/og.js`, `api/track-event.js` and `api/_lib/sitemap.js`. No page output changes. Falls back to the anon key if the env var is missing (Preview deploys only have it for Production), so nothing breaks before step 2.
+- Next, NOT done yet (each needs approval, after this is deployed and tested): (2) revoke `anon`/`authenticated` access and the stray `TRUNCATE`/`REFERENCES`/`TRIGGER` grants on the 3 views, then set them to `security_invoker = true`; (3) rewrite `auth.uid()` as `(select auth.uid())` in the `profiles`, `links` and `landing_pages` policies.
+
 ### Removed
 - **Contacts: "add contact via NET ID" removed.** `contacts.html` now only supports manual contacts (nickname + wallet address): add, edit nickname, reorder, delete. The Send modal contact picker in `pay.html`, `pay2.html` and `pay5.html` reads only `contacts.manual_address` and no longer queries `profiles_bio_public`. This also fixes the bug where a saved NET ID contact was missing from the Send modal when its owner had `show_donate` off (wallet came back NULL from the view).
 - `tx.html`: removed the `contact_added` notification icon (type and CSS). `privacy.html`: removed the "Discoverable via NET ID" toggle and its read/write of `profiles.net_id_discoverable`. `faq.html` (visible answer and FAQPage JSON-LD) and `llms.txt`: NET ID is now described as the number on the Netlink Pay card, with payments sent to wallet addresses.

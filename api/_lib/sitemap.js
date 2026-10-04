@@ -25,6 +25,7 @@
 // Same security note as api/landing.js: never select id/user_id.
 
 import { isDemoProfile } from './demo-profiles.js';
+import { supabaseAuthHeaders } from './public-db.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -50,8 +51,7 @@ async function supabaseGet(path) {
   while (true) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
       headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
+        ...supabaseAuthHeaders(path, SUPABASE_KEY),
         Range: `${offset}-${offset + PAGE_SIZE - 1}`,
       },
     });
