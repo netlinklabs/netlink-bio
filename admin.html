@@ -1196,18 +1196,40 @@
         $('ambSearch').addEventListener('input', () => { clearTimeout(ambTimer); ambTimer = setTimeout(loadAmbassadors, 350); });
         $('ambStatus').addEventListener('change', loadAmbassadors);
 
+        // Links are publicly readable (same as the bio page), so the admin page reads them directly.
+        async function loadAmbBioLinks(userId) {
+            const box = $('ambBioLinks');
+            try {
+                const { data, error } = await supabaseClient.from('links')
+                    .select('title, url').eq('user_id', userId).eq('is_active', true).order('position', { ascending: true }).limit(20);
+                if (error) throw error;
+                if (!box) return;
+                if (!data || !data.length) { box.innerHTML = '<p class="text-xs text-muted">No links on their bio yet.</p>'; return; }
+                box.innerHTML = data.map((l) => {
+                    const href = safeHref(l.url);
+                    return `<div class="kv"><span>${esc(l.title || '-')}</span><span class="mono">${href ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer nofollow" class="text-blue-500">${esc(l.url)}</a>` : esc(l.url)}</span></div>`;
+                }).join('');
+            } catch (err) {
+                const el = $('ambBioLinks');
+                if (el) el.innerHTML = '<p class="text-xs text-muted">Could not load their links.</p>';
+            }
+        }
+
         async function openAmbassador(id) {
             openModal('<p class="text-sm text-muted">Loading...</p>');
             try {
                 const d = await api('admin-ambassador', { query: `&id=${encodeURIComponent(id)}` });
                 const a = d.application;
                 const u = a.user || {};
-                const links = (a.social_links || []).map((l) => {
+                const linkHtml = (l) => {
                     const href = safeHref(l);
                     return href
                         ? `<div class="mono"><a href="${esc(href)}" target="_blank" rel="noopener noreferrer nofollow" class="text-blue-500">${esc(l)}</a></div>`
                         : `<div class="mono">${esc(l)}</div>`;
-                }).join('') || '-';
+                };
+                // The review is based on the applicant's bio page. Older applications may also have a link typed in.
+                const bioUrl = u.username ? `https://netlink.bio/${u.username}` : null;
+                const extraLinks = (a.social_links || []).filter((l) => l !== bioUrl).map(linkHtml).join('');
                 const canAct = canReviewAmb();
                 const actions = canAct ? (AMB_ACTIONS[a.status] || []) : [];
                 openModal(`
@@ -1230,7 +1252,10 @@
                     ${kv('Country', esc(ambCountryName(a.country_code)) + (a.city ? ', ' + esc(a.city) : ''))}
                     ${kv('Track', esc(AMB_TRACK_LABEL[a.track] || a.track))}
                     ${kv('Audience', esc(AMB_AUDIENCE_LABEL[a.audience_size] || a.audience_size))}
-                    ${kv('Links', links)}
+                    ${kv('Bio page', bioUrl ? linkHtml(bioUrl) : '-')}
+                    ${extraLinks ? kv('Link in application', extraLinks) : ''}
+                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Links on their bio</h4>
+                    <div id="ambBioLinks"><p class="text-xs text-muted">Loading...</p></div>
                     <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Why they want to apply</h4>
                     <p class="text-sm text-secondary" style="white-space:pre-wrap">${esc(a.motivation)}</p>
                     <h4 class="text-sm font-semibold text-primary mt-4 mb-1">How they would contribute</h4>
@@ -1241,6 +1266,7 @@
                     ${actions.length ? `<div class="mt-4 flex gap-2 flex-wrap">${actions.map((x, i) => `<button class="btn${x.danger ? ' btn-danger' : x.ghost ? ' btn-ghost' : ''}" data-act="${i}">${esc(x.label)}</button>`).join('')}</div>` : ''}
                 `);
                 $('ambNotes').value = a.admin_notes || '';
+                loadAmbBioLinks(a.user_id);
                 $('closeModalBtn').addEventListener('click', closeModal);
                 if (canAct) {
                     $('ambSaveNotes').addEventListener('click', async () => {
