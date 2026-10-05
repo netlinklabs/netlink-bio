@@ -48,7 +48,7 @@
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
             position: relative;
             overflow: hidden;
-            border-radius: 24px;
+            border-radius: 17px;
             box-shadow: 0 10px 30px rgba(2, 132, 199, 0.3), 0 0 0 1px rgba(255,255,255,0.1) inset;
         }
         .usdc-card::before {
@@ -74,7 +74,7 @@
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
             position: relative;
             overflow: hidden;
-            border-radius: 20px;
+            border-radius: 14px;
             box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
         }
         .token-card::before {
@@ -99,7 +99,7 @@
 
         .wallet-bar {
             background: #e2e8f0;
-            border-radius: 20px;
+            border-radius: 14px;
         }
         html.dark .wallet-bar {
             background: #1e293b;
@@ -128,7 +128,7 @@
         /* === ELEGANT SWAP CARD === */
         .swap-card {
             background: #e8ecf1;
-            border-radius: 24px;
+            border-radius: 17px;
             position: relative;
             border: 1px solid rgba(0,0,0,0.04);
         }
@@ -138,7 +138,7 @@
         }
         .swap-inner {
             background: #ffffff;
-            border-radius: 20px;
+            border-radius: 14px;
             border: 1px solid rgba(0,0,0,0.06);
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             transition: all 0.2s ease;
@@ -195,7 +195,7 @@
         .swap-details-card {
             background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(2, 132, 199, 0.03) 100%);
             border: 1px solid rgba(14, 165, 233, 0.12);
-            border-radius: 16px;
+            border-radius: 11px;
         }
         html.dark .swap-details-card {
             background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(2, 132, 199, 0.04) 100%);
@@ -338,6 +338,7 @@
         .bal-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; border-radius: 9999px; background: transparent; color: rgba(255,255,255,0.75); cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
         .bal-icon-btn:hover { background: rgba(255,255,255,0.15); }
         .pay-card-logo { margin-top: -11px; margin-bottom: -14px; }
+        .pay-card { border-radius: 11px; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: #ffffff; border-radius: 20px; padding: 24px; max-width: 380px; width: 100%; position: relative; }
@@ -490,7 +491,7 @@
             </div>
 
             <!-- Token List: USDC, POL, NET (NET is not part of Total Balance) -->
-            <div class="card rounded-2xl p-4 mb-4">
+            <div class="card pay-card p-4 mb-4">
                 <div class="flex items-center justify-between py-2.5 border-b border-subtle">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-10 h-10 bg-surface rounded-full flex items-center justify-center flex-shrink-0">
@@ -594,7 +595,7 @@
             </div>
 
             <!-- Onramp.Money Ramp Widget -->
-            <div id="rampSection" class="card rounded-2xl p-4 lg:p-6 mb-5">
+            <div id="rampSection" class="card pay-card p-4 lg:p-6 mb-5">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
                         <i data-lucide="credit-card" class="w-4 h-4 text-indigo-500"></i>
@@ -625,7 +626,7 @@
             </div>
 
             <!-- Netlink Prepaid Card (coming soon, same as pay.html) -->
-            <a href="card" class="card rounded-2xl mb-5 p-4 lg:p-5 flex items-center gap-4 hover-surface transition">
+            <a href="card" class="card pay-card mb-5 p-4 lg:p-5 flex items-center gap-4 hover-surface transition">
                 <img src="/assets/net-card.png" alt="Netlink Prepaid Card" class="w-16 flex-shrink-0 rounded-lg">
                 <div class="flex-1 min-w-0">
                     <h3 class="font-semibold text-primary text-sm">Netlink Prepaid Card</h3>
@@ -635,7 +636,7 @@
             </a>
 
             <!-- Transaction History moved to its own page: tx.html -->
-            <a href="tx" class="card rounded-2xl mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
+            <a href="tx" class="card pay-card mb-8 p-4 lg:p-5 flex items-center justify-between hover-surface transition">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
                         <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
@@ -833,7 +834,7 @@
             <i data-lucide="info" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
             <h3 class="font-semibold text-primary text-lg mb-2">Why is NET excluded?</h3>
             <p class="text-sm text-secondary mb-5 text-left">
-                NET is not yet listed on any CEX or DEX, so it has no reliable market price. To keep your total accurate, NET is not included in Total Balance.
+                NET is not listed on any CEX or DEX yet, so it has no market price. Once a price is available, NET will be included in Total Balance automatically.
             </p>
             <button onclick="closeNetInfoModal()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Got it</button>
         </div>
