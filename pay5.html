@@ -336,6 +336,8 @@
         .accordion-chevron.open { transform: rotate(180deg); }
 
 
+        .bal-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; border-radius: 9999px; background: transparent; color: rgba(255,255,255,0.75); cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
+        .bal-icon-btn:hover { background: rgba(255,255,255,0.15); }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: #ffffff; border-radius: 20px; padding: 24px; max-width: 380px; width: 100%; position: relative; }
@@ -417,27 +419,29 @@
     <div id="toast" class="toast">Saved successfully!</div>
 
     <main class="px-4 pt-4 pb-8 lg:px-8 max-w-md mx-auto">
-        <!-- USDC Premium Card -->
+        <!-- Total Balance Card (USDC + POL, excludes NET) -->
         <div class="usdc-card p-6 lg:p-8 mb-4 text-white relative">
             <div class="relative z-10">
                 <div class="flex items-start justify-between mb-4">
-                    <div>
-                        <p class="text-white font-semibold text-lg">USDC Balance</p>
-                        <p class="text-white/60 text-xs">USDC Coin (Polygon)</p>
+                    <div class="flex items-center gap-1">
+                        <p class="text-white font-semibold text-lg">Total Balance</p>
+                        <button id="balanceVisibilityBtn" type="button" onclick="toggleBalanceVisibility()" aria-label="Hide balance" class="bal-icon-btn">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
                     </div>
                     <img id="usdcCardLogo" src="/assets/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-16 w-auto opacity-90">
                 </div>
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-14 h-14 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm">
-                        <img src="/assets/usdc-logo.png" alt="USDC" class="w-8 h-8 rounded-full">
-                    </div>
-                    <div>
-                        <p id="balanceUsdc" class="text-4xl font-bold tracking-tight">0.00</p>
-                        <p id="balanceUsdcLocal" class="text-white/80 text-base font-semibold mt-0.5 hidden"></p>
-                    </div>
+                <div class="mb-6">
+                    <p id="balanceTotal" class="text-4xl font-bold tracking-tight">$0.00</p>
+                    <p id="balanceTotalLocal" class="text-white/80 text-base font-semibold mt-0.5 hidden"></p>
                 </div>
                 <div class="flex items-center justify-between">
-                    <p id="cardIdDisplay" class="text-white/70 text-xs font-mono">ID: NET-000000000000</p>
+                    <div class="flex items-center">
+                        <p class="text-white/70 text-xs">Total balance excl. NET</p>
+                        <button type="button" onclick="openNetInfoModal()" aria-label="Why is NET excluded?" class="bal-icon-btn">
+                            <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                     <button id="cardConnectBtn" onclick="openCreateWalletModal()" class="hidden inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition">
                         <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Connect Wallet
                     </button>
@@ -485,21 +489,24 @@
                 <p id="walletBalanceErrorTextPay" class="hidden mt-3 text-xs text-red-500 text-center"></p>
             </div>
 
-            <!-- NET & POL Assets Card -->
+            <!-- Token List: USDC, POL, NET (NET is not part of Total Balance) -->
             <div class="card rounded-2xl p-4 mb-4">
                 <div class="flex items-center justify-between py-2.5 border-b border-subtle">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-10 h-10 bg-surface rounded-full flex items-center justify-center flex-shrink-0">
-                            <img src="/assets/net-logo.png" alt="NET" class="w-6 h-6 rounded-full">
+                            <img src="/assets/usdc-logo.png" alt="USDC" class="w-6 h-6 rounded-full">
                         </div>
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-primary">NET</p>
-                            <p class="text-[11px] text-muted truncate">Netlink Ecosystem Token</p>
+                            <p class="text-sm font-semibold text-primary">USDC</p>
+                            <p class="text-[11px] text-muted truncate">USD Coin (Polygon)</p>
                         </div>
                     </div>
-                    <p id="balanceNet" class="text-lg font-bold text-primary tracking-tight flex-shrink-0 pl-2">0.00</p>
+                    <div class="flex flex-col items-end flex-shrink-0 pl-2">
+                        <p id="balanceUsdc" class="text-lg font-bold text-primary tracking-tight">0.00</p>
+                        <p id="balanceUsdcLocal" class="text-[11px] text-muted mt-0.5 hidden"></p>
+                    </div>
                 </div>
-                <div class="flex items-center justify-between py-2.5">
+                <div class="flex items-center justify-between py-2.5 border-b border-subtle">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-10 h-10 bg-surface rounded-full flex items-center justify-center flex-shrink-0">
                             <img src="/assets/polygon-logo.png" alt="POL" class="w-6 h-6 rounded-full">
@@ -513,6 +520,18 @@
                         <p id="balancePol" class="text-lg font-bold text-primary tracking-tight">0.00</p>
                         <p id="balancePolLocal" class="text-[11px] text-muted mt-0.5 hidden"></p>
                     </div>
+                </div>
+                <div class="flex items-center justify-between py-2.5">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 bg-surface rounded-full flex items-center justify-center flex-shrink-0">
+                            <img src="/assets/net-logo.png" alt="NET" class="w-6 h-6 rounded-full">
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-primary">NET</p>
+                            <p class="text-[11px] text-muted truncate">Netlink Ecosystem Token</p>
+                        </div>
+                    </div>
+                    <p id="balanceNet" class="text-lg font-bold text-primary tracking-tight flex-shrink-0 pl-2">0.00</p>
                 </div>
             </div>
 
@@ -806,6 +825,19 @@
                 </button>
                 <p id="createWalletOtpError" class="text-xs text-red-500 mt-2 hidden"></p>
             </div>
+        </div>
+    </div>
+
+    <!-- NET Info Modal (why NET is excluded from Total Balance) -->
+    <div id="netInfoModal" class="modal-overlay" onclick="if(event.target===this) closeNetInfoModal()">
+        <div class="modal-box text-center">
+            <button class="modal-close" onclick="closeNetInfoModal()" aria-label="Close">&times;</button>
+            <i data-lucide="info" class="w-8 h-8 text-blue-500 mx-auto mb-3"></i>
+            <h3 class="font-semibold text-primary text-lg mb-2">Why is NET excluded?</h3>
+            <p class="text-sm text-secondary mb-5 text-left">
+                NET is not yet listed on any CEX or DEX, so it has no reliable market price. To keep your total accurate, NET is not included in Total Balance.
+            </p>
+            <button onclick="closeNetInfoModal()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Got it</button>
         </div>
     </div>
 
@@ -1124,13 +1156,6 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        function formatNetId(rawId) {
-            if (!rawId) return 'ID: —';
-            const digits = rawId.replace(/^NET/i, '');
-            if (digits.length !== 10) return 'ID: ' + rawId;
-            return 'ID: NET-' + digits.slice(0, 5) + '-' + digits.slice(5);
-        }
-
         async function loadUserProfile() {
             const { data, error } = await supabaseClient
                 .from('profiles').select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, business_verified_at, identity_verified_at').eq('id', currentUser.id).single();
@@ -1139,8 +1164,6 @@
                 console.error('Failed to load profile:', error);
                 return;
             }
-
-            document.getElementById('cardIdDisplay').textContent = formatNetId(data.net_id);
 
             currentWalletAddress = data.wallet_address || '';
             window.currentWalletAddress = currentWalletAddress;
@@ -1296,7 +1319,7 @@
                 formatted = `${converted.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currentLocalCurrency}`;
             }
 
-            el.textContent = `≈ ${formatted}`;
+            setBalanceText(el.id, `≈ ${formatted}`);
             el.classList.remove('hidden');
         }
 
@@ -1326,7 +1349,7 @@
                 formatted = `${converted.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currentLocalCurrency}`;
             }
 
-            el.textContent = `≈ ${formatted}`;
+            setBalanceText(el.id, `≈ ${formatted}`);
             el.classList.remove('hidden');
         }
 
@@ -1335,8 +1358,111 @@
             if (window.currentBalances?.usdc !== undefined) {
                 updateLocalCurrencyDisplay(window.currentBalances.usdc);
                 updatePolLocalCurrencyDisplay(window.currentBalances.pol);
+                updateTotalBalanceDisplay();
             }
         });
+
+        // ---- Total Balance (USDC + POL, excludes NET) and hide balance ----
+        // NET is excluded because it has no market price yet (not listed on any CEX/DEX).
+        // var (not let) on purpose: balances can render before this line runs.
+        var BALANCE_HIDDEN_KEY = 'netlinkPayBalanceHidden';
+        var BALANCE_MASK = '••••';
+        var BALANCE_IDS = ['balanceTotal', 'balanceTotalLocal', 'balanceUsdc', 'balanceUsdcLocal', 'balancePol', 'balancePolLocal', 'balanceNet'];
+        var balanceHidden = false;
+        var totalRenderSeq = 0;
+        try { balanceHidden = localStorage.getItem(BALANCE_HIDDEN_KEY) === '1'; } catch (e) { /* storage blocked */ }
+
+        // Every balance text goes through here so the real value is kept
+        // in data-real and the screen can show a mask when balances are hidden.
+        function setBalanceText(id, text) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.dataset.real = text;
+            el.textContent = balanceHidden ? BALANCE_MASK : text;
+        }
+
+        function applyBalanceVisibility() {
+            BALANCE_IDS.forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.dataset.real === undefined) el.dataset.real = el.textContent;
+                el.textContent = balanceHidden ? BALANCE_MASK : el.dataset.real;
+            });
+            const btn = document.getElementById('balanceVisibilityBtn');
+            if (btn) {
+                btn.setAttribute('aria-label', balanceHidden ? 'Show balance' : 'Hide balance');
+                btn.innerHTML = `<i data-lucide="${balanceHidden ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        window.toggleBalanceVisibility = function () {
+            balanceHidden = !balanceHidden;
+            try { localStorage.setItem(BALANCE_HIDDEN_KEY, balanceHidden ? '1' : '0'); } catch (e) { /* storage blocked */ }
+            applyBalanceVisibility();
+        };
+
+        window.openNetInfoModal = function () {
+            document.getElementById('netInfoModal').classList.add('active');
+            if (window.lucide) lucide.createIcons();
+        };
+        window.closeNetInfoModal = function () {
+            document.getElementById('netInfoModal').classList.remove('active');
+        };
+
+        function formatLocalCurrency(converted) {
+            try {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currentLocalCurrency,
+                    maximumFractionDigits: converted >= 1000 ? 0 : 2,
+                }).format(converted);
+            } catch (err) {
+                return `${converted.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currentLocalCurrency}`;
+            }
+        }
+
+        async function updateTotalBalanceDisplay() {
+            const seq = ++totalRenderSeq;
+            const localEl = document.getElementById('balanceTotalLocal');
+            const b = window.currentBalances || {};
+            const usdc = parseFloat(b.usdc) || 0;
+            const pol = parseFloat(b.pol) || 0;
+
+            let polUsd = 0;
+            if (pol > 0) {
+                polUsd = await fetchPolPriceUsd();
+                if (seq !== totalRenderSeq) return;
+                if (!polUsd) {
+                    // No POL price: a partial total would be misleading, so show a placeholder.
+                    setBalanceText('balanceTotal', '$--');
+                    localEl.classList.add('hidden');
+                    return;
+                }
+            }
+
+            const totalUsd = usdc + pol * polUsd;
+            setBalanceText('balanceTotal', '$' + formatTokenAmount(totalUsd));
+
+            if (!currentLocalCurrency || currentLocalCurrency === 'USD') {
+                localEl.classList.add('hidden');
+                return;
+            }
+            const rate = await fetchFxRate(currentLocalCurrency);
+            if (seq !== totalRenderSeq) return;
+            if (!rate) { localEl.classList.add('hidden'); return; }
+            setBalanceText('balanceTotalLocal', `≈ ${formatLocalCurrency(totalUsd * rate)}`);
+            localEl.classList.remove('hidden');
+        }
+
+        function resetTotalBalanceDisplay() {
+            totalRenderSeq++;
+            setBalanceText('balanceTotal', '$0.00');
+            const localEl = document.getElementById('balanceTotalLocal');
+            if (localEl) localEl.classList.add('hidden');
+        }
+
+        applyBalanceVisibility();
 
         async function fetchWalletBalances(address) {
             const loadingBar = document.getElementById('walletBalanceLoadingBarPay');
@@ -1349,11 +1475,12 @@
                 const url = `/api/wallet?action=balance&address=${encodeURIComponent(address)}&_t=${Date.now()}`;
                 const data = await fetchWithRetry(url);
                 window.currentBalances = { net: data.net, usdc: data.usdc, pol: data.pol };
-                document.getElementById('balanceNet').textContent = formatTokenAmount(data.net);
-                document.getElementById('balanceUsdc').textContent = formatTokenAmount(data.usdc);
-                document.getElementById('balancePol').textContent = formatTokenAmount(data.pol);
+                setBalanceText('balanceNet', formatTokenAmount(data.net));
+                setBalanceText('balanceUsdc', formatTokenAmount(data.usdc));
+                setBalanceText('balancePol', formatTokenAmount(data.pol));
                 updateLocalCurrencyDisplay(data.usdc);
                 updatePolLocalCurrencyDisplay(data.pol);
+                updateTotalBalanceDisplay();
                 if (window.renderSwapTokens) window.renderSwapTokens();
                 loadingBar.classList.add('hidden');
                 errorText.classList.add('hidden');
@@ -1606,13 +1733,14 @@
                 window.currentWalletAddress = '';
                 window.currentBalances = { net: '0', usdc: '0', pol: '0' };
                 document.getElementById('walletAddressDisplay').textContent = 'Not connected';
-                document.getElementById('balanceNet').textContent = '0.00';
-                document.getElementById('balanceUsdc').textContent = '0.00';
-                document.getElementById('balancePol').textContent = '0.00';
+                setBalanceText('balanceNet', '0.00');
+                setBalanceText('balanceUsdc', '0.00');
+                setBalanceText('balancePol', '0.00');
                 const localEl = document.getElementById('balanceUsdcLocal');
                 if (localEl) localEl.classList.add('hidden');
                 const polLocalEl = document.getElementById('balancePolLocal');
                 if (polLocalEl) polLocalEl.classList.add('hidden');
+                resetTotalBalanceDisplay();
 
                 updateCardConnectState();
                 closeDisconnectWalletModal();
