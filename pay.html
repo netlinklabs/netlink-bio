@@ -337,6 +337,7 @@
 
         .bal-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; border-radius: 9999px; background: transparent; color: rgba(255,255,255,0.75); cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
         .bal-icon-btn:hover { background: rgba(255,255,255,0.15); }
+        .pay-card-logo { margin-top: -11px; margin-bottom: -14px; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 70; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: #ffffff; border-radius: 20px; padding: 24px; max-width: 380px; width: 100%; position: relative; }
@@ -415,19 +416,19 @@
 
     <main class="px-4 pt-4 pb-8 lg:px-8 max-w-md mx-auto">
         <!-- Total Balance Card (USDC + POL, excludes NET) -->
-        <div class="usdc-card p-6 lg:p-8 mb-4 text-white relative">
+        <div class="usdc-card p-5 lg:p-6 mb-4 text-white relative">
             <div class="relative z-10">
-                <div class="flex items-start justify-between mb-4">
+                <div class="flex items-start justify-between mb-2">
                     <div class="flex items-center gap-1">
                         <p class="text-white font-semibold text-lg">Total Balance</p>
                         <button id="balanceVisibilityBtn" type="button" onclick="toggleBalanceVisibility()" aria-label="Hide balance" class="bal-icon-btn">
                             <i data-lucide="eye" class="w-4 h-4"></i>
                         </button>
                     </div>
-                    <img id="usdcCardLogo" src="/assets/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-16 w-auto opacity-90">
+                    <img id="usdcCardLogo" src="/assets/netlinkpay-darkbg.png" alt="Netlink Pay" class="h-16 w-auto opacity-90 pay-card-logo">
                 </div>
-                <div class="mb-6">
-                    <p id="balanceTotal" class="text-4xl font-bold tracking-tight">$0.00</p>
+                <div class="mb-4">
+                    <p id="balanceTotal" class="text-4xl font-bold tracking-tight">$&thinsp;0.00</p>
                     <p id="balanceTotalLocal" class="text-white/80 text-base font-semibold mt-0.5 hidden"></p>
                 </div>
                 <div class="flex items-center justify-between">
@@ -1406,14 +1407,14 @@
                 if (seq !== totalRenderSeq) return;
                 if (!polUsd) {
                     // No POL price: a partial total would be misleading, so show a placeholder.
-                    setBalanceText('balanceTotal', '$--');
+                    setBalanceText('balanceTotal', '$\u2009--');
                     localEl.classList.add('hidden');
                     return;
                 }
             }
 
             const totalUsd = usdc + pol * polUsd;
-            setBalanceText('balanceTotal', '$' + formatTokenAmount(totalUsd));
+            setBalanceText('balanceTotal', '$\u2009' + formatTokenAmount(totalUsd));
 
             if (!currentLocalCurrency || currentLocalCurrency === 'USD') {
                 localEl.classList.add('hidden');
@@ -1428,7 +1429,7 @@
 
         function resetTotalBalanceDisplay() {
             totalRenderSeq++;
-            setBalanceText('balanceTotal', '$0.00');
+            setBalanceText('balanceTotal', '$\u20090.00');
             const localEl = document.getElementById('balanceTotalLocal');
             if (localEl) localEl.classList.add('hidden');
         }
