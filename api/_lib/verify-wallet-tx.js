@@ -45,7 +45,11 @@ export async function sb(key, path, options = {}) {
     },
   });
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
-  return res.status === 204 ? null : res.json();
+  // 204, or a 2xx with an empty body (for example a POST upsert with Prefer: return=minimal
+  // answers 201 and no body), means there is nothing to parse.
+  if (res.status === 204) return null;
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 // Returns { [hash]: { receipt } | { error } }
