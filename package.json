@@ -3,6 +3,7 @@
     "@vercel/functions": "^3.9.9",
     "@vercel/og": "^0.6.3",
     "nodemailer": "^10.0.12",
+    "pdf-lib": "^1.17.1",
     "sharp": "^0.35.5",
     "web-bot-auth": "0.2.0"
   },
