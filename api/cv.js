@@ -100,6 +100,76 @@ async function supabaseGet(path) {
   return res.json();
 }
 
+// ---- Certificates + project links ----
+// Certificate PDFs live in the PRIVATE bucket `cv-certificates` (Silver and up).
+// File paths are never put in the HTML. The "View Certificate" button points at
+// /cv/<username>?cert=<index>, and this function streams the PDF itself after
+// checking the tier, so Basic profiles never expose a file even if one exists
+// (for example after a downgrade).
+const CERT_BUCKET = 'cv-certificates';
+const CERT_TIERS = ['silver', 'gold', 'platinum'];
+const CERT_MAX_BYTES = 2 * 1024 * 1024;
+
+// Legacy certifications are plain strings, new ones are { name, file_path }.
+// `i` is the position in the stored array, so the ?cert=<i> link stays valid.
+function normalizeCertifications(list) {
+  return (Array.isArray(list) ? list : []).map((c, i) => (
+    typeof c === 'string'
+      ? { i, name: c.trim(), filePath: '' }
+      : { i, name: String(c?.name || '').trim(), filePath: String(c?.file_path || '') }
+  )).filter((c) => c.name);
+}
+
+function isSafeCertPath(profileId, path) {
+  return typeof path === 'string'
+    && path.startsWith(`${profileId}/`)
+    && /^[0-9a-f-]{36}\/[A-Za-z0-9._-]+\.pdf$/i.test(path)
+    && !path.includes('..');
+}
+
+// Featured Project links: https only. Anything else is dropped, not rendered.
+function safeHttpsUrl(value) {
+  const s = String(value || '').trim();
+  if (!/^https:\/\/\S+$/i.test(s) || s.length > 500) return '';
+  try { return new URL(s).href; } catch { return ''; }
+}
+
+async function serveCertificate(req, res, profile) {
+  const idx = Number.parseInt(String(req.query.cert), 10);
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const cert = normalizeCertifications(profile.cv_data?.certifications).find((c) => c.i === idx);
+  const allowed = CERT_TIERS.includes(profile.tier || 'basic')
+    && cert && cert.filePath && isSafeCertPath(profile.id, cert.filePath) && serviceKey;
+  if (!allowed) {
+    res.status(404).setHeader('Cache-Control', 'no-store').send('Certificate not found');
+    return;
+  }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/${CERT_BUCKET}/${cert.filePath}`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+    });
+    if (!r.ok) {
+      res.status(404).setHeader('Cache-Control', 'no-store').send('Certificate not found');
+      return;
+    }
+    const buf = Buffer.from(await r.arrayBuffer());
+    // The bucket limits size and mime type, but re-check the real bytes before serving.
+    if (buf.length > CERT_MAX_BYTES + 1024 || buf.subarray(0, 5).toString('latin1') !== '%PDF-') {
+      res.status(404).setHeader('Cache-Control', 'no-store').send('Certificate not found');
+      return;
+    }
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="certificate.pdf"');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Robots-Tag', 'noindex');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.status(200).send(buf);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Something went wrong loading this certificate.');
+  }
+}
+
 async function handler(req, res) {
   const username = (req.query.username || '').toLowerCase().trim();
   if (!username) { res.status(400).send('Missing username'); return; }
@@ -122,6 +192,12 @@ async function handler(req, res) {
     return;
   }
 
+  // /cv/<username>?cert=<index> returns the certificate PDF (popup viewer / new tab).
+  if (req.query.cert !== undefined) {
+    await serveCertificate(req, res, profile);
+    return;
+  }
+
   const cv = profile.cv_data || {};
   const displayName = profile.display_name || profile.username;
   const title = cv.title || '';
@@ -136,7 +212,8 @@ async function handler(req, res) {
   const languages = Array.isArray(cv.languages) ? cv.languages : [];
   const experience = Array.isArray(cv.experience) ? cv.experience : [];
   const projects = Array.isArray(cv.projects) ? cv.projects : [];
-  const certifications = Array.isArray(cv.certifications) ? cv.certifications : [];
+  const certifications = normalizeCertifications(cv.certifications);
+  const canViewCertFiles = CERT_TIERS.includes(profile.tier || 'basic');
   const avatar = profile.avatar_url || '';
   const pageUrl = `https://netlink.bio/cv/${profile.username}`;
   const bioUrl = `https://netlink.bio/${profile.username}`;
@@ -232,18 +309,38 @@ async function handler(req, res) {
     : '';
 
   const projectsHtml = projects.length
-    ? `<div class="cv-section"><h2 class="section-title">Featured Projects</h2><div class="project-grid">${projects.map((p) => `
+    ? `<div class="cv-section"><h2 class="section-title">Featured Projects</h2><div class="project-grid">${projects.map((p) => {
+        const projectUrl = safeHttpsUrl(p.url);
+        return `
         <div class="project-card">
-          <h4>${escapeHtml(p.name)}</h4>
+          <h4>${projectUrl ? `<a class="project-link" href="${escapeHtml(projectUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(p.name)} <span aria-hidden="true">&#8599;</span></a>` : escapeHtml(p.name)}</h4>
           ${p.description ? `<p>${escapeHtml(p.description)}</p>` : ''}
           ${(p.tags && p.tags.length) ? `<div class="project-tags">${p.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+        </div>`;
+      }).join('')}</div></div>`
+    : '';
+
+  // "View Certificate" only exists for Silver and up, and only for rows with a file.
+  const hasViewableCert = canViewCertFiles && certifications.some((c) => isSafeCertPath(profile.id, c.filePath));
+  const certificationsHtml = certifications.length
+    ? `<div class="cv-section"><h2 class="section-title">Certifications</h2><div class="cert-list">${certifications.map((c) => `
+        <div class="cert-item">
+          <div class="cert-title">${iconCheck()}<span>${escapeHtml(c.name)}</span></div>
+          ${(canViewCertFiles && isSafeCertPath(profile.id, c.filePath)) ? `<button type="button" class="cert-view-btn" data-cert-index="${c.i}" data-title="${escapeHtml(c.name)}" onclick="openCertificate(this)">View Certificate</button>` : ''}
         </div>`).join('')}</div></div>`
     : '';
 
-  const certificationsHtml = certifications.length
-    ? `<div class="cv-section"><h2 class="section-title">Certifications</h2><div class="cert-list">${certifications.map((c) => `
-        <div class="cert-item">${iconCheck()}<span>${escapeHtml(c)}</span></div>`).join('')}</div></div>`
-    : '';
+  const certModalHtml = hasViewableCert ? `
+    <div id="certModal" class="cert-modal-overlay" onclick="if(event.target===this) closeCertificate()">
+      <div class="cert-modal-box" role="dialog" aria-modal="true" aria-labelledby="certModalTitle">
+        <div class="cert-modal-bar">
+          <span id="certModalTitle" class="cert-modal-title"></span>
+          <a id="certModalOpen" class="cert-modal-open" href="#" target="_blank" rel="noopener">Open in new tab</a>
+          <button type="button" class="cert-modal-close" onclick="closeCertificate()" aria-label="Close">&times;</button>
+        </div>
+        <iframe id="certFrame" class="cert-modal-frame" title="Certificate" src="about:blank"></iframe>
+      </div>
+    </div>` : '';
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -340,9 +437,25 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .project-card p { font-size:0.8rem; color:var(--text-medium); margin-bottom:0.75rem; line-height:1.5; }
 .project-tags { display:flex; gap:0.5rem; flex-wrap:wrap; }
 .project-tags span { font-size:0.75rem; color:var(--primary); background:rgba(26,54,93,0.08); padding:0.25rem 0.5rem; border-radius:4px; font-weight:500; }
-.cert-list { display:flex; flex-direction:column; gap:0.75rem; }
-.cert-item { display:flex; align-items:center; gap:0.625rem; font-size:0.875rem; color:var(--text-medium); }
-.cert-item svg { flex-shrink:0; }
+.project-link { color:inherit; text-decoration:none; }
+.project-link:hover { color:var(--primary); text-decoration:underline; }
+.cert-list { display:flex; flex-direction:column; }
+.cert-item { display:flex; flex-direction:column; align-items:flex-start; gap:0.5rem; padding:0.75rem 0; border-top:1px solid var(--border); font-size:0.875rem; color:var(--text-medium); }
+.cert-item:first-child { border-top:none; padding-top:0; }
+.cert-item:last-child { padding-bottom:0; }
+.cert-title { display:flex; align-items:flex-start; gap:0.625rem; }
+.cert-title svg { flex-shrink:0; margin-top:2px; }
+.cert-view-btn { margin-left:calc(16px + 0.625rem); font-family:inherit; font-size:0.75rem; font-weight:600; color:var(--primary); background:rgba(26,54,93,0.08); border:none; border-radius:6px; padding:0.4rem 0.8rem; cursor:pointer; }
+.cert-view-btn:hover { background:rgba(26,54,93,0.14); }
+.cert-modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:110; align-items:center; justify-content:center; padding:1rem; }
+.cert-modal-overlay.active { display:flex; }
+.cert-modal-box { display:flex; flex-direction:column; width:100%; max-width:900px; height:88vh; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow-lg); }
+.cert-modal-bar { display:flex; align-items:center; gap:0.75rem; padding:0.625rem 1rem; border-bottom:1px solid var(--border); }
+.cert-modal-title { flex:1; min-width:0; font-size:0.875rem; font-weight:600; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cert-modal-open { font-size:0.75rem; font-weight:600; color:var(--primary); text-decoration:none; white-space:nowrap; }
+.cert-modal-open:hover { text-decoration:underline; }
+.cert-modal-close { width:30px; height:30px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:18px; line-height:1; cursor:pointer; flex-shrink:0; }
+.cert-modal-frame { flex:1; width:100%; border:0; background:#f8fafc; }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
 .legal-footer { margin-top:8px; text-align:center; }
@@ -366,6 +479,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   .legal-footer { display:none !important; }
   .cv-toolbar { display:none !important; }
   .cv-corner-logo { display:none !important; }
+  .cert-view-btn, .cert-modal-overlay { display:none !important; }
 }
 </style>
 </head>
@@ -400,6 +514,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   ${showWatermark(profile) ? `<div class="footer-link"><a href="/">Netlink | Build Your Page Free</a></div>` : ''}
   <div class="legal-footer"><a href="/privacy-policy" target="_blank" rel="noopener">Privacy</a><span>&middot;</span><a href="mailto:contact@netlink.bio" target="_blank" rel="noopener">Report</a></div>
   ${badgeModalsHtml(profile)}
+  ${certModalHtml}
   <script>
     function shareCv(event) {
       const shareData = { title: ${JSON.stringify(displayName + ' | CV')}, url: ${JSON.stringify(pageUrl)} };
@@ -425,6 +540,25 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
     function closeBadgeModal(idx) {
       document.getElementById('badgeModal' + idx).classList.remove('active');
     }
+
+    // Certificate popup. Browsers without a built-in PDF viewer (most phones)
+    // open the file in a new tab instead of a blank frame.
+    const CERT_BASE = ${JSON.stringify(`/cv/${profile.username}`)};
+    function openCertificate(btn) {
+      const url = CERT_BASE + '?cert=' + encodeURIComponent(btn.dataset.certIndex);
+      if (!navigator.pdfViewerEnabled) { window.open(url, '_blank', 'noopener'); return; }
+      document.getElementById('certModalTitle').textContent = btn.dataset.title || 'Certificate';
+      document.getElementById('certModalOpen').href = url;
+      document.getElementById('certFrame').src = url;
+      document.getElementById('certModal').classList.add('active');
+    }
+    function closeCertificate() {
+      const modal = document.getElementById('certModal');
+      if (!modal) return;
+      modal.classList.remove('active');
+      document.getElementById('certFrame').src = 'about:blank';
+    }
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCertificate(); });
   </script>
 </body>
 </html>`;
