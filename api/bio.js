@@ -6,7 +6,7 @@
 // and structured data, not an empty shell.
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
-import { escapeHtml, notFoundPage, jsonForScript } from './_lib/html.js';
+import { escapeHtml, notFoundPage, jsonForScript, safeHttpUrl } from './_lib/html.js';
 import { isDemoProfile } from './_lib/demo-profiles.js';
 import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
@@ -115,6 +115,8 @@ function iconHtml(iconKey) {
   const emojiOnly = { globe: '🌐', mail: '✉️', link: '🔗' };
   if (emojiOnly[iconKey]) return `<span class="emoji-icon">${emojiOnly[iconKey]}</span>`;
   // All other icon keys map directly to a Lucide icon name (lucide-static SVGs via jsDelivr)
+  // The key goes straight into the image URL, so only plain icon names are allowed.
+  if (!/^[a-z0-9-]{1,40}$/.test(String(iconKey || ''))) return `<span class="emoji-icon">🔗</span>`;
   return `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${iconKey}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg lucide-svg" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji-icon',textContent:'🔗'}))">`;
 }
 
@@ -333,7 +335,7 @@ async function handler(req, res) {
     if (!vidId) {
       // Not a recognizable YouTube link: show as a regular link card.
       return `
-      <a href="${escapeHtml(v.url)}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(null)">
+      <a href="${escapeHtml(safeHttpUrl(v.url) || '#')}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(null)">
         <span class="link-icon ${iconShape}">${iconHtml('youtube')}</span>
         <span class="link-text"><span class="link-title">${escapeHtml(vidTitle)}</span></span>
       </a>`;
@@ -357,7 +359,7 @@ async function handler(req, res) {
 
   // ---- Links list ----
   const linksHtml = links.map((l) => `
-      <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(${JSON.stringify(l.id)})">
+      <a href="${escapeHtml(safeHttpUrl(l.url) || '#')}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(${JSON.stringify(l.id)})">
         <span class="link-icon ${iconShape}">${iconHtml(l.icon)}</span>
         <span class="link-text">
           <span class="link-title">${escapeHtml(l.title)}</span>

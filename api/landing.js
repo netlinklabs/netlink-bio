@@ -11,7 +11,7 @@
 // is included only to attribute the view_landing analytics event
 // server-side -- it must never be rendered into the HTML/JSON-LD output.
 
-import { escapeHtml, notFoundPage, jsonForScript } from './_lib/html.js';
+import { escapeHtml, notFoundPage, jsonForScript, safeHttpUrl, safeCssColor } from './_lib/html.js';
 import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { sitemapHandler } from './_lib/sitemap.js';
@@ -278,7 +278,7 @@ async function handler(req, res) {
   const headline = c.headline || businessName;
   const subtitle = c.subtitle || '';
   const desc = c.desc || '';
-  const primary = c.primary || '#5D4037';
+  const primary = safeCssColor(c.primary, '#5D4037');
   const currency = c.currentCurrency || 'IDR';
   const modules = c.modules || {};
   const titles = BUSINESS_TITLES[c.businessType] || DEFAULT_TITLES;
@@ -410,7 +410,7 @@ ${modules.location !== false ? `<button class="btn-secondary" onclick="document.
   if (modules.location !== false && (c.addressLine || c.addressCity)) {
     const mapQuery = [c.addressLine, c.addressCity].filter(Boolean).join(', ') || 'Indonesia';
     const mapEmbedSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
-    const mapsLink = c.mapLink || 'https://maps.google.com/';
+    const mapsLink = safeHttpUrl(c.mapLink) || 'https://maps.google.com/';
     locationHtml = `
 <section id="locationModule" class="location-section">
 <div class="section-inner">
