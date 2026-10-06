@@ -4,6 +4,7 @@
 // immediately, plus JSON-LD (schema.org/Person with resume-specific fields
 // like jobTitle, alumniOf, worksFor, knowsAbout) for machine-readability.
 
+import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
 import { escapeHtml, notFoundPage, jsonForScript } from './_lib/html.js';
 import { isDemoProfile } from './_lib/demo-profiles.js';
@@ -134,6 +135,40 @@ function safeHttpsUrl(value) {
   try { return new URL(s).href; } catch { return ''; }
 }
 
+// Stamps every page with a light diagonal watermark that ties the copy to this
+// CV page and the day it was shown. It does not stop a determined forger, but a
+// copied file visibly says where it came from, and the stamp is in the file
+// itself, so it also shows up in downloads and screenshots.
+const CERT_MAX_PAGES = 30;
+async function stampCertificate(buf, username) {
+  const doc = await PDFDocument.load(buf, { ignoreEncryption: true, updateMetadata: false });
+  const pages = doc.getPages();
+  if (pages.length === 0 || pages.length > CERT_MAX_PAGES) throw new Error('page count');
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const label = `netlink.bio/cv/${username} | shown ${new Date().toISOString().slice(0, 10)} | unverified copy`;
+  const size = 11;
+  const textWidth = font.widthOfTextAtSize(label, size);
+  const stepX = textWidth + 70;
+  const stepY = 96;
+  const cos = Math.cos(Math.PI / 6);
+  const sin = Math.sin(Math.PI / 6);
+  for (const page of pages) {
+    const { width, height } = page.getSize();
+    const reach = Math.hypot(width, height);
+    let row = 0;
+    for (let y = -reach; y <= reach; y += stepY, row++) {
+      for (let x = -reach + (row % 2 ? stepX / 2 : 0); x <= reach; x += stepX) {
+        const px = x * cos - y * sin;
+        const py = x * sin + y * cos;
+        // Only draw tiles that touch the page (keeps the file small).
+        if (px < -textWidth || px > width || py < -textWidth || py > height) continue;
+        page.drawText(label, { x: px, y: py, size, font, color: rgb(0.45, 0.45, 0.5), opacity: 0.2, rotate: degrees(30) });
+      }
+    }
+  }
+  return Buffer.from(await doc.save());
+}
+
 async function serveCertificate(req, res, profile) {
   const idx = Number.parseInt(String(req.query.cert), 10);
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -158,12 +193,21 @@ async function serveCertificate(req, res, profile) {
       res.status(404).setHeader('Cache-Control', 'no-store').send('Certificate not found');
       return;
     }
+    let out;
+    try {
+      out = await stampCertificate(buf, profile.username);
+    } catch (stampErr) {
+      // Never serve the unstamped original: a file we cannot stamp is not shown.
+      console.error('certificate stamp failed', stampErr?.message);
+      res.status(422).setHeader('Cache-Control', 'no-store').send('This certificate file could not be displayed.');
+      return;
+    }
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'inline; filename="certificate.pdf"');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Robots-Tag', 'noindex');
     res.setHeader('Cache-Control', 'private, no-store');
-    res.status(200).send(buf);
+    res.status(200).send(out);
   } catch (err) {
     console.error(err);
     res.status(500).send('Something went wrong loading this certificate.');
@@ -342,6 +386,7 @@ async function handler(req, res) {
         </div>
         <iframe id="certFrame" class="cert-modal-frame" title="Certificate" src="about:blank"></iframe>
         <div id="certPages" class="cert-modal-pages" style="display:none"></div>
+        <p class="cert-modal-note">Unverified document, uploaded by the profile owner. Not checked by Netlink.</p>
       </div>
     </div>` : '';
 
@@ -461,6 +506,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-modal-frame { flex:1; width:100%; border:0; background:#f8fafc; }
 .cert-modal-pages { flex:1; overflow:auto; background:#e2e8f0; padding:0.75rem; -webkit-overflow-scrolling:touch; }
 .cert-modal-pages canvas { display:block; width:100%; height:auto; margin:0 auto 0.75rem; background:#fff; box-shadow:0 1px 4px rgba(15,23,42,0.18); }
+.cert-modal-note { padding:0.4rem 1rem; border-top:1px solid var(--border); background:#fff; font-size:0.7rem; line-height:1.3; color:var(--text-light); text-align:center; }
 .cert-modal-msg { padding:2rem 1rem; text-align:center; font-size:0.85rem; color:var(--text-medium); }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
