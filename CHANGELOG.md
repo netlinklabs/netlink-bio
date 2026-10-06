@@ -8,6 +8,11 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Added
+- **Admin Overview: "Bio page 404s" section with a Load button.** Shows the 404 log from `bio_not_found_daily` on demand (Today, 7D or 30D): total 404s, different names, share of bot probes, a per day chart and the top 30 names. A name that does not match the username rule (`[a-z0-9_]{3,20}`) is labelled "Probe", the rest "Valid format".
+  - `api/_lib/admin.js`: new action `admin-404-log` (roles: `super_admin`, `finance`, same as `admin-usage`). Read only, aggregates in code, max 4000 rows. No new serverless function (`api/` stays at 12).
+  - `admin.html`: new section under "Usage and limits" (`notFoundShell`, `loadNotFound`). Loads only when the button is pressed, not with the Overview. Kept out of the printed report.
+
+### Added
 - **Bio page 404 log, to tell bots from mistyped links.** Every time `api/bio.js` answers 404 (username does not exist) it now records the username in a new table, counted per day. No new serverless function (the `api/` folder stays at 12).
   - `supabase/migrations/20261006_bio_not_found_log.sql`: table `bio_not_found_daily (day, username, count)` and function `bump_bio_not_found(p_username)`. RLS on, no policies, only `service_role` can read, write or execute. Max 300 distinct usernames per day (extras are counted as `(other)`), rows older than 30 days are removed automatically. Migration is NOT applied yet.
   - `api/_lib/stats.js`: new `logBioNotFound(username)`, fire and forget through `waitUntil`, never throws.

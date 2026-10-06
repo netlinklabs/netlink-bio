@@ -41,6 +41,7 @@ const ACTION_ROLES = {
   'admin-me': null, // any signed-in user; returns an empty role list for non-admins
   'admin-overview': FINANCE_ROLES,
   'admin-usage': FINANCE_ROLES,
+  'admin-404-log': FINANCE_ROLES,
   'admin-orders': READ_ROLES,
   'admin-order': READ_ROLES,
   'admin-payments': FINANCE_ROLES,
@@ -221,6 +222,54 @@ export async function handleAdmin(action, req, res, user, ctx) {
   // the printable report. Each source fails on its own (null), so one problem hides one tile only.
   if (action === 'admin-usage') {
     return res.status(200).json(await usageSummary());
+  }
+
+  // ---------------------------------------------------------- admin-404-log
+  // Bio page 404s per username (public.bio_not_found_daily, written by api/bio.js). Read on demand
+  // from the Overview tab. Aggregated here because PostgREST cannot group. "probe" = the name does
+  // not match the username rule ([a-z0-9_]{3,20}), which is what bots scanning random paths look like.
+  if (action === 'admin-404-log') {
+    const days = [1, 7, 30].includes(Number(req.query.days)) ? Number(req.query.days) : 7;
+    const since = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+    const rows = [];
+    for (let page = 0; page < 4; page++) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/bio_not_found_daily?select=day,username,count&day=gte.${since}&order=day.asc,username.asc&limit=1000&offset=${page * 1000}`, {
+        headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+      });
+      if (!r.ok) {
+        console.error('admin-404-log read failed', r.status, await r.text().catch(() => ''));
+        return res.status(500).json({ error: 'Could not load the 404 log' });
+      }
+      const part = await r.json();
+      rows.push(...part);
+      if (part.length < 1000) break;
+    }
+    const isProbe = (name) => !/^[a-z0-9_]{3,20}$/.test(name);
+    const byName = new Map();
+    const byDay = new Map();
+    let total = 0;
+    let probeTotal = 0;
+    for (const row of rows) {
+      const n = Number(row.count) || 0;
+      total += n;
+      byDay.set(row.day, (byDay.get(row.day) || 0) + n);
+      const cur = byName.get(row.username) || { username: row.username, count: 0, days: 0, probe: isProbe(row.username) };
+      cur.count += n;
+      cur.days += 1;
+      byName.set(row.username, cur);
+      if (cur.probe) probeTotal += n;
+    }
+    const top = [...byName.values()].sort((a, b) => b.count - a.count).slice(0, 30);
+    return res.status(200).json({
+      days,
+      since,
+      total,
+      distinct: byName.size,
+      probe_total: probeTotal,
+      per_day: [...byDay.entries()].map(([day, count]) => ({ day, count })),
+      top,
+      truncated: rows.length >= 4000,
+    });
   }
 
   // ---------------------------------------------------------- admin-orders
