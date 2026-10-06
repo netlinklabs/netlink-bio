@@ -50,6 +50,31 @@
         .modal.active { display: flex; }
         /* Certificate upload: plain CSS on purpose, so this feature needs no Tailwind rebuild. */
         #certFileInput::file-selector-button { margin-right: 0.75rem; padding: 0.5rem 0.75rem; border: 0; border-radius: 0.5rem; background: rgba(59,130,246,0.1); color: #3b82f6; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+        .cert-label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.375rem; }
+        .cert-field { margin-bottom: 1rem; }
+        .cert-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 0.5rem; font-size: 0.875rem; background: #fff; color: #0f172a; }
+        html.dark .cert-input { background: #0f172a; color: #f8fafc; border-color: rgba(255,255,255,0.12); }
+        .cert-warning, .cert-lock { display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 1rem; padding: 0.625rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; line-height: 1.4; }
+        .cert-warning { background: #fef3c7; color: #92400e; }
+        .cert-warning svg, .cert-lock svg { flex-shrink: 0; margin-top: 1px; }
+        html.dark .cert-warning { background: rgba(245,158,11,0.15); color: #fcd34d; }
+        .cert-lock { flex-direction: column; background: rgba(59,130,246,0.08); color: inherit; }
+        .cert-lock-head { display: flex; gap: 0.5rem; align-items: flex-start; }
+        .cert-lock button { align-self: flex-start; padding: 0.375rem 0.75rem; border-radius: 0.5rem; background: #3b82f6; color: #fff; font-size: 0.75rem; font-weight: 500; }
+        .cert-progress-track { height: 8px; border-radius: 999px; overflow: hidden; background: rgba(148,163,184,0.3); }
+        .cert-attached { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+        .cert-attached span { flex: 1; min-width: 0; }
+        .cert-actions { display: flex; gap: 0.5rem; margin-top: 1.25rem; }
+        .cert-actions button { flex: 1; padding: 0.625rem 0; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; transition: opacity 0.2s; }
+        .cert-btn-cancel { border: 1px solid rgba(148,163,184,0.4); color: inherit; }
+        .cert-btn-save { background: #3b82f6; color: #fff; }
+        .cert-btn-save:hover { background: #2563eb; }
+        .cert-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cert-row { display: flex; align-items: center; gap: 0.5rem; }
+        .cert-row-main { flex: 1; min-width: 0; }
+        .cert-row-title { font-size: 0.875rem; overflow-wrap: anywhere; }
+        .cert-row-file { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.125rem; font-size: 0.75rem; }
+        .cert-row-edit { font-size: 0.75rem; color: #3b82f6; padding: 0.25rem; }
         .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
@@ -462,7 +487,7 @@
                             <span class="text-sm font-semibold text-primary">Certifications</span>
                             <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvCertificationsBodyChevron"></i>
                         </button>
-                        <button type="button" onclick="addCvItem('certifications')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                        <button type="button" onclick="openCertModal(-1)" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
                     </div>
                     <div id="cvCertificationsBody" class="accordion-body">
                         <div id="cvCertificationsList" class="space-y-3"></div>
@@ -614,18 +639,47 @@
         </div>
     </div>
 
-    <!-- Certificate upload modal -- opened from the Browse button on a Certifications row. -->
-    <div id="certUploadModal" class="modal">
-        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
+    <!-- Certificate modal -- opened by Add (new) or Edit (existing) in the Certifications section.
+         Basic plan: title only, the file area shows an upgrade note instead. -->
+    <div id="certModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-semibold text-primary">Attach Certificate</h3>
-                <button type="button" onclick="closeCertUploadModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <h3 id="certModalHeading" class="text-lg font-semibold text-primary">Add Certificate</h3>
+                <button type="button" onclick="closeCertModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <p id="certUploadTitle" class="text-sm font-medium text-primary mb-1" style="overflow-wrap:anywhere"></p>
-            <p class="text-xs text-muted mb-4">PDF only, max 2 MB.</p>
-            <input id="certFileInput" type="file" accept="application/pdf,.pdf" onchange="onCertFileChosen(this)" class="block w-full text-sm text-secondary">
-            <p id="certUploadError" class="text-xs text-red-500 mt-2 hidden"></p>
-            <button id="certUploadBtn" type="button" onclick="uploadCertFile()" disabled class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium rounded-xl transition text-sm">Upload</button>
+            <div class="cert-warning" role="note">
+                <i data-lucide="triangle-alert" class="w-4 h-4"></i>
+                <span>Do not upload sensitive data such as your ID number, home address, or bank account number.</span>
+            </div>
+            <div class="cert-field">
+                <label for="certTitleInput" class="cert-label text-primary">Certificate title</label>
+                <input id="certTitleInput" type="text" class="cert-input" placeholder="Certificate title" autocomplete="off">
+            </div>
+            <div id="certFileBox" class="cert-field">
+                <span class="cert-label text-primary">Certificate file (PDF only, max 2 MB)</span>
+                <input id="certFileInput" type="file" accept="application/pdf,.pdf" onchange="onCertFileChosen(this)" class="block w-full text-sm text-secondary">
+                <div id="certAttached" class="cert-attached hidden">
+                    <i data-lucide="file-text" class="w-4 h-4 text-secondary"></i>
+                    <span class="text-secondary">PDF attached</span>
+                    <button type="button" onclick="removeCertModalFile()" class="text-xs text-red-500 hover:text-red-600">Remove</button>
+                </div>
+                <div id="certProgress" class="hidden" style="margin-top:0.5rem">
+                    <div class="cert-progress-track"><div id="certProgressFill" class="progress-fill" style="width:0%"></div></div>
+                    <p id="certProgressText" class="text-xs text-muted" style="margin-top:0.25rem">Uploading 0%</p>
+                </div>
+            </div>
+            <div id="certLockBox" class="cert-lock hidden">
+                <div class="cert-lock-head">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                    <span class="text-secondary">Certificate files are available from the Silver plan and up. You can still save the title.</span>
+                </div>
+                <button type="button" onclick="showToast('Contact us to upgrade your plan')">Upgrade Plan</button>
+            </div>
+            <p id="certUploadError" class="text-xs text-red-500 hidden"></p>
+            <div class="cert-actions">
+                <button type="button" class="cert-btn-cancel" onclick="closeCertModal()">Cancel</button>
+                <button id="certSaveBtn" type="button" class="cert-btn-save" onclick="saveCertModal()">Save</button>
+            </div>
         </div>
     </div>
 
@@ -1446,7 +1500,6 @@ window.openNetlinkPay = openNetlinkPay;
         const CERT_MAX_BYTES = 2 * 1024 * 1024;
         let savedCertPaths = [];            // file paths stored in the last saved cv_data
         const pendingCertUploads = new Set(); // uploaded this session, not saved yet
-        let certUploadIdx = null;
 
         function certFileLimit() {
             return CERT_LIMITS[currentProfile?.tier || 'basic'] || 0;
@@ -1662,26 +1715,19 @@ window.openNetlinkPay = openNetlinkPay;
                     <input class="cv-proj-tags w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Tags, comma separated" value="${escapeHtml((item.tags || []).join(', '))}">
                 </div>
             `);
-            renderCvSection('certifications', 'cvCertificationsList', (item, idx, total) => {
-                const canUpload = certFileLimit() > 0;
-                const fileRow = item.file_path
-                    ? `<div class="flex items-center gap-2">
-                           <i data-lucide="file-text" class="w-3.5 h-3.5 text-secondary flex-shrink-0"></i>
-                           <span class="text-xs text-secondary flex-1">PDF attached</span>
-                           <button type="button" onclick="openCertUploadModal(${idx})" class="text-xs text-blue-500 hover:text-blue-600">Replace</button>
-                           <button type="button" onclick="removeCertFile(${idx})" class="text-xs text-red-500 hover:text-red-600">Remove</button>
-                       </div>`
-                    : `<button type="button" onclick="openCertUploadModal(${idx})" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="${canUpload ? 'file-text' : 'lock'}" class="w-3.5 h-3.5"></i> Browse file</button>`;
-                return `
-                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}" data-path="${escapeHtml(item.file_path)}">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-1">${cvReorderButtons('certifications', idx, total)}</div>
-                        <button type="button" onclick="removeCvItem('certifications', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            // Certificates are compact rows. Title and file are edited in the certificate modal.
+            renderCvSection('certifications', 'cvCertificationsList', (item, idx, total) => `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3" data-idx="${idx}">
+                    <div class="cert-row">
+                        <div class="flex items-center gap-1 flex-shrink-0">${cvReorderButtons('certifications', idx, total)}</div>
+                        <div class="cert-row-main">
+                            <div class="cert-row-title text-primary">${escapeHtml(item.name)}</div>
+                            ${item.file_path ? `<div class="cert-row-file text-secondary"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF attached</div>` : ''}
+                        </div>
+                        <button type="button" onclick="openCertModal(${idx})" class="cert-row-edit" aria-label="Edit certificate">Edit</button>
+                        <button type="button" onclick="removeCvItem('certifications', ${idx})" class="text-red-500 hover:text-red-600 p-1 flex-shrink-0" aria-label="Delete certificate"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                     </div>
-                    <input class="cv-cert-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Certificate title" value="${escapeHtml(item.name)}" oninput="onCertNameInput(this)">
-                    <div class="cv-cert-file ${item.name ? '' : 'hidden'}">${fileRow}</div>
-                </div>`;
-            });
+                </div>`);
             renderCvSection('languages', 'cvLanguagesList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
                     <div class="flex items-center gap-1 flex-shrink-0">${cvReorderButtons('languages', idx, total)}</div>
@@ -1790,24 +1836,23 @@ window.openNetlinkPay = openNetlinkPay;
                     name: row.querySelector('.cv-lang-name').value.trim(),
                     level: row.querySelector('.cv-lang-level').value.trim(),
                 }));
-            } else if (section === 'certifications') {
-                currentCvData.certifications = rows.map(row => ({
-                    name: row.querySelector('.cv-cert-name').value.trim(),
-                    file_path: row.dataset.path || '',
-                }));
             }
+            // certifications: no inputs in the rows (they are edited in the certificate modal),
+            // so currentCvData.certifications is always current and nothing is read from the DOM.
         }
 
         function syncAllCvSections() {
             ['experience', 'education', 'projects', 'languages', 'certifications'].forEach(syncCvSectionFromDom);
         }
 
-        // ---- Certificate PDF upload ----
-        // Show the Browse button only once the certificate has a title.
-        function onCertNameInput(input) {
-            const box = input.closest('.cv-item').querySelector('.cv-cert-file');
-            if (box) box.classList.toggle('hidden', !input.value.trim());
-        }
+        // ---- Certificate modal (Add / Edit) ----
+        // The modal edits a draft (title + file). Nothing reaches currentCvData until Save in the
+        // modal, and nothing reaches the database until Save CV. A file uploaded in the modal is
+        // tracked in pendingCertUploads, so Cancel (or removing it) deletes it again.
+        let certModalIdx = -1;        // -1 = adding a new certificate
+        let certModalPath = '';       // file attached in the modal
+        let certModalUploading = false;
+        let certXhr = null;
 
         function showCertUploadError(msg) {
             const el = document.getElementById('certUploadError');
@@ -1815,90 +1860,144 @@ window.openNetlinkPay = openNetlinkPay;
             el.classList.toggle('hidden', !msg);
         }
 
-        function openCertUploadModal(idx) {
-            const limit = certFileLimit();
-            if (!limit) { showToast('Certificate files are available from the Silver plan and up'); return; }
+        function setCertProgress(pct) {
+            const box = document.getElementById('certProgress');
+            box.classList.toggle('hidden', pct === null);
+            if (pct === null) return;
+            document.getElementById('certProgressFill').style.width = pct + '%';
+            document.getElementById('certProgressText').textContent = `Uploading ${pct}%`;
+        }
+
+        // Shows either the file picker or the "PDF attached" row.
+        function renderCertModalFile() {
+            const attached = !!certModalPath;
+            document.getElementById('certFileInput').classList.toggle('hidden', attached || certModalUploading);
+            document.getElementById('certAttached').classList.toggle('hidden', !attached);
+            document.getElementById('certSaveBtn').disabled = certModalUploading;
+        }
+
+        function openCertModal(idx) {
             syncAllCvSections();
-            const item = currentCvData.certifications[idx];
-            if (!item || !item.name) { showToast('Add a certificate title first'); return; }
-            certUploadIdx = idx;
-            document.getElementById('certUploadTitle').textContent = item.name;
+            const item = idx >= 0 ? currentCvData.certifications[idx] : null;
+            if (idx >= 0 && !item) return;
+            certModalIdx = idx;
+            certModalPath = item ? item.file_path : '';
+            certModalUploading = false;
+            document.getElementById('certModalHeading').textContent = item ? 'Edit Certificate' : 'Add Certificate';
+            document.getElementById('certTitleInput').value = item ? item.name : '';
             document.getElementById('certFileInput').value = '';
-            document.getElementById('certUploadBtn').disabled = true;
             showCertUploadError('');
-            document.getElementById('certUploadModal').classList.add('active');
+            setCertProgress(null);
+            const canUpload = certFileLimit() > 0;
+            document.getElementById('certFileBox').classList.toggle('hidden', !canUpload);
+            document.getElementById('certLockBox').classList.toggle('hidden', canUpload);
+            renderCertModalFile();
+            document.getElementById('certModal').classList.add('active');
+            lucide.createIcons();
         }
 
-        function closeCertUploadModal() {
-            document.getElementById('certUploadModal').classList.remove('active');
-            certUploadIdx = null;
+        async function closeCertModal() {
+            if (certXhr) { certXhr.abort(); certXhr = null; }
+            certModalUploading = false;
+            document.getElementById('certModal').classList.remove('active');
+            certModalIdx = -1;
+            certModalPath = '';
+            await pruneUnreferencedCertUploads(); // deletes a file uploaded in the modal but never saved
         }
 
-        // Checks type, size and the real PDF header (not just the file name).
+        // Checks type, size and the real PDF header (not just the file name), then uploads at once.
         async function onCertFileChosen(input) {
-            const btn = document.getElementById('certUploadBtn');
-            btn.disabled = true;
             showCertUploadError('');
             const file = input.files[0];
             if (!file) return;
-            if (file.size > CERT_MAX_BYTES) { showCertUploadError('This file is larger than 2 MB.'); return; }
+            if (file.size > CERT_MAX_BYTES) { showCertUploadError('This file is larger than 2 MB.'); input.value = ''; return; }
             if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) {
-                showCertUploadError('Only PDF files are allowed.'); return;
+                showCertUploadError('Only PDF files are allowed.'); input.value = ''; return;
             }
             try {
                 const head = await file.slice(0, 5).text();
-                if (head !== '%PDF-') { showCertUploadError('This file is not a valid PDF.'); return; }
+                if (head !== '%PDF-') { showCertUploadError('This file is not a valid PDF.'); input.value = ''; return; }
             } catch (e) {
-                showCertUploadError('Could not read this file.'); return;
+                showCertUploadError('Could not read this file.'); input.value = ''; return;
             }
-            btn.disabled = false;
+            await uploadCertModalFile(file);
         }
 
-        async function uploadCertFile() {
-            const input = document.getElementById('certFileInput');
-            const btn = document.getElementById('certUploadBtn');
-            const file = input.files[0];
+        // Uploads with XMLHttpRequest (not supabase-js) so the progress bar shows real progress.
+        // Same endpoint, same user token, so the storage policies apply exactly as before.
+        async function uploadCertModalFile(file) {
             const limit = certFileLimit();
-            if (!file || certUploadIdx === null) return;
             if (!limit) { showCertUploadError('Certificate files are available from the Silver plan and up.'); return; }
-
-            syncAllCvSections();
-            const list = currentCvData.certifications;
-            const item = list[certUploadIdx];
-            if (!item) return;
-            const otherFiles = list.filter((c, i) => i !== certUploadIdx && c.file_path).length;
+            const otherFiles = currentCvData.certifications.filter((c, i) => i !== certModalIdx && c.file_path).length;
             if (otherFiles >= limit) {
                 showCertUploadError(`Certificate file limit reached for your plan (${limit} files).`);
+                document.getElementById('certFileInput').value = '';
                 return;
             }
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { showCertUploadError('Please sign in again.'); return; }
 
-            btn.disabled = true;
-            btn.textContent = 'Uploading...';
             const path = `${currentUser.id}/${crypto.randomUUID()}.pdf`;
-            const { error } = await supabaseClient.storage.from('cv-certificates')
-                .upload(path, file, { contentType: 'application/pdf', upsert: false });
-            btn.textContent = 'Upload';
-            if (error) {
-                console.error('Certificate upload failed:', error);
-                btn.disabled = false;
+            certModalUploading = true;
+            renderCertModalFile();
+            setCertProgress(0);
+            const ok = await new Promise(resolve => {
+                const xhr = new XMLHttpRequest();
+                certXhr = xhr;
+                xhr.open('POST', `${SUPABASE_URL}/storage/v1/object/cv-certificates/${path}`);
+                xhr.setRequestHeader('apikey', SUPABASE_KEY);
+                xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+                xhr.setRequestHeader('x-upsert', 'false');
+                xhr.setRequestHeader('Content-Type', 'application/pdf');
+                xhr.upload.onprogress = (e) => { if (e.lengthComputable) setCertProgress(Math.round((e.loaded / e.total) * 100)); };
+                xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
+                xhr.onerror = () => resolve(false);
+                xhr.onabort = () => resolve(false);
+                xhr.send(file);
+            });
+            certXhr = null;
+            if (!document.getElementById('certModal').classList.contains('active')) return; // closed meanwhile
+            certModalUploading = false;
+            setCertProgress(null);
+            if (!ok) {
+                console.error('Certificate upload failed');
+                document.getElementById('certFileInput').value = '';
+                renderCertModalFile();
                 showCertUploadError('Upload failed. If you reached your file limit, remove a file first.');
                 return;
             }
             pendingCertUploads.add(path);
-            item.file_path = path;
-            closeCertUploadModal();
-            renderCvLists();
-            await pruneUnreferencedCertUploads(); // drops the replaced file if it was never saved
-            showToast('Certificate attached. Tap Save CV to publish.');
+            certModalPath = path;
+            renderCertModalFile();
         }
 
-        async function removeCertFile(idx) {
+        async function removeCertModalFile() {
+            certModalPath = '';
+            document.getElementById('certFileInput').value = '';
+            renderCertModalFile();
+            await pruneUnreferencedCertUploads(); // a file uploaded in this modal goes now, a saved one after Save CV
+        }
+
+        async function saveCertModal() {
+            if (certModalUploading) return;
+            const name = document.getElementById('certTitleInput').value.trim();
+            if (!name) { showCertUploadError('Add a certificate title first.'); return; }
             syncAllCvSections();
-            const item = currentCvData.certifications[idx];
-            if (!item) return;
-            item.file_path = '';
+            const list = currentCvData.certifications;
+            if (certModalIdx >= 0) {
+                if (!list[certModalIdx]) return;
+                list[certModalIdx] = { name, file_path: certModalPath };
+            } else {
+                list.push({ name, file_path: certModalPath });
+            }
+            const wasNew = certModalIdx < 0;
+            document.getElementById('certModal').classList.remove('active');
+            certModalIdx = -1;
+            certModalPath = '';
             renderCvLists();
-            await pruneUnreferencedCertUploads();
+            openAccordion('cvCertificationsBody');
+            await pruneUnreferencedCertUploads(); // drops a replaced file if it was never saved
+            showToast(wasNew ? 'Certificate added. Tap Save CV to publish.' : 'Certificate updated. Tap Save CV to publish.');
         }
 
         async function saveCv() {
