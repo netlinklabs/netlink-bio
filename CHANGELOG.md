@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **Bio page 404 log, to tell bots from mistyped links.** Every time `api/bio.js` answers 404 (username does not exist) it now records the username in a new table, counted per day. No new serverless function (the `api/` folder stays at 12).
+  - `supabase/migrations/20261006_bio_not_found_log.sql`: table `bio_not_found_daily (day, username, count)` and function `bump_bio_not_found(p_username)`. RLS on, no policies, only `service_role` can read, write or execute. Max 300 distinct usernames per day (extras are counted as `(other)`), rows older than 30 days are removed automatically. Migration is NOT applied yet.
+  - `api/_lib/stats.js`: new `logBioNotFound(username)`, fire and forget through `waitUntil`, never throws.
+  - `api/bio.js`: calls `logBioNotFound(username)` in the 404 branch only (not for the 400 missing username case).
+  - Read it in the Supabase SQL editor: `select username, sum(count) n from bio_not_found_daily where day >= current_date - 7 group by 1 order by n desc limit 30;`
+
 ### Changed
 - **Privacy policy v1.7 (effective October 6, 2026): clearer text for accounts with identity verification (KYC) or payment records.** Text only, no system change. Section 7 now says that if you completed identity verification or made a payment, we keep the account and the related verification and payment records for as long as legal, tax, or fraud-prevention requirements apply, that the deletion request stays on hold meanwhile, and that accounts without verification or payment records are deleted after the 45-day grace period. Section 8 no longer says "a limited period" (for held accounts there is no fixed end date) and now says "for as long as legal, tax, or fraud-prevention requirements apply". New paragraph under the service providers: identity verification is done by Didit as our processor, the ID document and face data are not stored in our database (checked: `kyc_sessions` and `verifications` hold only status, dates and session references), and Didit keeps data for the retention period set in our account with them. No period is named, because no legal review has been done.
   - `privacy.html`: `CURRENT_POLICY_VERSION` is now `'1.7'`, so every user sees the re-consent prompt once. The deletion modal and the Delete Account card got one short sentence each saying records may be kept and that a KYC or payment account request stays on hold.

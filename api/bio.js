@@ -10,7 +10,7 @@ import { escapeHtml, notFoundPage, jsonForScript, safeHttpUrl } from './_lib/htm
 import { isDemoProfile } from './_lib/demo-profiles.js';
 import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
-import { withStats } from './_lib/stats.js';
+import { withStats, logBioNotFound } from './_lib/stats.js';
 import { waitUntil } from '@vercel/functions';
 import { OG_RENDER_VERSION, hasOgColumns, currentStoredOgUrl } from './_lib/og-shared.js';
 import { templateCss } from './_lib/bio-templates.js';
@@ -205,6 +205,7 @@ async function handler(req, res) {
   try {
     const profiles = await supabaseGet(`profiles_bio_public?username=eq.${encodeURIComponent(username)}&select=*`);
     if (!profiles.length) {
+      logBioNotFound(username);
       res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
         title: 'Profile not found',
         heading: `@${escapeHtml(username)} isn't on Netlink`,
