@@ -849,8 +849,10 @@
                 <p class="text-xs text-muted">Percent of the plan quota. Bandwidth and monthly active users are not shown here.</p></div>`;
 
             h += '<div id="usageBlock"></div>';
+            h += notFoundShell();
             $('overview').innerHTML = h;
             loadUsage();
+            wireNotFound();
             $('overview').querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.go)));
             fillVolume(d);
         }
@@ -937,6 +939,61 @@
                 const again = $('usageBlock');
                 if (again) again.innerHTML = '<div class="ov-title">Usage and limits</div><p class="text-xs text-muted mb-2">Could not load usage figures.</p>';
             }
+        }
+
+        // ---------- bio page 404 log (button, loads on demand) ----------
+        // Data comes from bio_not_found_daily (written by api/bio.js on every 404).
+        let nfDays = 7;
+
+        function notFoundShell() {
+            return `<div class="ov-title">Bio page 404s</div><div class="card chart-card">
+                <p class="text-xs text-muted mb-2">Usernames people opened that do not exist. A name that does not look like a real username (for example wp-admin or .env) is a bot probe. Counting started when this feature was released.</p>
+                <div class="flex gap-2 flex-wrap mb-2" id="nfRange">
+                    <button type="button" class="range-btn" data-d="1">Today</button>
+                    <button type="button" class="range-btn active" data-d="7">7D</button>
+                    <button type="button" class="range-btn" data-d="30">30D</button>
+                    <button type="button" id="nfLoad" class="btn" style="margin-left:auto">Load 404 log</button>
+                </div>
+                <div id="nfResult"></div></div>`;
+        }
+
+        function nfHtml(d) {
+            if (!d.total) return '<p class="text-xs text-muted">No 404s recorded in this period yet.</p>';
+            const probePct = d.total ? Math.round((d.probe_total / d.total) * 100) : 0;
+            const tiles = `<div class="tiles">
+                ${tile(fmtN(d.total), '404s in period', '')}
+                ${tile(fmtN(d.distinct), 'Different names', '')}
+                ${tile(probePct + '%', 'Bot probes', fmtN(d.probe_total) + ' of ' + fmtN(d.total) + ' (invalid username format)')}
+                ${tile(fmtN(d.total - d.probe_total), 'Valid format, not found', 'Mistyped links or removed profiles')}
+            </div>`;
+            const chart = d.per_day.length > 1
+                ? chartHtml('404s per day', d.per_day.map((x) => x.day), 'day', [{ name: '404s', values: d.per_day.map((x) => x.count), color: 'var(--series-1)' }])
+                : '';
+            const rows = d.top.map((x) => `<tr><td class="mono">${esc(x.username)}</td><td class="n">${fmtN(x.count)}</td><td class="n">${fmtN(x.days)}</td><td><span class="badge ${x.probe ? 'b-warn' : 'b-gray'}">${x.probe ? 'Probe' : 'Valid format'}</span></td></tr>`).join('');
+            const note = d.truncated ? '<p class="text-xs text-muted mt-2">Very large log, the list may be incomplete.</p>' : '';
+            return `${tiles}${chart}<div class="card chart-card"><h4 class="text-primary">Top 30 names</h4><table class="mini"><thead><tr><th>Name</th><th class="n">404s</th><th class="n">Days</th><th>Type</th></tr></thead><tbody>${rows}</tbody></table>${note}</div>`;
+        }
+
+        async function loadNotFound() {
+            const box = $('nfResult'); const btn = $('nfLoad');
+            if (!box || !btn) return;
+            btn.disabled = true; btn.textContent = 'Loading...';
+            box.innerHTML = '<p class="text-xs text-muted">Loading...</p>';
+            try {
+                const d = await api('admin-404-log', { query: `&days=${nfDays}` });
+                const again = $('nfResult'); if (again) again.innerHTML = nfHtml(d);
+            } catch (err) {
+                const again = $('nfResult'); if (again) again.innerHTML = `<p class="text-xs text-red-500">${esc(err.message || 'Could not load the 404 log')}</p>`;
+            }
+            const b = $('nfLoad'); if (b) { b.disabled = false; b.textContent = 'Load 404 log'; }
+        }
+
+        function wireNotFound() {
+            document.querySelectorAll('#nfRange .range-btn').forEach((b) => b.addEventListener('click', () => {
+                nfDays = Number(b.dataset.d);
+                document.querySelectorAll('#nfRange .range-btn').forEach((x) => x.classList.toggle('active', x === b));
+            }));
+            const load = $('nfLoad'); if (load) load.addEventListener('click', loadNotFound);
         }
 
         async function loadOverview() {
