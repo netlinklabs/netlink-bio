@@ -58,6 +58,8 @@
         .cert-warning { background: #fef3c7; color: #92400e; }
         .cert-warning svg, .cert-lock svg { flex-shrink: 0; margin-top: 1px; }
         html.dark .cert-warning { background: rgba(245,158,11,0.15); color: #fcd34d; }
+        /* These two set display:flex, which would beat the Tailwind .hidden class. */
+        .cert-lock.hidden, .cert-attached.hidden { display: none; }
         .cert-lock { flex-direction: column; background: rgba(59,130,246,0.08); color: inherit; }
         .cert-lock-head { display: flex; gap: 0.5rem; align-items: flex-start; }
         .cert-lock button { align-self: flex-start; padding: 0.375rem 0.75rem; border-radius: 0.5rem; background: #3b82f6; color: #fff; font-size: 0.75rem; font-weight: 500; }
