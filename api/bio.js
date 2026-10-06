@@ -110,14 +110,14 @@ function badgeModalsHtml(profile) {
 function iconHtml(iconKey) {
   const slug = BRAND_SLUGS[iconKey];
   if (slug) {
-    return `<img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg">`;
+    return `<img src="https://cdn.jsdelivr.net/npm/simple-icons@13.15.0/icons/${slug}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg">`;
   }
   const emojiOnly = { globe: '🌐', mail: '✉️', link: '🔗' };
   if (emojiOnly[iconKey]) return `<span class="emoji-icon">${emojiOnly[iconKey]}</span>`;
   // All other icon keys map directly to a Lucide icon name (lucide-static SVGs via jsDelivr)
   // The key goes straight into the image URL, so only plain icon names are allowed.
   if (!/^[a-z0-9-]{1,40}$/.test(String(iconKey || ''))) return `<span class="emoji-icon">🔗</span>`;
-  return `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${iconKey}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg lucide-svg" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji-icon',textContent:'🔗'}))">`;
+  return `<img src="https://cdn.jsdelivr.net/npm/lucide-static@1.52.0/icons/${iconKey}.svg" alt="${escapeHtml(iconKey)}" class="brand-svg lucide-svg" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji-icon',textContent:'🔗'}))">`;
 }
 
 // A profile "has a real CV" when at least one section actually has content --
@@ -359,7 +359,7 @@ async function handler(req, res) {
 
   // ---- Links list ----
   const linksHtml = links.map((l) => `
-      <a href="${escapeHtml(safeHttpUrl(l.url) || '#')}" target="_blank" rel="noopener" class="link-card" onclick="trackClick(${JSON.stringify(l.id)})">
+      <a href="${escapeHtml(safeHttpUrl(l.url) || '#')}" target="_blank" rel="noopener" class="link-card" data-link-id="${escapeHtml(l.id)}" onclick="trackClick(this.dataset.linkId)">
         <span class="link-icon ${iconShape}">${iconHtml(l.icon)}</span>
         <span class="link-text">
           <span class="link-title">${escapeHtml(l.title)}</span>
