@@ -58,6 +58,8 @@
         .cert-warning { background: #fef3c7; color: #92400e; }
         .cert-warning svg, .cert-lock svg { flex-shrink: 0; margin-top: 1px; }
         html.dark .cert-warning { background: rgba(245,158,11,0.15); color: #fcd34d; }
+        /* These two set display:flex, which would beat the Tailwind .hidden class. */
+        .cert-lock.hidden, .cert-attached.hidden { display: none; }
         .cert-lock { flex-direction: column; background: rgba(59,130,246,0.08); color: inherit; }
         .cert-lock-head { display: flex; gap: 0.5rem; align-items: flex-start; }
         .cert-lock button { align-self: flex-start; padding: 0.375rem 0.75rem; border-radius: 0.5rem; background: #3b82f6; color: #fff; font-size: 0.75rem; font-weight: 500; }
@@ -667,6 +669,9 @@
                     <div class="cert-progress-track"><div id="certProgressFill" class="progress-fill" style="width:0%"></div></div>
                     <p id="certProgressText" class="text-xs text-muted" style="margin-top:0.25rem">Uploading 0%</p>
                 </div>
+                <label for="certVerifyInput" class="cert-label text-primary" style="margin-top:1rem">Verification link (recommended)</label>
+                <input id="certVerifyInput" type="url" inputmode="url" autocapitalize="none" class="cert-input" placeholder="https://example.com/verify/123" disabled>
+                <p class="text-xs text-muted" style="margin-top:0.25rem">A page where the issuer confirms this certificate, so viewers can check it. Must start with https://. Available after the file is uploaded.</p>
             </div>
             <div id="certLockBox" class="cert-lock hidden">
                 <div class="cert-lock-head">
@@ -1509,8 +1514,8 @@ window.openNetlinkPay = openNetlinkPay;
         function normalizeCvCertifications(list) {
             return (Array.isArray(list) ? list : []).map(c => (
                 typeof c === 'string'
-                    ? { name: c.trim(), file_path: '' }
-                    : { name: String(c?.name || '').trim(), file_path: String(c?.file_path || '') }
+                    ? { name: c.trim(), file_path: '', verify_url: '' }
+                    : { name: String(c?.name || '').trim(), file_path: String(c?.file_path || ''), verify_url: String(c?.verify_url || '') }
             )).filter(c => c.name || c.file_path);
         }
 
@@ -1722,7 +1727,7 @@ window.openNetlinkPay = openNetlinkPay;
                         <div class="flex items-center gap-1 flex-shrink-0">${cvReorderButtons('certifications', idx, total)}</div>
                         <div class="cert-row-main">
                             <div class="cert-row-title text-primary">${escapeHtml(item.name)}</div>
-                            ${item.file_path ? `<div class="cert-row-file text-secondary"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF attached</div>` : ''}
+                            ${item.file_path ? `<div class="cert-row-file text-secondary"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> ${item.verify_url ? 'PDF attached, with verification link' : 'PDF attached'}</div>` : ''}
                         </div>
                         <button type="button" onclick="openCertModal(${idx})" class="cert-row-edit" aria-label="Edit certificate">Edit</button>
                         <button type="button" onclick="removeCvItem('certifications', ${idx})" class="text-red-500 hover:text-red-600 p-1 flex-shrink-0" aria-label="Delete certificate"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
@@ -1874,6 +1879,9 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('certFileInput').classList.toggle('hidden', attached || certModalUploading);
             document.getElementById('certAttached').classList.toggle('hidden', !attached);
             document.getElementById('certSaveBtn').disabled = certModalUploading;
+            const verify = document.getElementById('certVerifyInput');
+            verify.disabled = !attached;
+            if (!attached) verify.value = '';
         }
 
         function openCertModal(idx) {
@@ -1885,6 +1893,7 @@ window.openNetlinkPay = openNetlinkPay;
             certModalUploading = false;
             document.getElementById('certModalHeading').textContent = item ? 'Edit Certificate' : 'Add Certificate';
             document.getElementById('certTitleInput').value = item ? item.name : '';
+            document.getElementById('certVerifyInput').value = item ? (item.verify_url || '') : '';
             document.getElementById('certFileInput').value = '';
             showCertUploadError('');
             setCertProgress(null);
@@ -1982,13 +1991,20 @@ window.openNetlinkPay = openNetlinkPay;
             if (certModalUploading) return;
             const name = document.getElementById('certTitleInput').value.trim();
             if (!name) { showCertUploadError('Add a certificate title first.'); return; }
+            // The link only exists together with a file, and must be https (the database checks too).
+            const verifyUrl = certModalPath ? document.getElementById('certVerifyInput').value.trim() : '';
+            if (verifyUrl && (!/^https:\/\/\S+$/i.test(verifyUrl) || verifyUrl.length > 500)) {
+                showCertUploadError('The verification link must start with https://');
+                return;
+            }
             syncAllCvSections();
             const list = currentCvData.certifications;
+            const entry = { name, file_path: certModalPath, verify_url: verifyUrl };
             if (certModalIdx >= 0) {
                 if (!list[certModalIdx]) return;
-                list[certModalIdx] = { name, file_path: certModalPath };
+                list[certModalIdx] = entry;
             } else {
-                list.push({ name, file_path: certModalPath });
+                list.push(entry);
             }
             const wasNew = certModalIdx < 0;
             document.getElementById('certModal').classList.remove('active');
@@ -2015,7 +2031,9 @@ window.openNetlinkPay = openNetlinkPay;
                 // Rows without a title are dropped (their files are cleaned up below).
                 const certifications = currentCvData.certifications
                     .filter(c => c.name)
-                    .map(c => (c.file_path ? { name: c.name, file_path: c.file_path } : { name: c.name }));
+                    .map(c => (c.file_path
+                        ? { name: c.name, file_path: c.file_path, ...(c.verify_url ? { verify_url: c.verify_url } : {}) }
+                        : { name: c.name }));
 
                 const payload = {
                     title: document.getElementById('cvTitle').value.trim(),
@@ -2032,7 +2050,7 @@ window.openNetlinkPay = openNetlinkPay;
                 const { error } = await supabaseClient.from('profiles').update({ cv_data: payload }).eq('id', currentUser.id);
                 if (error) {
                     console.error('Failed to save CV:', error);
-                    showToast(/Certificate|Project links/.test(error.message || '') ? error.message : 'Failed to save CV');
+                    showToast(/Certificate|Project links|Verification links/.test(error.message || '') ? error.message : 'Failed to save CV');
                     return;
                 }
                 showToast('CV saved!');

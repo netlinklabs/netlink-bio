@@ -116,8 +116,8 @@ const CERT_MAX_BYTES = 2 * 1024 * 1024;
 function normalizeCertifications(list) {
   return (Array.isArray(list) ? list : []).map((c, i) => (
     typeof c === 'string'
-      ? { i, name: c.trim(), filePath: '' }
-      : { i, name: String(c?.name || '').trim(), filePath: String(c?.file_path || '') }
+      ? { i, name: c.trim(), filePath: '', verifyUrl: '' }
+      : { i, name: String(c?.name || '').trim(), filePath: String(c?.file_path || ''), verifyUrl: safeHttpsUrl(c?.verify_url) }
   )).filter((c) => c.name);
 }
 
@@ -284,7 +284,7 @@ async function handler(req, res) {
     } : {}),
     ...(skills.length ? { knowsAbout: skills } : {}),
     // Certificate names only. The PDF itself is private and noindex, so it is never linked here.
-    ...(certifications.some((c) => c.name) ? { hasCredential: certifications.filter((c) => c.name).map((c) => ({ '@type': 'EducationalOccupationalCredential', name: c.name })) } : {}),
+    ...(certifications.some((c) => c.name) ? { hasCredential: certifications.filter((c) => c.name).map((c) => ({ '@type': 'EducationalOccupationalCredential', name: c.name, ...((canViewCertFiles && c.verifyUrl) ? { url: c.verifyUrl } : {}) })) } : {}),
     ...(languages.length ? { knowsLanguage: languages.map((l) => l.name).filter(Boolean) } : {}),
     ...(education.length ? { alumniOf: education.map((e) => ({ '@type': 'EducationalOrganization', name: e.school })).filter((e) => e.name) } : {}),
     ...(experience.length && experience[0].company ? { worksFor: { '@type': 'Organization', name: experience[0].company } } : {}),
@@ -372,7 +372,7 @@ async function handler(req, res) {
     ? `<div class="cv-section"><h2 class="section-title">Certifications</h2><div class="cert-list">${certifications.map((c) => `
         <div class="cert-item">
           <div class="cert-title">${iconCheck()}<span>${escapeHtml(c.name)}</span></div>
-          ${(canViewCertFiles && isSafeCertPath(profile.id, c.filePath)) ? `<button type="button" class="cert-view-btn" data-cert-index="${c.i}" data-title="${escapeHtml(c.name)}" onclick="openCertificate(this)">View Certificate</button>` : ''}
+          ${(canViewCertFiles && isSafeCertPath(profile.id, c.filePath)) ? `<div class="cert-actions-row"><button type="button" class="cert-view-btn" data-cert-index="${c.i}" data-title="${escapeHtml(c.name)}" onclick="openCertificate(this)">View Certificate</button>${c.verifyUrl ? `<a class="cert-verify-link" href="${escapeHtml(c.verifyUrl)}" target="_blank" rel="noopener noreferrer">Verify this certificate <span aria-hidden="true">&#8599;</span></a>` : ''}</div>` : ''}
         </div>`).join('')}</div></div>`
     : '';
 
@@ -493,6 +493,9 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-item:last-child { padding-bottom:0; }
 .cert-title { display:flex; align-items:flex-start; gap:0.625rem; }
 .cert-title svg { flex-shrink:0; margin-top:2px; }
+.cert-actions-row { display:flex; flex-wrap:wrap; align-items:center; gap:0.75rem; margin-left:calc(16px + 0.625rem); }
+.cert-actions-row .cert-view-btn { margin-left:0; }
+.cert-verify-link { font-size:0.75rem; font-weight:600; color:var(--primary); text-decoration:underline; }
 .cert-view-btn { margin-left:calc(16px + 0.625rem); font-family:inherit; font-size:0.75rem; font-weight:600; color:var(--primary); background:rgba(26,54,93,0.08); border:none; border-radius:6px; padding:0.4rem 0.8rem; cursor:pointer; }
 .cert-view-btn:hover { background:rgba(26,54,93,0.14); }
 .cert-modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:110; align-items:center; justify-content:center; padding:1rem; }
