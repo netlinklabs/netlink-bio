@@ -1,4 +1,4 @@
--- DRAFT, NOT APPLIED. Needs owner approval before running on production.
+-- APPLIED to production on 2026-10-06 (owner approved), via Supabase MCP, name: cv_certificates.
 -- CV certificate PDFs (Silver and up) + https-only Featured Project links.
 --
 -- What this does
