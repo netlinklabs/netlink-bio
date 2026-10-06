@@ -1,4 +1,4 @@
--- DRAFT, NOT APPLIED. Needs owner approval before running on production.
+-- APPLIED to production on 2026-10-06 (owner approved), via Supabase MCP, name: links_validate_icon_url.
 -- Input checks on public link data (defense in depth, the public pages also
 -- validate when rendering).
 --
