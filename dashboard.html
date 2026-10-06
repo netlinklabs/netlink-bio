@@ -48,6 +48,8 @@
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
+        /* Certificate upload: plain CSS on purpose, so this feature needs no Tailwind rebuild. */
+        #certFileInput::file-selector-button { margin-right: 0.75rem; padding: 0.5rem 0.75rem; border: 0; border-radius: 0.5rem; background: rgba(59,130,246,0.1); color: #3b82f6; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
         .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
@@ -460,10 +462,10 @@
                             <span class="text-sm font-semibold text-primary">Certifications</span>
                             <i data-lucide="chevron-down" class="accordion-chevron w-4 h-4 text-secondary" id="cvCertificationsBodyChevron"></i>
                         </button>
+                        <button type="button" onclick="addCvItem('certifications')" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
                     </div>
                     <div id="cvCertificationsBody" class="accordion-body">
-                        <label class="text-sm font-medium text-secondary block mb-1.5"><span class="text-muted">(one per line)</span></label>
-                        <textarea id="cvCertifications" rows="3" placeholder="Google UX Design Professional Certificate&#10;AWS Cloud Practitioner" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/30"></textarea>
+                        <div id="cvCertificationsList" class="space-y-3"></div>
                     </div>
                 </div>
 
@@ -609,6 +611,21 @@
                 <i id="templateGalleryChevron" data-lucide="chevron-right" class="w-4 h-4 text-secondary"></i>
             </button>
             <p id="templateGalleryHint" class="hidden text-xs text-muted mt-2">Available from the Silver plan. <a href="plans" class="text-blue-500 hover:underline">See plans</a></p>
+        </div>
+    </div>
+
+    <!-- Certificate upload modal -- opened from the Browse button on a Certifications row. -->
+    <div id="certUploadModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold text-primary">Attach Certificate</h3>
+                <button type="button" onclick="closeCertUploadModal()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p id="certUploadTitle" class="text-sm font-medium text-primary mb-1" style="overflow-wrap:anywhere"></p>
+            <p class="text-xs text-muted mb-4">PDF only, max 2 MB.</p>
+            <input id="certFileInput" type="file" accept="application/pdf,.pdf" onchange="onCertFileChosen(this)" class="block w-full text-sm text-secondary">
+            <p id="certUploadError" class="text-xs text-red-500 mt-2 hidden"></p>
+            <button id="certUploadBtn" type="button" onclick="uploadCertFile()" disabled class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium rounded-xl transition text-sm">Upload</button>
         </div>
     </div>
 
@@ -1422,6 +1439,47 @@ window.openNetlinkPay = openNetlinkPay;
         const CV_DEFAULT = { title: '', location: '', summary: '', skills: [], education: [], languages: [], experience: [], projects: [], certifications: [] };
         let currentCvData = { ...CV_DEFAULT };
 
+        // Certificate PDFs (private bucket `cv-certificates`). Silver and up only.
+        // The same limits are enforced in the database (public.cv_certificate_limit),
+        // this copy only drives the UI messages.
+        const CERT_LIMITS = { silver: 5, gold: 10, platinum: 10 };
+        const CERT_MAX_BYTES = 2 * 1024 * 1024;
+        let savedCertPaths = [];            // file paths stored in the last saved cv_data
+        const pendingCertUploads = new Set(); // uploaded this session, not saved yet
+        let certUploadIdx = null;
+
+        function certFileLimit() {
+            return CERT_LIMITS[currentProfile?.tier || 'basic'] || 0;
+        }
+
+        // Legacy certifications were plain strings. New ones are { name, file_path }.
+        function normalizeCvCertifications(list) {
+            return (Array.isArray(list) ? list : []).map(c => (
+                typeof c === 'string'
+                    ? { name: c.trim(), file_path: '' }
+                    : { name: String(c?.name || '').trim(), file_path: String(c?.file_path || '') }
+            )).filter(c => c.name || c.file_path);
+        }
+
+        function certFilePaths(list) {
+            return (list || []).map(c => c && c.file_path).filter(Boolean);
+        }
+
+        async function deleteCertFiles(paths) {
+            const unique = [...new Set(paths.filter(Boolean))];
+            if (!unique.length) return;
+            const { error } = await supabaseClient.storage.from('cv-certificates').remove(unique);
+            if (error) console.error('Failed to delete certificate files:', error);
+        }
+
+        // Delete files uploaded in this session that no row references anymore.
+        async function pruneUnreferencedCertUploads() {
+            const referenced = new Set(certFilePaths(currentCvData.certifications));
+            const orphans = [...pendingCertUploads].filter(p => !referenced.has(p));
+            orphans.forEach(p => pendingCertUploads.delete(p));
+            await deleteCertFiles(orphans);
+        }
+
         function scrollToCvCard() {
             document.getElementById('cvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -1555,13 +1613,14 @@ window.openNetlinkPay = openNetlinkPay;
                 languages: cv?.languages || [],
                 experience: cv?.experience || [],
                 projects: cv?.projects || [],
-                certifications: cv?.certifications || [],
+                certifications: normalizeCvCertifications(cv?.certifications),
             };
+            savedCertPaths = certFilePaths(currentCvData.certifications);
+            pendingCertUploads.clear();
             document.getElementById('cvTitle').value = currentCvData.title || '';
             document.getElementById('cvLocation').value = currentCvData.location || '';
             document.getElementById('cvSummary').value = currentCvData.summary || '';
             document.getElementById('cvSkills').value = (currentCvData.skills || []).join(', ');
-            document.getElementById('cvCertifications').value = (currentCvData.certifications || []).join('\n');
             renderCvLists();
             updateCvCountryDisplay();
         }
@@ -1599,9 +1658,30 @@ window.openNetlinkPay = openNetlinkPay;
                     </div>
                     <input class="cv-proj-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Project Name" value="${escapeHtml(item.name)}">
                     <textarea class="cv-proj-desc w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="2" placeholder="Short description">${escapeHtml(item.description)}</textarea>
+                    <input class="cv-proj-url w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" type="url" inputmode="url" autocapitalize="none" placeholder="https://example.com (optional)" value="${escapeHtml(item.url)}">
                     <input class="cv-proj-tags w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Tags, comma separated" value="${escapeHtml((item.tags || []).join(', '))}">
                 </div>
             `);
+            renderCvSection('certifications', 'cvCertificationsList', (item, idx, total) => {
+                const canUpload = certFileLimit() > 0;
+                const fileRow = item.file_path
+                    ? `<div class="flex items-center gap-2">
+                           <i data-lucide="file-text" class="w-3.5 h-3.5 text-secondary flex-shrink-0"></i>
+                           <span class="text-xs text-secondary flex-1">PDF attached</span>
+                           <button type="button" onclick="openCertUploadModal(${idx})" class="text-xs text-blue-500 hover:text-blue-600">Replace</button>
+                           <button type="button" onclick="removeCertFile(${idx})" class="text-xs text-red-500 hover:text-red-600">Remove</button>
+                       </div>`
+                    : `<button type="button" onclick="openCertUploadModal(${idx})" class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"><i data-lucide="${canUpload ? 'file-text' : 'lock'}" class="w-3.5 h-3.5"></i> Browse file</button>`;
+                return `
+                <div class="cv-item bg-surface border border-subtle rounded-xl p-3 space-y-2" data-idx="${idx}" data-path="${escapeHtml(item.file_path)}">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-1">${cvReorderButtons('certifications', idx, total)}</div>
+                        <button type="button" onclick="removeCvItem('certifications', ${idx})" class="text-red-500 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                    <input class="cv-cert-name w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Certificate title" value="${escapeHtml(item.name)}" oninput="onCertNameInput(this)">
+                    <div class="cv-cert-file ${item.name ? '' : 'hidden'}">${fileRow}</div>
+                </div>`;
+            });
             renderCvSection('languages', 'cvLanguagesList', (item, idx, total) => `
                 <div class="cv-item bg-surface border border-subtle rounded-xl p-3 flex items-center gap-2" data-idx="${idx}">
                     <div class="flex items-center gap-1 flex-shrink-0">${cvReorderButtons('languages', idx, total)}</div>
@@ -1623,7 +1703,7 @@ window.openNetlinkPay = openNetlinkPay;
         }
 
         function autoOpenCvAccordions() {
-            const map = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
+            const map = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody', certifications: 'cvCertificationsBody' };
             Object.entries(map).forEach(([key, bodyId]) => {
                 if ((currentCvData[key] || []).length > 0) openAccordion(bodyId);
             });
@@ -1659,25 +1739,29 @@ window.openNetlinkPay = openNetlinkPay;
             const blanks = {
                 experience: { title: '', company: '', date: '', bullets: [] },
                 education: { degree: '', school: '', year: '', detail: '' },
-                projects: { name: '', description: '', tags: [] },
+                projects: { name: '', description: '', url: '', tags: [] },
                 languages: { name: '', level: '' },
+                certifications: { name: '', file_path: '' },
             };
-            const bodyMap = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody' };
+            const bodyMap = { experience: 'cvExperienceBody', education: 'cvEducationBody', projects: 'cvProjectsBody', languages: 'cvLanguagesBody', certifications: 'cvCertificationsBody' };
             syncCvSectionFromDom(section);
-            currentCvData[section] = [...(currentCvData[section] || []), blanks[section]];
+            currentCvData[section] = [...(currentCvData[section] || []), { ...blanks[section] }];
             renderCvLists();
             openAccordion(bodyMap[section]);
         }
 
-        function removeCvItem(section, idx) {
+        async function removeCvItem(section, idx) {
             syncCvSectionFromDom(section);
             currentCvData[section].splice(idx, 1);
             renderCvLists();
+            // A file uploaded this session and never saved can be deleted right away.
+            // Saved files are deleted after Save CV succeeds.
+            if (section === 'certifications') await pruneUnreferencedCertUploads();
         }
 
         function syncCvSectionFromDom(section) {
             const container = document.getElementById(
-                { experience: 'cvExperienceList', education: 'cvEducationList', projects: 'cvProjectsList', languages: 'cvLanguagesList' }[section]
+                { experience: 'cvExperienceList', education: 'cvEducationList', projects: 'cvProjectsList', languages: 'cvLanguagesList', certifications: 'cvCertificationsList' }[section]
             );
             const rows = [...container.querySelectorAll('.cv-item')];
             if (section === 'experience') {
@@ -1698,6 +1782,7 @@ window.openNetlinkPay = openNetlinkPay;
                 currentCvData.projects = rows.map(row => ({
                     name: row.querySelector('.cv-proj-name').value.trim(),
                     description: row.querySelector('.cv-proj-desc').value.trim(),
+                    url: row.querySelector('.cv-proj-url').value.trim(),
                     tags: row.querySelector('.cv-proj-tags').value.split(',').map(s => s.trim()).filter(Boolean),
                 }));
             } else if (section === 'languages') {
@@ -1705,29 +1790,163 @@ window.openNetlinkPay = openNetlinkPay;
                     name: row.querySelector('.cv-lang-name').value.trim(),
                     level: row.querySelector('.cv-lang-level').value.trim(),
                 }));
+            } else if (section === 'certifications') {
+                currentCvData.certifications = rows.map(row => ({
+                    name: row.querySelector('.cv-cert-name').value.trim(),
+                    file_path: row.dataset.path || '',
+                }));
             }
+        }
+
+        function syncAllCvSections() {
+            ['experience', 'education', 'projects', 'languages', 'certifications'].forEach(syncCvSectionFromDom);
+        }
+
+        // ---- Certificate PDF upload ----
+        // Show the Browse button only once the certificate has a title.
+        function onCertNameInput(input) {
+            const box = input.closest('.cv-item').querySelector('.cv-cert-file');
+            if (box) box.classList.toggle('hidden', !input.value.trim());
+        }
+
+        function showCertUploadError(msg) {
+            const el = document.getElementById('certUploadError');
+            el.textContent = msg || '';
+            el.classList.toggle('hidden', !msg);
+        }
+
+        function openCertUploadModal(idx) {
+            const limit = certFileLimit();
+            if (!limit) { showToast('Certificate files are available from the Silver plan and up'); return; }
+            syncAllCvSections();
+            const item = currentCvData.certifications[idx];
+            if (!item || !item.name) { showToast('Add a certificate title first'); return; }
+            certUploadIdx = idx;
+            document.getElementById('certUploadTitle').textContent = item.name;
+            document.getElementById('certFileInput').value = '';
+            document.getElementById('certUploadBtn').disabled = true;
+            showCertUploadError('');
+            document.getElementById('certUploadModal').classList.add('active');
+        }
+
+        function closeCertUploadModal() {
+            document.getElementById('certUploadModal').classList.remove('active');
+            certUploadIdx = null;
+        }
+
+        // Checks type, size and the real PDF header (not just the file name).
+        async function onCertFileChosen(input) {
+            const btn = document.getElementById('certUploadBtn');
+            btn.disabled = true;
+            showCertUploadError('');
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > CERT_MAX_BYTES) { showCertUploadError('This file is larger than 2 MB.'); return; }
+            if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) {
+                showCertUploadError('Only PDF files are allowed.'); return;
+            }
+            try {
+                const head = await file.slice(0, 5).text();
+                if (head !== '%PDF-') { showCertUploadError('This file is not a valid PDF.'); return; }
+            } catch (e) {
+                showCertUploadError('Could not read this file.'); return;
+            }
+            btn.disabled = false;
+        }
+
+        async function uploadCertFile() {
+            const input = document.getElementById('certFileInput');
+            const btn = document.getElementById('certUploadBtn');
+            const file = input.files[0];
+            const limit = certFileLimit();
+            if (!file || certUploadIdx === null) return;
+            if (!limit) { showCertUploadError('Certificate files are available from the Silver plan and up.'); return; }
+
+            syncAllCvSections();
+            const list = currentCvData.certifications;
+            const item = list[certUploadIdx];
+            if (!item) return;
+            const otherFiles = list.filter((c, i) => i !== certUploadIdx && c.file_path).length;
+            if (otherFiles >= limit) {
+                showCertUploadError(`Certificate file limit reached for your plan (${limit} files).`);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Uploading...';
+            const path = `${currentUser.id}/${crypto.randomUUID()}.pdf`;
+            const { error } = await supabaseClient.storage.from('cv-certificates')
+                .upload(path, file, { contentType: 'application/pdf', upsert: false });
+            btn.textContent = 'Upload';
+            if (error) {
+                console.error('Certificate upload failed:', error);
+                btn.disabled = false;
+                showCertUploadError('Upload failed. If you reached your file limit, remove a file first.');
+                return;
+            }
+            pendingCertUploads.add(path);
+            item.file_path = path;
+            closeCertUploadModal();
+            renderCvLists();
+            await pruneUnreferencedCertUploads(); // drops the replaced file if it was never saved
+            showToast('Certificate attached. Tap Save CV to publish.');
+        }
+
+        async function removeCertFile(idx) {
+            syncAllCvSections();
+            const item = currentCvData.certifications[idx];
+            if (!item) return;
+            item.file_path = '';
+            renderCvLists();
+            await pruneUnreferencedCertUploads();
         }
 
         async function saveCv() {
             await withSaving('cvSaveBtn', async () => {
-                ['experience', 'education', 'projects', 'languages'].forEach(syncCvSectionFromDom);
+                syncAllCvSections();
+
+                // Featured Project links must be https (the database checks this too).
+                const badProject = currentCvData.projects.find(p => p.url && (!/^https:\/\/\S+$/i.test(p.url) || p.url.length > 500));
+                if (badProject) {
+                    openAccordion('cvProjectsBody');
+                    showToast('Project links must start with https://');
+                    return;
+                }
+
+                // Rows without a title are dropped (their files are cleaned up below).
+                const certifications = currentCvData.certifications
+                    .filter(c => c.name)
+                    .map(c => (c.file_path ? { name: c.name, file_path: c.file_path } : { name: c.name }));
 
                 const payload = {
                     title: document.getElementById('cvTitle').value.trim(),
                     location: document.getElementById('cvLocation').value.trim(),
                     summary: document.getElementById('cvSummary').value.trim(),
                     skills: document.getElementById('cvSkills').value.split(',').map(s => s.trim()).filter(Boolean),
-                    certifications: document.getElementById('cvCertifications').value.split('\n').map(s => s.trim()).filter(Boolean),
+                    certifications,
                     experience: currentCvData.experience,
                     education: currentCvData.education,
-                    projects: currentCvData.projects,
+                    projects: currentCvData.projects.map(({ url, ...rest }) => (url ? { ...rest, url } : rest)),
                     languages: currentCvData.languages,
                 };
 
                 const { error } = await supabaseClient.from('profiles').update({ cv_data: payload }).eq('id', currentUser.id);
-                if (error) { showToast('Failed to save CV'); return; }
+                if (error) {
+                    console.error('Failed to save CV:', error);
+                    showToast(/Certificate|Project links/.test(error.message || '') ? error.message : 'Failed to save CV');
+                    return;
+                }
                 showToast('CV saved!');
-                currentCvData = payload;
+
+                // Files that are no longer referenced by the saved CV can go now.
+                const newPaths = certFilePaths(certifications);
+                const removedPaths = [...savedCertPaths, ...pendingCertUploads].filter(p => !newPaths.includes(p));
+                savedCertPaths = newPaths;
+                pendingCertUploads.clear();
+                await deleteCertFiles(removedPaths);
+
+                currentCvData = { ...CV_DEFAULT, ...payload, certifications: normalizeCvCertifications(certifications) };
+                renderCvLists();
                 calculateCvScore();
             });
         }
@@ -1779,7 +1998,7 @@ window.openNetlinkPay = openNetlinkPay;
                 [(cv.skills || []).length > 0, 15],
                 [(cv.experience || []).length > 0, 20],
                 [(cv.education || []).length > 0, 15],
-                [(cv.certifications || []).length > 0, 10],
+                [(cv.certifications || []).some(c => (typeof c === 'string' ? c : c && c.name)), 10],
                 [!!val('cvLocation'), 10],
             ];
             const pct = items.reduce((sum, [done, weight]) => sum + (done ? weight : 0), 0);
