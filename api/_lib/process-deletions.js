@@ -9,7 +9,9 @@
 //      keys orders.user_id, kyc_sessions.user_id, sponsored_members.user_id and
 //      admin_audit_log.admin_id are NO ACTION, so the delete would fail, and those
 //      records may need to be kept for legal or tax reasons. This is reported in
-//      the result as `blocked` and left for a human decision. Nothing is deleted.
+//      the result as `blocked` (with ids and tables in `onHold`, and one log line per run)
+//      and left for a human decision. Nothing is deleted. They never use up the daily
+//      batch, so they cannot hold back other requests.
 //   3. Delete the user's files in every storage bucket (all buckets use
 //      <user id>/ as the first folder). Storage is not removed by database
 //      cascades, so this must be explicit.
@@ -34,7 +36,9 @@ const BLOCKERS = [
   ['sponsored_members', 'user_id'],
   ['admin_audit_log', 'admin_id'],
 ];
-const BATCH_SIZE = 5; // requests per run; the rest are picked up by the next daily run
+const BATCH_SIZE = 5;        // requests acted on per run; the rest are picked up by the next daily run
+const MAX_SCANNED = 500;     // due requests looked at per run (ids only)
+const TIME_BUDGET_MS = 45000; // stop starting new requests after this long
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function authHeaders(extra = {}) {
@@ -105,13 +109,21 @@ export async function processAccountDeletions() {
   const enabled = process.env.DELETION_EXECUTOR_ENABLED === 'true';
   const out = { enabled, due: 0, deleted: 0, wouldDelete: 0, blocked: 0, failed: 0 };
 
+  // Take every due request (capped), oldest first, then work through them until
+  // BATCH_SIZE have been acted on. Requests that are on hold (blocked) or that fail
+  // do NOT use up the batch, so they can never starve the requests behind them.
   const due = await restGet(
     `deletion_requests?status=eq.pending&scheduled_for=lte.${encodeURIComponent(new Date().toISOString())}`
-    + `&select=id,user_id&order=scheduled_for.asc&limit=${BATCH_SIZE}`
+    + `&select=id,user_id&order=scheduled_for.asc,id.asc&limit=${MAX_SCANNED}`
   );
   out.due = due.length;
+  out.onHold = [];
+  const deadline = Date.now() + TIME_BUDGET_MS; // this job shares the cron function with the rollup
+  let acted = 0;
 
   for (const req of due) {
+    if (acted >= BATCH_SIZE) break;
+    if (Date.now() > deadline) { out.timeBudgetReached = true; break; }
     try {
       if (!UUID_RE.test(req.id) || !UUID_RE.test(req.user_id)) throw new Error('bad id');
       if (!(await isStillPending(req.id))) continue; // cancelled meanwhile
@@ -119,7 +131,7 @@ export async function processAccountDeletions() {
       const blockers = await findBlockers(req.user_id);
       if (blockers.length) {
         out.blocked++;
-        console.warn(`account-deletion: request ${req.id} blocked by rows in: ${blockers.join(', ')}`);
+        if (out.onHold.length < 20) out.onHold.push({ request: req.id, tables: blockers });
         continue;
       }
 
@@ -139,6 +151,7 @@ export async function processAccountDeletions() {
 
       if (!enabled) {
         out.wouldDelete++;
+        acted++;
         continue;
       }
 
@@ -148,11 +161,18 @@ export async function processAccountDeletions() {
       if (!(await isStillPending(req.id))) continue;
       await deleteAuthUser(req.user_id);
       out.deleted++;
+      acted++;
       console.log(`account-deletion: request ${req.id} completed`);
     } catch (err) {
       out.failed++;
       console.error(`account-deletion: request ${req.id || '?'} failed: ${err.message}`);
     }
+  }
+
+  // One line per run, so a held request is visible in the Vercel logs (ids only, no personal data).
+  if (out.blocked) {
+    console.warn(`account-deletion: ${out.blocked} due request(s) on hold because of payment, KYC, sponsor or admin records: `
+      + out.onHold.map((h) => `${h.request} (${h.tables.join(', ')})`).join('; '));
   }
   return out;
 }
