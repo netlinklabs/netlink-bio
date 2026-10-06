@@ -5,7 +5,7 @@
 // like jobTitle, alumniOf, worksFor, knowsAbout) for machine-readability.
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
-import { escapeHtml, notFoundPage } from './_lib/html.js';
+import { escapeHtml, notFoundPage, jsonForScript } from './_lib/html.js';
 import { isDemoProfile } from './_lib/demo-profiles.js';
 import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
@@ -239,6 +239,8 @@ async function handler(req, res) {
       }
     } : {}),
     ...(skills.length ? { knowsAbout: skills } : {}),
+    // Certificate names only. The PDF itself is private and noindex, so it is never linked here.
+    ...(certifications.some((c) => c.name) ? { hasCredential: certifications.filter((c) => c.name).map((c) => ({ '@type': 'EducationalOccupationalCredential', name: c.name })) } : {}),
     ...(languages.length ? { knowsLanguage: languages.map((l) => l.name).filter(Boolean) } : {}),
     ...(education.length ? { alumniOf: education.map((e) => ({ '@type': 'EducationalOrganization', name: e.school })).filter((e) => e.name) } : {}),
     ...(experience.length && experience[0].company ? { worksFor: { '@type': 'Organization', name: experience[0].company } } : {}),
@@ -361,7 +363,7 @@ ${isDemoProfile(profile.username)
   // Demo/mockup profile (api/_lib/demo-profiles.js): keep it out of search
   // indexes and don't describe it to crawlers/AI as a real Person.
   ? '<meta name="robots" content="noindex, nofollow">'
-  : `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`}
+  : `<script type="application/ld+json">${jsonForScript(jsonLd)}</script>`}
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -522,7 +524,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   ${certModalHtml}
   <script>
     function shareCv(event) {
-      const shareData = { title: ${JSON.stringify(displayName + ' | CV')}, url: ${JSON.stringify(pageUrl)} };
+      const shareData = { title: ${jsonForScript(displayName + ' | CV')}, url: ${jsonForScript(pageUrl)} };
       if (navigator.share) {
         navigator.share(shareData).catch(() => {});
       } else {
@@ -550,7 +552,7 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
     // iframe. Others (most phones) render the pages with PDF.js on canvas, still
     // inside the popup. PDF.js is self-hosted and loaded only on first use.
     // A new tab is only the last fallback if rendering fails.
-    const CERT_BASE = ${JSON.stringify(`/cv/${profile.username}`)};
+    const CERT_BASE = ${jsonForScript(`/cv/${profile.username}`)};
     let certToken = 0;
     let pdfjsLoading = null;
     function loadPdfJs() {

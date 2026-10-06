@@ -6,7 +6,7 @@
 // and structured data, not an empty shell.
 
 import { COUNTRY_NAME_BY_CODE, countryFlag } from './_lib/countries.js';
-import { escapeHtml, notFoundPage } from './_lib/html.js';
+import { escapeHtml, notFoundPage, jsonForScript } from './_lib/html.js';
 import { isDemoProfile } from './_lib/demo-profiles.js';
 import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
@@ -436,7 +436,7 @@ ${isDemoProfile(profile.username)
   // Demo/mockup profile (api/_lib/demo-profiles.js): keep it out of search
   // indexes and don't describe it to crawlers/AI as a real Person.
   ? '<meta name="robots" content="noindex, nofollow">'
-  : `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`}
+  : `<script type="application/ld+json">${jsonForScript(jsonLd)}</script>`}
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -661,7 +661,7 @@ ${isDemoProfile(profile.username)
     // doesn't block the outbound navigation the <a> click is about to do;
     // fetch(..., {keepalive:true}) is the fallback for older browsers.
     function trackClick(linkId) {
-      const payload = JSON.stringify({ username: ${JSON.stringify(profile.username)}, linkId, referrer: document.referrer, utmSource: new URLSearchParams(location.search).get('utm_source') });
+      const payload = JSON.stringify({ username: ${jsonForScript(profile.username)}, linkId, referrer: document.referrer, utmSource: new URLSearchParams(location.search).get('utm_source') });
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
       } else {
@@ -684,7 +684,7 @@ ${isDemoProfile(profile.username)
     }
 
     function shareProfile(event) {
-      const shareData = { title: ${JSON.stringify(displayName)}, url: ${JSON.stringify(pageUrl)} };
+      const shareData = { title: ${jsonForScript(displayName)}, url: ${jsonForScript(pageUrl)} };
       if (navigator.share) {
         navigator.share(shareData).catch(() => {});
       } else {
@@ -700,7 +700,7 @@ ${isDemoProfile(profile.username)
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
     function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); }
     function copyWallet() {
-      navigator.clipboard.writeText(${JSON.stringify(walletAddress)}).then(() => {
+      navigator.clipboard.writeText(${jsonForScript(walletAddress)}).then(() => {
         const btn = document.querySelector('.copy-btn');
         const original = btn.textContent;
         btn.textContent = 'Copied!';
