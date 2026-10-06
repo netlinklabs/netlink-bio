@@ -24,11 +24,15 @@
 //   - syncFeeIncome(): copies the swap commission arriving on the fee wallet into
 //     swap_fee_income (api/_lib/sync-fee-income.js). Part of the same wallet jobs, so the
 //     same `?job=verify-wallet-tx` call also runs it (this is how the first backfill is done).
+//   - processAccountDeletions(): deletes accounts whose 45-day deletion grace period is over
+//     (api/_lib/process-deletions.js). Dry run unless DELETION_EXECUTOR_ENABLED=true.
+//     `?job=process-deletions` runs only this job.
 
 import { sendMail, getUserEmail, reminderMail } from '../_lib/mailer.js';
 import { verifyWalletTx } from '../_lib/verify-wallet-tx.js';
 import { checkWalletTxAmounts } from '../_lib/verify-wallet-amount.js';
 import { syncFeeIncome } from '../_lib/sync-fee-income.js';
+import { processAccountDeletions } from '../_lib/process-deletions.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -58,6 +62,16 @@ async function runWalletJobs() {
   return out;
 }
 
+// Isolated like the wallet jobs: a failure is reported but never fails the rollup.
+async function runDeletionJob() {
+  try {
+    return await processAccountDeletions();
+  } catch (err) {
+    console.error('process-deletions failed', err);
+    return { error: 'failed' };
+  }
+}
+
 export default async function handler(req, res) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
@@ -71,6 +85,13 @@ export default async function handler(req, res) {
   }
   if (!SERVICE_ROLE_KEY) {
     res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' });
+    return;
+  }
+
+  // Manual run of the account deletion job only (dry run unless DELETION_EXECUTOR_ENABLED=true).
+  if (req.query.job === 'process-deletions') {
+    const out = await runDeletionJob();
+    res.status(out.error ? 500 : 200).json({ ok: !out.error, job: 'process-deletions', ...out });
     return;
   }
 
@@ -105,7 +126,8 @@ export default async function handler(req, res) {
     const reminders = await sendReminders();
     // Isolated: a failure here is reported in the response but never fails the rollup.
     const walletChecks = await runWalletJobs();
-    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders, walletChecks });
+    const accountDeletions = await runDeletionJob();
+    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders, walletChecks, accountDeletions });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || String(err) });

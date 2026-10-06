@@ -30,6 +30,46 @@ async function supabaseGet(path, accessToken) {
   return res.json();
 }
 
+// Like supabaseGet, but one failing section must not break the whole export.
+async function supabaseGetSafe(path, accessToken, label, unavailable) {
+  try {
+    return await supabaseGet(path, accessToken);
+  } catch (err) {
+    console.error(`Export section ${label} failed:`, err.message);
+    unavailable.push(label);
+    return [];
+  }
+}
+
+// Certificate PDFs live in the private bucket `cv-certificates`. The export
+// gives one signed download link per file (valid 7 days), made with the user's
+// own token, so the owner-only storage policy applies. Paths are checked to be
+// inside the user's own folder first.
+const CERT_PATH_RE = /^[0-9a-f-]{36}\/[A-Za-z0-9._-]+\.pdf$/i;
+async function buildCertificateLinks(cvData, userId, accessToken, unavailable) {
+  const list = Array.isArray(cvData?.certifications) ? cvData.certifications : [];
+  const out = [];
+  for (const c of list) {
+    const path = typeof c === 'object' && c ? String(c.file_path || '') : '';
+    if (!path) continue;
+    if (!path.startsWith(`${userId}/`) || !CERT_PATH_RE.test(path) || path.includes('..')) continue;
+    try {
+      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/cv-certificates/${path}`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresIn: 7 * 24 * 3600 }),
+      });
+      if (!r.ok) throw new Error(`sign ${r.status}`);
+      const { signedURL } = await r.json();
+      out.push({ title: String(c.name || ''), download_url: `${SUPABASE_URL}/storage/v1${signedURL}`, expires_in_days: 7 });
+    } catch (err) {
+      console.error('Export certificate link failed:', err.message);
+      if (!unavailable.includes('certificate_files')) unavailable.push('certificate_files');
+    }
+  }
+  return out;
+}
+
 // ==================== action=export (ex api/export-data.js) ====================
 // Builds a downloadable JSON export of the current user's personal data.
 // Uses the user's own access token as the Authorization header for every
@@ -68,6 +108,35 @@ async function handleExport(req, res) {
       supabaseGet(`contacts?owner_id=eq.${user.id}&select=*`, accessToken),
     ]);
 
+    // More of the user's own data. Each section is optional: if one query fails
+    // the export still works and the section is listed in `sections_unavailable`.
+    // links and profile_videos have a public SELECT policy, so the user_id filter
+    // here is what limits them to this user. Left out on purpose: kyc_sessions.verification_url
+    // (a live verification link), fiat_orders.raw_payload (provider internals),
+    // ambassador_applications.admin_notes (internal notes), and broadcast notifications.
+    const unavailable = [];
+    const uid = user.id;
+    const [
+      links, profileVideos, landingPages, verifications, orders, kycSessions, fiatOrders,
+      walletTransactions, rewards, referrals, analyticsDaily, ambassadorApplications, notifications,
+    ] = await Promise.all([
+      supabaseGetSafe(`links?user_id=eq.${uid}&select=*&order=position.asc`, accessToken, 'links', unavailable),
+      supabaseGetSafe(`profile_videos?user_id=eq.${uid}&select=*&order=position.asc`, accessToken, 'profile_videos', unavailable),
+      supabaseGetSafe(`landing_pages?user_id=eq.${uid}&select=*`, accessToken, 'landing_pages', unavailable),
+      supabaseGetSafe(`verifications?profile_id=eq.${uid}&select=*&order=created_at.desc`, accessToken, 'verifications', unavailable),
+      supabaseGetSafe(`orders?user_id=eq.${uid}&select=*&order=created_at.desc`, accessToken, 'orders', unavailable),
+      supabaseGetSafe(`kyc_sessions?user_id=eq.${uid}&select=id,order_id,didit_session_id,created_at&order=created_at.desc`, accessToken, 'kyc_sessions', unavailable),
+      supabaseGetSafe(`fiat_orders?user_id=eq.${uid}&select=id,order_id,provider,order_type,status,fiat_ticker,fiat_amount,crypto_ticker,crypto_amount,wallet_address,txn_hash,created_at,updated_at&order=created_at.desc`, accessToken, 'fiat_orders', unavailable),
+      supabaseGetSafe(`wallet_transactions?owner_id=eq.${uid}&select=*&order=created_at.desc`, accessToken, 'wallet_transactions', unavailable),
+      supabaseGetSafe(`rewards?user_id=eq.${uid}&select=*&order=created_at.desc`, accessToken, 'rewards', unavailable),
+      supabaseGetSafe(`referrals?or=(referrer_id.eq.${uid},referred_id.eq.${uid})&select=*`, accessToken, 'referrals', unavailable),
+      supabaseGetSafe(`analytics_daily_summary?user_id=eq.${uid}&select=*&order=date.desc`, accessToken, 'analytics_daily_summary', unavailable),
+      supabaseGetSafe(`ambassador_applications?user_id=eq.${uid}&select=id,season,country_code,city,track,social_links,audience_size,motivation,contribution_plan,terms_accepted_at,status,reviewed_at,created_at,updated_at`, accessToken, 'ambassador_applications', unavailable),
+      supabaseGetSafe(`notifications?target_id=eq.${uid}&select=*&order=created_at.desc`, accessToken, 'notifications', unavailable),
+    ]);
+
+    const certificateFiles = await buildCertificateLinks(profile[0]?.cv_data, uid, accessToken, unavailable);
+
     const exportPayload = {
       exported_at: new Date().toISOString(),
       account: {
@@ -79,7 +148,22 @@ async function handleExport(req, res) {
       consents,
       deletion_requests: deletionRequests,
       contacts,
-      note: 'On-chain wallet transactions are public blockchain data and are not included here -- view them via PolygonScan using your wallet address.',
+      links,
+      profile_videos: profileVideos,
+      landing_pages: landingPages,
+      verifications,
+      orders,
+      kyc_sessions: kycSessions,
+      fiat_orders: fiatOrders,
+      wallet_transactions: walletTransactions,
+      rewards,
+      referrals,
+      analytics_daily_summary: analyticsDaily,
+      ambassador_applications: ambassadorApplications,
+      notifications,
+      certificate_files: certificateFiles,
+      ...(unavailable.length ? { sections_unavailable: unavailable } : {}),
+      note: 'On-chain wallet transactions are public blockchain data and are not included here -- view them via PolygonScan using your wallet address. Certificate files are not embedded: download each one from its link before the link expires (7 days).',
     };
 
     res.setHeader('Content-Type', 'application/json');
