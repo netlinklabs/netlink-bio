@@ -339,6 +339,7 @@ async function handler(req, res) {
           <button type="button" class="cert-modal-close" onclick="closeCertificate()" aria-label="Close">&times;</button>
         </div>
         <iframe id="certFrame" class="cert-modal-frame" title="Certificate" src="about:blank"></iframe>
+        <div id="certPages" class="cert-modal-pages" style="display:none"></div>
       </div>
     </div>` : '';
 
@@ -456,6 +457,9 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .cert-modal-open:hover { text-decoration:underline; }
 .cert-modal-close { width:30px; height:30px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:18px; line-height:1; cursor:pointer; flex-shrink:0; }
 .cert-modal-frame { flex:1; width:100%; border:0; background:#f8fafc; }
+.cert-modal-pages { flex:1; overflow:auto; background:#e2e8f0; padding:0.75rem; -webkit-overflow-scrolling:touch; }
+.cert-modal-pages canvas { display:block; width:100%; height:auto; margin:0 auto 0.75rem; background:#fff; box-shadow:0 1px 4px rgba(15,23,42,0.18); }
+.cert-modal-msg { padding:2rem 1rem; text-align:center; font-size:0.85rem; color:var(--text-medium); }
 .footer-link { margin-top:2rem; text-align:center; }
 .footer-link a { color:#94a3b8; font-size:12px; text-decoration:none; }
 .legal-footer { margin-top:8px; text-align:center; }
@@ -472,7 +476,8 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
   .project-grid { grid-template-columns:1fr 1fr; }
 }
 @media print {
-  @page { size:A4; margin:0; }
+  @page { size:A4; margin:14mm 0; }
+  @page :first { margin:0 0 14mm 0; }
   body { background:white; padding:0; }
   .cv-container { display:grid !important; grid-template-columns:280px 1fr !important; max-width:100%; box-shadow:none; border-radius:0; min-height:100vh; }
   .footer-link { display:none !important; }
@@ -541,22 +546,80 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
       document.getElementById('badgeModal' + idx).classList.remove('active');
     }
 
-    // Certificate popup. Browsers without a built-in PDF viewer (most phones)
-    // open the file in a new tab instead of a blank frame.
+    // Certificate popup. Browsers with a built-in PDF viewer show the file in an
+    // iframe. Others (most phones) render the pages with PDF.js on canvas, still
+    // inside the popup. PDF.js is self-hosted and loaded only on first use.
+    // A new tab is only the last fallback if rendering fails.
     const CERT_BASE = ${JSON.stringify(`/cv/${profile.username}`)};
+    let certToken = 0;
+    let pdfjsLoading = null;
+    function loadPdfJs() {
+      if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+      if (pdfjsLoading) return pdfjsLoading;
+      pdfjsLoading = new Promise((resolve, reject) => {
+        const sc = document.createElement('script');
+        sc.src = '/assets/pdfjs/pdf.min.js';
+        sc.onload = () => {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdfjs/pdf.worker.min.js';
+          resolve(window.pdfjsLib);
+        };
+        sc.onerror = () => { pdfjsLoading = null; reject(new Error('load')); };
+        document.head.appendChild(sc);
+      });
+      return pdfjsLoading;
+    }
+    async function renderCertificate(url, token) {
+      const box = document.getElementById('certPages');
+      box.innerHTML = '<div class="cert-modal-msg">Loading certificate...</div>';
+      try {
+        const lib = await loadPdfJs();
+        const doc = await lib.getDocument({ url, withCredentials: false }).promise;
+        if (token !== certToken) { doc.destroy(); return; }
+        box.innerHTML = '';
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.max(box.clientWidth - 24, 280);
+        for (let n = 1; n <= doc.numPages; n++) {
+          const page = await doc.getPage(n);
+          if (token !== certToken) { doc.destroy(); return; }
+          const base = page.getViewport({ scale: 1 });
+          const vp = page.getViewport({ scale: (width / base.width) * ratio });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.floor(vp.width);
+          canvas.height = Math.floor(vp.height);
+          box.appendChild(canvas);
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        }
+      } catch (err) {
+        if (token !== certToken) return;
+        closeCertificate();
+        window.open(url, '_blank', 'noopener');
+      }
+    }
     function openCertificate(btn) {
       const url = CERT_BASE + '?cert=' + encodeURIComponent(btn.dataset.certIndex);
-      if (!navigator.pdfViewerEnabled) { window.open(url, '_blank', 'noopener'); return; }
+      const frame = document.getElementById('certFrame');
+      const pages = document.getElementById('certPages');
+      const token = ++certToken;
       document.getElementById('certModalTitle').textContent = btn.dataset.title || 'Certificate';
       document.getElementById('certModalOpen').href = url;
-      document.getElementById('certFrame').src = url;
       document.getElementById('certModal').classList.add('active');
+      if (navigator.pdfViewerEnabled) {
+        pages.style.display = 'none';
+        frame.style.display = '';
+        frame.src = url;
+      } else {
+        frame.style.display = 'none';
+        pages.style.display = '';
+        renderCertificate(url, token);
+      }
     }
     function closeCertificate() {
       const modal = document.getElementById('certModal');
       if (!modal) return;
+      certToken++;
       modal.classList.remove('active');
       document.getElementById('certFrame').src = 'about:blank';
+      document.getElementById('certPages').innerHTML = '';
     }
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCertificate(); });
   </script>
