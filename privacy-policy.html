@@ -44,8 +44,8 @@
             <h1 class="text-2xl font-bold text-primary">Privacy Policy</h1>
         </div>
         <div class="flex items-center gap-2 mb-6">
-            <span class="badge">Version 1.5</span>
-            <span class="text-xs text-muted">Effective September 27, 2026</span>
+            <span class="badge">Version 1.6</span>
+            <span class="text-xs text-muted">Effective October 6, 2026</span>
         </div>
 
         <div class="card rounded-2xl p-5 lg:p-7">
@@ -58,6 +58,7 @@
             <ul>
                 <li><strong>Account data:</strong> name, email, username, avatar, password (via Supabase Auth)</li>
                 <li><strong>Profile content:</strong> bio, CV, business page, links you add</li>
+                <li><strong>Certificate files:</strong> PDF files you attach to certifications on your CV (Silver plan and up)</li>
                 <li><strong>Wallet data:</strong> your wallet address, and your wallet's linked Google email (if you create a smart wallet)</li>
                 <li><strong>Verification data:</strong> identity/business verification status and documents, processed via our KYC/KYB partner</li>
                 <li><strong>Contacts:</strong> contacts you save for payments</li>
@@ -69,6 +70,13 @@
 
             <h3>AI and search discoverability of public pages</h3>
             <p>Public pages (profile, CV, and business page) are intentionally structured with machine-readable data (schema.org JSON-LD and our <a href="/llms.txt" class="inline-link">llms.txt</a> file) so that AI assistants and search engines can accurately read and reference them, in addition to human visitors. By publishing a public page, you acknowledge and agree that its content may be accessed, read, and referenced by automated AI agents and crawlers, and you remain responsible for what you choose to include on it.</p>
+
+            <h3>Certificate files on your CV</h3>
+            <p><strong>What we store.</strong> If you are on the Silver plan or higher, you can attach a PDF file (up to 2 MB) to a certification on your CV. We store the file in a private storage bucket linked to your account. We do not review or verify its content.</p>
+            <p><strong>Who can see it.</strong> You can see it from your dashboard. Anyone who opens your public CV can view the file through the "View Certificate" button, so treat every attached file as public. The file is not indexed by search engines, and its storage location is never shown on the page. We access it only to run the service, handle abuse reports, or comply with the law.</p>
+            <p><strong>Watermark.</strong> Each time someone opens a certificate, we add a watermark to every page of the copy they see. It shows your CV address, the date it was shown, and the words "unverified copy". Your original file is not changed. Netlink does not verify that any certificate is genuine.</p>
+            <p><strong>What not to upload.</strong> Do not upload documents that contain sensitive data, such as ID numbers, home addresses, or bank account numbers. Only upload files you have the right to share.</p>
+            <p><strong>How to delete.</strong> Use Remove or Replace on the certification in your dashboard, then save your CV. The file is then deleted from our storage. If you downgrade to the Basic plan, the file is no longer shown on your CV but stays stored until you remove it.</p>
 
             <h2>3. How We Use Your Data, and Our Legal Basis</h2>
             <ul>
@@ -117,6 +125,7 @@
             <h2>8. Data Retention</h2>
             <p>We retain your data for as long as your account is active, and for a limited period afterward where required for legal, tax, or fraud-prevention purposes.</p>
             <p>Individual visit records for public pages are deleted after 90 days. Only daily aggregated counts are kept, for as long as the page owner's account is active.</p>
+            <p>Certificate files are kept until you remove them.</p>
 
             <h2>9. Security</h2>
             <p>We apply access controls (including database-level row security) so that your personal data is only accessible to you and to systems that need it to operate the service.</p>
