@@ -26,6 +26,30 @@ export function jsonForScript(value) {
     .replace(/\u2029/g, '\\u2029');
 }
 
+// Returns the URL only when it is a plain http(s) URL, otherwise ''.
+// Used for user-provided links so schemes like javascript: or data: never
+// reach an href.
+export function safeHttpUrl(value) {
+  const v = String(value || '').trim();
+  if (!v || v.length > 2000) return '';
+  try {
+    const u = new URL(v);
+    return (u.protocol === 'https:' || u.protocol === 'http:') ? v : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+// Returns the value only when it looks like a plain CSS colour (hex, rgb(a),
+// hsl(a)), otherwise the fallback. Stops values like "red;position:fixed" from
+// adding extra CSS declarations inside a style="" attribute.
+export function safeCssColor(value, fallback) {
+  const v = String(value || '').trim();
+  if (/^#[0-9a-f]{3,8}$/i.test(v)) return v;
+  if (/^(rgb|hsl)a?\(\s*[0-9.%\s,/-]+\)$/i.test(v)) return v;
+  return fallback;
+}
+
 // Branded 404 page for a missing profile / CV / landing page.
 // heading and message may contain a caller-escaped value (see call sites);
 // ctaHref/ctaText default to sending people back to create their own page.
