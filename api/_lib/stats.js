@@ -47,3 +47,21 @@ export function withStats(endpoint, handler) {
     }
   };
 }
+
+// Logs the username of a bio page 404 (see supabase/migrations/20261006_bio_not_found_log.sql).
+// Fire and forget, never throws, never delays the response.
+export function logBioNotFound(username) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return;
+  waitUntil((async () => {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/rpc/bump_bio_not_found`, {
+        method: 'POST',
+        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_username: String(username || '').slice(0, 80) }),
+      });
+    } catch (e) {
+      console.error('stats: bio 404 log failed', e.message);
+    }
+  })());
+}
