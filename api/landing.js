@@ -11,7 +11,7 @@
 // is included only to attribute the view_landing analytics event
 // server-side -- it must never be rendered into the HTML/JSON-LD output.
 
-import { escapeHtml, notFoundPage } from './_lib/html.js';
+import { escapeHtml, notFoundPage, jsonForScript } from './_lib/html.js';
 import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { sitemapHandler } from './_lib/sitemap.js';
@@ -523,7 +523,7 @@ ${c.closingText ? `<p style="margin-top: 20px; font-size: 14px; color: #666; lin
   const lightboxScript = galleryImages.length
     ? `
 <script>
-const galleryImages = ${JSON.stringify(galleryImages.map((g) => g.src))};
+const galleryImages = ${jsonForScript(galleryImages.map((g) => g.src))};
 let lightboxIndex = 0;
 function openLightbox(index) {
   lightboxIndex = index;
@@ -561,7 +561,7 @@ ${c.logoImage ? `<meta property="og:image" content="${escapeHtml(c.logoImage)}">
 <meta property="og:url" content="${pageUrl}">
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+<script type="application/ld+json">${jsonForScript(jsonLd)}</script>
 <style>${PAGE_CSS}</style>
 </head>
 <body>
@@ -590,7 +590,7 @@ ${lightboxScript}
 // Fire-and-forget click tracking (Gold Landing Page stats). Resolved by
 // slug server-side, same pattern as api/bio.js's trackClick.
 function trackClick() {
-  const payload = JSON.stringify({ slug: ${JSON.stringify(page.slug)}, referrer: document.referrer, utmSource: new URLSearchParams(location.search).get('utm_source') });
+  const payload = JSON.stringify({ slug: ${jsonForScript(page.slug)}, referrer: document.referrer, utmSource: new URLSearchParams(location.search).get('utm_source') });
   if (navigator.sendBeacon) {
     navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
   } else {

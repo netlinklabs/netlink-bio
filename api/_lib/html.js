@@ -12,6 +12,20 @@ export function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// JSON for embedding inside an inline <script> (JSON-LD or JS variables).
+// Plain JSON.stringify leaves "</script>" intact, so user text like
+// "</script><script>alert(1)</script>" would close the tag and run. Escaping
+// < > & and the two JS line separators keeps the output valid JSON and valid JS
+// while making it impossible to break out of the script element.
+export function jsonForScript(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 // Branded 404 page for a missing profile / CV / landing page.
 // heading and message may contain a caller-escaped value (see call sites);
 // ctaHref/ctaText default to sending people back to create their own page.
