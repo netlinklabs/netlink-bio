@@ -9,8 +9,11 @@
 -- This migration adds:
 --   1) fulfill_plan_order(order_id): idempotent activation of a paid 'plan' order (service_role only).
 --   2) expire_lapsed_tiers(grace):   daily downgrade to Basic, 7 days after expiry (service_role only).
---   3) Two trigger fixes so a downgrade never fails and never overwrites user data.
---   4) (commented) data fix for the owner account and a username decision.
+--   3) Four trigger fixes: a downgrade never fails and never overwrites user data (hide footer link,
+--      video layout, username), and Landing Page creation is Gold and up only.
+--   4) Data: owner account expiry moved to 2030-12-31 (so the first expiry run does not downgrade it).
+--
+-- Owner decisions (2026-10-07): a username is NEVER changed by a tier downgrade; Landing Page is Gold only.
 --
 -- Order meta used by plan orders:
 --   { "tier": "silver" | "gold", "kind": "new" | "upgrade", "months": 1 | 12 }
@@ -18,7 +21,11 @@
 --   priced by the API from the remaining days; the expiry date does not change.
 --
 -- Rollback: drop function public.fulfill_plan_order(uuid); drop function public.expire_lapsed_tiers(interval);
--- then re-create the two trigger functions from their previous definitions (see section 3 comments).
+-- then re-create the four trigger functions with their previous behavior:
+--   enforce_hide_footer_link_tier_gate: raise on every insert/update when a toggle is on and tier is not Gold+.
+--   enforce_video_layout_tier:          set video_layout = 'standard' on every insert/update when tier is Basic.
+--   enforce_username_length:            validate the username length on every insert/update of username or tier.
+--   enforce_landing_page_tier_gate:     raise only when the owner tier is Basic (Silver was allowed).
 
 -- 1) Activate a paid plan order. Safe to call twice (second call changes nothing).
 create or replace function public.fulfill_plan_order(p_order_id uuid)
@@ -171,17 +178,58 @@ begin
 end;
 $$;
 
--- 4) NOT included, needs a decision first.
---
--- 4a) Username length. enforce_username_length() runs on "update of username, tier" and raises when the
---     username is shorter than the new tier allows (Basic needs 5+). A Gold user with a 3 or 4
---     character username would make the downgrade UPDATE fail (and the daily job with it).
---     Today no paid user is affected (checked: 0 usernames under 5 characters among paid tiers).
---     Option A (keep the name): only validate on INSERT or when the username changes. Risk: someone
---     buys one month of Gold to claim a short name and keeps it after expiry.
---     Option B (force a rename after expiry): needs a rename flow and redirect handling.
---
--- 4b) Owner account. ramlanhadiansyah is Gold with tier_expires_at = 2026-07-12 (already past). The
---     first run of expire_lapsed_tiers() would downgrade it. If it should stay Gold for good:
---       update public.profiles set tier_expires_at = null where username = 'ramlanhadiansyah';
---     (a Gold account with no expiry date is treated as permanent by both functions above.)
+-- 3c) enforce_username_length ran on "update of username, tier" and raised when the username was shorter
+--     than the new tier allows (Basic needs 5+), so downgrading a Gold user with a 3 or 4 character
+--     username would fail. Decision: a username is never changed by a downgrade. Now it validates only
+--     on insert or when the username itself changes. Message and rules are unchanged. Known trade-off:
+--     a short name bought with a short Gold plan stays after expiry.
+create or replace function public.enforce_username_length()
+returns trigger
+language plpgsql
+set search_path to 'public', 'pg_temp'
+as $$
+begin
+  if new.username is null then
+    return new;
+  end if;
+
+  if tg_op = 'UPDATE' and new.username is not distinct from old.username then
+    return new;
+  end if;
+
+  if not public.is_slug_length_valid(new.username, new.tier) then
+    raise exception
+      'Username "%" does not meet the length requirement for tier "%" (min % characters, max 25)',
+      new.username, coalesce(new.tier, 'basic'), public.min_slug_length_for_tier(new.tier);
+  end if;
+
+  return new;
+end;
+$$;
+
+-- 3d) Landing Page is Gold and up only (was: anything but Basic, so Silver could create one).
+--     The trigger is BEFORE INSERT only, so existing pages of a lapsed account are kept (hidden, not
+--     deleted). Checked in production: both existing landing pages belong to Gold accounts.
+create or replace function public.enforce_landing_page_tier_gate()
+returns trigger
+language plpgsql
+set search_path to 'public', 'pg_temp'
+as $$
+declare
+  v_tier text;
+begin
+  select tier into v_tier from public.profiles where id = new.user_id;
+
+  if coalesce(v_tier, 'basic') not in ('gold', 'platinum') then
+    raise exception 'Landing Page is available from the Gold plan and up.';
+  end if;
+
+  return new;
+end;
+$$;
+
+-- 4) Data: owner account (ramlanhadiansyah) had tier_expires_at 2026-07-12, already past, so the first
+--    expire_lapsed_tiers() run would have downgraded it. Moved to 2030-12-31 (owner decision).
+update public.profiles
+   set tier_expires_at = timestamptz '2030-12-31 23:59:59+07'
+ where username = 'ramlanhadiansyah' and tier = 'gold';
