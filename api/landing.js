@@ -266,6 +266,18 @@ async function handler(req, res) {
       return;
     }
     page = rows[0];
+    // Landing Page is a Gold feature. When the owner's plan has ended (tier is back to Basic or
+    // Silver) the page data is kept, but the public page is switched off with a neutral notice.
+    // It comes back by itself when the owner is on Gold again.
+    if (page.tier !== 'gold' && page.tier !== 'platinum') {
+      res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
+        title: 'Page not active',
+        heading: 'This page is not active',
+        message: 'This page is currently unavailable. Please contact the page owner.',
+        code: '',
+      }));
+      return;
+    }
   } catch (err) {
     console.error(err);
     res.status(500).send('Something went wrong loading this page.');

@@ -31,7 +31,12 @@ older entries in older-dated files) if what you are looking for is not below.
   - Downgrade: calls `expire_lapsed_tiers()` (7 days after the end date), then sends an in-app notice and email "plan has ended, data kept". The username is never changed.
   - `api/_lib/mailer.js`: new `planExpiringMail` and `planEndedMail`.
   - Tested with a mocked database (window logic, dedupe on second run, downgrade notice). Not run against production data.
-  - Still to do: "This page is not active" for expired Gold landing pages, hide features above Basic limits, admin view of plan details, a real payment test.
+- **Landing page switched off when the owner is not on Gold (step 4 of paid plans).** No database change.
+  - `api/landing.js`: if the owner's tier is not `gold` or `platinum`, `/page/<slug>` answers 404 with a neutral page "This page is not active. This page is currently unavailable. Please contact the page owner." (noindex). Page data is kept; it works again when the owner is back on Gold.
+  - `api/_lib/html.js`: `notFoundPage` has a new optional `code` (default `404`, `''` hides it).
+  - `api/_lib/sitemap.js`: landing pages now come from `landing_pages_public` and only Gold or Platinum owners are listed.
+  - Tested with mocked data: basic and silver inactive, gold renders, sitemap lists Gold only. Today both published pages have Gold owners (checked read only).
+  - Still to do: hide features above Basic limits, admin view of plan details, a real payment test.
 
 ### Added
 - **Admin Overview: "Bio page 404s" section with a Load button.** Shows the 404 log from `bio_not_found_daily` on demand (Today, 7D or 30D): total 404s, different names, share of bot probes, a per day chart and the top 30 names. A name that does not match the username rule (`[a-z0-9_]{3,20}`) is labelled "Probe", the rest "Valid format".
