@@ -101,16 +101,7 @@
             <!-- Plan orders only: billing period, can be changed before Continue -->
             <div id="periodPicker" class="card rounded-2xl p-5 mb-4 hidden">
                 <h3 class="font-semibold text-primary text-sm mb-3">Billing period</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" role="radiogroup" aria-label="Billing period">
-                    <div id="periodMonthly" class="method-card" data-period="monthly" role="radio" tabindex="0" aria-checked="false">
-                        <p class="text-sm font-semibold text-primary">Monthly</p>
-                        <p id="periodMonthlyPrice" class="text-xs text-muted mt-0.5"></p>
-                    </div>
-                    <div id="periodAnnual" class="method-card" data-period="annual" role="radio" tabindex="0" aria-checked="false">
-                        <p class="text-sm font-semibold text-primary">Annual</p>
-                        <p id="periodAnnualPrice" class="text-xs text-muted mt-0.5"></p>
-                    </div>
-                </div>
+                <div id="periodOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" role="radiogroup" aria-label="Billing period"></div>
             </div>
 
             <div class="card rounded-2xl p-5 mb-4">
@@ -244,7 +235,10 @@
         const params = new URLSearchParams(location.search);
         const ORDER_TYPE = params.get('type') === 'plan' ? 'plan' : 'kyc'; // KYB orders reuse this page later
         const PLAN_TIER = params.get('tier');
-        let PLAN_PERIOD = params.get('period') === 'annual' ? 'annual' : 'monthly'; // can be changed on this page before Continue
+        // Plan lengths, in the order they are shown. Same names as api/orders.js (PLAN_PERIODS).
+        const PERIODS = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 };
+        const FREE_MONTHS = { 6: 1, 12: 3 }; // months not paid for: 6 months pays 5, 12 months pays 9
+        let PLAN_PERIOD = Object.prototype.hasOwnProperty.call(PERIODS, params.get('period')) ? params.get('period') : 'monthly'; // can be changed on this page before Continue
         const PLAN_QUOTES = {}; // period -> server quote
         const TIER_NAME = { silver: 'Silver', gold: 'Gold' };
         const POLL_MS = 20000;
@@ -290,10 +284,12 @@
         function fmtDay(iso) { return iso ? new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''; }
 
         // Item name for an order (plan orders carry their details in order.plan).
+        function monthsText(n) { return `${n} month${n === 1 ? '' : 's'}`; }
+
         function orderItemLabel(o) {
             if (o.type === 'plan' && o.plan) {
                 const t = TIER_NAME[o.plan.tier] || 'Plan';
-                return o.plan.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${o.plan.months === 12 ? '12 months' : '1 month'}`;
+                return o.plan.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${monthsText(o.plan.months || 1)}`;
             }
             return 'Identity Verification (KYC)';
         }
@@ -302,7 +298,8 @@
         function planQuoteNote(q) {
             const until = fmtDay(q.current_until);
             if (q.kind === 'upgrade') return `Your Silver plan has ${q.days_left} day${q.days_left === 1 ? '' : 's'} left. You pay the price difference for those days. Your end date stays ${until}.`;
-            const length = q.months === 12 ? '12 months for the price of 11. ' : '1 month. ';
+            const free = FREE_MONTHS[q.months];
+            const length = free ? `${q.months} months for the price of ${q.months - free}. ` : `${monthsText(q.months)}. `;
             return q.renewal ? `${length}Added after your current end date (${until}).` : `${length}Starts when your payment is confirmed.`;
         }
 
@@ -312,27 +309,44 @@
             if (!q) return;
             PLAN_PERIOD = period;
             const t = TIER_NAME[q.tier] || 'Plan';
-            $('itemName').textContent = q.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${q.months === 12 ? '12 months' : '1 month'}`;
+            $('itemName').textContent = q.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${monthsText(q.months)}`;
             $('itemNote').textContent = planQuoteNote(q);
             $('itemPrice').textContent = `$${Number(q.amount_usdc).toFixed(2)}`;
-            for (const [per, id] of [['monthly', 'periodMonthly'], ['annual', 'periodAnnual']]) {
-                const el = $(id);
-                el.classList.toggle('selected', per === period);
-                el.setAttribute('aria-checked', per === period ? 'true' : 'false');
+            for (const el of $('periodOptions').children) {
+                const on = el.dataset.period === period;
+                el.classList.toggle('selected', on);
+                el.setAttribute('aria-checked', on ? 'true' : 'false');
             }
             // keep the address bar in step, so a refresh keeps the choice
             history.replaceState(null, '', `/checkout?type=plan&tier=${encodeURIComponent(q.tier)}&period=${period}`);
         }
 
-        // Monthly and annual options. An upgrade has no period choice, so the picker stays hidden.
+        // 1, 3, 6 and 12 month options. An upgrade has no length choice, so the picker stays hidden.
         function initPeriodPicker() {
-            const m = PLAN_QUOTES.monthly, a = PLAN_QUOTES.annual;
-            if (!m || !a || m.kind === 'upgrade' || a.kind === 'upgrade') return;
-            $('periodMonthlyPrice').textContent = `$${Number(m.amount_usdc).toFixed(2)} per month`;
-            $('periodAnnualPrice').textContent = `$${Number(a.amount_usdc).toFixed(2)} per year, 1 month free`;
-            for (const el of [$('periodMonthly'), $('periodAnnual')]) {
-                el.addEventListener('click', () => showPlanPeriod(el.dataset.period));
-                el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPlanPeriod(el.dataset.period); } });
+            const names = Object.keys(PERIODS);
+            if (names.some((n) => !PLAN_QUOTES[n] || PLAN_QUOTES[n].kind === 'upgrade')) return;
+            const box = $('periodOptions');
+            box.textContent = '';
+            for (const name of names) {
+                const q = PLAN_QUOTES[name];
+                const free = FREE_MONTHS[q.months];
+                const el = document.createElement('div');
+                el.className = 'method-card';
+                el.id = `period_${name}`;
+                el.dataset.period = name;
+                el.setAttribute('role', 'radio');
+                el.setAttribute('tabindex', '0');
+                el.setAttribute('aria-checked', 'false');
+                const title = document.createElement('p');
+                title.className = 'text-sm font-semibold text-primary';
+                title.textContent = monthsText(q.months);
+                const price = document.createElement('p');
+                price.className = 'text-xs text-muted mt-0.5';
+                price.textContent = `$${Number(q.amount_usdc).toFixed(2)}${free ? `, ${monthsText(free)} free` : ''}`;
+                el.append(title, price);
+                el.addEventListener('click', () => showPlanPeriod(name));
+                el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPlanPeriod(name); } });
+                box.appendChild(el);
             }
             show('periodPicker', true);
         }
@@ -671,11 +685,9 @@
                 if (ORDER_TYPE === 'plan') {
                     // The server decides the price (renewal, or the per-day price of an upgrade) and whether the plan can be ordered.
                     try {
-                        // Both periods, so the buyer can switch before pressing Continue.
-                        const results = await Promise.all(['monthly', 'annual'].map((per) =>
-                            api('plan-quote', { query: `&tier=${encodeURIComponent(PLAN_TIER || '')}&period=${per}` })));
-                        PLAN_QUOTES.monthly = results[0].quote;
-                        PLAN_QUOTES.annual = results[1].quote;
+                        // Every length in one request, so the buyer can switch before pressing Continue.
+                        const { quotes } = await api('plan-quote', { query: `&tier=${encodeURIComponent(PLAN_TIER || '')}&period=all` });
+                        Object.assign(PLAN_QUOTES, quotes);
                     } catch (err) {
                         showBlocked(err.message, '/plans', 'View plans');
                         return;
