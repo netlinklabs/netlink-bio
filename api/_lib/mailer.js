@@ -130,12 +130,23 @@ function fmtDate(iso) {
   }) + ' WIB';
 }
 
-const TYPE_LABEL = { kyc: 'Identity verification (KYC)' };
+const TIER_NAME = { silver: 'Silver', gold: 'Gold' };
+
+// Item name on invoices and receipts. Plan orders carry the plan in meta
+// ({ tier, kind: 'new' | 'upgrade', months: 1 | 12 }).
+function itemLabel(o) {
+  if (o.type === 'plan') {
+    const tier = TIER_NAME[o.meta?.tier] || 'Plan';
+    if (o.meta?.kind === 'upgrade') return `Upgrade to ${tier}`;
+    return `${tier} plan, ${Number(o.meta?.months) === 12 ? '12 months' : '1 month'}`;
+  }
+  return { kyc: 'Identity verification (KYC)' }[o.type] || o.type;
+}
 
 function orderRows(o) {
   return [
     ['Order', o.order_no],
-    ['Item', TYPE_LABEL[o.type] || o.type],
+    ['Item', itemLabel(o)],
     ['Amount', fmtUsdc(o.amount_usdc)],
   ];
 }
@@ -176,20 +187,46 @@ export function reminderMail(o) {
   };
 }
 
-export function receiptMail(o) {
+// extra.activeUntil (plan orders): the date the plan now runs until. Without it
+// the mail says the plan will be active shortly (activation is retried).
+export function receiptMail(o, extra = {}) {
+  let intro = 'We received your payment. You can start your identity verification now.';
+  let cta = { label: 'Start verification', url: `${SITE}/identity` };
+  if (o.type === 'plan') {
+    const tier = TIER_NAME[o.meta?.tier] || 'plan';
+    intro = extra.activeUntil
+      ? `We received your payment. Your ${tier} plan is active until ${fmtDate(extra.activeUntil)}.`
+      : 'We received your payment. Your plan will be active shortly. If it is not active within a few minutes, reply to this email with your order number.';
+    cta = { label: 'Open my account', url: `${SITE}/dashboard` };
+  }
   return {
     subject: `Receipt for order ${o.order_no}`,
     ...layout({
       preheader: `Payment received for ${o.order_no}`,
       title: 'Payment received',
-      intro: 'We received your payment. You can start your identity verification now.',
+      intro,
       rows: [
         ...orderRows(o),
         ['Paid', fmtUsdc(o.paid_amount)],
         ['Paid at', fmtDate(o.paid_at)],
         ...(o.paid_tx_hash ? [['Transaction', o.paid_tx_hash]] : []),
       ],
-      cta: { label: 'Start verification', url: `${SITE}/identity` },
+      cta,
+    }),
+  };
+}
+
+// To the team mailbox when a paid plan order could not be activated.
+export function planActivationFailedMail(o, reason) {
+  return {
+    subject: `[Netlink] Plan not activated ${o.order_no}`,
+    ...layout({
+      preheader: `${o.order_no} is paid but the plan is not active`,
+      title: 'Plan activation failed',
+      intro: 'An order was paid but the plan could not be activated automatically. It is retried each time the customer opens the order. If it keeps failing, check the account and the reason below.',
+      rows: [...orderRows(o), ['Reason', String(reason || 'unknown').slice(0, 200)]],
+      after: `Manual retry in the Supabase SQL editor: select public.fulfill_plan_order('${o.id}');`,
+      cta: { label: 'Open admin', url: `${SITE}/admin` },
     }),
   };
 }

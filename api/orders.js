@@ -1,6 +1,6 @@
 // api/orders.js
-// One serverless function for every paid order (KYC now, KYB and plans later),
-// dispatched by ?action=create|status|check-payment|cancel|didit-session, plus admin-* actions
+// One serverless function for every paid order (KYC and plans now, KYB later),
+// dispatched by ?action=create|status|plan-quote|check-payment|cancel|didit-session, plus admin-* actions
 // (see api/_lib/admin.js). Kept as a single
 // file on purpose: the Vercel Hobby plan caps a deployment at 12 functions
 // and this is the last free slot.
@@ -25,7 +25,7 @@
 // All amounts are handled as integer micro-USDC (BigInt) to avoid float drift.
 
 import { notifyUser } from './_lib/notify.js';
-import { emailUser, emailAdmin, invoiceMail, receiptMail, adminPaidMail, getUserEmail, sendMail, ambassadorThanksMail } from './_lib/mailer.js';
+import { emailUser, emailAdmin, invoiceMail, receiptMail, adminPaidMail, planActivationFailedMail, getUserEmail, sendMail, ambassadorThanksMail } from './_lib/mailer.js';
 import { handleAdmin, isAdminAction } from './_lib/admin.js';
 import { withStats } from './_lib/stats.js';
 import { trackAlchemy } from './_lib/usage.js';
@@ -40,10 +40,22 @@ const FINANCE_WALLET = (process.env.FINANCE_WALLET_ADDRESS || '').toLowerCase();
 const USDC_CONTRACT = '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359'; // native USDC (Circle), NOT USDC.e
 const USDC_DECIMALS = 6;
 
-// Price list in micro-USDC. Only KYC is open for now.
+// Price list in micro-USDC for one-time orders.
 const PRICES = {
   kyc: 2_500_000n, // $2.50 one-time
 };
+
+// Plan prices in micro-USDC, by tier and months. 12 months is the annual plan:
+// it pays 11 months and gives 12. Never taken from the request.
+const PLAN_PRICES = {
+  silver: { 1: 3_000_000n, 12: 33_000_000n },
+  gold: { 1: 6_000_000n, 12: 66_000_000n },
+};
+const PLAN_PERIODS = { monthly: 1, annual: 12 };
+const PLAN_RANK = { basic: 0, silver: 1, gold: 2, platinum: 3 };
+const DAY_MS = 86_400_000;
+
+const ORDER_TYPES = ['kyc', 'plan'];
 
 const TOLERANCE = 50_000n; // $0.05 counts as fully paid
 const ADDR_RE = /^0x[0-9a-f]{40}$/;
@@ -114,6 +126,15 @@ function publicOrder(o) {
     id: o.id,
     order_no: o.order_no,
     type: o.type,
+    ...(o.type === 'plan' ? {
+      plan: {
+        tier: o.meta?.tier || null,
+        kind: o.meta?.kind || 'new',
+        months: o.meta?.months || null,
+        activated: !!o.fulfilled_at,
+        active_until: o.meta?.granted_until || null,
+      },
+    } : {}),
     amount_usdc: fromMicro(amount),
     paid_amount: fromMicro(paid),
     remaining_usdc: fromMicro(remaining),
@@ -134,6 +155,88 @@ async function loadOwnOrder(orderId, userId) {
   return rows[0] || null;
 }
 
+// ---------------------------------------------------------------- plan helpers
+
+const TIER_NAMES = { basic: 'Basic', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' };
+
+// Where an account stands. Mirrors the database function fulfill_plan_order:
+// a paid tier with no expiry date is permanent (team accounts). Otherwise the
+// plan is running until tier_expires_at. After that the tier stays visible for
+// the 7 day grace period, but buying then is a fresh purchase that starts now.
+function planState(profile, now = Date.now()) {
+  const tier = profile?.tier || 'basic';
+  if (tier === 'basic') return { tier, permanent: false, running: false, expiresAt: null };
+  if (!profile.tier_expires_at) return { tier, permanent: true, running: true, expiresAt: null };
+  const expiresAt = new Date(profile.tier_expires_at).getTime();
+  return { tier, permanent: false, running: expiresAt > now, expiresAt };
+}
+
+// Silver to Gold: the price difference per day for the days left, rounded up to
+// the cent. Annual buyers get the annual difference rate, so an upgrade never
+// costs more than the plain price difference for the same time.
+async function upgradePrice(userId, expiresAt, now) {
+  const rows = await db(`orders?user_id=eq.${userId}&type=eq.plan&status=eq.paid&select=meta&order=paid_at.desc&limit=10`);
+  const last = rows.find((r) => r.meta?.tier === 'silver' && r.meta?.kind !== 'upgrade');
+  const annual = Number(last?.meta?.months) === 12;
+  const diff = annual ? PLAN_PRICES.gold[12] - PLAN_PRICES.silver[12] : PLAN_PRICES.gold[1] - PLAN_PRICES.silver[1];
+  const periodDays = annual ? 365n : 30n;
+  const daysLeft = BigInt(Math.max(1, Math.ceil((expiresAt - now) / DAY_MS)));
+  const micro = (diff * daysLeft + periodDays - 1n) / periodDays; // round up
+  const cent = 10_000n;
+  return { amount: ((micro + cent - 1n) / cent) * cent, daysLeft: Number(daysLeft) }; // whole cents, rounded up
+}
+
+// Works out what a plan order has to be for this account. Returns
+// { status, error } when it cannot be ordered, otherwise { kind, amount, meta, ... }.
+async function planSpec(userId, profile, tier, period, now = Date.now()) {
+  if (!PLAN_PRICES[tier] || !PLAN_PERIODS[period]) return { status: 400, error: 'Choose a plan and a billing period' };
+  const months = PLAN_PERIODS[period];
+  const st = planState(profile, now);
+  const base = {
+    current_tier: st.tier,
+    current_until: st.expiresAt ? new Date(st.expiresAt).toISOString() : null,
+  };
+  if (st.permanent) return { status: 409, error: 'Your account has a plan with no end date. No payment is needed.' };
+
+  if (st.running) {
+    const have = PLAN_RANK[st.tier] ?? 0;
+    const want = PLAN_RANK[tier];
+    if (want < have) {
+      return { status: 409, error: `Your ${TIER_NAMES[st.tier]} plan is still active. You can choose a lower plan after it ends.` };
+    }
+    if (want > have) {
+      // Only Silver to Gold is sold. The days already paid for are credited.
+      if (!(st.tier === 'silver' && tier === 'gold')) return { status: 409, error: 'This upgrade is not available.' };
+      const up = await upgradePrice(userId, st.expiresAt, now);
+      return {
+        ...base, kind: 'upgrade', tier, months: null, days_left: up.daysLeft, amount: up.amount,
+        meta: { tier, kind: 'upgrade', days_left: up.daysLeft },
+      };
+    }
+  }
+  return {
+    ...base, kind: 'new', tier, months, renewal: st.running, amount: PLAN_PRICES[tier][months],
+    meta: { tier, kind: 'new', months, period },
+  };
+}
+
+// Activates a paid plan order through the database function. Safe to repeat:
+// the function never extends the same order twice.
+async function activatePlanOrder(order) {
+  try {
+    const r = await db('rpc/fulfill_plan_order', { method: 'POST', body: { p_order_id: order.id } });
+    return { ok: true, tier: r?.tier || null, expiresAt: r?.tier_expires_at || null, already: !!r?.already };
+  } catch (err) {
+    console.error('orders: plan activation failed', order.order_no, err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
+function fmtDay(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-GB', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 function configError() {
   if (!SERVICE_ROLE_KEY) return 'SUPABASE_SERVICE_ROLE_KEY is not configured';
   if (!ADDR_RE.test(FINANCE_WALLET)) return 'FINANCE_WALLET_ADDRESS is not configured';
@@ -148,17 +251,27 @@ async function handleCreate(req, res, user) {
   const { type, pay_method: payMethod } = req.body || {};
   let payerAddress = (req.body?.payer_address || '').trim().toLowerCase();
 
-  if (!PRICES[type]) return res.status(400).json({ error: 'This order type is not available yet' });
+  if (!ORDER_TYPES.includes(type)) return res.status(400).json({ error: 'This order type is not available yet' });
   if (!['netlink_pay', 'external_wallet'].includes(payMethod)) {
     return res.status(400).json({ error: 'Invalid payment method' });
   }
 
-  const profiles = await db(`profiles?id=eq.${user.id}&select=wallet_address,identity_verification_status&limit=1`);
+  const profiles = await db(`profiles?id=eq.${user.id}&select=wallet_address,identity_verification_status,tier,tier_expires_at&limit=1`);
   const profile = profiles[0];
   if (!profile) return res.status(404).json({ error: 'Profile not found' });
 
   if (type === 'kyc' && profile.identity_verification_status === 'approved') {
     return res.status(409).json({ error: 'Your identity is already verified' });
+  }
+
+  // The amount and the plan details are decided here, never by the client.
+  let amountMicro = PRICES[type];
+  let meta = {};
+  if (type === 'plan') {
+    const spec = await planSpec(user.id, profile, req.body?.tier, req.body?.period);
+    if (spec.error) return res.status(spec.status).json({ error: spec.error });
+    amountMicro = spec.amount;
+    meta = spec.meta;
   }
 
   if (payMethod === 'netlink_pay') {
@@ -180,7 +293,21 @@ async function handleCreate(req, res, user) {
     `orders?user_id=eq.${user.id}&type=eq.${type}&status=in.(${ACTIVE_STATUSES.join(',')})&select=*&limit=1`
   );
   if (existing[0]) {
-    return res.status(200).json({ order: publicOrder(existing[0]), existing: true });
+    const ex = existing[0];
+    const same = type !== 'plan' || (
+      ex.meta?.tier === meta.tier && ex.meta?.kind === meta.kind &&
+      (ex.meta?.months || null) === (meta.months || null) && toMicro(ex.amount_usdc) === amountMicro
+    );
+    if (same) return res.status(200).json({ order: publicOrder(ex), existing: true });
+    // A different plan (or a new upgrade price) is already open: replace it, but only if nothing was paid on it.
+    if (toMicro(ex.paid_amount) > 0n) {
+      return res.status(409).json({ error: 'You have an open plan order with a partial payment. Finish that order, or wait until it expires.' });
+    }
+    await db(`orders?id=eq.${ex.id}&status=eq.awaiting_payment`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: { status: 'cancelled' },
+    });
   }
 
   try {
@@ -190,7 +317,8 @@ async function handleCreate(req, res, user) {
       body: {
         user_id: user.id,
         type,
-        amount_usdc: fromMicro(PRICES[type]),
+        meta,
+        amount_usdc: fromMicro(amountMicro),
         pay_method: payMethod,
         payer_address: payerAddress,
         pay_to_address: FINANCE_WALLET,
@@ -212,22 +340,60 @@ async function handleCreate(req, res, user) {
 // ?order_id=<uuid> returns that order (404 if it is not the caller's).
 // ?type=kyc returns the caller's most recent open or paid order of that type,
 // or { order: null }, so the checkout page can resume instead of starting over.
+// A paid plan order that is not activated yet (the first attempt failed) is
+// retried here, so opening the order again fixes it. Safe to repeat.
+async function healPlanOrder(order) {
+  if (order.type !== 'plan' || order.status !== 'paid' || order.fulfilled_at) return order;
+  const act = await activatePlanOrder(order);
+  if (!act.ok) return order;
+  return (await loadOwnOrder(order.id, order.user_id)) || order;
+}
+
 async function handleStatus(req, res, user) {
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.query.order_id) {
-    const order = await loadOwnOrder(req.query.order_id, user.id);
+    let order = await loadOwnOrder(req.query.order_id, user.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
+    order = await healPlanOrder(order);
     return res.status(200).json({ order: publicOrder(order) });
   }
 
   const type = req.query.type;
-  if (!PRICES[type]) return res.status(400).json({ error: 'Missing order_id or a valid type' });
+  if (!ORDER_TYPES.includes(type)) return res.status(400).json({ error: 'Missing order_id or a valid type' });
+  // Plans are bought again and again, so only an open plan order is resumed.
+  // KYC is bought once, so a paid one is shown too.
+  const statuses = type === 'plan' ? 'awaiting_payment,underpaid,late_payment' : 'awaiting_payment,underpaid,late_payment,paid';
   const rows = await db(
     `orders?user_id=eq.${user.id}&type=eq.${type}` +
-      `&status=in.(awaiting_payment,underpaid,late_payment,paid)&select=*&order=created_at.desc&limit=1`
+      `&status=in.(${statuses})&select=*&order=created_at.desc&limit=1`
   );
   return res.status(200).json({ order: rows[0] ? publicOrder(rows[0]) : null });
+}
+
+// ---------------------------------------------------------------- action=plan-quote
+
+// ?tier=silver|gold&period=monthly|annual returns what this plan costs this
+// account right now (renewal, or the per-day price of an upgrade), or the
+// reason it cannot be ordered. The checkout page shows it before the order exists.
+async function handlePlanQuote(req, res, user) {
+  res.setHeader('Cache-Control', 'no-store');
+  const profiles = await db(`profiles?id=eq.${user.id}&select=tier,tier_expires_at&limit=1`);
+  if (!profiles[0]) return res.status(404).json({ error: 'Profile not found' });
+  const spec = await planSpec(user.id, profiles[0], req.query.tier, req.query.period);
+  if (spec.error) return res.status(spec.status).json({ error: spec.error });
+  return res.status(200).json({
+    quote: {
+      tier: spec.tier,
+      kind: spec.kind,
+      months: spec.months,
+      renewal: !!spec.renewal,
+      amount_usdc: fromMicro(spec.amount),
+      days_left: spec.days_left ?? null,
+      current_tier: spec.current_tier,
+      current_until: spec.current_until,
+    },
+  });
 }
 
 // ---------------------------------------------------------------- action=cancel
@@ -356,7 +522,25 @@ async function settleOrder(order, now = Date.now()) {
   // In-app notifications, only when this call actually changed the order.
   const after = updated[0];
   if (after) {
-    if (after.status === 'paid' && order.status !== 'paid') {
+    if (after.status === 'paid' && order.status !== 'paid' && after.type === 'plan') {
+      // Plan orders: activate the plan first, so the notice and the receipt can say until when.
+      const act = await activatePlanOrder(after);
+      const tierName = TIER_NAMES[after.meta?.tier] || 'Plan';
+      await notifyUser(order.user_id, act.ok ? {
+        type: 'tier', icon: 'star',
+        title: `Your ${tierName} plan is active`,
+        body: `Order ${after.order_no} is paid. Your plan runs until ${fmtDay(act.expiresAt)}.`,
+        link: `/checkout?order=${after.id}&n=paid`,
+      } : {
+        type: 'tier', icon: 'star',
+        title: 'Payment received',
+        body: `We received your payment for order ${after.order_no}. Your plan will be active shortly.`,
+        link: `/checkout?order=${after.id}&n=paid`,
+      });
+      emailUser(order.user_id, receiptMail(after, act.ok ? { activeUntil: act.expiresAt } : {}));
+      if (!act.ok) emailAdmin(planActivationFailedMail(after, act.error));
+      getUserEmail(order.user_id).then((e) => emailAdmin(adminPaidMail(after, e)));
+    } else if (after.status === 'paid' && order.status !== 'paid') {
       await notifyUser(order.user_id, {
         type: 'kyc', icon: 'shield-check',
         title: 'Payment received',
@@ -387,7 +571,7 @@ async function handleCheckPayment(req, res, user) {
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
   if (['paid', 'cancelled', 'refunded'].includes(order.status)) {
-    return res.status(200).json({ order: publicOrder(order) });
+    return res.status(200).json({ order: publicOrder(await healPlanOrder(order)) });
   }
 
   const last = lastCheckAt.get(order.id) || 0;
@@ -579,11 +763,12 @@ async function handler(req, res) {
     }
     if (action === 'create') return await handleCreate(req, res, user);
     if (action === 'status') return await handleStatus(req, res, user);
+    if (action === 'plan-quote') return await handlePlanQuote(req, res, user);
     if (action === 'check-payment') return await handleCheckPayment(req, res, user);
     if (action === 'cancel') return await handleCancel(req, res, user);
     if (action === 'didit-session') return await handleDiditSession(req, res, user);
     if (action === 'ambassador-thanks') return await handleAmbassadorThanks(req, res, user);
-    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, check-payment, cancel, didit-session, or ambassador-thanks)' });
+    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, plan-quote, check-payment, cancel, didit-session, or ambassador-thanks)' });
   } catch (err) {
     console.error('orders: unhandled error', err);
     return res.status(500).json({ error: 'Something went wrong. Please try again.' });
