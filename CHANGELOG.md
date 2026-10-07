@@ -41,6 +41,10 @@ older entries in older-dated files) if what you are looking for is not below.
   - `dashboard.html`: the "x/y links used" label adds "Only the first y active links show on your page." when the owner is over the limit.
   - Already tier-checked at render time, so nothing to change: video cards (`VIDEO_LIMITS`), templates, header banner, CV certificate files, footer link toggle.
   - Tested with mocked data: 60 links show as 20, 30 and 50 for Basic, Silver and Gold.
+- **Admin shows plan details, and the free plan button works (step 6 of paid plans).** No database change.
+  - `api/_lib/admin.js`: `adminOrder` meta now carries `plan` (tier, kind, months, active_until) for plan orders.
+  - `admin.html`: plan orders show a label like "Silver 12 months" or "Upgrade to Gold" in the list, and "Plan" and "Active until" in the order details (or "Not activated yet"). KYC only sections (Didit sessions, verification results) are hidden for plan orders.
+  - `plans.html`: "Get Started Free" on the Basic card now goes to `/login`. `noindex, nofollow` stays on until the end to end payment test is done.
   - Still to do: hide features above Basic limits, admin view of plan details, a real payment test.
 
 ### Added

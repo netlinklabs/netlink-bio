@@ -281,6 +281,11 @@
         const STATUS_CLASS = { awaiting_payment: 'b-warn', underpaid: 'b-warn', paid: 'b-ok', expired: 'b-bad', late_payment: 'b-info', cancelled: 'b-gray', refunded: 'b-gray' };
         const PAY_CLASS = { unmatched: 'b-warn', late: 'b-info', matched: 'b-ok', ignored: 'b-gray' };
         const TYPE_LABEL = { kyc: 'KYC', kyb: 'KYB', plan: 'Plan' };
+        // Plan order, for example "Silver 12 months" or "Upgrade to Gold".
+        function planLabel(pl) {
+            const t = pl.tier ? pl.tier.charAt(0).toUpperCase() + pl.tier.slice(1) : 'Plan';
+            return pl.kind === 'upgrade' ? 'Upgrade to ' + t : t + ' ' + (pl.months || '?') + ' month' + (pl.months === 1 ? '' : 's');
+        }
 
         function esc(v) { return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
         function showAuthError(msg) { $('authGateText').textContent = 'Something went wrong: ' + msg; }
@@ -1021,7 +1026,7 @@
                             <span class="badge ${STATUS_CLASS[o.status] || 'b-gray'}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
                         </div>
                         <div class="flex items-center justify-between gap-2 mt-1 text-xs text-muted">
-                            <span>${esc(TYPE_LABEL[o.type] || o.type)} · ${esc(o.user ? '@' + o.user.username : 'unknown user')}${o.meta && o.meta.test ? ' · test' : ''}</span>
+                            <span>${esc(o.type === 'plan' && o.meta && o.meta.plan ? planLabel(o.meta.plan) : (TYPE_LABEL[o.type] || o.type))} · ${esc(o.user ? '@' + o.user.username : 'unknown user')}${o.meta && o.meta.test ? ' · test' : ''}</span>
                             <span>${fmtUsdc(o.paid_amount)} / ${fmtUsdc(o.amount_usdc)} · ${esc(fmtDate(o.created_at))}</span>
                         </div>
                     </button>`).join('');
@@ -1045,6 +1050,7 @@
                 const verifs = (d.verifications || []).map((v) => `<div class="kv"><span>${esc(fmtDate(v.created_at))}</span><span>${esc(v.raw_status || v.status)}</span></div>`).join('') || '<p class="text-xs text-muted">No verification results yet.</p>';
                 const pays = (d.payments || []).map((p) => `<div class="py-2 border-b border-subtle"><div class="flex justify-between text-sm"><span class="font-semibold text-primary">${fmtUsdc(p.amount)}</span><span class="badge ${PAY_CLASS[p.match_status] || 'b-gray'}">${esc(p.match_status)}</span></div><div class="mono text-muted mt-1">${esc(p.tx_hash)}</div><div class="text-xs text-muted">${esc(fmtDate(p.occurred_at))} from ${esc(shortAddr(p.from_address))}${p.admin_note ? ' · ' + esc(p.admin_note) : ''}</div></div>`).join('');
                 const canLate = isFinance() && o.status === 'late_payment';
+                const isPlan = o.type === 'plan' && o.meta && o.meta.plan;
                 openModal(`
                     <div class="flex items-start justify-between mb-3">
                         <div><p class="text-base font-bold text-primary mono">${esc(o.order_no)}</p>
@@ -1052,6 +1058,8 @@
                         <button id="closeModalBtn" class="text-muted text-sm" aria-label="Close">Close</button>
                     </div>
                     ${kv('Type', esc(TYPE_LABEL[o.type] || o.type))}
+                    ${isPlan ? kv('Plan', esc(planLabel(o.meta.plan))) : ''}
+                    ${isPlan ? kv('Active until', esc(o.meta.plan.active_until ? fmtDate(o.meta.plan.active_until) : 'Not activated yet')) : ''}
                     ${kv('User', esc(u.username ? '@' + u.username : '-') + (u.display_name ? ' (' + esc(u.display_name) + ')' : ''))}
                     ${kv('Email', esc(d.email || '-'))}
                     ${kv('Identity status', esc(u.identity_status || '-'))}
@@ -1065,10 +1073,10 @@
                     ${kv('Paid at', esc(fmtDate(o.paid_at)))}
                     ${kv('Fulfilled', esc(fmtDate(o.fulfilled_at)))}
                     ${o.meta && o.meta.test ? kv('Flag', 'Test order') : ''}
-                    <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Didit sessions</h4>
+                    ${isPlan ? '' : `<h4 class="text-sm font-semibold text-primary mt-4 mb-1">Didit sessions</h4>
                     ${sessions}
                     <h4 class="text-sm font-semibold text-primary mt-4 mb-1">Verification results</h4>
-                    ${verifs}
+                    ${verifs}`}
                     ${d.payments ? `<h4 class="text-sm font-semibold text-primary mt-4 mb-1">Payments</h4>${pays || '<p class="text-xs text-muted">No payments recorded.</p>'}` : ''}
                     ${canLate ? `<div class="mt-4"><button id="acceptLateBtn" class="btn">Accept late payment</button></div>` : ''}
                 `);

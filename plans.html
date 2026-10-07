@@ -223,6 +223,12 @@
           });
         });
 
+        // Basic card: free plan, goes to the sign up and login page
+        var free = card.querySelector('.cta-basic');
+        if (free) {
+          free.addEventListener('click', function () { window.location.href = '/login'; });
+        }
+
         // Checkout button: goes to /checkout with the tier and the billing period currently selected
         var cta = card.querySelector('.plan-cta[data-tier]');
         if (cta) {
