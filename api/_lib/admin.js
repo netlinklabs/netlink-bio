@@ -158,7 +158,11 @@ export async function handleAdmin(action, req, res, user, ctx) {
     paid_at: o.paid_at,
     fulfilled_at: o.fulfilled_at,
     created_at: o.created_at,
-    meta: o.meta && (o.meta.test || o.meta.comped) ? { test: !!o.meta.test, comped: !!o.meta.comped } : {},
+    meta: {
+      ...(o.meta && (o.meta.test || o.meta.comped) ? { test: !!o.meta.test, comped: !!o.meta.comped } : {}),
+      // Plan orders: what was bought and until when it was granted (null until activated).
+      ...(o.type === 'plan' && o.meta ? { plan: { tier: o.meta.tier || null, kind: o.meta.kind || 'new', months: o.meta.months || null, active_until: o.meta.granted_until || null } } : {}),
+    },
     user: p ? { username: p.username, display_name: p.display_name, identity_status: p.identity_verification_status } : null,
   });
 

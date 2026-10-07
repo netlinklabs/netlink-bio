@@ -85,10 +85,10 @@
             <div class="card rounded-2xl p-5 mb-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-semibold text-primary">Identity Verification (KYC)</p>
-                        <p class="text-xs text-muted mt-0.5">One-time fee, valid for any plan</p>
+                        <p id="itemName" class="text-sm font-semibold text-primary">Identity Verification (KYC)</p>
+                        <p id="itemNote" class="text-xs text-muted mt-0.5">One-time fee, valid for any plan</p>
                     </div>
-                    <p class="text-lg font-bold text-primary">$2.50 <span class="text-xs font-medium text-muted">USDC</span></p>
+                    <p class="text-lg font-bold text-primary"><span id="itemPrice">$2.50</span> <span class="text-xs font-medium text-muted">USDC</span></p>
                 </div>
             </div>
 
@@ -137,7 +137,7 @@
                     <span id="orderStatusBadge" class="status-badge status-pending">-</span>
                 </div>
                 <div class="mt-4 space-y-2 text-sm">
-                    <div class="flex justify-between"><span class="text-muted">Item</span><span class="text-primary font-medium">Identity Verification (KYC)</span></div>
+                    <div class="flex justify-between"><span class="text-muted">Item</span><span id="orderItem" class="text-primary font-medium">Identity Verification (KYC)</span></div>
                     <div class="flex justify-between"><span class="text-muted">Total</span><span id="orderTotal" class="text-primary font-medium">-</span></div>
                     <div id="orderPaidRow" class="hidden flex justify-between"><span class="text-muted">Received</span><span id="orderPaid" class="text-primary font-medium">-</span></div>
                     <div id="orderRemainingRow" class="hidden flex justify-between"><span class="text-muted">Remaining</span><span id="orderRemaining" class="text-primary font-semibold">-</span></div>
@@ -187,9 +187,17 @@
                 <a href="/identity" class="inline-block mt-3 text-xs text-muted hover:text-primary">Later, go to Account</a>
             </div>
 
+            <!-- Paid plan order -->
+            <div id="planPaidPanel" class="hidden card rounded-2xl p-5 mb-4 text-center">
+                <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500 flex items-center justify-center"><i data-lucide="check" class="w-8 h-8 text-white"></i></div>
+                <p id="planPaidTitle" class="text-base font-semibold text-primary mb-1">Payment confirmed</p>
+                <p id="planPaidText" class="text-sm text-muted mb-4">-</p>
+                <a href="/dashboard" class="block text-center w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Go to dashboard</a>
+            </div>
+
             <!-- Start over (expired, cancelled) -->
             <div id="restartPanel" class="hidden card rounded-2xl p-5 mb-4 text-center">
-                <a href="/checkout?type=kyc" class="inline-block px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Start a new order</a>
+                <a id="restartLink" href="/checkout?type=kyc" class="inline-block px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition">Start a new order</a>
             </div>
 
             <div class="text-center">
@@ -205,7 +213,10 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const params = new URLSearchParams(location.search);
-        const ORDER_TYPE = 'kyc'; // KYB and plan orders reuse this page later
+        const ORDER_TYPE = params.get('type') === 'plan' ? 'plan' : 'kyc'; // KYB orders reuse this page later
+        const PLAN_TIER = params.get('tier');
+        const PLAN_PERIOD = params.get('period');
+        const TIER_NAME = { silver: 'Silver', gold: 'Gold' };
         const POLL_MS = 20000;
         const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
@@ -242,6 +253,30 @@
 
         function fmtUsdc(v) { return `$${Number(v).toFixed(2)} USDC`; }
         function shortAddr(a) { return a ? `${a.slice(0, 6)}...${a.slice(-4)}` : ''; }
+        function fmtDay(iso) { return iso ? new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''; }
+
+        // Item name for an order (plan orders carry their details in order.plan).
+        function orderItemLabel(o) {
+            if (o.type === 'plan' && o.plan) {
+                const t = TIER_NAME[o.plan.tier] || 'Plan';
+                return o.plan.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${o.plan.months === 12 ? '12 months' : '1 month'}`;
+            }
+            return 'Identity Verification (KYC)';
+        }
+
+        // Short explanation under the plan name, from the server quote.
+        function planQuoteNote(q) {
+            const until = fmtDay(q.current_until);
+            if (q.kind === 'upgrade') return `Your Silver plan has ${q.days_left} day${q.days_left === 1 ? '' : 's'} left. You pay the price difference for those days. Your end date stays ${until}.`;
+            const length = q.months === 12 ? '12 months for the price of 11. ' : '1 month. ';
+            return q.renewal ? `${length}Added after your current end date (${until}).` : `${length}Starts when your payment is confirmed.`;
+        }
+
+        // Does an open order already match what the link asks for?
+        function sameAsQuote(o, q) {
+            return !!(o.plan && o.plan.tier === q.tier && o.plan.kind === q.kind &&
+                (o.plan.months || null) === (q.months || null) && Number(o.amount_usdc) === Number(q.amount_usdc));
+        }
 
         async function api(action, { method = 'GET', body, query = '' } = {}) {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -305,6 +340,7 @@
             const errEl = $('selectError');
             errEl.classList.add('hidden');
             const body = { type: ORDER_TYPE, pay_method: selectedMethod };
+            if (ORDER_TYPE === 'plan') { body.tier = PLAN_TIER; body.period = PLAN_PERIOD; }
             if (selectedMethod === 'external_wallet') {
                 const addr = $('payerAddressInput').value.trim();
                 if (!ADDR_RE.test(addr)) { errEl.textContent = 'Enter a valid wallet address that starts with 0x.'; errEl.classList.remove('hidden'); return; }
@@ -347,6 +383,9 @@
             $('authGate').style.display = 'none';
             $('pageSubtitle').textContent = `Order ${o.order_no}`;
             $('orderNo').textContent = o.order_no;
+            $('orderItem').textContent = orderItemLabel(o);
+            $('restartLink').setAttribute('href', o.type === 'plan' ? '/plans' : '/checkout?type=kyc');
+            $('restartLink').textContent = o.type === 'plan' ? 'Back to plans' : 'Start a new order';
             const badge = $('orderStatusBadge');
             badge.textContent = STATUS_LABEL[o.status] || o.status;
             badge.className = `status-badge ${STATUS_CLASS[o.status] || 'status-pending'}`;
@@ -364,7 +403,18 @@
             const isNp = o.pay_method === 'netlink_pay';
             show('netlinkPayPanel', open && isNp);
             show('externalPanel', open && !isNp);
-            show('paidPanel', o.status === 'paid');
+            const isPlan = o.type === 'plan';
+            const planDone = isPlan && o.plan && o.plan.activated;
+            show('paidPanel', o.status === 'paid' && !isPlan);
+            show('planPaidPanel', o.status === 'paid' && isPlan);
+            if (o.status === 'paid' && isPlan) {
+                const t = TIER_NAME[o.plan && o.plan.tier] || 'Plan';
+                $('planPaidTitle').textContent = planDone ? `${t} plan active` : 'Payment confirmed';
+                $('planPaidText').textContent = planDone
+                    ? `Your ${t} plan is active until ${fmtDay(o.plan.active_until)}. Thank you.`
+                    : 'We are activating your plan. This usually takes a few seconds.';
+                scheduleActivationCheck(o);
+            }
             show('restartPanel', o.status === 'expired' || o.status === 'cancelled');
             show('cancelBtn', o.status === 'awaiting_payment' && !paid);
 
@@ -384,11 +434,30 @@
             else if (o.status === 'late_payment') setNotice('warn', 'Your payment arrived after this order expired. Our team will review it. Please contact support with your order number.');
             else if (o.status === 'expired') setNotice('warn', 'This order expired before a payment was received. If you already sent USDC, please contact support with your order number.');
             else if (o.status === 'cancelled') setNotice('info', 'This order was cancelled.');
-            else if (o.status === 'paid') setNotice('ok', 'Your payment has been received.');
+            else if (o.status === 'paid' && !isPlan) setNotice('ok', 'Your payment has been received.');
             else setNotice('', '');
 
             schedulePolling();
             if (window.lucide) lucide.createIcons();
+        }
+
+        // A paid plan order that is not active yet: look again a few times. The server retries the activation each time.
+        let activationTries = 0;
+        let activationTimer = null;
+        function scheduleActivationCheck(o) {
+            clearTimeout(activationTimer);
+            if (o.plan && o.plan.activated) return;
+            if (activationTries >= 6) {
+                $('planPaidText').textContent = 'Your payment is confirmed. Activation is taking longer than usual. Please contact support with your order number.';
+                return;
+            }
+            activationTries++;
+            activationTimer = setTimeout(async () => {
+                try {
+                    const { order: updated } = await api('status', { query: `&order_id=${encodeURIComponent(o.id)}` });
+                    renderOrder(updated);
+                } catch (err) { /* try again on the next round */ }
+            }, 4000);
         }
 
         function schedulePolling() {
@@ -492,6 +561,32 @@
 
                 if (params.get('type') !== ORDER_TYPE) {
                     showBlocked('Choose what you want to order from the plans page.', '/plans', 'View plans');
+                    return;
+                }
+                if (ORDER_TYPE === 'plan') {
+                    // The server decides the price (renewal, or the per-day price of an upgrade) and whether the plan can be ordered.
+                    let quote;
+                    try {
+                        ({ quote } = await api('plan-quote', { query: `&tier=${encodeURIComponent(PLAN_TIER || '')}&period=${encodeURIComponent(PLAN_PERIOD || '')}` }));
+                    } catch (err) {
+                        showBlocked(err.message, '/plans', 'View plans');
+                        return;
+                    }
+                    // Resume an open order that matches, or any open order that already has a payment on it.
+                    const { order: open } = await api('status', { query: '&type=plan' });
+                    if (open && (sameAsQuote(open, quote) || Number(open.paid_amount) > 0)) {
+                        history.replaceState(null, '', `/checkout?order=${encodeURIComponent(open.id)}`);
+                        renderOrder(open);
+                        checkOnOpen();
+                        return;
+                    }
+                    const t = TIER_NAME[quote.tier] || 'Plan';
+                    $('itemName').textContent = quote.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${quote.months === 12 ? '12 months' : '1 month'}`;
+                    $('itemNote').textContent = planQuoteNote(quote);
+                    $('itemPrice').textContent = `$${Number(quote.amount_usdc).toFixed(2)}`;
+                    $('authGate').style.display = 'none';
+                    initSelectView();
+                    if (window.lucide) lucide.createIcons();
                     return;
                 }
                 if (currentProfile.identity_verification_status === 'approved') {

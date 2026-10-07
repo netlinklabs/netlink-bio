@@ -2467,7 +2467,7 @@ window.openNetlinkPay = openNetlinkPay;
             const limit = LINK_LIMITS[tier] ?? 20;
             const shape = currentProfile?.link_icon_shape || 'circle';
 
-            document.getElementById('linkCountLabel').textContent = `${currentLinks.length}/${limit} links used`;
+            document.getElementById('linkCountLabel').textContent = `${currentLinks.length}/${limit} links used` + (currentLinks.length > limit ? `. Only the first ${limit} active links show on your page.` : '');
             list.querySelectorAll('.link-item').forEach(el => el.remove());
 
             if (currentLinks.length === 0) { empty.classList.remove('hidden'); return; }

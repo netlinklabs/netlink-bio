@@ -107,7 +107,7 @@ export async function sitemapHandler(req, res) {
   const [bioResult, cvResult, landingResult] = await Promise.allSettled([
     supabaseGet('profiles_bio_public?select=username'),
     supabaseGet('profiles_cv_public?select=username,cv_data'),
-    supabaseGet('landing_pages?is_published=eq.true&select=slug,updated_at'),
+    supabaseGet('landing_pages_public?select=slug,updated_at,tier'),
   ]);
 
   if (bioResult.status === 'fulfilled') {
@@ -131,6 +131,8 @@ export async function sitemapHandler(req, res) {
   if (landingResult.status === 'fulfilled') {
     for (const page of landingResult.value) {
       if (!page.slug) continue;
+      // Inactive pages (owner no longer on Gold) answer 404, so keep them out of the sitemap.
+      if (page.tier !== 'gold' && page.tier !== 'platinum') continue;
       entries.push(urlEntry(`https://netlink.bio/page/${page.slug}`, { lastmod: page.updated_at }));
     }
   } else {

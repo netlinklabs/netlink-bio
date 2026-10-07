@@ -197,6 +197,8 @@ async function supabaseGet(path) {
   return res.json();
 }
 
+const LINK_LIMITS = { basic: 20, silver: 30, gold: 50, platinum: 200 };
+
 async function handler(req, res) {
   const username = (req.query.username || '').toLowerCase().trim();
   if (!username) { res.status(400).send('Missing username'); return; }
@@ -215,6 +217,9 @@ async function handler(req, res) {
     }
     profile = profiles[0];
     links = await supabaseGet(`links?user_id=eq.${profile.id}&is_active=eq.true&select=*&order=position.asc`);
+    // Links above the owner's current plan limit are hidden, not deleted (for example after a
+    // plan ends). Keep in sync with LINK_LIMITS in dashboard.html.
+    links = links.slice(0, LINK_LIMITS[profile.tier] ?? LINK_LIMITS.basic);
     // Video cards live in profile_videos. A failure here must never take the
     // whole page down (e.g. table not migrated yet), so fall back to the
     // legacy single youtube_* columns.

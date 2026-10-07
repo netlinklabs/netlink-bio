@@ -53,7 +53,8 @@ export function safeCssColor(value, fallback) {
 // Branded 404 page for a missing profile / CV / landing page.
 // heading and message may contain a caller-escaped value (see call sites);
 // ctaHref/ctaText default to sending people back to create their own page.
-export function notFoundPage({ title, heading, message, ctaHref = '/', ctaText = 'Create your own free page' }) {
+// code: big number shown above the heading. Pass '' to hide it (used by the inactive landing page).
+export function notFoundPage({ title, heading, message, ctaHref = '/', ctaText = 'Create your own free page', code = '404' }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,7 +114,7 @@ export function notFoundPage({ title, heading, message, ctaHref = '/', ctaText =
 </head>
 <body>
   <div class="wrap">
-    <div class="code">404</div>
+    ${code ? `<div class="code">${code}</div>` : ''}
     <h1>${heading}</h1>
     <p>${message}</p>
     <a class="cta" href="${ctaHref}">${ctaText} &rarr;</a>
