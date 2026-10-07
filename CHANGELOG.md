@@ -36,6 +36,11 @@ older entries in older-dated files) if what you are looking for is not below.
   - `api/_lib/html.js`: `notFoundPage` has a new optional `code` (default `404`, `''` hides it).
   - `api/_lib/sitemap.js`: landing pages now come from `landing_pages_public` and only Gold or Platinum owners are listed.
   - Tested with mocked data: basic and silver inactive, gold renders, sitemap lists Gold only. Today both published pages have Gold owners (checked read only).
+- **Links above the plan limit are hidden, not deleted (step 5 of paid plans).** No database change.
+  - `api/bio.js`: the public page shows only the first N active links for the owner's current tier (Basic 20, Silver 30, Gold 50), in the saved order. Same numbers as `LINK_LIMITS` in `dashboard.html`. Extra links stay in the database and show again after a renewal.
+  - `dashboard.html`: the "x/y links used" label adds "Only the first y active links show on your page." when the owner is over the limit.
+  - Already tier-checked at render time, so nothing to change: video cards (`VIDEO_LIMITS`), templates, header banner, CV certificate files, footer link toggle.
+  - Tested with mocked data: 60 links show as 20, 30 and 50 for Basic, Silver and Gold.
   - Still to do: hide features above Basic limits, admin view of plan details, a real payment test.
 
 ### Added
