@@ -1,6 +1,6 @@
 -- Paid plans (Silver / Gold): activation, expiry and trigger fixes.
 --
--- DRAFT. NOT applied to production yet. Needs owner approval first (CLAUDE.md: production data safety).
+-- Applied to production 2026-10-07 (owner approved the draft).
 --
 -- Already in the database, nothing to add:
 --   orders.type allows 'plan' (check orders_type_check), orders.meta (jsonb) holds the plan details,
