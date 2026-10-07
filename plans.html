@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <!-- Internal reference page — not linked in nav yet, kept out of search until final -->
-  <title>Netlink Plans (Draft)</title>
-  <meta name="description" content="Netlink membership plans, internal reference draft.">
+  <!-- Still noindex on purpose until plan checkout is live end to end (see CHANGELOG) -->
+  <title>Netlink Plans</title>
+  <meta name="description" content="Compare Netlink membership plans: Basic, Silver, and Gold for Link in Bio, Professional CV, Landing Page, and Netlink Pay.">
   <meta name="robots" content="noindex, nofollow">
 
   <!-- Favicon -->
@@ -28,8 +28,6 @@
     body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--bg-primary); }
     a { text-decoration: none; color: inherit; }
     ul { list-style: none; }
-
-    .draft-banner { background: #FEF3C7; color: #92400E; text-align: center; padding: 10px 16px; font-size: 0.875rem; font-weight: 600; border-bottom: 1px solid #FDE68A; }
 
     .plans-section { padding-top: var(--space-10); padding-bottom: var(--space-12); }
     .plans-header { text-align: center; max-width: 640px; margin: 0 auto var(--space-8); }
@@ -101,8 +99,6 @@
   </style>
 </head>
 <body>
-  <div class="draft-banner">Internal draft, feature reference only. Not linked in navigation, not final until all features ship.</div>
-
   <div id="site-header"></div>
 
   <main id="main-content">
@@ -118,7 +114,7 @@
           <article class="plan-card tier-basic">
             <span class="plan-badge">Free Forever</span>
             <h2 class="plan-name">Basic</h2>
-            <div class="billing-spacer" aria-hidden="true"><button type="button" class="billing-tab active" tabindex="-1" disabled>Monthly</button><button type="button" class="billing-tab" tabindex="-1" disabled>Annual <span class="save-badge">-17%</span></button></div>
+            <div class="billing-spacer" aria-hidden="true"><button type="button" class="billing-tab active" tabindex="-1" disabled>Monthly</button><button type="button" class="billing-tab" tabindex="-1" disabled>Annual <span class="save-badge">-8%</span></button></div>
             <p class="plan-price"><span class="price-amount">$0</span> <span class="price-suffix">/ month</span></p>
             <p class="plan-note">Free forever</p>
             <ul class="plan-features">
@@ -142,7 +138,7 @@
             <h2 class="plan-name">Silver</h2>
             <div class="billing-toggle" role="tablist" aria-label="Silver billing period">
               <button type="button" class="billing-tab active" data-period="monthly" data-amount="$3" data-suffix="/ month" data-note="Billed monthly in USDC" aria-selected="true">Monthly</button>
-              <button type="button" class="billing-tab" data-period="annual" data-amount="$30" data-suffix="/ year" data-note="Billed annually, 2 months free (save $6/yr)" aria-selected="false">Annual <span class="save-badge">-17%</span></button>
+              <button type="button" class="billing-tab" data-period="annual" data-amount="$33" data-suffix="/ year" data-note="Billed annually, 1 month free (save $3/yr)" aria-selected="false">Annual <span class="save-badge">-8%</span></button>
             </div>
             <p class="plan-price"><span class="price-amount">$3</span> <span class="price-suffix">/ month</span></p>
             <p class="plan-note">Billed monthly in USDC</p>
@@ -158,7 +154,7 @@
               <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Landing Page</li>
               <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Hide footer link</li>
             </ul>
-            <button type="button" class="plan-cta cta-silver">Checkout Silver</button>
+            <button type="button" class="plan-cta cta-silver" data-tier="silver">Checkout Silver</button>
           </article>
 
           <!-- GOLD -->
@@ -167,7 +163,7 @@
             <h2 class="plan-name">Gold</h2>
             <div class="billing-toggle" role="tablist" aria-label="Gold billing period">
               <button type="button" class="billing-tab active" data-period="monthly" data-amount="$6" data-suffix="/ month" data-note="Billed monthly in USDC" aria-selected="true">Monthly</button>
-              <button type="button" class="billing-tab" data-period="annual" data-amount="$60" data-suffix="/ year" data-note="Billed annually, 2 months free (save $12/yr)" aria-selected="false">Annual <span class="save-badge">-17%</span></button>
+              <button type="button" class="billing-tab" data-period="annual" data-amount="$66" data-suffix="/ year" data-note="Billed annually, 1 month free (save $6/yr)" aria-selected="false">Annual <span class="save-badge">-8%</span></button>
             </div>
             <p class="plan-price"><span class="price-amount">$6</span> <span class="price-suffix">/ month</span></p>
             <p class="plan-note">Billed monthly in USDC</p>
@@ -183,7 +179,7 @@
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Landing Page</li>
               <li><svg class="icon-yes" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Hide footer link (toggle)</li>
             </ul>
-            <button type="button" class="plan-cta cta-gold">Checkout Gold</button>
+            <button type="button" class="plan-cta cta-gold" data-tier="gold">Checkout Gold</button>
           </article>
         </div>
 
@@ -194,7 +190,7 @@
         </div>
 
         <p class="plans-footnote">
-          This page is a working reference for tier scoping, not a public pricing page. Platinum tier is paused for a future release. Payments accepted in USDC only until a fiat payment processor is integrated.
+          Payments are accepted in USDC only until a fiat payment processor is integrated.
         </p>
       </div>
     </section>
@@ -226,6 +222,16 @@
             noteEl.textContent = tab.dataset.note;
           });
         });
+
+        // Checkout button: goes to /checkout with the tier and the billing period currently selected
+        var cta = card.querySelector('.plan-cta[data-tier]');
+        if (cta) {
+          cta.addEventListener('click', function () {
+            var active = toggle.querySelector('.billing-tab.active');
+            var period = active ? active.dataset.period : 'monthly';
+            window.location.href = '/checkout?type=plan&tier=' + encodeURIComponent(cta.dataset.tier) + '&period=' + encodeURIComponent(period);
+          });
+        }
       });
     })();
   </script>

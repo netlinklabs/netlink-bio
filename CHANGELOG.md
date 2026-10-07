@@ -7,6 +7,14 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`plans.html`: production pricing and copy (step 1 of paid plans).** Text and front end only, no database change.
+  - Removed the "Internal draft" banner, "(Draft)" in the title, the "working reference" footnote and the Platinum note. New meta description.
+  - Annual discount cut from 2 months to 1 month: Silver `$30` to `$33` per year (save `$3`), Gold `$60` to `$66` per year (save `$6`), badge `-17%` to `-8%` (also on the hidden Basic spacer). Monthly stays `$3` / `$6` with no discount.
+  - "Checkout Silver" and "Checkout Gold" now go to `/checkout?type=plan&tier=<silver|gold>&period=<monthly|annual>`, using the billing tab selected on the card.
+  - **Not working end to end yet:** `api/orders.js` only has a `kyc` price (`PRICES`) and `checkout.html` is fixed to `ORDER_TYPE = 'kyc'`, so a plan link currently falls back to "Choose what you want to order from the plans page". Plan orders need a backend step first (see PR description). Page stays `noindex` and out of the nav until then.
+  - Decided, not built: the extra "1 month off with 20 NET" discount is postponed until NET is listed and has a market price. Grace period 7 days after expiry, reminders 7 and 3 days before expiry, upgrade Silver to Gold charged by remaining days, renewal adds time from the old end date, features above the Basic limits are hidden (not deleted) after expiry, an expired Gold landing page shows a neutral "This page is not active" page, and its data is kept.
+
 ### Added
 - **Admin Overview: "Bio page 404s" section with a Load button.** Shows the 404 log from `bio_not_found_daily` on demand (Today, 7D or 30D): total 404s, different names, share of bot probes, a per day chart and the top 30 names. A name that does not match the username rule (`[a-z0-9_]{3,20}`) is labelled "Probe", the rest "Valid format".
   - `api/_lib/admin.js`: new action `admin-404-log` (roles: `super_admin`, `finance`, same as `admin-usage`). Read only, aggregates in code, max 4000 rows. No new serverless function (`api/` stays at 12).
