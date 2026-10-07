@@ -27,12 +27,15 @@
 //   - processAccountDeletions(): deletes accounts whose 45-day deletion grace period is over
 //     (api/_lib/process-deletions.js). Dry run unless DELETION_EXECUTOR_ENABLED=true.
 //     `?job=process-deletions` runs only this job.
+//   - processPlanExpiry(): paid plan reminders (7 and 3 days before the end date) and the
+//     downgrade to Basic 7 days after it (api/_lib/plan-expiry.js). `?job=plan-expiry` runs only this job.
 
 import { sendMail, getUserEmail, reminderMail } from '../_lib/mailer.js';
 import { verifyWalletTx } from '../_lib/verify-wallet-tx.js';
 import { checkWalletTxAmounts } from '../_lib/verify-wallet-amount.js';
 import { syncFeeIncome } from '../_lib/sync-fee-income.js';
 import { processAccountDeletions } from '../_lib/process-deletions.js';
+import { processPlanExpiry } from '../_lib/plan-expiry.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -60,6 +63,16 @@ async function runWalletJobs() {
     out.fees = { error: 'failed' };
   }
   return out;
+}
+
+async function runPlanExpiryJob() {
+  try {
+    const out = await processPlanExpiry();
+    return out;
+  } catch (err) {
+    console.error('plan-expiry failed', err);
+    return { error: 'failed' };
+  }
 }
 
 // Isolated like the wallet jobs: a failure is reported but never fails the rollup.
@@ -95,6 +108,13 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Manual run of the plan expiry job only.
+  if (req.query.job === 'plan-expiry') {
+    const out = await runPlanExpiryJob();
+    res.status(out.error ? 500 : 200).json({ ok: !out.error, job: 'plan-expiry', ...out });
+    return;
+  }
+
   // Manual run of the wallet checks only (no rollup, no reminders).
   if (req.query.job === 'verify-wallet-tx') {
     const out = await runWalletJobs();
@@ -127,7 +147,8 @@ export default async function handler(req, res) {
     // Isolated: a failure here is reported in the response but never fails the rollup.
     const walletChecks = await runWalletJobs();
     const accountDeletions = await runDeletionJob();
-    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders, walletChecks, accountDeletions });
+    const planExpiry = await runPlanExpiryJob();
+    res.status(200).json({ ok: true, date: targetDate || 'yesterday (UTC)', reminders, walletChecks, accountDeletions, planExpiry });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || String(err) });

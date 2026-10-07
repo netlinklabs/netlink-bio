@@ -231,6 +231,36 @@ export function planActivationFailedMail(o, reason) {
   };
 }
 
+// Plan expiry mails (sent by the daily job in api/_lib/plan-expiry.js).
+// daysLeft is 7 or 3. The renew link goes to the plans page.
+export function planExpiringMail(tier, daysLeft, expiresAt) {
+  const name = TIER_NAME[tier] || 'plan';
+  return {
+    subject: `Your ${name} plan ends in ${daysLeft} days`,
+    ...layout({
+      preheader: `Renew before ${fmtDate(expiresAt)} to keep your ${name} features`,
+      title: `Your ${name} plan ends in ${daysLeft} days`,
+      intro: `Your ${name} plan is active until ${fmtDate(expiresAt)}. Renew before then to keep all your features. Renewing adds time after your current end date, so you lose nothing.`,
+      rows: [['Plan', name], ['Active until', fmtDate(expiresAt)]],
+      cta: { label: 'Renew my plan', url: `${SITE}/plans` },
+      note: 'After the end date you have 7 days to renew. After that your account returns to Basic. Your data is kept and nothing is deleted.',
+    }),
+  };
+}
+
+export function planEndedMail(tier) {
+  const name = TIER_NAME[tier] || 'plan';
+  return {
+    subject: `Your ${name} plan has ended`,
+    ...layout({
+      preheader: 'Your account is now on the Basic plan',
+      title: `Your ${name} plan has ended`,
+      intro: `Your account is now on the Basic plan. Features above the Basic limits are hidden, not deleted. Renew any time to get them back. Your username does not change.`,
+      cta: { label: 'Renew my plan', url: `${SITE}/plans` },
+    }),
+  };
+}
+
 export function kycResultMail(status) {
   const map = {
     approved: {

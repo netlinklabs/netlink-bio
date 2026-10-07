@@ -25,7 +25,13 @@ older entries in older-dated files) if what you are looking for is not below.
   - `api/_lib/mailer.js`: item label per order (plan or KYC), plan receipt text, new `planActivationFailedMail`.
   - `checkout.html`: `?type=plan&tier=&period=` shows the server price, resumes an open order, and after payment shows "plan active until <date>" (polls a few times while activating). KYC behavior unchanged. No new Tailwind classes.
   - **Migration `supabase/migrations/20261007_plan_fulfill_running_fix.sql` (applied to production 2026-10-07 after owner approval, verified).** The applied `fulfill_plan_order` counted the 7 day grace period as active, so a Silver account in grace could not buy Gold. Fix: only a plan whose end date is in the future is "running"; a purchase in grace or after is a fresh one from now. Tested in a rolled back transaction (8 cases).
-  - Still to do: daily expiry job (`expire_lapsed_tiers`), reminder emails (7 and 3 days), "This page is not active" for expired Gold landing pages, hide features above Basic limits, admin view of plan details, a real payment test.
+- **Plan expiry job: reminders and downgrade (step 3 of paid plans).** No database change, no new serverless function.
+  - New `api/_lib/plan-expiry.js`, run by the existing daily cron `api/cron/rollup-analytics.js` (isolated like the other jobs; `?job=plan-expiry` runs only this job).
+  - Reminders: paid plans ending in 7 days or less get an email plus an in-app notice at 7 and again at 3 days. Dedupe uses the notification link (contains the end date), so no migration and a renewal starts fresh. Permanent (team) tiers have no end date and are skipped.
+  - Downgrade: calls `expire_lapsed_tiers()` (7 days after the end date), then sends an in-app notice and email "plan has ended, data kept". The username is never changed.
+  - `api/_lib/mailer.js`: new `planExpiringMail` and `planEndedMail`.
+  - Tested with a mocked database (window logic, dedupe on second run, downgrade notice). Not run against production data.
+  - Still to do: "This page is not active" for expired Gold landing pages, hide features above Basic limits, admin view of plan details, a real payment test.
 
 ### Added
 - **Admin Overview: "Bio page 404s" section with a Load button.** Shows the 404 log from `bio_not_found_daily` on demand (Today, 7D or 30D): total 404s, different names, share of bot probes, a per day chart and the top 30 names. A name that does not match the username rule (`[a-z0-9_]{3,20}`) is labelled "Probe", the rest "Valid format".
