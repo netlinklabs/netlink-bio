@@ -1,7 +1,6 @@
 -- Fix for fulfill_plan_order (created in 20261007_plan_orders_and_expiry.sql).
 --
--- DRAFT. NOT applied to production yet. Needs owner approval first (CLAUDE.md: production data safety).
--- Nothing calls the function yet, so no account is affected by the old behavior.
+-- Applied to production 2026-10-07 (owner approved).
 --
 -- Problem: the function treated an account as "active" until 7 days AFTER its expiry date (the grace period).
 -- So a Silver account that expired 3 days ago could not buy Gold ("Use an upgrade order"), and an upgrade
