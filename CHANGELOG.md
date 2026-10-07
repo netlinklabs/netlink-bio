@@ -8,6 +8,12 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **Checkout shows "Confirming payment" right after paying from Netlink Pay (no double payment).** Front end only, no database change. Applies to plan and KYC orders.
+  - Problem: after paying, `pay.html` returns to `checkout.html` while the order is still "Awaiting payment" for a few seconds, and the "Pay with Netlink Pay" button was visible again, so a user could pay twice.
+  - `pay.html`: the return link after a successful Netlink Pay payment now adds `&paid=1`.
+  - `checkout.html`: with `paid=1` (kept in `sessionStorage` per order for 150 seconds, so a refresh keeps it) the order shows badge "Confirming payment", a loading bar and "Please do not pay again". The pay button and the Cancel button are hidden. It checks every 5 seconds (the server still limits real chain checks to one per 10 seconds) and switches to the paid view as soon as the payment is found.
+  - If nothing is found after 150 seconds the normal view returns with a warning: "We have not seen your payment yet. If you just paid, wait a minute before paying again." External wallet orders are unchanged.
+  - Tested in jsdom (15 checks including the new confirming flow, normal open order and KYC regressions). The 150 second timeout path was not run in a browser.
 - **`plans.html`: shows the visitor's current plan when signed in.** Labels only, no database change. Signed out visitors see the page exactly as before.
   - Reads `tier` and `tier_expires_at` of the visitor's own profile with the normal signed in session (same read `dashboard.html` and `checkout.html` already do, covered by the existing RLS: a user reads only their own row). The plain HTML stays neutral, labels change after the check, so crawlers and anonymous visitors see one version.
   - Basic: Basic button becomes "Current Plan" (disabled). Silver running: "Renew Silver" with "Current plan, active until <date>", Gold becomes "Upgrade to Gold". Gold running: "Renew Gold", Silver is disabled ("Available after your Gold plan ends", same rule the server enforces). Permanent (team) paid tier: "Current Plan", no renew. Ended paid plan: Basic is current with a note "Your Silver plan ended on <date>", paid plans can be bought again.

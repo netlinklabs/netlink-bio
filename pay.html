@@ -2650,7 +2650,7 @@
                     // Give the transaction record above a moment to save, then let
                     // checkout confirm the payment (it checks the chain on load).
                     showToast('Payment sent. Returning to checkout...');
-                    setTimeout(() => { window.location.href = 'checkout?order=' + encodeURIComponent(orderPay.id); }, 2500);
+                    setTimeout(() => { window.location.href = 'checkout?order=' + encodeURIComponent(orderPay.id) + '&paid=1'; }, 2500);
                 }
             } catch (err) {
                 console.error(err);

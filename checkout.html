@@ -51,6 +51,12 @@
         .method-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
         .method-card.disabled { opacity: 0.55; cursor: not-allowed; }
 
+        /* Confirming payment: indeterminate loading bar */
+        .confirm-track { height: 6px; border-radius: 999px; background: rgba(59,130,246,0.15); overflow: hidden; position: relative; }
+        .confirm-track::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; border-radius: 999px; background: #3b82f6; animation: confirm-slide 1.4s ease-in-out infinite; }
+        @keyframes confirm-slide { 0% { left: -40%; } 100% { left: 100%; } }
+        @media (prefers-reduced-motion: reduce) { .confirm-track::after { animation: none; left: 0; width: 100%; opacity: 0.6; } }
+
         .notice { border-radius: 10px; padding: 10px 12px; font-size: 12px; }
         .notice-warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #92400e; }
         html.dark .notice-warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.25); color: #fbbf24; }
@@ -162,6 +168,14 @@
 
             <div id="stateNotice" class="notice hidden mb-4"></div>
 
+            <!-- Confirming payment (right after paying from Netlink Pay): hides every pay button so nobody pays twice -->
+            <div id="confirmPanel" class="hidden card rounded-2xl p-5 mb-4 text-center" role="status" aria-live="polite">
+                <p class="text-base font-semibold text-primary mb-1">Confirming your payment</p>
+                <p class="text-sm text-muted mb-4">Your payment was sent. We are confirming it on the network. This usually takes less than a minute.</p>
+                <div class="confirm-track mb-4" aria-hidden="true"></div>
+                <p class="text-xs font-semibold text-primary">Please do not pay again.</p>
+            </div>
+
             <!-- Netlink Pay -->
             <div id="netlinkPayPanel" class="hidden card rounded-2xl p-5 mb-4">
                 <p class="text-sm text-secondary mb-4">Pay <span id="npAmount" class="font-semibold text-primary">-</span> USDC from your Netlink Pay wallet. You will confirm the transfer on the next screen.</p>
@@ -234,6 +248,10 @@
         const PLAN_QUOTES = {}; // period -> server quote
         const TIER_NAME = { silver: 'Silver', gold: 'Gold' };
         const POLL_MS = 20000;
+        const CONFIRM_MS = 150000;      // how long we show "Confirming payment" after returning from the wallet
+        const CONFIRM_POLL_MS = 5000;   // faster checks while confirming (the server limits real chain checks to one per 10 s)
+        let confirmTimer = null;
+        let confirmTimedOut = null; // order id whose confirming time ran out without a result
         const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
         let currentUser = null;
@@ -424,6 +442,30 @@
             el.textContent = text;
         }
 
+        // "Just paid" marker per order, kept in sessionStorage so a refresh keeps the confirming view for a short time.
+        function confirmKey(id) { return 'nl_confirming_' + id; }
+        function markConfirming(id) { try { sessionStorage.setItem(confirmKey(id), String(Date.now())); } catch (e) {} }
+        function clearConfirming(id) { try { sessionStorage.removeItem(confirmKey(id)); } catch (e) {} }
+        function isConfirming(id) {
+            try {
+                const t = Number(sessionStorage.getItem(confirmKey(id)));
+                return t > 0 && Date.now() - t < CONFIRM_MS;
+            } catch (e) { return false; }
+        }
+        function stopConfirmPolling() { clearInterval(confirmTimer); confirmTimer = null; }
+        function startConfirmPolling(id) {
+            if (confirmTimer) return;
+            const startedAt = Date.now();
+            confirmTimer = setInterval(() => {
+                if (!order || order.id !== id || !isConfirming(id) || Date.now() - startedAt > CONFIRM_MS) {
+                    stopConfirmPolling();
+                    if (order && order.id === id) { clearConfirming(id); if (order.status === 'awaiting_payment' || order.status === 'underpaid') confirmTimedOut = id; renderOrder(order); } // time is up: back to the normal view with a warning
+                    return;
+                }
+                checkPayment(false);
+            }, CONFIRM_POLL_MS);
+        }
+
         function renderOrder(o) {
             order = o;
             show('blockedView', false); show('selectView', false); show('orderView', true);
@@ -448,8 +490,18 @@
             $('orderExpiry').textContent = expiryText(o.expires_at);
 
             const isNp = o.pay_method === 'netlink_pay';
-            show('netlinkPayPanel', open && isNp);
+            // Right after paying from Netlink Pay the order stays open for a few seconds. Show that we are confirming,
+            // and hide the pay button so nobody pays a second time.
+            const confirming = open && isNp && isConfirming(o.id);
+            if (!open) { clearConfirming(o.id); stopConfirmPolling(); }
+            show('confirmPanel', confirming);
+            show('netlinkPayPanel', open && isNp && !confirming);
             show('externalPanel', open && !isNp);
+            if (confirming) {
+                badge.textContent = 'Confirming payment';
+                badge.className = 'status-badge status-pending';
+                startConfirmPolling(o.id);
+            }
             const isPlan = o.type === 'plan';
             const planDone = isPlan && o.plan && o.plan.activated;
             show('paidPanel', o.status === 'paid' && !isPlan);
@@ -463,7 +515,7 @@
                 scheduleActivationCheck(o);
             }
             show('restartPanel', o.status === 'expired' || o.status === 'cancelled');
-            show('cancelBtn', o.status === 'awaiting_payment' && !paid);
+            show('cancelBtn', o.status === 'awaiting_payment' && !paid && !confirming);
 
             if (open && isNp) {
                 $('npAmount').textContent = Number(o.remaining_usdc).toFixed(2);
@@ -482,6 +534,7 @@
             else if (o.status === 'expired') setNotice('warn', 'This order expired before a payment was received. If you already sent USDC, please contact support with your order number.');
             else if (o.status === 'cancelled') setNotice('info', 'This order was cancelled.');
             else if (o.status === 'paid' && !isPlan) setNotice('ok', 'Your payment has been received.');
+            else if (open && isNp && confirmTimedOut === o.id) setNotice('warn', 'We have not seen your payment yet. If you just paid, wait a minute before paying again. This page keeps checking automatically.');
             else setNotice('', '');
 
             schedulePolling();
@@ -596,6 +649,11 @@
 
                 const orderId = params.get('order');
                 if (orderId) {
+                    // Coming back from the wallet after paying (pay.html adds paid=1): show "Confirming payment".
+                    if (params.get('paid') === '1') {
+                        markConfirming(orderId);
+                        history.replaceState(null, '', `/checkout?order=${encodeURIComponent(orderId)}`);
+                    }
                     try {
                         const { order: o } = await api('status', { query: `&order_id=${encodeURIComponent(orderId)}` });
                         renderOrder(o);
