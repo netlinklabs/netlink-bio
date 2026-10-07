@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **`docs/payment-rules.md`**: one document with every payment, KYC and membership rule (prices, plan lengths, upgrade math, grace period, reminders, refunds, tier features, KYC limits, database objects, list of files covered, rule history). `CLAUDE.md` now says to read it before editing any payment related file. Docs only, no code or database change.
+
 ### Changed
 - **Plan lengths: 1, 3, 6 and 12 months, with new discounts.** Replaces the old 1 and 12 month options ($33 and $66 a year).
   - Prices (set in `api/orders.js`, never from the client): Silver `$3` / `$9` / `$15` / `$27`, Gold `$6` / `$18` / `$30` / `$54`. 1 and 3 months have no discount, 6 months pays 5 (1 month free, -17%), 12 months pays 9 (3 months free, -25%).

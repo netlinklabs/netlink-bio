@@ -86,6 +86,10 @@ When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and a
 - Prefer small, scoped diffs over full-file rewrites unless explicitly asked.
 - Don't silently rewrite or refactor logic you don't understand the origin of — flag it and ask instead.
 
+## Payment, KYC and membership rules (read before editing)
+
+`docs/payment-rules.md` is the single source of truth for prices, plan lengths, upgrade math, grace period, reminders, KYC rules, tier features and refunds. **Before changing any file that touches payments, orders, KYC, tiers or plan expiry (list in section 8 of that file), read it first, so your change does not conflict with the current rules.** If you change a rule, update that file in the same PR and add a line to its "Rule history".
+
 ## Production data safety
 
 - Before writing/inserting data into any **production Supabase table** (e.g. notifications broadcasts, manual data fixes), stop and show a draft of the change first. Do not execute without explicit approval.
