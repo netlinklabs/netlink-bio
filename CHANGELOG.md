@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`checkout.html`: choose monthly or annual on the checkout page.** For plan orders a "Billing period" picker (Monthly, Annual) sits under the item card, so the buyer can change the plan length before pressing Continue. The link from `plans.html` only sets the starting choice.
+  - Both prices come from the server (`plan-quote` is asked for both periods). The item card and the address bar follow the choice, and Continue creates the order with the chosen period. An existing unpaid plan order of another length is still replaced by the server, as before.
+  - Upgrade (Silver to Gold) has no period choice, so the picker is hidden. KYC checkout is unchanged. No new Tailwind classes.
+  - Tested in jsdom with 12 checks (picker shown and hidden, switching, create body, KYC and resume regressions).
 - **`plans.html`: production pricing and copy (step 1 of paid plans).** Text and front end only, no database change.
   - Removed the "Internal draft" banner, "(Draft)" in the title, the "working reference" footnote and the Platinum note. New meta description.
   - Annual discount cut from 2 months to 1 month: Silver `$30` to `$33` per year (save `$3`), Gold `$60` to `$66` per year (save `$6`), badge `-17%` to `-8%` (also on the hidden Basic spacer). Monthly stays `$3` / `$6` with no discount.

@@ -92,6 +92,21 @@
                 </div>
             </div>
 
+            <!-- Plan orders only: billing period, can be changed before Continue -->
+            <div id="periodPicker" class="card rounded-2xl p-5 mb-4 hidden">
+                <h3 class="font-semibold text-primary text-sm mb-3">Billing period</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" role="radiogroup" aria-label="Billing period">
+                    <div id="periodMonthly" class="method-card" data-period="monthly" role="radio" tabindex="0" aria-checked="false">
+                        <p class="text-sm font-semibold text-primary">Monthly</p>
+                        <p id="periodMonthlyPrice" class="text-xs text-muted mt-0.5"></p>
+                    </div>
+                    <div id="periodAnnual" class="method-card" data-period="annual" role="radio" tabindex="0" aria-checked="false">
+                        <p class="text-sm font-semibold text-primary">Annual</p>
+                        <p id="periodAnnualPrice" class="text-xs text-muted mt-0.5"></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="card rounded-2xl p-5 mb-4">
                 <h3 class="font-semibold text-primary text-sm mb-3">Pay with</h3>
 
@@ -215,7 +230,8 @@
         const params = new URLSearchParams(location.search);
         const ORDER_TYPE = params.get('type') === 'plan' ? 'plan' : 'kyc'; // KYB orders reuse this page later
         const PLAN_TIER = params.get('tier');
-        const PLAN_PERIOD = params.get('period');
+        let PLAN_PERIOD = params.get('period') === 'annual' ? 'annual' : 'monthly'; // can be changed on this page before Continue
+        const PLAN_QUOTES = {}; // period -> server quote
         const TIER_NAME = { silver: 'Silver', gold: 'Gold' };
         const POLL_MS = 20000;
         const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -270,6 +286,37 @@
             if (q.kind === 'upgrade') return `Your Silver plan has ${q.days_left} day${q.days_left === 1 ? '' : 's'} left. You pay the price difference for those days. Your end date stays ${until}.`;
             const length = q.months === 12 ? '12 months for the price of 11. ' : '1 month. ';
             return q.renewal ? `${length}Added after your current end date (${until}).` : `${length}Starts when your payment is confirmed.`;
+        }
+
+        // Show the quote of the chosen period in the item card and mark the chosen option.
+        function showPlanPeriod(period) {
+            const q = PLAN_QUOTES[period];
+            if (!q) return;
+            PLAN_PERIOD = period;
+            const t = TIER_NAME[q.tier] || 'Plan';
+            $('itemName').textContent = q.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${q.months === 12 ? '12 months' : '1 month'}`;
+            $('itemNote').textContent = planQuoteNote(q);
+            $('itemPrice').textContent = `$${Number(q.amount_usdc).toFixed(2)}`;
+            for (const [per, id] of [['monthly', 'periodMonthly'], ['annual', 'periodAnnual']]) {
+                const el = $(id);
+                el.classList.toggle('selected', per === period);
+                el.setAttribute('aria-checked', per === period ? 'true' : 'false');
+            }
+            // keep the address bar in step, so a refresh keeps the choice
+            history.replaceState(null, '', `/checkout?type=plan&tier=${encodeURIComponent(q.tier)}&period=${period}`);
+        }
+
+        // Monthly and annual options. An upgrade has no period choice, so the picker stays hidden.
+        function initPeriodPicker() {
+            const m = PLAN_QUOTES.monthly, a = PLAN_QUOTES.annual;
+            if (!m || !a || m.kind === 'upgrade' || a.kind === 'upgrade') return;
+            $('periodMonthlyPrice').textContent = `$${Number(m.amount_usdc).toFixed(2)} per month`;
+            $('periodAnnualPrice').textContent = `$${Number(a.amount_usdc).toFixed(2)} per year, 1 month free`;
+            for (const el of [$('periodMonthly'), $('periodAnnual')]) {
+                el.addEventListener('click', () => showPlanPeriod(el.dataset.period));
+                el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPlanPeriod(el.dataset.period); } });
+            }
+            show('periodPicker', true);
         }
 
         // Does an open order already match what the link asks for?
@@ -565,13 +612,17 @@
                 }
                 if (ORDER_TYPE === 'plan') {
                     // The server decides the price (renewal, or the per-day price of an upgrade) and whether the plan can be ordered.
-                    let quote;
                     try {
-                        ({ quote } = await api('plan-quote', { query: `&tier=${encodeURIComponent(PLAN_TIER || '')}&period=${encodeURIComponent(PLAN_PERIOD || '')}` }));
+                        // Both periods, so the buyer can switch before pressing Continue.
+                        const results = await Promise.all(['monthly', 'annual'].map((per) =>
+                            api('plan-quote', { query: `&tier=${encodeURIComponent(PLAN_TIER || '')}&period=${per}` })));
+                        PLAN_QUOTES.monthly = results[0].quote;
+                        PLAN_QUOTES.annual = results[1].quote;
                     } catch (err) {
                         showBlocked(err.message, '/plans', 'View plans');
                         return;
                     }
+                    const quote = PLAN_QUOTES[PLAN_PERIOD];
                     // Resume an open order that matches, or any open order that already has a payment on it.
                     const { order: open } = await api('status', { query: '&type=plan' });
                     if (open && (sameAsQuote(open, quote) || Number(open.paid_amount) > 0)) {
@@ -580,10 +631,8 @@
                         checkOnOpen();
                         return;
                     }
-                    const t = TIER_NAME[quote.tier] || 'Plan';
-                    $('itemName').textContent = quote.kind === 'upgrade' ? `Upgrade to ${t}` : `${t} plan, ${quote.months === 12 ? '12 months' : '1 month'}`;
-                    $('itemNote').textContent = planQuoteNote(quote);
-                    $('itemPrice').textContent = `$${Number(quote.amount_usdc).toFixed(2)}`;
+                    initPeriodPicker();
+                    showPlanPeriod(PLAN_PERIOD);
                     $('authGate').style.display = 'none';
                     initSelectView();
                     if (window.lucide) lucide.createIcons();
