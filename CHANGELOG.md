@@ -8,6 +8,15 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **Plan lengths: 1, 3, 6 and 12 months, with new discounts.** Replaces the old 1 and 12 month options ($33 and $66 a year).
+  - Prices (set in `api/orders.js`, never from the client): Silver `$3` / `$9` / `$15` / `$27`, Gold `$6` / `$18` / `$30` / `$54`. 1 and 3 months have no discount, 6 months pays 5 (1 month free, -17%), 12 months pays 9 (3 months free, -25%).
+  - `api/orders.js`: period names `monthly`, `quarterly`, `semiannual`, `annual`. `plan-quote` accepts `period=all` and returns every length in one request. The upgrade (Silver to Gold) per day price now follows the length of the Silver plan that was bought (price difference of that length divided by its days: 30, 91, 182 or 365), rounded up to the cent.
+  - `checkout.html`: the billing period picker has four options (1, 3, 6, 12 months) with the price and the free months. Unknown period in a link falls back to monthly.
+  - `plans.html`: four tabs per card (1, 3, 6, 12 mo) with -17% and -25% badges. New footnote: plan payments are not refundable, and when a plan ends, features above the Basic limits are hidden from public pages, not deleted.
+  - `api/_lib/mailer.js`: item label for any length ("Silver plan, 6 months").
+  - **Migration `supabase/migrations/20261007_plan_months_3_6.sql` (applied to production 2026-10-07 after owner approval, verified):** `fulfill_plan_order` accepts months 1, 3, 6 and 12 (was 1 and 12). No table, column or trigger change. Tested in a rolled back transaction on production: 3, 6 and 12 months add the right time after the end date, 5 months is refused. Applied before this change is merged, so a paid 3 or 6 month order activates right away.
+  - Decided, not built: data older than 6 months after a plan ended may be cleaned up later. Nothing is deleted today.
+  - Tested: 26 pricing checks on the real source, 17 jsdom checkout checks, jsdom checks of the plans tabs and a screenshot check at phone and desktop width.
 - **Checkout shows "Confirming payment" right after paying from Netlink Pay (no double payment).** Front end only, no database change. Applies to plan and KYC orders.
   - Problem: after paying, `pay.html` returns to `checkout.html` while the order is still "Awaiting payment" for a few seconds, and the "Pay with Netlink Pay" button was visible again, so a user could pay twice.
   - `pay.html`: the return link after a successful Netlink Pay payment now adds `&paid=1`.

@@ -52,11 +52,11 @@
 
     .plan-name { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-2); }
 
-    .billing-toggle { display: inline-flex; padding: 3px; gap: 2px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 100px; margin-bottom: var(--space-4); }
+    .billing-toggle { display: grid; grid-template-columns: repeat(4, 1fr); padding: 3px; gap: 2px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; margin-bottom: var(--space-4); }
     /* Invisible twin of .billing-toggle (same buttons, so same height) on the Basic card, so price, note and feature list line up across all three cards on desktop */
-    .billing-spacer { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid transparent; border-radius: 100px; margin-bottom: var(--space-4); visibility: hidden; pointer-events: none; }
+    .billing-spacer { display: grid; grid-template-columns: repeat(4, 1fr); padding: 3px; gap: 2px; border: 1px solid transparent; border-radius: 16px; margin-bottom: var(--space-4); visibility: hidden; pointer-events: none; }
     @media (max-width: 767px) { .billing-spacer { display: none; } }
-    .billing-tab { border: none; background: transparent; cursor: pointer; font-family: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); padding: 7px 14px; border-radius: 100px; display: flex; align-items: center; gap: 6px; transition: background var(--transition-fast, 0.15s), color var(--transition-fast, 0.15s); }
+    .billing-tab { border: none; background: transparent; cursor: pointer; font-family: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); padding: 7px 2px; border-radius: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 48px; transition: background var(--transition-fast, 0.15s), color var(--transition-fast, 0.15s); }
     .billing-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .billing-tab .save-badge { background: rgba(22, 198, 200, 0.15); color: var(--color-primary-dark, var(--color-primary)); font-size: 0.6875rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
     .billing-tab:not(.active) .save-badge { background: rgba(148, 163, 184, 0.15); color: var(--text-secondary); }
@@ -118,7 +118,7 @@
           <article class="plan-card tier-basic">
             <span class="plan-badge">Free Forever</span>
             <h2 class="plan-name">Basic</h2>
-            <div class="billing-spacer" aria-hidden="true"><button type="button" class="billing-tab active" tabindex="-1" disabled>Monthly</button><button type="button" class="billing-tab" tabindex="-1" disabled>Annual <span class="save-badge">-8%</span></button></div>
+            <div class="billing-spacer" aria-hidden="true"><button type="button" class="billing-tab active" tabindex="-1" disabled>1 mo</button><button type="button" class="billing-tab" tabindex="-1" disabled>3 mo</button><button type="button" class="billing-tab" tabindex="-1" disabled>6 mo <span class="save-badge">-17%</span></button><button type="button" class="billing-tab" tabindex="-1" disabled>12 mo <span class="save-badge">-25%</span></button></div>
             <p class="plan-price"><span class="price-amount">$0</span> <span class="price-suffix">/ month</span></p>
             <p class="plan-note">Free forever</p>
             <ul class="plan-features">
@@ -141,8 +141,10 @@
             <span class="plan-badge">Favourite</span>
             <h2 class="plan-name">Silver</h2>
             <div class="billing-toggle" role="tablist" aria-label="Silver billing period">
-              <button type="button" class="billing-tab active" data-period="monthly" data-amount="$3" data-suffix="/ month" data-note="Billed monthly in USDC" aria-selected="true">Monthly</button>
-              <button type="button" class="billing-tab" data-period="annual" data-amount="$33" data-suffix="/ year" data-note="Billed annually, 1 month free (save $3/yr)" aria-selected="false">Annual <span class="save-badge">-8%</span></button>
+              <button type="button" class="billing-tab active" data-period="monthly" data-amount="$3" data-suffix="/ month" data-note="Billed monthly in USDC" aria-selected="true">1 mo</button>
+              <button type="button" class="billing-tab" data-period="quarterly" data-amount="$9" data-suffix="/ 3 months" data-note="Billed every 3 months" aria-selected="false">3 mo</button>
+              <button type="button" class="billing-tab" data-period="semiannual" data-amount="$15" data-suffix="/ 6 months" data-note="Billed every 6 months, 1 month free (save $3)" aria-selected="false">6 mo <span class="save-badge">-17%</span></button>
+              <button type="button" class="billing-tab" data-period="annual" data-amount="$27" data-suffix="/ year" data-note="Billed annually, 3 months free (save $9)" aria-selected="false">12 mo <span class="save-badge">-25%</span></button>
             </div>
             <p class="plan-price"><span class="price-amount">$3</span> <span class="price-suffix">/ month</span></p>
             <p class="plan-note">Billed monthly in USDC</p>
@@ -166,8 +168,10 @@
             <span class="plan-badge">Professional</span>
             <h2 class="plan-name">Gold</h2>
             <div class="billing-toggle" role="tablist" aria-label="Gold billing period">
-              <button type="button" class="billing-tab active" data-period="monthly" data-amount="$6" data-suffix="/ month" data-note="Billed monthly in USDC" aria-selected="true">Monthly</button>
-              <button type="button" class="billing-tab" data-period="annual" data-amount="$66" data-suffix="/ year" data-note="Billed annually, 1 month free (save $6/yr)" aria-selected="false">Annual <span class="save-badge">-8%</span></button>
+              <button type="button" class="billing-tab active" data-period="monthly" data-amount="$6" data-suffix="/ month" data-note="Billed monthly in USDC" aria-selected="true">1 mo</button>
+              <button type="button" class="billing-tab" data-period="quarterly" data-amount="$18" data-suffix="/ 3 months" data-note="Billed every 3 months" aria-selected="false">3 mo</button>
+              <button type="button" class="billing-tab" data-period="semiannual" data-amount="$30" data-suffix="/ 6 months" data-note="Billed every 6 months, 1 month free (save $6)" aria-selected="false">6 mo <span class="save-badge">-17%</span></button>
+              <button type="button" class="billing-tab" data-period="annual" data-amount="$54" data-suffix="/ year" data-note="Billed annually, 3 months free (save $18)" aria-selected="false">12 mo <span class="save-badge">-25%</span></button>
             </div>
             <p class="plan-price"><span class="price-amount">$6</span> <span class="price-suffix">/ month</span></p>
             <p class="plan-note">Billed monthly in USDC</p>
@@ -195,6 +199,7 @@
 
         <p class="plans-footnote">
           Payments are accepted in USDC only until a fiat payment processor is integrated.
+          Plan payments are not refundable. When a plan ends, features above the Basic limits are hidden from your public pages, not deleted.
         </p>
       </div>
     </section>

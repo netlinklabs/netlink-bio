@@ -45,13 +45,16 @@ const PRICES = {
   kyc: 2_500_000n, // $2.50 one-time
 };
 
-// Plan prices in micro-USDC, by tier and months. 12 months is the annual plan:
-// it pays 11 months and gives 12. Never taken from the request.
+// Plan prices in micro-USDC, by tier and months. 6 months pays 5 and 12 months pays 9
+// (1 and 3 months have no discount). Never taken from the request.
 const PLAN_PRICES = {
-  silver: { 1: 3_000_000n, 12: 33_000_000n },
-  gold: { 1: 6_000_000n, 12: 66_000_000n },
+  silver: { 1: 3_000_000n, 3: 9_000_000n, 6: 15_000_000n, 12: 27_000_000n },
+  gold: { 1: 6_000_000n, 3: 18_000_000n, 6: 30_000_000n, 12: 54_000_000n },
 };
-const PLAN_PERIODS = { monthly: 1, annual: 12 };
+// period name used in links and requests -> months. 'monthly' and 'annual' are the original names.
+const PLAN_PERIODS = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 };
+// Days used to turn a plan price into a per day price (for upgrades).
+const PLAN_PERIOD_DAYS = { 1: 30n, 3: 91n, 6: 182n, 12: 365n };
 const PLAN_RANK = { basic: 0, silver: 1, gold: 2, platinum: 3 };
 const DAY_MS = 86_400_000;
 
@@ -172,14 +175,15 @@ function planState(profile, now = Date.now()) {
 }
 
 // Silver to Gold: the price difference per day for the days left, rounded up to
-// the cent. Annual buyers get the annual difference rate, so an upgrade never
-// costs more than the plain price difference for the same time.
+// the cent. The rate follows the length of the Silver plan that was bought (a 12 month
+// buyer gets the 12 month difference rate), so an upgrade never costs more than the
+// plain price difference for the same time.
 async function upgradePrice(userId, expiresAt, now) {
   const rows = await db(`orders?user_id=eq.${userId}&type=eq.plan&status=eq.paid&select=meta&order=paid_at.desc&limit=10`);
   const last = rows.find((r) => r.meta?.tier === 'silver' && r.meta?.kind !== 'upgrade');
-  const annual = Number(last?.meta?.months) === 12;
-  const diff = annual ? PLAN_PRICES.gold[12] - PLAN_PRICES.silver[12] : PLAN_PRICES.gold[1] - PLAN_PRICES.silver[1];
-  const periodDays = annual ? 365n : 30n;
+  const months = PLAN_PERIOD_DAYS[Number(last?.meta?.months)] ? Number(last.meta.months) : 1;
+  const diff = PLAN_PRICES.gold[months] - PLAN_PRICES.silver[months];
+  const periodDays = PLAN_PERIOD_DAYS[months];
   const daysLeft = BigInt(Math.max(1, Math.ceil((expiresAt - now) / DAY_MS)));
   const micro = (diff * daysLeft + periodDays - 1n) / periodDays; // round up
   const cent = 10_000n;
@@ -373,27 +377,39 @@ async function handleStatus(req, res, user) {
 
 // ---------------------------------------------------------------- action=plan-quote
 
-// ?tier=silver|gold&period=monthly|annual returns what this plan costs this
-// account right now (renewal, or the per-day price of an upgrade), or the
-// reason it cannot be ordered. The checkout page shows it before the order exists.
+// ?tier=silver|gold&period=monthly|quarterly|semiannual|annual returns what this plan costs
+// this account right now (renewal, or the per-day price of an upgrade), or the reason it
+// cannot be ordered. period=all returns the quote of every period in { quotes }.
+// The checkout page shows it before the order exists.
+function quoteBody(spec) {
+  return {
+    tier: spec.tier,
+    kind: spec.kind,
+    months: spec.months,
+    renewal: !!spec.renewal,
+    amount_usdc: fromMicro(spec.amount),
+    days_left: spec.days_left ?? null,
+    current_tier: spec.current_tier,
+    current_until: spec.current_until,
+  };
+}
+
 async function handlePlanQuote(req, res, user) {
   res.setHeader('Cache-Control', 'no-store');
   const profiles = await db(`profiles?id=eq.${user.id}&select=tier,tier_expires_at&limit=1`);
   if (!profiles[0]) return res.status(404).json({ error: 'Profile not found' });
+  if (req.query.period === 'all') {
+    const quotes = {};
+    for (const period of Object.keys(PLAN_PERIODS)) {
+      const spec = await planSpec(user.id, profiles[0], req.query.tier, period);
+      if (spec.error) return res.status(spec.status).json({ error: spec.error });
+      quotes[period] = quoteBody(spec);
+    }
+    return res.status(200).json({ quotes });
+  }
   const spec = await planSpec(user.id, profiles[0], req.query.tier, req.query.period);
   if (spec.error) return res.status(spec.status).json({ error: spec.error });
-  return res.status(200).json({
-    quote: {
-      tier: spec.tier,
-      kind: spec.kind,
-      months: spec.months,
-      renewal: !!spec.renewal,
-      amount_usdc: fromMicro(spec.amount),
-      days_left: spec.days_left ?? null,
-      current_tier: spec.current_tier,
-      current_until: spec.current_until,
-    },
-  });
+  return res.status(200).json({ quote: quoteBody(spec) });
 }
 
 // ---------------------------------------------------------------- action=cancel

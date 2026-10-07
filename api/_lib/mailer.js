@@ -133,12 +133,13 @@ function fmtDate(iso) {
 const TIER_NAME = { silver: 'Silver', gold: 'Gold' };
 
 // Item name on invoices and receipts. Plan orders carry the plan in meta
-// ({ tier, kind: 'new' | 'upgrade', months: 1 | 12 }).
+// ({ tier, kind: 'new' | 'upgrade', months: 1 | 3 | 6 | 12 }).
 function itemLabel(o) {
   if (o.type === 'plan') {
     const tier = TIER_NAME[o.meta?.tier] || 'Plan';
     if (o.meta?.kind === 'upgrade') return `Upgrade to ${tier}`;
-    return `${tier} plan, ${Number(o.meta?.months) === 12 ? '12 months' : '1 month'}`;
+    const n = Number(o.meta?.months) || 1;
+    return `${tier} plan, ${n} month${n === 1 ? '' : 's'}`;
   }
   return { kyc: 'Identity verification (KYC)' }[o.type] || o.type;
 }
