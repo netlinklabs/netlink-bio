@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`plans.html`: shows the visitor's current plan when signed in.** Labels only, no database change. Signed out visitors see the page exactly as before.
+  - Reads `tier` and `tier_expires_at` of the visitor's own profile with the normal signed in session (same read `dashboard.html` and `checkout.html` already do, covered by the existing RLS: a user reads only their own row). The plain HTML stays neutral, labels change after the check, so crawlers and anonymous visitors see one version.
+  - Basic: Basic button becomes "Current Plan" (disabled). Silver running: "Renew Silver" with "Current plan, active until <date>", Gold becomes "Upgrade to Gold". Gold running: "Renew Gold", Silver is disabled ("Available after your Gold plan ends", same rule the server enforces). Permanent (team) paid tier: "Current Plan", no renew. Ended paid plan: Basic is current with a note "Your Silver plan ended on <date>", paid plans can be bought again.
+  - The server still decides what can be ordered; these labels are only hints. Tested in jsdom (anonymous, Basic, Silver running, Gold running, Gold permanent, Silver ended).
 - **`checkout.html`: choose monthly or annual on the checkout page.** For plan orders a "Billing period" picker (Monthly, Annual) sits under the item card, so the buyer can change the plan length before pressing Continue. The link from `plans.html` only sets the starting choice.
   - Both prices come from the server (`plan-quote` is asked for both periods). The item card and the address bar follow the choice, and Continue creates the order with the chosen period. An existing unpaid plan order of another length is still replaced by the server, as before.
   - Upgrade (Silver to Gold) has no period choice, so the picker is hidden. KYC checkout is unchanged. No new Tailwind classes.

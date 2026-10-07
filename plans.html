@@ -76,6 +76,10 @@
     .plan-cta { display: block; width: 100%; text-align: center; padding: 13px; border-radius: var(--radius-input); font-weight: 700; font-size: 0.9375rem; cursor: pointer; font-family: inherit; transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease; }
     .plan-cta:hover { transform: translateY(-2px); }
     .plan-cta:active { transform: translateY(0); }
+    /* Signed in view: the plan the visitor is on. Filled in by script, the plain page stays neutral for everyone else. */
+    .plan-cta:disabled { opacity: 0.55; cursor: default; transform: none; filter: none; box-shadow: none; }
+    .plan-card.is-current { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+    .plan-current { font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); text-align: center; margin: var(--space-3) 0 0; }
 
     .plan-cta.cta-basic { background: #1a1a1a; color: #fff; border: none; }
     .plan-cta.cta-basic:hover { background: #2d2d2d; }
@@ -199,6 +203,7 @@
   <div id="site-footer"></div>
 
   <script src="shared/site-nav.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (function () {
       'use strict';
@@ -239,6 +244,71 @@
           });
         }
       });
+    })();
+
+    // Signed in visitors see which plan they are on. Anonymous visitors see the page unchanged.
+    // The server still decides what can be bought, so this only changes labels.
+    (function () {
+      var DAY_FMT = { day: '2-digit', month: 'short', year: 'numeric' };
+      function fmt(iso) { return new Date(iso).toLocaleDateString('en-GB', DAY_FMT); }
+
+      function markCurrent(card, text) {
+        card.classList.add('is-current');
+        var note = document.createElement('p');
+        note.className = 'plan-current';
+        note.textContent = text;
+        card.appendChild(note);
+      }
+      function lock(btn, label) { btn.textContent = label; btn.disabled = true; }
+
+      function apply(profile) {
+        var tier = profile.tier || 'basic';
+        var until = profile.tier_expires_at || null;
+        var paid = tier === 'silver' || tier === 'gold';
+        var permanent = paid && !until;
+        var running = paid && (permanent || new Date(until).getTime() > Date.now());
+        var basic = document.querySelector('.plan-card.tier-basic');
+        var silver = document.querySelector('.plan-card.tier-silver');
+        var gold = document.querySelector('.plan-card.tier-gold');
+        var bBtn = basic.querySelector('.plan-cta');
+        var sBtn = silver.querySelector('.plan-cta[data-tier]');
+        var gBtn = gold.querySelector('.plan-cta[data-tier]');
+
+        if (!running) {
+          // Basic, or a paid plan that has ended: the free plan is the current one, paid plans can be bought again.
+          lock(bBtn, 'Current Plan');
+          markCurrent(basic, paid ? 'Your ' + (tier === 'gold' ? 'Gold' : 'Silver') + ' plan ended on ' + fmt(until) : 'You are on this plan');
+          return;
+        }
+        lock(bBtn, 'Free plan');
+        if (permanent) {
+          var card = tier === 'gold' ? gold : silver;
+          lock(card.querySelector('.plan-cta[data-tier]'), 'Current Plan');
+          markCurrent(card, 'Included with your account');
+          if (tier === 'gold') lock(sBtn, 'Not available');
+          return;
+        }
+        if (tier === 'silver') {
+          sBtn.textContent = 'Renew Silver';
+          markCurrent(silver, 'Current plan, active until ' + fmt(until));
+          gBtn.textContent = 'Upgrade to Gold';
+        } else {
+          gBtn.textContent = 'Renew Gold';
+          markCurrent(gold, 'Current plan, active until ' + fmt(until));
+          lock(sBtn, 'Available after your Gold plan ends');
+        }
+      }
+
+      if (!window.supabase) return;
+      var client = window.supabase.createClient('https://fuewalufgiclrcgszlit.supabase.co', 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb');
+      client.auth.getSession().then(function (res) {
+        var session = res && res.data && res.data.session;
+        if (!session) return null;
+        // RLS: a signed in user can only read their own profile row.
+        return client.from('profiles').select('tier, tier_expires_at').eq('id', session.user.id).single();
+      }).then(function (res) {
+        if (res && res.data) apply(res.data);
+      }).catch(function () { /* labels stay as they are */ });
     })();
   </script>
 </body>
