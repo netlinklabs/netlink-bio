@@ -1,6 +1,6 @@
 -- Plan lengths: 1, 3, 6 and 12 months (was 1 and 12).
 --
--- DRAFT. NOT applied to production yet. Needs owner approval first (CLAUDE.md: production data safety).
+-- Applied to production 2026-10-07 (owner approved).
 --
 -- Only change: fulfill_plan_order accepts months 1, 3, 6 and 12 for a new plan order. Everything else
 -- (running plan rules, upgrade, renewal after the end date, grants) is the same as in
