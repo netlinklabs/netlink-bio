@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **CV Featured Projects polish** (`api/cv.js`): the "View Project" button is now dark gray (`#2d3748`) with light text and icon so it stands apart from the tags. In print / PDF the URL now starts with the label `View Project:`.
+
 ### Added
 - **`docs/payment-rules.md`**: one document with every payment, KYC and membership rule (prices, plan lengths, upgrade math, grace period, reminders, refunds, tier features, KYC limits, database objects, list of files covered, rule history). `CLAUDE.md` now says to read it before editing any payment related file. Docs only, no code or database change.
 
