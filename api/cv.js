@@ -486,8 +486,8 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .project-card p { font-size:0.8rem; color:var(--text-medium); margin-bottom:0.75rem; line-height:1.5; }
 .project-tags { display:flex; gap:0.5rem; flex-wrap:wrap; }
 .project-tags span { font-size:0.75rem; color:var(--primary); background:rgba(26,54,93,0.08); padding:0.25rem 0.5rem; border-radius:4px; font-weight:500; }
-.project-view-btn { display:inline-flex; align-items:center; gap:0.4rem; margin-top:0.75rem; font-family:inherit; font-size:0.75rem; font-weight:600; color:#f8fafc; background:#2d3748; border-radius:6px; padding:0.45rem 0.9rem; text-decoration:none; }
-.project-view-btn:hover { background:#1a202c; }
+.project-view-btn { display:inline-flex; align-items:center; gap:0.4rem; margin-top:0.75rem; font-family:inherit; font-size:0.75rem; font-weight:600; color:var(--text-medium); background:transparent; border:1px solid var(--accent); border-radius:6px; padding:0.4rem 0.85rem; text-decoration:none; }
+.project-view-btn:hover { background:rgba(197,164,126,0.12); color:var(--text-dark); }
 .project-view-icon { flex-shrink:0; }
 .project-url-print { display:none; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
