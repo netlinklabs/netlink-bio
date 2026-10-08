@@ -11,6 +11,7 @@ older entries in older-dated files) if what you are looking for is not below.
 - **`docs/payment-rules.md`**: one document with every payment, KYC and membership rule (prices, plan lengths, upgrade math, grace period, reminders, refunds, tier features, KYC limits, database objects, list of files covered, rule history). `CLAUDE.md` now says to read it before editing any payment related file. Docs only, no code or database change.
 
 ### Changed
+- **CV Featured Projects: "View Project" button replaces the small arrow link** (`api/cv.js`). Each card with a URL now ends with a `View Project` button with an external link icon (box and arrow) that opens in a new tab. The project name is plain text. On print / Save as PDF the button is hidden and the full URL is printed under the card instead. Still https only (`safeHttpsUrl`).
 - **Plan lengths: 1, 3, 6 and 12 months, with new discounts.** Replaces the old 1 and 12 month options ($33 and $66 a year).
   - Prices (set in `api/orders.js`, never from the client): Silver `$3` / `$9` / `$15` / `$27`, Gold `$6` / `$18` / `$30` / `$54`. 1 and 3 months have no discount, 6 months pays 5 (1 month free, -17%), 12 months pays 9 (3 months free, -25%).
   - `api/orders.js`: period names `monthly`, `quarterly`, `semiannual`, `annual`. `plan-quote` accepts `period=all` and returns every length in one request. The upgrade (Silver to Gold) per day price now follows the length of the Silver plan that was bought (price difference of that length divided by its days: 30, 91, 182 or 365), rounded up to the cent.
