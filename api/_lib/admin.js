@@ -39,6 +39,8 @@ const AMBASSADOR_FLOW = {
 
 // NET reward claims (public.rewards). Finance reads the list to pay claims out; this file only reads.
 const REWARD_STATUSES = ['pending', 'claimed'];
+const REWARD_ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
+const NET_CONTRACT = '0x0e893B239094A5c573373d44CF1C7D03576b95cb'; // NET token on Polygon
 
 const ACTION_ROLES = {
   'admin-me': null, // any signed-in user; returns an empty role list for non-admins
@@ -56,6 +58,8 @@ const ACTION_ROLES = {
   'admin-ambassador': AMBASSADOR_READ_ROLES,
   'admin-ambassador-update': AMBASSADOR_WRITE_ROLES,
   'admin-rewards': FINANCE_ROLES,
+  'admin-rewards-detect': FINANCE_ROLES,
+  'admin-rewards-confirm': FINANCE_ROLES,
   'admin-audit': ['super_admin'],
   'admin-test-email': ['super_admin'],
 };
@@ -621,6 +625,108 @@ export async function handleAdmin(action, req, res, user, ctx) {
         };
       }),
     });
+  }
+
+  // ---------------------------------------------------------- admin-rewards-detect / admin-rewards-confirm
+  // Matches unpaid NET claims to real transfers sent from the reward wallet (env REWARD_WALLET_ADDRESS)
+  // on Polygon. Detect only reads. Confirm repeats the same lookup on the server and writes the
+  // status, tx hash and time itself: the page only sends claim ids, so a hash is never typed in.
+  // A claim matches when a NET transfer went to the claimant's current wallet, for exactly the
+  // claim amount, after the claim was created. Each transfer is used for one claim only.
+  const rewardError = (status, message) => Object.assign(new Error(message), { status });
+  const detectRewardPayments = async () => {
+    const wallet = String(process.env.REWARD_WALLET_ADDRESS || '').trim();
+    const alchemyKey = process.env.ALCHEMY_API_KEY;
+    if (!REWARD_ADDR_RE.test(wallet) || !alchemyKey) throw rewardError(400, 'The reward wallet is not configured on the server');
+
+    const pending = await db('rewards?select=id,user_id,amount,created_at&status=eq.pending&order=created_at.asc&limit=1000');
+    const userIds = [...new Set(pending.map((r) => r.user_id))];
+    const profiles = [];
+    for (let i = 0; i < userIds.length; i += 100) {
+      const chunk = userIds.slice(i, i + 100);
+      profiles.push(...(await db(`profiles?id=in.(${chunk.join(',')})&select=id,username,wallet_address`)));
+    }
+    const byId = Object.fromEntries(profiles.map((p) => [p.id, p]));
+    if (!pending.length) return { wallet, matches: [], unmatched: [] };
+
+    let transfers;
+    try {
+      const r = await fetch(`https://polygon-mainnet.g.alchemy.com/v2/${alchemyKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1, method: 'alchemy_getAssetTransfers',
+          params: [{ fromAddress: wallet, contractAddresses: [NET_CONTRACT], category: ['erc20'], order: 'desc', maxCount: '0x3e8', withMetadata: true, excludeZeroValue: true }],
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error?.message || `HTTP ${r.status}`);
+      transfers = j.result?.transfers || [];
+    } catch (err) {
+      console.error('admin-rewards: alchemy lookup failed', err.message);
+      throw rewardError(502, 'Could not read the blockchain right now. Try again in a minute.');
+    }
+
+    const used = new Set();
+    const matches = [];
+    const unmatched = [];
+    for (const rw of pending) {
+      const p = byId[rw.user_id];
+      const username = p?.username || null;
+      const addr = String(p?.wallet_address || '').toLowerCase();
+      if (!REWARD_ADDR_RE.test(addr)) { unmatched.push({ reward_id: rw.id, username, reason: 'No valid wallet' }); continue; }
+      const want = Number(rw.amount);
+      const hit = transfers.find((t) => !used.has(t.uniqueId)
+        && String(t.to || '').toLowerCase() === addr
+        && Math.abs(Number(t.value) - want) < 1e-6
+        && new Date(t.metadata?.blockTimestamp) >= new Date(rw.created_at));
+      if (!hit) { unmatched.push({ reward_id: rw.id, username, reason: 'No matching transfer found' }); continue; }
+      used.add(hit.uniqueId);
+      matches.push({ reward_id: rw.id, username, amount: want, to: hit.to, tx_hash: hit.hash, paid_at: hit.metadata.blockTimestamp });
+    }
+    return { wallet, matches, unmatched };
+  };
+
+  if (action === 'admin-rewards-detect') {
+    try {
+      return res.status(200).json(await detectRewardPayments());
+    } catch (err) {
+      return res.status(err.status || 502).json({ error: err.status ? err.message : 'Could not check payments right now' });
+    }
+  }
+
+  if (action === 'admin-rewards-confirm') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const ids = Array.isArray(req.body?.reward_ids) ? req.body.reward_ids : [];
+    if (!ids.length || ids.length > 200 || !ids.every((id) => UUID_RE.test(String(id)))) {
+      return res.status(400).json({ error: 'Choose between 1 and 200 claims' });
+    }
+    let detected;
+    try {
+      detected = await detectRewardPayments();
+    } catch (err) {
+      return res.status(err.status || 502).json({ error: err.status ? err.message : 'Could not check payments right now' });
+    }
+    const wanted = new Set(ids);
+    const done = [];
+    for (const m of detected.matches.filter((x) => wanted.has(x.reward_id))) {
+      // status=eq.pending keeps this safe if two admins confirm at the same time.
+      const rows = await db(`rewards?id=eq.${m.reward_id}&status=eq.pending`, {
+        method: 'PATCH',
+        prefer: 'return=representation',
+        body: { status: 'claimed', tx_hash: m.tx_hash, claimed_at: m.paid_at },
+      });
+      if (rows[0]) done.push(m);
+    }
+    if (done.length) {
+      await audit('reward_paid', null, {
+        count: done.length,
+        total_net: done.reduce((s, m) => s + m.amount, 0),
+        tx_hashes: [...new Set(done.map((m) => m.tx_hash))],
+        reward_ids: done.map((m) => m.reward_id),
+      });
+    }
+    return res.status(200).json({ confirmed: done.length, skipped: ids.length - done.length });
   }
 
   // ---------------------------------------------------------- admin-audit

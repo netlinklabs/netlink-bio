@@ -268,6 +268,7 @@
                 <div class="flex flex-col sm:flex-row gap-2 mb-3">
                     <button id="rwCopyBtn" type="button" class="btn">Copy for TokenPocket</button>
                     <button id="rwCsvBtn" type="button" class="btn btn-ghost">Download CSV</button>
+                    <button id="rwDetectBtn" type="button" class="btn btn-ghost">Detect payments</button>
                 </div>
                 <div id="rwList" class="card rounded-2xl overflow-hidden"></div>
             </section>
@@ -1485,6 +1486,60 @@
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
 
+        // Detect payments: the server reads real NET transfers from the reward wallet and matches them
+        // to unpaid claims. Confirming sends only claim ids; the server writes the tx hash itself.
+        function renderRwDetect(d) {
+            const matches = d.matches || [];
+            const unmatched = d.unmatched || [];
+            const total = matches.reduce((s, m) => s + m.amount, 0);
+            const rows = matches.map((m) => `
+                <div class="row">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm font-semibold text-primary">${esc(m.username ? '@' + m.username : 'unknown user')}</span>
+                        <span class="text-sm">${esc(fmtNet(m.amount))} NET</span>
+                    </div>
+                    <div class="text-xs text-muted" style="margin-top:4px"><a href="https://polygonscan.com/tx/${encodeURIComponent(m.tx_hash)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 mono">${esc(shortAddr(m.tx_hash))}</a> · ${esc(fmtDate(m.paid_at))}</div>
+                </div>`).join('');
+            const skipped = unmatched.length
+                ? `<p class="text-xs text-muted" style="margin-top:12px">${unmatched.length} unpaid claim${unmatched.length === 1 ? '' : 's'} had no matching transfer and ${unmatched.length === 1 ? 'is' : 'are'} left as not received.</p>`
+                : '';
+            openModal(`
+                <h3 class="text-base font-semibold text-primary">Detected payments</h3>
+                <p class="text-xs text-muted" style="margin:4px 0 12px">Sent from ${esc(shortAddr(d.wallet))}. A claim matches a NET transfer to the claimant's wallet for the exact claim amount.</p>
+                ${matches.length ? `<div class="card rounded-2xl overflow-hidden">${rows}</div>` : '<p class="text-sm text-muted">No matching payments found.</p>'}
+                ${skipped}
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    ${matches.length ? `<button id="rwConfirmBtn" type="button" class="btn">Mark ${matches.length} as received (${esc(fmtNet(total))} NET)</button>` : ''}
+                    <button id="rwCloseBtn" type="button" class="btn btn-ghost">Close</button>
+                </div>`);
+            $('rwCloseBtn').addEventListener('click', closeModal);
+            const confirmBtn = $('rwConfirmBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', async () => {
+                    confirmBtn.disabled = true;
+                    try {
+                        const r = await api('admin-rewards-confirm', { method: 'POST', body: { reward_ids: matches.map((m) => m.reward_id) } });
+                        closeModal();
+                        showToast(`Marked ${r.confirmed} as received${r.skipped ? `, ${r.skipped} skipped` : ''}`);
+                        loadRewards();
+                    } catch (err) {
+                        confirmBtn.disabled = false;
+                        showToast(err.message, true);
+                    }
+                });
+            }
+        }
+
+        $('rwDetectBtn').addEventListener('click', async () => {
+            openModal('<p class="text-sm text-muted">Checking the blockchain...</p>');
+            try {
+                renderRwDetect(await api('admin-rewards-detect'));
+            } catch (err) {
+                openModal(`<p class="text-sm text-red-500">${esc(err.message)}</p><div style="margin-top:16px"><button id="rwCloseBtn" type="button" class="btn btn-ghost">Close</button></div>`);
+                $('rwCloseBtn').addEventListener('click', closeModal);
+            }
+        });
+
         let rwTimer = null;
         $('rwSearch').addEventListener('input', () => { clearTimeout(rwTimer); rwTimer = setTimeout(loadRewards, 350); });
         $('rwStatus').addEventListener('change', loadRewards);
@@ -1504,6 +1559,7 @@
                     if (d.order_status) bits.push('Order: ' + d.order_status);
                     if (d.transfers_seen !== undefined) bits.push(`Seen ${d.transfers_seen}, changed ${d.orders_changed}`);
                     if (d.to) bits.push(`Application: ${d.from} to ${d.to}`);
+                    if (e.action === 'reward_paid') bits.push(`${d.count} claims marked received, ${d.total_net} NET`);
                     return `<div class="row"><div class="flex justify-between text-sm"><span class="font-semibold text-primary">${esc(e.action)}</span><span class="text-xs text-muted">${esc(fmtDate(e.created_at))}</span></div><div class="text-xs text-muted">${esc(String(e.admin))} (${esc(e.role)})${bits.length ? ' · ' + esc(bits.join(' · ')) : ''}</div></div>`;
                 }).join('');
             } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
