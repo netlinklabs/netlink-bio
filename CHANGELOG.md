@@ -8,6 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Added
+- **In-app notification when a NET reward is marked received.** `admin-rewards-confirm` now calls `notifyUser` for each confirmed claim (type `reward`, icon `gift`, title "Your NET reward has been sent"). Unique link per claim (`/reward?paid=<id>`) prevents duplicates; failures never block the confirmation. Shows in the Notification tab of `tx.html`. No database change, no email. File: `api/_lib/admin.js`.
 - **Detect payments in the admin Rewards tab.** New button reads real NET transfers sent from the reward wallet on Polygon (Alchemy `alchemy_getAssetTransfers`, one query) and matches them to unpaid claims: same NET transfer to the claimant's current wallet, exact claim amount, sent after the claim was created, one transfer per claim. A dialog lists the matches; "Mark as received" sets `status = 'claimed'`, `tx_hash` and `claimed_at` on those claims. The page only sends claim ids and the server repeats the lookup, so a hash cannot be typed in or forged. Changes only rows still `pending`, writes `reward_paid` to the audit log, finance and super_admin only. New server actions `admin-rewards-detect` and `admin-rewards-confirm` in `api/_lib/admin.js`. Needs env `REWARD_WALLET_ADDRESS` (the wallet that sends rewards) and the migration `20261008_rewards_service_role_update.sql` (`grant update (status, tx_hash, claimed_at)` to `service_role`). No new Tailwind classes.
 
 ### Fixed

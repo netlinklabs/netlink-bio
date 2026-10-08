@@ -18,6 +18,7 @@ const ORDER_STATUSES = ['awaiting_payment', 'underpaid', 'paid', 'expired', 'lat
 const SETTLEABLE = ['awaiting_payment', 'underpaid', 'expired', 'late_payment'];
 
 import { sendMail, invoiceMail, getUserEmail, ambassadorStatusMail } from './mailer.js';
+import { notifyUser } from './notify.js';
 import { usageSummary } from './usage.js';
 const SAMPLE_ADDR = '0x0000000000000000000000000000000000000000';
 
@@ -716,7 +717,17 @@ export async function handleAdmin(action, req, res, user, ctx) {
         prefer: 'return=representation',
         body: { status: 'claimed', tx_hash: m.tx_hash, claimed_at: m.paid_at },
       });
-      if (rows[0]) done.push(m);
+      if (rows[0]) {
+        done.push(m);
+        // In-app notification. Unique link per claim keeps it from repeating. Never blocks the payout.
+        await notifyUser(rows[0].user_id, {
+          type: 'reward',
+          title: 'Your NET reward has been sent',
+          body: `${m.amount} NET was sent to your wallet.`,
+          icon: 'gift',
+          link: `/reward?paid=${m.reward_id}`,
+        });
+      }
     }
     if (done.length) {
       await audit('reward_paid', null, {
