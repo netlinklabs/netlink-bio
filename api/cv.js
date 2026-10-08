@@ -362,7 +362,7 @@ async function handler(req, res) {
           <h4>${escapeHtml(p.name)}</h4>
           ${p.description ? `<p>${escapeHtml(p.description)}</p>` : ''}
           ${(p.tags && p.tags.length) ? `<div class="project-tags">${p.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join('')}</div>` : ''}
-          ${projectUrl ? `<a class="project-view-btn" href="${escapeHtml(projectUrl)}" target="_blank" rel="noopener noreferrer">View Project <svg class="project-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg><span class="sr-only"> (opens in a new tab)</span></a><span class="project-url-print">${escapeHtml(projectUrl)}</span>` : ''}
+          ${projectUrl ? `<a class="project-view-btn" href="${escapeHtml(projectUrl)}" target="_blank" rel="noopener noreferrer">View Project <svg class="project-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg><span class="sr-only"> (opens in a new tab)</span></a><span class="project-url-print"><strong>View Project:</strong> ${escapeHtml(projectUrl)}</span>` : ''}
         </div>`;
       }).join('')}</div></div>`
     : '';
@@ -486,8 +486,8 @@ body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sa
 .project-card p { font-size:0.8rem; color:var(--text-medium); margin-bottom:0.75rem; line-height:1.5; }
 .project-tags { display:flex; gap:0.5rem; flex-wrap:wrap; }
 .project-tags span { font-size:0.75rem; color:var(--primary); background:rgba(26,54,93,0.08); padding:0.25rem 0.5rem; border-radius:4px; font-weight:500; }
-.project-view-btn { display:inline-flex; align-items:center; gap:0.4rem; margin-top:0.75rem; font-family:inherit; font-size:0.75rem; font-weight:600; color:var(--primary); background:rgba(26,54,93,0.08); border-radius:6px; padding:0.4rem 0.8rem; text-decoration:none; }
-.project-view-btn:hover { background:rgba(26,54,93,0.14); }
+.project-view-btn { display:inline-flex; align-items:center; gap:0.4rem; margin-top:0.75rem; font-family:inherit; font-size:0.75rem; font-weight:600; color:#f8fafc; background:#2d3748; border-radius:6px; padding:0.45rem 0.9rem; text-decoration:none; }
+.project-view-btn:hover { background:#1a202c; }
 .project-view-icon { flex-shrink:0; }
 .project-url-print { display:none; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
