@@ -37,6 +37,9 @@ const AMBASSADOR_FLOW = {
   revoked: [],
 };
 
+// NET reward claims (public.rewards). Finance reads the list to pay claims out; this file only reads.
+const REWARD_STATUSES = ['pending', 'claimed'];
+
 const ACTION_ROLES = {
   'admin-me': null, // any signed-in user; returns an empty role list for non-admins
   'admin-overview': FINANCE_ROLES,
@@ -52,6 +55,7 @@ const ACTION_ROLES = {
   'admin-ambassadors': AMBASSADOR_READ_ROLES,
   'admin-ambassador': AMBASSADOR_READ_ROLES,
   'admin-ambassador-update': AMBASSADOR_WRITE_ROLES,
+  'admin-rewards': FINANCE_ROLES,
   'admin-audit': ['super_admin'],
   'admin-test-email': ['super_admin'],
 };
@@ -560,6 +564,63 @@ export async function handleAdmin(action, req, res, user, ctx) {
     }
 
     return res.status(400).json({ error: 'Nothing to update' });
+  }
+
+  // ---------------------------------------------------------- admin-rewards
+  // Read only. Lists NET reward claims with the claimant's current wallet (read from profiles at
+  // request time, so an address changed after claiming is picked up). Optional filters: status
+  // (pending or claimed), reward_type, username search. Counts always cover all claims.
+  if (action === 'admin-rewards') {
+    const st = REWARD_STATUSES.includes(req.query.status) ? req.query.status : '';
+    const type = /^[a-z0-9_]{1,40}$/.test(req.query.reward_type || '') ? req.query.reward_type : '';
+    const q = String(req.query.q || '').replace(/[^A-Za-z0-9_]/g, '').toLowerCase().slice(0, 30);
+
+    const [allRows, programs] = await Promise.all([
+      db('rewards?select=status,amount&limit=1000'),
+      db('reward_programs?select=reward_type,quota,amount_per_claim,is_active'),
+    ]);
+    const counts = { total: allRows.length, pending: 0, claimed: 0, pending_amount: 0 };
+    allRows.forEach((r) => {
+      if (r.status === 'pending') { counts.pending += 1; counts.pending_amount += Number(r.amount) || 0; }
+      else if (r.status === 'claimed') counts.claimed += 1;
+    });
+
+    let filter = '';
+    if (st) filter += `&status=eq.${st}`;
+    if (type) filter += `&reward_type=eq.${type}`;
+    if (q) {
+      const found = await db(`profiles?username=ilike.*${q}*&select=id&limit=50`);
+      const ids = found.map((p) => p.id);
+      if (!ids.length) return res.status(200).json({ rewards: [], counts, programs });
+      filter += `&user_id=in.(${ids.join(',')})`;
+    }
+    const rows = await db(`rewards?select=id,user_id,reward_type,status,amount,tx_hash,claimed_at,created_at&order=created_at.asc&limit=1000${filter}`);
+
+    // Profiles in chunks so the request URL stays short.
+    const userIds = [...new Set(rows.map((r) => r.user_id))];
+    const profiles = [];
+    for (let i = 0; i < userIds.length; i += 100) {
+      const chunk = userIds.slice(i, i + 100);
+      profiles.push(...(await db(`profiles?id=in.(${chunk.join(',')})&select=id,username,display_name,wallet_address`)));
+    }
+    const byId = Object.fromEntries(profiles.map((p) => [p.id, p]));
+    return res.status(200).json({
+      counts,
+      programs,
+      rewards: rows.map((r) => {
+        const p = byId[r.user_id];
+        return {
+          id: r.id,
+          reward_type: r.reward_type,
+          status: r.status,
+          amount: Number(r.amount) || 0,
+          tx_hash: r.tx_hash || null,
+          claimed_at: r.claimed_at,
+          created_at: r.created_at,
+          user: p ? { username: p.username, display_name: p.display_name, wallet_address: p.wallet_address || null } : null,
+        };
+      }),
+    });
   }
 
   // ---------------------------------------------------------- admin-audit

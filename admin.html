@@ -253,6 +253,25 @@
                 <div id="ambList" class="card rounded-2xl overflow-hidden"></div>
             </section>
 
+            <!-- Rewards -->
+            <section id="tab-rewards" class="hidden">
+                <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                    <input id="rwSearch" class="field" placeholder="Search username" maxlength="30" autocomplete="off">
+                    <select id="rwStatus" class="field sm:max-w-[200px]">
+                        <option value="pending">Not received yet</option>
+                        <option value="claimed">Received</option>
+                        <option value="">All claims</option>
+                    </select>
+                </div>
+                <p id="rwCounts" class="text-xs text-muted mb-2"></p>
+                <p id="rwWarn" class="hidden text-xs text-red-500 mb-2"></p>
+                <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                    <button id="rwCopyBtn" type="button" class="btn">Copy for TokenPocket</button>
+                    <button id="rwCsvBtn" type="button" class="btn btn-ghost">Download CSV</button>
+                </div>
+                <div id="rwList" class="card rounded-2xl overflow-hidden"></div>
+            </section>
+
             <!-- Audit -->
             <section id="tab-audit" class="hidden">
                 <div id="auditList" class="card rounded-2xl overflow-hidden"></div>
@@ -332,6 +351,7 @@
             tabs.push({ id: 'orders', label: 'Orders' });
             if (isFinance()) tabs.push({ id: 'payments', label: 'Payments' });
             if (has('super_admin', 'support')) tabs.push({ id: 'ambassadors', label: 'Ambassadors' });
+            if (isFinance()) tabs.push({ id: 'rewards', label: 'Rewards' });
             if (has('super_admin')) tabs.push({ id: 'audit', label: 'Audit log' });
             $('tabs').innerHTML = tabs.map((t) => `<button class="tab-btn" data-tab="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
             $('tabs').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -340,12 +360,13 @@
 
         function switchTab(id) {
             activeTab = id;
-            ['overview', 'orders', 'payments', 'ambassadors', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
+            ['overview', 'orders', 'payments', 'ambassadors', 'rewards', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
             $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
             if (id === 'overview') loadOverview();
             if (id === 'orders') loadOrders();
             if (id === 'payments') loadPayments();
             if (id === 'ambassadors') loadAmbassadors();
+            if (id === 'rewards') loadRewards();
             if (id === 'audit') loadAudit();
         }
 
@@ -1359,6 +1380,114 @@
                 }));
             } catch (err) { openModal(`<p class="text-sm text-red-500 mb-3">${esc(err.message)}</p><button id="closeModalBtn" class="btn btn-ghost">Close</button>`); $('closeModalBtn').addEventListener('click', closeModal); }
         }
+
+        // ---------- rewards ----------
+        // Read only. Finance sees who claimed a NET reward, filters the ones not paid yet, and exports
+        // the recipients (TokenPocket batch paste or CSV). Marking a claim as paid is still done by hand.
+        const RW_ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
+        const RW_STATUS_LABEL = { pending: 'Not received', claimed: 'Received' };
+        const RW_STATUS_CLASS = { pending: 'b-warn', claimed: 'b-ok' };
+        let rwRows = [];
+
+        const fmtNet = (v) => String(Number(Number(v).toFixed(6)));
+        const rwHasWallet = (r) => !!(r.user && RW_ADDR_RE.test(r.user.wallet_address || ''));
+        // Only claims that are still unpaid and have a valid wallet may go into a payout paste.
+        const rwPayable = () => rwRows.filter((r) => r.status === 'pending' && rwHasWallet(r));
+
+        // Stops a spreadsheet from running a cell that starts with = + - @ as a formula.
+        function csvCell(v) {
+            let s = String(v ?? '');
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            return `"${s.replace(/"/g, '""')}"`;
+        }
+
+        function updateRwActions() {
+            const payable = rwPayable();
+            const pendingRows = rwRows.filter((r) => r.status === 'pending');
+            const noWallet = pendingRows.length - payable.length;
+            const seen = new Map();
+            payable.forEach((r) => { const k = r.user.wallet_address.toLowerCase(); seen.set(k, (seen.get(k) || 0) + 1); });
+            const dup = [...seen.values()].filter((n) => n > 1).length;
+            const warns = [];
+            if (noWallet > 0) warns.push(`${noWallet} unpaid claim${noWallet === 1 ? ' has' : 's have'} no valid wallet and ${noWallet === 1 ? 'is' : 'are'} left out of the paste.`);
+            if (dup > 0) warns.push(`${dup} wallet address${dup === 1 ? ' appears' : 'es appear'} more than once. Check before sending.`);
+            $('rwWarn').textContent = warns.join(' ');
+            show('rwWarn', warns.length > 0);
+            const total = payable.reduce((s, r) => s + r.amount, 0);
+            $('rwCopyBtn').disabled = payable.length === 0;
+            $('rwCopyBtn').textContent = payable.length ? `Copy for TokenPocket (${payable.length}, ${fmtNet(total)} NET)` : 'Copy for TokenPocket';
+            $('rwCsvBtn').disabled = rwRows.length === 0;
+        }
+
+        async function loadRewards() {
+            const list = $('rwList');
+            list.innerHTML = '<p class="p-4 text-sm text-muted">Loading...</p>';
+            try {
+                const q = encodeURIComponent($('rwSearch').value.trim());
+                const st = encodeURIComponent($('rwStatus').value);
+                const { rewards, counts } = await api('admin-rewards', { query: `&q=${q}&status=${st}` });
+                rwRows = rewards;
+                $('rwCounts').textContent = `Not received ${counts.pending} (${fmtNet(counts.pending_amount)} NET) · Received ${counts.claimed} · Total ${counts.total}`;
+                updateRwActions();
+                if (!rewards.length) { list.innerHTML = '<p class="p-4 text-sm text-muted">No claims found.</p>'; return; }
+                list.innerHTML = rewards.map((r) => {
+                    const u = r.user || {};
+                    const addr = u.wallet_address || '';
+                    const addrHtml = RW_ADDR_RE.test(addr)
+                        ? `<span class="mono">${esc(addr)}</span>`
+                        : '<span class="text-red-500">No valid wallet</span>';
+                    const txHtml = r.tx_hash
+                        ? ` · <a href="https://polygonscan.com/tx/${encodeURIComponent(r.tx_hash)}" target="_blank" rel="noopener noreferrer" class="text-blue-500">View transaction</a>`
+                        : '';
+                    return `
+                    <div class="row">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-semibold text-primary">${esc(u.username ? '@' + u.username : 'unknown user')}${u.display_name ? ' <span class="text-xs text-muted font-normal">' + esc(u.display_name) + '</span>' : ''}</span>
+                            <span class="badge ${RW_STATUS_CLASS[r.status] || 'b-gray'}">${esc(RW_STATUS_LABEL[r.status] || r.status)}</span>
+                        </div>
+                        <div class="mt-1 text-xs text-muted">${addrHtml}</div>
+                        <div class="flex items-center justify-between gap-2 mt-1 text-xs text-muted">
+                            <span>${esc(fmtNet(r.amount))} NET · ${esc(fmtDate(r.created_at))}${txHtml}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
+        }
+
+        // TokenPocket batch transfer: one line per transfer, "address,amount".
+        $('rwCopyBtn').addEventListener('click', () => {
+            const payable = rwPayable();
+            if (!payable.length) return;
+            const text = payable.map((r) => `${r.user.wallet_address},${fmtNet(r.amount)}`).join('\n');
+            const total = payable.reduce((s, r) => s + r.amount, 0);
+            navigator.clipboard.writeText(text).then(
+                () => showToast(`Copied ${payable.length} recipient${payable.length === 1 ? '' : 's'}, ${fmtNet(total)} NET`),
+                () => showToast('Could not copy', true),
+            );
+        });
+
+        // CSV of the rows currently listed (all columns, including already received ones).
+        $('rwCsvBtn').addEventListener('click', () => {
+            if (!rwRows.length) return;
+            const head = ['username', 'display_name', 'wallet_address', 'amount_net', 'status', 'tx_hash', 'claimed_at', 'created_at'];
+            const lines = [head.join(',')].concat(rwRows.map((r) => {
+                const u = r.user || {};
+                return [u.username, u.display_name, u.wallet_address, fmtNet(r.amount), r.status, r.tx_hash, r.claimed_at, r.created_at].map(csvCell).join(',');
+            }));
+            const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `netlink-rewards-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+
+        let rwTimer = null;
+        $('rwSearch').addEventListener('input', () => { clearTimeout(rwTimer); rwTimer = setTimeout(loadRewards, 350); });
+        $('rwStatus').addEventListener('change', loadRewards);
 
         // ---------- audit ----------
         async function loadAudit() {
