@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **Rewards tab in `admin.html`** (finance and super_admin only). Lists NET reward claims from `public.rewards` with username, current wallet (read from `profiles` at request time), amount, status and tx link. Filter: Not received yet (default), Received, All claims, plus username search. Header line shows counts and the NET still owed. "Copy for TokenPocket" copies unpaid claims with a valid wallet as `address,amount` lines for TokenPocket's batch transfer paste box; "Download CSV" exports the listed rows (cells starting with `=`, `+`, `-` or `@` are prefixed so spreadsheets do not run them as formulas). Warns when unpaid claims have no valid wallet (left out of the paste) or when one wallet appears more than once. Read only: marking a claim as paid is still done by hand. New server action `admin-rewards` in `api/_lib/admin.js` (role check on the server, service role read, up to 1,000 claims, profiles fetched in chunks of 100). No schema change, no new Tailwind classes.
+
 ### Changed
 - **CV "View Project" button restyled** (`api/cv.js`): transparent background, 1px border in the theme accent color (`--accent`), 6px radius, text and icon in the normal body text color. The dark gray fill was too loud next to the project title. Print / PDF output is unchanged.
 
