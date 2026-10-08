@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **CV "View Project" button restyled** (`api/cv.js`): transparent background, 1px border in the theme accent color (`--accent`), 6px radius, text and icon in the normal body text color. The dark gray fill was too loud next to the project title. Print / PDF output is unchanged.
+
+### Changed
 - **CV Featured Projects polish** (`api/cv.js`): the "View Project" button is now dark gray (`#2d3748`) with light text and icon so it stands apart from the tags. In print / PDF the URL now starts with the label `View Project:`.
 
 ### Added
