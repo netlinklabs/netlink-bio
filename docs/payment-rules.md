@@ -109,9 +109,18 @@ Set in `api/orders.js` (`PLAN_PRICES`). Period names in requests: `monthly`, `qu
 14. Owner account `ramlanhadiansyah` (Gold) runs until **2030-12-31**.
 15. Test account `@yourname` is used for marketing mockups and live payment tests.
 
+### billing.html behaviour (in-app page)
+
+- `billing.html` is an **app page**: signed in users only. It shows the current plan (tier and end date) and the user's order history (plans and KYC), newest first, up to 50 rows.
+- Orders come from `api/orders.js?action=list`. It returns only the caller's own orders and only the fields a history row needs (no wallet addresses, no transaction hashes).
+- Each row links to `checkout?order=<id>`, which shows the order status, the payment details and the receipt.
+- Status labels: awaiting_payment "Awaiting payment", underpaid "Partly paid", paid "Paid", late_payment "Under review", expired "Expired", cancelled "Cancelled", refunded "Refunded".
+- Reached from the Account menu item "Billing" (`shared/account-menu.js`) and from the "View billing history" link at the bottom of `plans.html`.
+- `billing` is a reserved name (client lists in `page-builder.html` and `dashboard.html`, and `reserved_usernames` in the database, see migration `20261009_reserve_billing_name.sql`).
+
 ### plans.html behaviour (in-app page)
 
-- `plans.html` is an **app page** (`PAGE-TYPE: app`): signed in users only, app nav, no marketing header or footer. Signed out visitors are sent to `login`. Every Upgrade, Renew and "See plans" button in the app points to `/plans`. The Account menu has a "Plans & Billing" item (`shared/account-menu.js`) that opens it.
+- `plans.html` is an **app page** (`PAGE-TYPE: app`): signed in users only, app nav, no marketing header or footer. Signed out visitors are sent to `login`. Every Upgrade, Renew and "See plans" button in the app points to `/plans`. The Account menu has a "Plans" item (`shared/account-menu.js`) that opens it.
 - Reads the user's own `tier` and `tier_expires_at`. Labels: "Current Plan", "Renew Silver", "Upgrade to Gold", "Renew Gold", locked Silver while Gold is running, a note when a paid plan ended.
 - The page stays `noindex, nofollow`. A public pricing page (with the website header and footer) is a separate future file, for example `pricing.html`. It must not copy prices by hand: it should link signed in users to `/plans`.
 - Feature lists and prices on any plans or pricing page must match the tier feature table in this file.
@@ -162,7 +171,7 @@ Set in `api/orders.js` (`PLAN_PRICES`). Period names in requests: `monthly`, `qu
 - `api/_lib/mailer.js` (invoice, receipt, plan emails)
 - `api/_lib/plan-expiry.js`, `api/cron/rollup-analytics.js` (reminders and downgrade job)
 - `api/_lib/admin.js`, `admin.html` (order review, refunds)
-- `checkout.html`, `plans.html`, `identity.html`
+- `checkout.html`, `plans.html`, `billing.html`, `identity.html`
 - `pay.html`, `pay2.html`, `pay5.html`, `tx.html`, `recovery.html` (wallet and payment return)
 - `api/bio.js`, `api/landing.js`, `api/_lib/sitemap.js` (tier limits on public pages)
 - `dashboard.html`, `template.html`, `privacy.html` (tier gates and locks)
@@ -179,3 +188,4 @@ Set in `api/orders.js` (`PLAN_PRICES`). Period names in requests: `monthly`, `qu
 - 2026-10-07: 20 NET discount postponed. KYC yearly renewal postponed.
 - Earlier: KYC became a separate $2.50 one-time add-on, no longer required for Gold.
 - 2026-10-09: `plans.html` became an in-app page (app nav, login required). A public pricing page, if built later, is a separate file that sends signed in users to `/plans`.
+- 2026-10-09: New in-app `billing.html` (current plan and order history) and `api/orders.js?action=list`. The Account menu now has separate "Plans" and "Billing" items.

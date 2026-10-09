@@ -120,6 +120,8 @@
     .addon-note .plan-cta.cta-addon { max-width: 260px; margin: var(--space-4) auto 0; background: var(--bg-primary); color: var(--color-primary-dark, var(--color-primary)); border: 1.5px solid var(--color-primary); }
     .addon-note .plan-cta.cta-addon:hover { background: rgba(22, 198, 200, 0.08); }
 
+    .billing-link { text-align: center; margin: var(--space-4) 0 0; font-size: 0.875rem; }
+    .billing-link a { color: var(--color-primary-dark); font-weight: 600; text-decoration: none; }
     .plans-footnote { max-width: 700px; margin: var(--space-6) auto 0; text-align: center; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.7; }
 
     @media (min-width: 768px) {
@@ -230,6 +232,7 @@
           Payments are accepted in USDC only until a fiat payment processor is integrated.
           Plan payments are not refundable. When a plan ends, features above the Basic limits are hidden from your public pages, not deleted.
         </p>
+        <p class="billing-link"><a href="/billing">View billing history</a></p>
       </div>
     </section>
   </main>
@@ -349,7 +352,7 @@
     })();
   </script>
 
-  <script src="/shared/account-menu.js?v=5"></script>
+  <script src="/shared/account-menu.js?v=6"></script>
   <script src="/shared/nav.js?v=7"></script>
   <script src="/shared/app-lock.js?v=3"></script>
 </body>

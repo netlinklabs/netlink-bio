@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <!-- PAGE-TYPE: app -->
+  <meta charset="UTF-8">
+  <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing - Netlink</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+  <link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
+
+  <link rel="stylesheet" href="/shared/tailwind.css?v=13">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.460.0" defer></script>
+
+  <style>
+    /* Plain CSS only (no new Tailwind classes), tokens match plans.html. */
+    :root {
+      --font-body: 'Inter', sans-serif; --font-heading: 'Poppins', 'Inter', sans-serif;
+      --text-primary: #0f172a; --text-secondary: #475569;
+      --bg-primary: #ffffff; --bg-secondary: #f1f5f9; --border-color: rgba(0, 0, 0, 0.10);
+      --color-primary: #16c6c8;
+      --page-bg: #f8fafc;
+    }
+    html.dark {
+      --text-primary: #f8fafc; --text-secondary: #94a3b8;
+      --bg-primary: #1e293b; --bg-secondary: #0f172a; --border-color: rgba(255, 255, 255, 0.10);
+      --color-primary: #22d3d5;
+      --page-bg: #0f172a;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--page-bg); }
+
+    #authGate { position: fixed; inset: 0; background: var(--page-bg); z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .gate-box { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 0 24px; text-align: center; }
+    .gate-spinner { width: 32px; height: 32px; border: 2px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: gate-spin 0.8s linear infinite; }
+    @keyframes gate-spin { to { transform: rotate(360deg); } }
+    .gate-text { font-size: 14px; color: var(--text-secondary); }
+
+    .billing-wrap { max-width: 640px; margin: 0 auto; padding: 16px 28px 112px; }
+    @media (min-width: 768px) { .billing-wrap { padding-left: 24px; padding-right: 24px; } }
+    .page-title { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; text-align: center; margin: 16px 0 24px; }
+    .section-title { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); margin: 28px 0 10px; }
+
+    .card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 18px; }
+    .plan-summary { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .plan-summary-label { font-size: 0.75rem; color: var(--text-secondary); }
+    .plan-summary-name { font-family: var(--font-heading); font-size: 1.125rem; font-weight: 700; }
+    .plan-summary-note { font-size: 0.8125rem; color: var(--text-secondary); }
+    .btn-small { flex-shrink: 0; padding: 9px 16px; border-radius: 12px; font-size: 0.875rem; font-weight: 600; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; }
+
+    .order-list { display: flex; flex-direction: column; gap: 10px; }
+    .order-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; text-decoration: none; color: inherit; }
+    .order-row:hover { border-color: var(--color-primary); }
+    .order-main { min-width: 0; }
+    .order-title { font-size: 0.9375rem; font-weight: 600; }
+    .order-meta { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; word-break: break-all; }
+    .order-side { text-align: right; flex-shrink: 0; }
+    .order-amount { font-size: 0.9375rem; font-weight: 700; }
+    .badge { display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; }
+    .badge-paid { background: rgba(16, 185, 129, 0.14); color: #059669; }
+    .badge-open { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+    .badge-review { background: rgba(59, 130, 246, 0.14); color: #2563eb; }
+    .badge-off { background: rgba(148, 163, 184, 0.18); color: var(--text-secondary); }
+    html.dark .badge-paid { color: #34d399; }
+    html.dark .badge-open { color: #fbbf24; }
+    html.dark .badge-review { color: #93c5fd; }
+
+    .empty-note { padding: 22px 20px; text-align: center; font-size: 0.9375rem; color: var(--text-secondary); }
+    .empty-note a { color: var(--color-primary); font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="authGate">
+    <div class="gate-box">
+      <div class="gate-spinner"></div>
+      <p id="authGateText" class="gate-text">Loading billing...</p>
+    </div>
+  </div>
+
+  <main class="billing-wrap">
+    <h1 class="page-title">Billing</h1>
+
+    <div class="card plan-summary" id="planSummary">
+      <div>
+        <p class="plan-summary-label">Current plan</p>
+        <p class="plan-summary-name" id="planName">-</p>
+        <p class="plan-summary-note" id="planNote"></p>
+      </div>
+      <a class="btn-small" href="/plans">View plans</a>
+    </div>
+
+    <h2 class="section-title">Order history</h2>
+    <div id="orderList" class="order-list"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      'use strict';
+      var DAY_FMT = { day: '2-digit', month: 'short', year: 'numeric' };
+      function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-GB', DAY_FMT); }
+      function money(v) { return '$' + Number(v).toFixed(2); }
+      function $(id) { return document.getElementById(id); }
+      function gateText(msg) { var el = $('authGateText'); if (el) el.textContent = msg; }
+
+      var STATUS = {
+        paid: ['Paid', 'badge-paid'],
+        awaiting_payment: ['Awaiting payment', 'badge-open'],
+        underpaid: ['Partly paid', 'badge-open'],
+        late_payment: ['Under review', 'badge-review'],
+        expired: ['Expired', 'badge-off'],
+        cancelled: ['Cancelled', 'badge-off'],
+        refunded: ['Refunded', 'badge-off']
+      };
+
+      function monthsText(n) { return n === 1 ? '1 month' : n + ' months'; }
+      function titleOf(o) {
+        if (o.type === 'kyc') return 'Identity verification (KYC)';
+        var p = o.plan || {};
+        var tier = p.tier ? p.tier.charAt(0).toUpperCase() + p.tier.slice(1) : 'Plan';
+        if (p.kind === 'upgrade') return 'Upgrade to ' + tier;
+        return tier + ' plan' + (p.months ? ', ' + monthsText(p.months) : '');
+      }
+
+      function renderPlan(profile) {
+        var tier = profile.tier || 'basic';
+        var until = profile.tier_expires_at || null;
+        var paid = tier === 'silver' || tier === 'gold';
+        $('planName').textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+        if (!paid) { $('planNote').textContent = 'Free plan'; return; }
+        if (!until) { $('planNote').textContent = 'Included with your account'; return; }
+        var running = new Date(until).getTime() > Date.now();
+        $('planNote').textContent = (running ? 'Active until ' : 'Ended on ') + fmtDate(until);
+      }
+
+      function renderOrders(orders) {
+        var box = $('orderList');
+        box.textContent = '';
+        if (!orders.length) {
+          var empty = document.createElement('div');
+          empty.className = 'card empty-note';
+          empty.appendChild(document.createTextNode('No orders yet. '));
+          var link = document.createElement('a');
+          link.href = '/plans';
+          link.textContent = 'See plans';
+          empty.appendChild(link);
+          box.appendChild(empty);
+          return;
+        }
+        orders.forEach(function (o) {
+          var row = document.createElement('a');
+          row.className = 'card order-row';
+          row.href = '/checkout?order=' + encodeURIComponent(o.id);
+
+          var main = document.createElement('div');
+          main.className = 'order-main';
+          var title = document.createElement('p');
+          title.className = 'order-title';
+          title.textContent = titleOf(o);
+          var meta = document.createElement('p');
+          meta.className = 'order-meta';
+          meta.textContent = o.order_no + ' • ' + fmtDate(o.created_at);
+          main.appendChild(title);
+          main.appendChild(meta);
+
+          var side = document.createElement('div');
+          side.className = 'order-side';
+          var amount = document.createElement('p');
+          amount.className = 'order-amount';
+          amount.textContent = money(o.amount_usdc);
+          var st = STATUS[o.status] || [o.status, 'badge-off'];
+          var badge = document.createElement('span');
+          badge.className = 'badge ' + st[1];
+          badge.textContent = st[0];
+          side.appendChild(amount);
+          side.appendChild(badge);
+
+          row.appendChild(main);
+          row.appendChild(side);
+          box.appendChild(row);
+        });
+      }
+
+      var client = window.supabase.createClient('https://fuewalufgiclrcgszlit.supabase.co', 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb');
+      client.auth.getSession().then(function (res) {
+        var session = res && res.data && res.data.session;
+        if (!session) { window.location.href = 'login'; return null; }
+        return client.from('profiles')
+          .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency, identity_verified_at, business_verified_at')
+          .eq('id', session.user.id).single()
+          .then(function (p) {
+            if (p.error) throw p.error;
+            renderPlan(p.data);
+            if (window.NetlinkNav) NetlinkNav.init({ activePage: null, profile: p.data, supabaseClient: client, userId: session.user.id });
+            return fetch('/api/orders?action=list', { headers: { Authorization: 'Bearer ' + session.access_token } });
+          })
+          .then(function (r) {
+            return r.json().then(function (json) {
+              if (!r.ok) throw new Error(json.error || 'Could not load your orders');
+              return json.orders || [];
+            });
+          })
+          .then(function (orders) {
+            renderOrders(orders);
+            $('authGate').style.display = 'none';
+            if (window.lucide) lucide.createIcons();
+          });
+      }).catch(function (err) {
+        console.error(err);
+        gateText('Something went wrong: ' + ((err && err.message) || err));
+      });
+    })();
+  </script>
+
+  <script src="/shared/account-menu.js?v=6"></script>
+  <script src="/shared/nav.js?v=7"></script>
+  <script src="/shared/app-lock.js?v=3"></script>
+</body>
+</html>
