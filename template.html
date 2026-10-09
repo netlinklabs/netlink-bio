@@ -79,7 +79,7 @@
         .tpl-thumb.base-dark .bar.short { background: #334155; }
         .tpl-notice { font-size: 12px; line-height: 1.45; padding: 10px 12px; border-radius: 12px; margin-bottom: 12px; background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.3); }
         html.dark .tpl-notice { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
-        .tpl-tier { position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; }
+        .tpl-tier { display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
         .tpl-tier.silver { background: rgba(148,163,184,0.2); color: #475569; }
         .tpl-tier.gold { background: rgba(245,158,11,0.18); color: #b45309; }
         html.dark .tpl-tier.silver { color: #cbd5e1; }
@@ -118,6 +118,11 @@
         .tp-btn { flex: 1; padding: 12px 16px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.12); color: #ffffff; }
         .tp-btn.primary { background: #3b82f6; border-color: #3b82f6; }
         .tp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        html .tpl-thumb.tpl-art { position: relative; }
+        .tpl-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,0.72); color: #ffffff; }
+        .tpl-card.locked { cursor: pointer; }
+        .tpl-card.locked .tpl-thumb { filter: saturate(0.55); opacity: 0.85; }
+        .tpl-card.locked:hover { transform: none; }
         .tpl-desc { display: block; font-size: 11px; line-height: 1.3; color: #64748b; margin-top: 2px; }
         html.dark .tpl-desc { color: #94a3b8; }
     </style>
@@ -232,40 +237,57 @@
         // s = card shadow, a = avatar dot, bw/l/lw = border width and left accent.
         // Basic has the plain Light and Dark looks, Silver adds colored static
         // designs, Gold adds animated premium designs.
-        // Silver users see only 'silver' templates. Gold users see all.
+        // Everyone on Silver or Gold sees all templates. Templates above the plan are shown locked.
+        // `thumb` is the Light preview and `dark` the Dark preview (they follow the user's current look).
         const TEMPLATES = [
             { id: 'silver-01', name: 'Ocean', desc: 'Cool blue, soft shadows', tier: 'silver',
-              thumb: { b: 'linear-gradient(180deg,#e0f2fe,#ecfeff)', c: '#fff', bd: 'rgba(14,116,144,.25)', r: '6px', s: '0 3px 6px -3px rgba(14,116,144,.6)', a: '#38bdf8' } },
+              thumb: { b: 'linear-gradient(180deg,#e0f2fe,#ecfeff)', c: '#fff', bd: 'rgba(14,116,144,.25)', r: '6px', s: '0 3px 6px -3px rgba(14,116,144,.6)', a: '#38bdf8' },
+              dark: { b: 'linear-gradient(180deg,#082f49,#0b2236)', c: '#12304a', bd: 'rgba(125,211,252,.3)', r: '6px', s: '0 3px 6px -3px rgba(14,116,144,.7)', a: '#38bdf8' } },
             { id: 'silver-02', name: 'Sunset', desc: 'Warm pink, pill cards', tier: 'silver',
-              thumb: { b: 'linear-gradient(160deg,#fff1eb,#ffe4ec)', c: '#fff', bd: 'rgba(244,63,94,.25)', r: '99px', s: '0 3px 6px -3px rgba(244,63,94,.6)', a: '#fb7185' } },
+              thumb: { b: 'linear-gradient(160deg,#fff1eb,#ffe4ec)', c: '#fff', bd: 'rgba(244,63,94,.25)', r: '99px', s: '0 3px 6px -3px rgba(244,63,94,.6)', a: '#fb7185' },
+              dark: { b: 'linear-gradient(160deg,#2a0f1d,#1f0f1e)', c: '#35192a', bd: 'rgba(251,113,133,.35)', r: '99px', s: '0 3px 6px -3px rgba(244,63,94,.7)', a: '#fb7185' } },
             { id: 'silver-03', name: 'Forest', desc: 'Fresh green, accent bar', tier: 'silver',
-              thumb: { b: 'linear-gradient(180deg,#dcfce7,#f7fee7)', c: '#fff', bd: 'rgba(22,101,52,.2)', r: '3px', s: '0 3px 6px -3px rgba(22,101,52,.5)', a: '#22c55e', l: '#22c55e', lw: '4px' } },
+              thumb: { b: 'linear-gradient(180deg,#dcfce7,#f7fee7)', c: '#fff', bd: 'rgba(22,101,52,.2)', r: '3px', s: '0 3px 6px -3px rgba(22,101,52,.5)', a: '#22c55e', l: '#22c55e', lw: '4px' },
+              dark: { b: 'linear-gradient(180deg,#052e16,#0a1f14)', c: '#0f3320', bd: 'rgba(134,239,172,.25)', r: '3px', s: '0 3px 6px -3px rgba(22,101,52,.7)', a: '#22c55e', l: '#22c55e', lw: '4px' } },
             { id: 'silver-04', name: 'Paper Pop', desc: 'Bold outlines, hard shadows', tier: 'silver',
-              thumb: { b: 'radial-gradient(rgba(17,24,39,.25) 1px,transparent 1px) 0 0/8px 8px,#fef9c3', c: '#fff', bd: '#111827', bw: '2px', r: '3px', s: '2px 2px 0 #111827', a: '#facc15' } },
+              thumb: { b: 'radial-gradient(rgba(17,24,39,.25) 1px,transparent 1px) 0 0/8px 8px,#fef9c3', c: '#fff', bd: '#111827', bw: '2px', r: '3px', s: '2px 2px 0 #111827', a: '#facc15' },
+              dark: { b: 'radial-gradient(rgba(250,250,250,.2) 1px,transparent 1px) 0 0/8px 8px,#18181b', c: '#27272a', bd: '#fafafa', bw: '2px', r: '3px', s: '2px 2px 0 #fafafa', a: '#facc15' } },
             { id: 'silver-05', name: 'Navy Executive', desc: 'Formal navy, accent bar', tier: 'silver',
-              thumb: { b: 'linear-gradient(180deg,#e2e8f0,#f1f5f9)', c: '#fff', bd: 'rgba(30,58,138,.25)', r: '2px', s: '0 3px 6px -3px rgba(15,23,42,.5)', a: '#1e3a8a', l: '#1e3a8a', lw: '4px' } },
+              thumb: { b: 'linear-gradient(180deg,#e2e8f0,#f1f5f9)', c: '#fff', bd: 'rgba(30,58,138,.25)', r: '2px', s: '0 3px 6px -3px rgba(15,23,42,.5)', a: '#1e3a8a', l: '#1e3a8a', lw: '4px' },
+              dark: { b: 'linear-gradient(180deg,#0f1b33,#0b1220)', c: '#111c33', bd: 'rgba(147,197,253,.3)', r: '2px', s: '0 3px 6px -3px rgba(0,0,0,.6)', a: '#3b82f6', l: '#3b82f6', lw: '4px' } },
             { id: 'silver-06', name: 'Graphite', desc: 'Calm grey, flat outline', tier: 'silver',
-              thumb: { b: 'linear-gradient(180deg,#fafaf9,#f5f5f4)', c: '#fff', bd: 'rgba(28,25,23,.3)', r: '4px', s: 'none', a: '#78716c' } },
+              thumb: { b: 'linear-gradient(180deg,#fafaf9,#f5f5f4)', c: '#fff', bd: 'rgba(28,25,23,.3)', r: '4px', s: 'none', a: '#78716c' },
+              dark: { b: 'linear-gradient(180deg,#1c1c1c,#141414)', c: '#262626', bd: 'rgba(255,255,255,.3)', r: '4px', s: 'none', a: '#a3a3a3' } },
             { id: 'silver-07', name: 'Ivory Classic', desc: 'Cream paper, fine gold lines', tier: 'silver',
-              thumb: { b: 'linear-gradient(180deg,#fffbeb,#fefce8)', c: '#fffdf7', bd: 'rgba(161,98,7,.55)', r: '4px', s: '0 3px 6px -3px rgba(161,98,7,.5)', a: '#b45309' } },
+              thumb: { b: 'linear-gradient(180deg,#fffbeb,#fefce8)', c: '#fffdf7', bd: 'rgba(161,98,7,.55)', r: '4px', s: '0 3px 6px -3px rgba(161,98,7,.5)', a: '#b45309' },
+              dark: { b: 'linear-gradient(180deg,#241a0b,#1c1409)', c: '#2a1f0e', bd: 'rgba(217,119,6,.6)', r: '4px', s: '0 3px 6px -3px rgba(217,119,6,.5)', a: '#d97706' } },
             { id: 'silver-08', name: 'Lavender', desc: 'Soft purple, gentle shadows', tier: 'silver',
-              thumb: { b: 'linear-gradient(180deg,#f3e8ff,#faf5ff)', c: '#fff', bd: 'rgba(147,51,234,.25)', r: '8px', s: '0 3px 6px -3px rgba(147,51,234,.55)', a: '#a855f7' } },
+              thumb: { b: 'linear-gradient(180deg,#f3e8ff,#faf5ff)', c: '#fff', bd: 'rgba(147,51,234,.25)', r: '8px', s: '0 3px 6px -3px rgba(147,51,234,.55)', a: '#a855f7' },
+              dark: { b: 'linear-gradient(180deg,#22123f,#1a1030)', c: '#2a1a4a', bd: 'rgba(192,132,252,.35)', r: '8px', s: '0 3px 6px -3px rgba(147,51,234,.7)', a: '#a855f7' } },
             { id: 'silver-09', name: 'Mint', desc: 'Fresh teal, wide pill cards', tier: 'silver',
-              thumb: { b: 'linear-gradient(180deg,#ccfbf1,#f0fdfa)', c: '#fff', bd: 'rgba(13,148,136,.25)', r: '99px', s: '0 3px 6px -3px rgba(13,148,136,.55)', a: '#2dd4bf' } },
+              thumb: { b: 'linear-gradient(180deg,#ccfbf1,#f0fdfa)', c: '#fff', bd: 'rgba(13,148,136,.25)', r: '99px', s: '0 3px 6px -3px rgba(13,148,136,.55)', a: '#2dd4bf' },
+              dark: { b: 'linear-gradient(180deg,#052e2b,#04201d)', c: '#0b3330', bd: 'rgba(94,234,212,.3)', r: '99px', s: '0 3px 6px -3px rgba(13,148,136,.7)', a: '#2dd4bf' } },
             { id: 'silver-10', name: 'Coral', desc: 'Bright orange, thick outline', tier: 'silver',
-              thumb: { b: 'linear-gradient(160deg,#ffedd5,#fff7ed)', c: '#fff', bd: '#fb923c', bw: '2px', r: '10px', s: '0 3px 6px -4px rgba(234,88,12,.6)', a: '#fb923c' } },
+              thumb: { b: 'linear-gradient(160deg,#ffedd5,#fff7ed)', c: '#fff', bd: '#fb923c', bw: '2px', r: '10px', s: '0 3px 6px -4px rgba(234,88,12,.6)', a: '#fb923c' },
+              dark: { b: 'linear-gradient(160deg,#2a1208,#1f0e07)', c: '#3a1c10', bd: 'rgba(251,146,60,.7)', bw: '2px', r: '10px', s: '0 3px 6px -4px rgba(234,88,12,.7)', a: '#fb923c' } },
             { id: 'gold-01', name: 'Aurora', desc: 'Moving light, frosted glass', tier: 'gold',
-              thumb: { b: 'radial-gradient(circle at 20% 20%,rgba(56,189,248,.8),transparent 55%),radial-gradient(circle at 80% 30%,rgba(167,139,250,.85),transparent 55%),radial-gradient(circle at 55% 95%,rgba(52,211,153,.7),transparent 55%),#f5f3ff', c: 'rgba(255,255,255,.65)', bd: 'rgba(255,255,255,.9)', r: '6px', s: '0 3px 8px -3px rgba(76,29,149,.5)', a: '#fff' } },
+              thumb: { b: 'radial-gradient(circle at 20% 20%,rgba(56,189,248,.8),transparent 55%),radial-gradient(circle at 80% 30%,rgba(167,139,250,.85),transparent 55%),radial-gradient(circle at 55% 95%,rgba(52,211,153,.7),transparent 55%),#f5f3ff', c: 'rgba(255,255,255,.65)', bd: 'rgba(255,255,255,.9)', r: '6px', s: '0 3px 8px -3px rgba(76,29,149,.5)', a: '#fff' },
+              dark: { b: 'radial-gradient(circle at 20% 20%,rgba(56,189,248,.6),transparent 55%),radial-gradient(circle at 80% 30%,rgba(167,139,250,.65),transparent 55%),radial-gradient(circle at 55% 95%,rgba(52,211,153,.5),transparent 55%),#080c1c', c: 'rgba(15,23,42,.55)', bd: 'rgba(255,255,255,.25)', r: '6px', s: '0 3px 8px -3px rgba(0,0,0,.6)', a: 'rgba(255,255,255,.9)' } },
             { id: 'gold-02', name: 'Midnight Gold', desc: 'Black and gold, shining name', tier: 'gold',
-              thumb: { b: 'linear-gradient(180deg,#1a1405,#0a0a0a)', c: '#151515', bd: '#d4af37', r: '5px', s: '0 0 8px -2px rgba(212,175,55,.8)', a: '#d4af37' } },
+              thumb: { b: 'linear-gradient(180deg,#fff8e1,#fff4cc)', c: '#fff', bd: 'rgba(180,134,11,.5)', r: '5px', s: '0 3px 8px -3px rgba(180,134,11,.5)', a: '#b8860b' },
+              dark: { b: 'linear-gradient(180deg,#1a1405,#0a0a0a)', c: '#151515', bd: '#d4af37', r: '5px', s: '0 0 8px -2px rgba(212,175,55,.8)', a: '#d4af37' } },
             { id: 'gold-03', name: 'Neon Grid', desc: 'Glowing neon on a grid', tier: 'gold',
-              thumb: { b: 'linear-gradient(rgba(34,211,238,.2) 1px,transparent 1px) 0 0/10px 10px,linear-gradient(90deg,rgba(34,211,238,.2) 1px,transparent 1px) 0 0/10px 10px,#05060f', c: '#0b1020', bd: '#22d3ee', r: '4px', s: '0 0 8px rgba(34,211,238,.8)', a: '#22d3ee' } },
+              thumb: { b: 'linear-gradient(rgba(99,102,241,.2) 1px,transparent 1px) 0 0/10px 10px,linear-gradient(90deg,rgba(99,102,241,.2) 1px,transparent 1px) 0 0/10px 10px,#eef2ff', c: '#fff', bd: '#6366f1', r: '4px', s: '0 0 8px rgba(99,102,241,.6)', a: '#6366f1' },
+              dark: { b: 'linear-gradient(rgba(34,211,238,.2) 1px,transparent 1px) 0 0/10px 10px,linear-gradient(90deg,rgba(34,211,238,.2) 1px,transparent 1px) 0 0/10px 10px,#05060f', c: '#0b1020', bd: '#22d3ee', r: '4px', s: '0 0 8px rgba(34,211,238,.8)', a: '#22d3ee' } },
             { id: 'gold-04', name: 'Royal Glass', desc: 'Jewel gradient, floating glow', tier: 'gold',
-              thumb: { b: 'linear-gradient(135deg,#6d28d9,#be185d)', c: 'rgba(255,255,255,.25)', bd: 'rgba(255,255,255,.5)', r: '8px', a: 'rgba(255,255,255,.9)' } },
+              thumb: { b: 'linear-gradient(135deg,#ddd6fe,#fbcfe8,#bae6fd)', c: 'rgba(255,255,255,.6)', bd: 'rgba(255,255,255,.9)', r: '8px', s: '0 3px 8px -3px rgba(109,40,217,.4)', a: '#7c3aed' },
+              dark: { b: 'linear-gradient(135deg,#312e81,#6d28d9,#be185d)', c: 'rgba(255,255,255,.12)', bd: 'rgba(255,255,255,.35)', r: '8px', a: 'rgba(255,255,255,.9)' } },
             { id: 'gold-05', name: 'Rose Gold', desc: 'Polished metal, spinning border', tier: 'gold',
-              thumb: { b: 'linear-gradient(180deg,#fff1ec,#ffe4de)', c: '#fff', bd: '#e8a598', bw: '2px', r: '7px', s: '0 3px 8px -3px rgba(217,142,130,.9)', a: '#e8a598' } },
+              thumb: { b: 'linear-gradient(180deg,#fff1ec,#ffe4de)', c: '#fff', bd: '#e8a598', bw: '2px', r: '7px', s: '0 3px 8px -3px rgba(217,142,130,.9)', a: '#e8a598' },
+              dark: { b: 'linear-gradient(180deg,#2a1519,#170d10)', c: '#2a1a1d', bd: '#f4c7b8', bw: '2px', r: '7px', s: '0 3px 8px -3px rgba(244,199,184,.5)', a: '#f4c7b8' } },
             { id: 'gold-06', name: 'Holographic', desc: 'Iridescent, rainbow border', tier: 'gold',
-              thumb: { b: 'linear-gradient(120deg,#fbc2eb,#a6c1ee,#c2ffd8,#ffd6a5)', c: '#fff', bd: '#a18cd1', bw: '2px', r: '6px', s: '0 3px 8px -3px rgba(161,140,209,.9)', a: '#fff' } },
+              thumb: { b: 'linear-gradient(120deg,#fbc2eb,#a6c1ee,#c2ffd8,#ffd6a5)', c: '#fff', bd: '#a18cd1', bw: '2px', r: '6px', s: '0 3px 8px -3px rgba(161,140,209,.9)', a: '#fff' },
+              dark: { b: 'linear-gradient(120deg,#1b1035,#0f2a4a,#10332f,#34163a)', c: '#17122e', bd: '#a18cd1', bw: '2px', r: '6px', s: '0 3px 8px -3px rgba(161,140,209,.7)', a: '#c4b5fd' } },
         ];
         const TIER_RANK = { basic: 0, silver: 1, gold: 2 };
         const TIER_LABEL = { silver: 'Silver', gold: 'Gold' };
@@ -376,7 +398,7 @@
                 : '';
             notice.classList.toggle('hidden', !templateUnavailable);
             document.getElementById('templateIntro').textContent =
-                (tier === 'gold' ? 'All Silver and Gold templates are unlocked for you.' : 'Silver templates are unlocked for you. Upgrade to Gold to unlock more.')
+                (tier === 'gold' ? 'All Silver and Gold templates are unlocked for you.' : 'Silver templates are unlocked for you. Gold templates are locked until you upgrade to Gold.')
                 + ' Templates use your current look (' + (theme === 'dark' ? 'Dark' : 'Light') + '). Tap a template to preview it before you apply it.';
 
             const baseCards = ['light', 'dark'].map((t) => `
@@ -387,14 +409,19 @@
                     <span class="tpl-desc">Standard look</span>
                 </button>`).join('');
 
-            const templateCards = TEMPLATES.filter(canUseTemplate).map((t) => `
-                <button type="button" class="tpl-card ${!templateUnavailable && selectedTemplate === t.id ? 'selected' : ''}" data-id="${t.id}" onclick="openTemplatePreview('${t.id}')">
+            const lockIcon = '<span class="tpl-lock" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>';
+            const templateCards = TEMPLATES.map((t) => {
+                const locked = !canUseTemplate(t);
+                const selected = !locked && !templateUnavailable && selectedTemplate === t.id;
+                return `
+                <button type="button" class="tpl-card ${selected ? 'selected' : ''} ${locked ? 'locked' : ''}" data-id="${t.id}" onclick="${locked ? "showLockedTemplate('" + t.id + "')" : "openTemplatePreview('" + t.id + "')"}"${locked ? ' aria-disabled="true"' : ''}>
                     <span class="tpl-check">&#10003;</span>
-                    <span class="tpl-tier ${t.tier}">${TIER_LABEL[t.tier]}</span>
-                    <div class="tpl-thumb tpl-art" style="${templateThumbStyle(t.thumb)}"><div class="dot"></div><div class="mini"></div><div class="mini"></div></div>
+                    <div class="tpl-thumb tpl-art" style="${templateThumbStyle(theme === 'dark' ? t.dark : t.thumb)}"><div class="dot"></div><div class="mini"></div><div class="mini"></div>${locked ? lockIcon : ''}</div>
                     <span class="text-sm font-medium text-primary">${t.name}</span>
                     <span class="tpl-desc">${t.desc}</span>
-                </button>`).join('');
+                    <span class="tpl-tier ${t.tier}">${TIER_LABEL[t.tier]}</span>
+                </button>`;
+            }).join('');
 
             document.getElementById('templateGrid').innerHTML = baseCards + templateCards;
         }
@@ -466,6 +493,12 @@
             cover.classList.add('failed');
             document.getElementById('tpCoverText').textContent = message;
             document.getElementById('tpStatus').textContent = 'Failed';
+        }
+
+        function showLockedTemplate(id) {
+            const tpl = TEMPLATES.find((t) => t.id === id);
+            const label = tpl ? TIER_LABEL[tpl.tier] : 'higher';
+            showToast('This is a ' + label + ' template. Upgrade to ' + label + ' to unlock it.', true);
         }
 
         function openTemplatePreview(id) {
