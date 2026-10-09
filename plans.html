@@ -1,35 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
-  <!-- PAGE-TYPE: public -->
+  <!-- PAGE-TYPE: app -->
   <meta charset="UTF-8">
+  <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <!-- Still noindex on purpose until plan checkout is live end to end (see CHANGELOG) -->
-  <title>Netlink Plans</title>
-  <meta name="description" content="Compare Netlink membership plans: Basic, Silver, and Gold for Link in Bio, Professional CV, Landing Page, and Netlink Pay.">
+  <!-- In-app plans page (signed in users only). A public pricing page, if added later, lives in its own file. -->
+  <title>Plans - Netlink</title>
   <meta name="robots" content="noindex, nofollow">
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
   <link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
 
-  <!-- Google Fonts -->
+  <link rel="stylesheet" href="/shared/tailwind.css?v=13">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shared/site-nav.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.460.0" defer></script>
 
   <style>
-    :root { --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.10); }
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
-    body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--bg-primary); }
-    a { text-decoration: none; color: inherit; }
-    ul { list-style: none; }
+    /* Design tokens are local to this page (it no longer loads shared/site-nav.css). Plain CSS only, no new Tailwind classes. */
+    :root {
+      --font-body: 'Inter', sans-serif; --font-heading: 'Poppins', 'Inter', sans-serif;
+      --text-primary: #0f172a; --text-secondary: #475569;
+      --bg-primary: #ffffff; --bg-secondary: #f1f5f9; --border-color: rgba(0, 0, 0, 0.10);
+      --color-primary: #16c6c8; --color-primary-dark: #0e8f91;
+      --radius-card: 20px; --radius-input: 12px;
+      --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px;
+      --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.10);
+      --basic-ink: #1a1a1a; --basic-ink-hover: #2d2d2d; --basic-on-ink: #ffffff;
+      --page-bg: #f8fafc;
+    }
+    html.dark {
+      --text-primary: #f8fafc; --text-secondary: #94a3b8;
+      --bg-primary: #1e293b; --bg-secondary: #0f172a; --border-color: rgba(255, 255, 255, 0.10);
+      --color-primary: #22d3d5; --color-primary-dark: #22d3d5;
+      --basic-ink: #e2e8f0; --basic-ink-hover: #f8fafc; --basic-on-ink: #0f172a;
+      --page-bg: #0f172a;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--text-primary); background-color: var(--page-bg); }
+    .plan-features { list-style: none; padding: 0; }
 
-    .plans-section { padding-top: var(--space-10); padding-bottom: var(--space-12); }
+    #authGate { position: fixed; inset: 0; background: var(--page-bg); z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .gate-box { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 0 24px; text-align: center; }
+    .gate-spinner { width: 32px; height: 32px; border: 2px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: gate-spin 0.8s linear infinite; }
+    @keyframes gate-spin { to { transform: rotate(360deg); } }
+    .gate-text { font-size: 14px; color: var(--text-secondary); }
+
+    .plans-wrap { max-width: 1000px; margin: 0 auto; padding: var(--space-4) var(--space-4) 112px; }
+    .back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 500; color: var(--text-secondary); text-decoration: none; margin-bottom: var(--space-3); }
+    .back-link:hover { color: var(--text-primary); }
+
+    .plans-section { padding-top: var(--space-4); padding-bottom: var(--space-4); }
     .plans-header { text-align: center; max-width: 640px; margin: 0 auto var(--space-8); }
     .plans-title { font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-3); }
     .plans-subtitle { font-size: 1.0625rem; color: var(--text-secondary); line-height: 1.6; }
@@ -102,12 +127,18 @@
     }
   </style>
 </head>
-<body>
-  <div id="site-header"></div>
+<body class="min-h-screen">
+  <div id="authGate">
+    <div class="gate-box">
+      <div class="gate-spinner"></div>
+      <p id="authGateText" class="gate-text">Loading plans...</p>
+    </div>
+  </div>
 
-  <main id="main-content">
+  <main id="main-content" class="plans-wrap">
+    <a class="back-link" href="/dashboard">&larr; Back to Dashboard</a>
     <section class="plans-section">
-      <div class="container">
+      <div>
         <div class="plans-header">
           <h1 class="plans-title">Netlink Plans</h1>
           <p class="plans-subtitle">Membership tiers for Link in Bio, Professional CV, Landing Page, and Netlink Pay wallet. Billed in USDC, crypto payment only for now.</p>
@@ -133,7 +164,7 @@
               <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Landing Page</li>
               <li class="disabled"><svg class="icon-no" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Hide footer link</li>
             </ul>
-            <button type="button" class="plan-cta cta-basic">Get Started Free</button>
+            <button type="button" class="plan-cta cta-basic" disabled>Free plan</button>
           </article>
 
           <!-- SILVER -->
@@ -205,19 +236,10 @@
     </section>
   </main>
 
-  <div id="site-footer"></div>
-
-  <script src="shared/site-nav.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (function () {
       'use strict';
-      // Basic card: free plan, goes to the sign up and login page
-      var free = document.querySelector('.plan-cta.cta-basic');
-      if (free) {
-        free.addEventListener('click', function () { window.location.href = '/login'; });
-      }
-
       document.querySelectorAll('.billing-toggle').forEach(function (toggle) {
         var card = toggle.closest('.plan-card');
         var amountEl = card.querySelector('.price-amount');
@@ -251,8 +273,7 @@
       });
     })();
 
-    // Signed in visitors see which plan they are on. Anonymous visitors see the page unchanged.
-    // The server still decides what can be bought, so this only changes labels.
+    // Labels show which plan the signed in user is on. The server still decides what can be bought, so this only changes labels.
     (function () {
       var DAY_FMT = { day: '2-digit', month: 'short', year: 'numeric' };
       function fmt(iso) { return new Date(iso).toLocaleDateString('en-GB', DAY_FMT); }
@@ -304,17 +325,34 @@
         }
       }
 
-      if (!window.supabase) return;
+      function gateText(msg) { var el = document.getElementById('authGateText'); if (el) el.textContent = msg; }
+      function openGate() { document.getElementById('authGate').style.display = 'none'; }
+
+      // This is an app page: signed out visitors go to login.
       var client = window.supabase.createClient('https://fuewalufgiclrcgszlit.supabase.co', 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb');
       client.auth.getSession().then(function (res) {
         var session = res && res.data && res.data.session;
-        if (!session) return null;
+        if (!session) { window.location.href = 'login'; return null; }
         // RLS: a signed in user can only read their own profile row.
-        return client.from('profiles').select('tier, tier_expires_at').eq('id', session.user.id).single();
-      }).then(function (res) {
-        if (res && res.data) apply(res.data);
-      }).catch(function () { /* labels stay as they are */ });
+        return client.from('profiles')
+          .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency')
+          .eq('id', session.user.id).single()
+          .then(function (p) {
+            if (p.error) throw p.error;
+            apply(p.data);
+            if (window.NetlinkNav) NetlinkNav.init({ activePage: null, profile: p.data, supabaseClient: client, userId: session.user.id });
+            openGate();
+            if (window.lucide) lucide.createIcons();
+          });
+      }).catch(function (err) {
+        console.error(err);
+        gateText('Something went wrong: ' + ((err && err.message) || err));
+      });
     })();
   </script>
+
+  <script src="/shared/account-menu.js?v=4"></script>
+  <script src="/shared/nav.js?v=6"></script>
+  <script src="/shared/app-lock.js?v=3"></script>
 </body>
 </html>

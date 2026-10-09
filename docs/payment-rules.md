@@ -109,11 +109,12 @@ Set in `api/orders.js` (`PLAN_PRICES`). Period names in requests: `monthly`, `qu
 14. Owner account `ramlanhadiansyah` (Gold) runs until **2030-12-31**.
 15. Test account `@yourname` is used for marketing mockups and live payment tests.
 
-### plans.html behaviour (signed in)
+### plans.html behaviour (in-app page)
 
+- `plans.html` is an **app page** (`PAGE-TYPE: app`): signed in users only, app nav, no marketing header or footer. Signed out visitors are sent to `login`. Every Upgrade, Renew and "See plans" button in the app points to `/plans`.
 - Reads the user's own `tier` and `tier_expires_at`. Labels: "Current Plan", "Renew Silver", "Upgrade to Gold", "Renew Gold", locked Silver while Gold is running, a note when a paid plan ended.
-- Signed out: no "Current Plan" label.
-- The page stays `noindex, nofollow` during testing. Remove it, add /plans to the nav and the sitemap at launch (user decides when).
+- The page stays `noindex, nofollow`. A public pricing page (with the website header and footer) is a separate future file, for example `pricing.html`. It must not copy prices by hand: it should link signed in users to `/plans`.
+- Feature lists and prices on any plans or pricing page must match the tier feature table in this file.
 
 ---
 
@@ -177,3 +178,4 @@ Set in `api/orders.js` (`PLAN_PRICES`). Period names in requests: `monthly`, `qu
 - 2026-10-07: Landing Page Gold only. Expired Gold landing shows a neutral inactive page.
 - 2026-10-07: 20 NET discount postponed. KYC yearly renewal postponed.
 - Earlier: KYC became a separate $2.50 one-time add-on, no longer required for Gold.
+- 2026-10-09: `plans.html` became an in-app page (app nav, login required). A public pricing page, if built later, is a separate file that sends signed in users to `/plans`.
