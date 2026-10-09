@@ -10,7 +10,7 @@
 //
 // Every other profile is unaffected. Add a username here (lowercase) to
 // mark another mockup profile.
-export const DEMO_USERNAMES = new Set(['yourname', 'michelletan', 'alandmusic']);
+export const DEMO_USERNAMES = new Set(['yourname', 'michelletan', 'alandmusic', 'rh777', 'rusmiati_hadiansyah']);
 
 export function isDemoProfile(username) {
   return DEMO_USERNAMES.has(String(username || '').toLowerCase());
