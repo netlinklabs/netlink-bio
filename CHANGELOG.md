@@ -20,6 +20,9 @@ older entries in older-dated files) if what you are looking for is not below.
 - **App header (`shared/nav.js`): shorter verification label, no stray dot.** The KYC badge now reads "Verified" (was "Verified Profile (KYC)"), so a verified Gold member sees "Gold • Verified" with the green check. Members without a badge see only the plan name ("Basic", "Silver", "Gold"), without the "•". "Verified Business" and "Previously Verified" are unchanged. Bumped `nav.js?v=6` to `?v=7` on the app pages that use a version number (`dashboard.html` loads it without one).
 
 ### Fixed
+- **`checkout.html`: the paid KYC card now follows the verification status.** Opening a paid KYC order (for example from `billing.html`) always showed "Payment confirmed" with "Start verification", even for a user who was already verified. The card now reads `identity_verification_status`: `approved` shows "Verification completed" (no start button), `pending` shows "Verification in review", `declined` shows "Verification rejected" (contact support, as in `docs/payment-rules.md`), `resubmission_needed` shows "Try again", and not started keeps "Start verification". Plan orders are unchanged. Plain CSS and inline style only, no Tailwind rebuild.
+
+### Fixed
 - **`plans.html`: header verification badge is back.** The profile query for the app header did not ask for `identity_verified_at` and `business_verified_at`, so `nav.js` could not show the green check for KYC members (Gold, Verified Profile). Both columns are now selected, so the header looks the same as on the other app pages (same green check as the public bio page).
 
 ### Changed

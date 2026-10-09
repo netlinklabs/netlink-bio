@@ -200,11 +200,11 @@
 
             <!-- Paid -->
             <div id="paidPanel" class="hidden card rounded-2xl p-5 mb-4 text-center">
-                <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500 flex items-center justify-center"><i data-lucide="check" class="w-8 h-8 text-white"></i></div>
-                <p class="text-base font-semibold text-primary mb-1">Payment confirmed</p>
-                <p class="text-sm text-muted mb-4">Next, verify your identity with a government ID and a quick selfie. It takes about 2 minutes.</p>
+                <div id="kycPaidIcon" class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500 flex items-center justify-center"><i data-lucide="check" class="w-8 h-8 text-white"></i></div>
+                <p id="kycPaidTitle" class="text-base font-semibold text-primary mb-1">Payment confirmed</p>
+                <p id="kycPaidText" class="text-sm text-muted mb-4">Next, verify your identity with a government ID and a quick selfie. It takes about 2 minutes.</p>
                 <button id="startVerifyBtn" type="button" class="w-full px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition">Start verification</button>
-                <a href="/identity" class="inline-block mt-3 text-xs text-muted hover:text-primary">Later, go to Account</a>
+                <a id="kycPaidLink" href="/identity" class="inline-block mt-3 text-xs text-muted hover:text-primary">Later, go to Account</a>
             </div>
 
             <!-- Paid plan order -->
@@ -480,6 +480,47 @@
             }, CONFIRM_POLL_MS);
         }
 
+        // Paid KYC order: the card follows the verification status, not only the payment.
+        // Not started or resubmission needed: Start verification. Pending: in review. Approved: done. Declined: contact support.
+        function renderKycPaid() {
+            const status = (currentProfile && currentProfile.identity_verification_status) || 'not_started';
+            const icon = $('kycPaidIcon');
+            const title = $('kycPaidTitle');
+            const text = $('kycPaidText');
+            const btn = $('startVerifyBtn');
+            const link = $('kycPaidLink');
+            icon.style.background = '';
+            btn.classList.remove('hidden');
+            link.setAttribute('href', '/identity');
+            link.textContent = 'Later, go to Account';
+            if (status === 'approved') {
+                title.textContent = 'Verification completed';
+                text.textContent = 'Your identity is verified. Your profile shows the Verified badge.';
+                btn.classList.add('hidden');
+                link.textContent = 'Go to Account';
+            } else if (status === 'pending') {
+                icon.style.background = '#f59e0b';
+                title.textContent = 'Verification in review';
+                text.textContent = 'Your documents are being reviewed. This can take up to 1 business day.';
+                btn.classList.add('hidden');
+                link.textContent = 'Check status in Account';
+            } else if (status === 'declined') {
+                icon.style.background = '#ef4444';
+                title.textContent = 'Verification rejected';
+                text.textContent = 'Contact support if you think this is a mistake.';
+                btn.classList.add('hidden');
+                link.textContent = 'Go to Account';
+            } else if (status === 'resubmission_needed') {
+                title.textContent = 'Resubmission needed';
+                text.textContent = 'We could not verify your documents. Please submit them again.';
+                btn.textContent = 'Try again';
+            } else {
+                title.textContent = 'Payment confirmed';
+                text.textContent = 'Next, verify your identity with a government ID and a quick selfie. It takes about 2 minutes.';
+                btn.textContent = 'Start verification';
+            }
+        }
+
         function renderOrder(o) {
             order = o;
             show('blockedView', false); show('selectView', false); show('orderView', true);
@@ -519,6 +560,7 @@
             const isPlan = o.type === 'plan';
             const planDone = isPlan && o.plan && o.plan.activated;
             show('paidPanel', o.status === 'paid' && !isPlan);
+            if (o.status === 'paid' && !isPlan) renderKycPaid();
             show('planPaidPanel', o.status === 'paid' && isPlan);
             if (o.status === 'paid' && isPlan) {
                 const t = TIER_NAME[o.plan && o.plan.tier] || 'Plan';
@@ -614,6 +656,7 @@
         $('startVerifyBtn').addEventListener('click', async () => {
             if (!order) return;
             const btn = $('startVerifyBtn');
+            const idleLabel = btn.textContent;
             btn.disabled = true;
             btn.textContent = 'Starting...';
             try {
@@ -622,7 +665,7 @@
             } catch (err) {
                 showToast(err.message, true);
                 btn.disabled = false;
-                btn.textContent = 'Start verification';
+                btn.textContent = idleLabel;
             }
         });
 
