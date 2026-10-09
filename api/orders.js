@@ -1,6 +1,6 @@
 // api/orders.js
 // One serverless function for every paid order (KYC and plans now, KYB later),
-// dispatched by ?action=create|status|plan-quote|check-payment|cancel|didit-session, plus admin-* actions
+// dispatched by ?action=create|status|list|plan-quote|check-payment|cancel|didit-session, plus admin-* actions
 // (see api/_lib/admin.js). Kept as a single
 // file on purpose: the Vercel Hobby plan caps a deployment at 12 functions
 // and this is the last free slot.
@@ -373,6 +373,40 @@ async function handleStatus(req, res, user) {
       `&status=in.(${statuses})&select=*&order=created_at.desc&limit=1`
   );
   return res.status(200).json({ order: rows[0] ? publicOrder(rows[0]) : null });
+}
+
+// ---------------------------------------------------------------- action=list
+
+// The caller's own orders, newest first, for the billing page. Only the fields a
+// history row needs leave the server (no wallet addresses, no transaction hashes).
+// Capped at 50 rows. Open orders are not "healed" here: opening one does that.
+async function handleList(req, res, user) {
+  res.setHeader('Cache-Control', 'no-store');
+  const rows = await db(
+    `orders?user_id=eq.${user.id}&select=id,order_no,type,amount_usdc,paid_amount,status,meta,fulfilled_at,expires_at,paid_at,created_at` +
+      `&order=created_at.desc&limit=50`
+  );
+  const orders = rows.map((o) => ({
+    id: o.id,
+    order_no: o.order_no,
+    type: o.type,
+    ...(o.type === 'plan' ? {
+      plan: {
+        tier: o.meta?.tier || null,
+        kind: o.meta?.kind || 'new',
+        months: o.meta?.months || null,
+        activated: !!o.fulfilled_at,
+        active_until: o.meta?.granted_until || null,
+      },
+    } : {}),
+    amount_usdc: fromMicro(toMicro(o.amount_usdc)),
+    paid_amount: fromMicro(toMicro(o.paid_amount)),
+    status: o.status,
+    expires_at: o.expires_at,
+    paid_at: o.paid_at,
+    created_at: o.created_at,
+  }));
+  return res.status(200).json({ orders });
 }
 
 // ---------------------------------------------------------------- action=plan-quote
@@ -779,12 +813,13 @@ async function handler(req, res) {
     }
     if (action === 'create') return await handleCreate(req, res, user);
     if (action === 'status') return await handleStatus(req, res, user);
+    if (action === 'list') return await handleList(req, res, user);
     if (action === 'plan-quote') return await handlePlanQuote(req, res, user);
     if (action === 'check-payment') return await handleCheckPayment(req, res, user);
     if (action === 'cancel') return await handleCancel(req, res, user);
     if (action === 'didit-session') return await handleDiditSession(req, res, user);
     if (action === 'ambassador-thanks') return await handleAmbassadorThanks(req, res, user);
-    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, plan-quote, check-payment, cancel, didit-session, or ambassador-thanks)' });
+    return res.status(400).json({ error: 'Invalid or missing action (expected create, status, list, plan-quote, check-payment, cancel, didit-session, or ambassador-thanks)' });
   } catch (err) {
     console.error('orders: unhandled error', err);
     return res.status(500).json({ error: 'Something went wrong. Please try again.' });
