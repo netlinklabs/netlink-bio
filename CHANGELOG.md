@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`changelog.html` (public): template update.** Added three entries under October 2026: 41 templates for Link in Bio (11 Silver, 30 Gold, each with Light and Dark; Basic uses the Standard look; Silver applies 11; Gold applies all 41), preview before apply (Silver can preview Gold, Apply locked), and the Appearance switch plus clearer padlock. English only, no em dash.
+
 ### Added
 - **New Silver bio template `silver-11` Creator (Silver now has 11, Gold 30).** For content creators: hot pink and violet static gradient, rounded cards with a thick colored bottom edge, with Light and Dark looks. Static like all Silver templates (no animation). Together with the Standard card the gallery now has 42 cards, an even number, so the last row is no longer left with one card. Registered in `bio-templates.js`, `TEMPLATE_TIERS` (`api/bio.js`) and `TEMPLATES` (`template.html`). **Needs one row in `bio_templates` (`silver-11`, `min_tier = 'silver'`) before it can be applied.**
 
