@@ -170,7 +170,12 @@ const TEMPLATE_TIERS = {
   'silver-05': 'silver', 'silver-06': 'silver', 'silver-07': 'silver',
   'silver-08': 'silver', 'silver-09': 'silver', 'silver-10': 'silver',
   'gold-01': 'gold', 'gold-02': 'gold', 'gold-03': 'gold',
-  'gold-04': 'gold', 'gold-05': 'gold', 'gold-06': 'gold',
+  'gold-04': 'gold', 'gold-05': 'gold', 'gold-06': 'gold', 'gold-07': 'gold', 'gold-08': 'gold',
+  'gold-09': 'gold', 'gold-10': 'gold', 'gold-11': 'gold', 'gold-12': 'gold', 'gold-13': 'gold',
+  'gold-14': 'gold', 'gold-15': 'gold', 'gold-16': 'gold', 'gold-17': 'gold', 'gold-18': 'gold',
+  'gold-19': 'gold', 'gold-20': 'gold', 'gold-21': 'gold', 'gold-22': 'gold', 'gold-23': 'gold',
+  'gold-24': 'gold', 'gold-25': 'gold', 'gold-26': 'gold', 'gold-27': 'gold', 'gold-28': 'gold',
+  'gold-29': 'gold', 'gold-30': 'gold',
 };
 const TIER_RANK = { basic: 0, silver: 1, gold: 2 };
 const BANNER_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/banners/`;
@@ -249,16 +254,21 @@ async function handler(req, res) {
   const iconShape = profile.link_icon_shape === 'rounded' ? 'rounded' : 'circle';
   // Preview mode (?preview=<template id>), used by the preview window in
   // template.html. Shows this profile with a template that is not saved yet.
-  // The tier check is the same as for a saved template, so a plan can only
-  // preview what it could apply. Nothing is written, no view is counted, the
-  // page is noindex and never cached, and clicks are blocked (script below).
+  // Only the visual look is previewed. Nothing is written, no view is counted,
+  // the page is noindex and never cached, and clicks are blocked (script below).
+  // Applying a template is still limited by tier (client check + DB trigger).
+  // When the preview is loaded inside our own page (same-origin iframe, which is
+  // how template.html opens it), a higher-tier template can also be previewed,
+  // so Silver can look at Gold designs. This is a soft rule: it only decides
+  // what is drawn, never what can be saved.
   const isPreview = typeof req.query.preview === 'string' && req.query.preview.trim() !== '';
   // In preview mode ?theme=light|dark overrides the saved Light/Dark choice, so the
   // preview window can show both looks. Ignored on normal pages.
   const previewTheme = isPreview && (req.query.theme === 'dark' || req.query.theme === 'light') ? req.query.theme : null;
   const themePreset = previewTheme || (profile.theme_preset === 'dark' ? 'dark' : 'light');
+  const inOwnFrame = req.headers['sec-fetch-dest'] === 'iframe' && req.headers['sec-fetch-site'] === 'same-origin';
   const templateId = isPreview
-    ? effectiveTemplateId({ template_id: req.query.preview.trim(), tier: profile.tier })
+    ? effectiveTemplateId({ template_id: req.query.preview.trim(), tier: inOwnFrame ? 'gold' : profile.tier })
     : effectiveTemplateId(profile);
   const bannerUrl = effectiveBannerUrl(profile);
   // Cache-buster for the OG image: social platforms and the CDN cache
