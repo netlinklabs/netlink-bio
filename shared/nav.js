@@ -113,7 +113,7 @@
     if (!profile) return null;
     const tierEligible = profile.tier === 'gold' || profile.tier === 'platinum';
     if (profile.business_verified_at && tierEligible) return { label: 'Verified Business', color: '#f59e0b' };
-    if (profile.identity_verified_at) return { label: 'Verified Profile (KYC)', color: '#10b981' };
+    if (profile.identity_verified_at) return { label: 'Verified', color: '#10b981' };
     if (profile.business_verified_at) return { label: 'Previously Verified', color: '#94a3b8' };
     return null;
   }
@@ -143,7 +143,8 @@
             <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-white flex-shrink-0" style="background:${badge.color}; font-size:9px; line-height:1;">&#10003;</span>
           </span>`
       : '';
-    const subtitleHtml = `${escapeHtml(tierLabel)} \u2022${badgeHtml}`;
+    // The dot only separates the plan from a badge, so no badge means no dot.
+    const subtitleHtml = badge ? `${escapeHtml(tierLabel)} \u2022${badgeHtml}` : escapeHtml(tierLabel);
 
     el.innerHTML = `
       <button type="button" id="nlnav-avatar-btn" class="flex items-center gap-3 flex-1 min-w-0 text-left">

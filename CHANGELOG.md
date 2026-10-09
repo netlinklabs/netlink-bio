@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **App header (`shared/nav.js`): shorter verification label, no stray dot.** The KYC badge now reads "Verified" (was "Verified Profile (KYC)"), so a verified Gold member sees "Gold • Verified" with the green check. Members without a badge see only the plan name ("Basic", "Silver", "Gold"), without the "•". "Verified Business" and "Previously Verified" are unchanged. Bumped `nav.js?v=6` to `?v=7` on the app pages that use a version number (`dashboard.html` loads it without one).
+
 ### Fixed
 - **`plans.html`: header verification badge is back.** The profile query for the app header did not ask for `identity_verified_at` and `business_verified_at`, so `nav.js` could not show the green check for KYC members (Gold, Verified Profile). Both columns are now selected, so the header looks the same as on the other app pages (same green check as the public bio page).
 
