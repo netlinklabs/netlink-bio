@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Added
+- **Template preview window in `template.html`.** Tapping a template no longer saves it right away. A window opens with the user's real public page in an iframe, shown with that template, and a progress bar plus a cover that stay until the page has fully loaded (Apply is disabled until then, so users wait instead of tapping around). Sticky buttons: **Apply** saves the template (same save and tier checks as before), **Close** (also Esc or a tap outside) discards. Phone: bottom sheet at 70% of the screen height. Tablet and desktop: centered panel, 440px wide, up to 78% of the height. If the page cannot be loaded or does not show the chosen template, the window says so and Apply stays disabled. Light and Dark cards still apply directly. Plain CSS in the page, no new Tailwind classes, no CSS rebuild.
+- **`?preview=<template id>` mode in `api/bio.js`.** Renders a profile with a template that is not saved yet. The id must be allowed for the owner's current tier (same check as a saved template, so a Silver page cannot show a Gold template). Preview responses are `noindex, nofollow` (meta tag and `X-Robots-Tag`), `Cache-Control: private, no-store`, carry no schema.org data, do not record a `view_bio` event, and block all clicks (links, buttons, video) so nothing can navigate or be tracked from inside the preview. Nothing is written to the database. Normal profile pages are unchanged.
+
+### Added
 - **6 new Silver bio templates (Silver now has 10).** Professional: `silver-05` Navy Executive, `silver-06` Graphite, `silver-07` Ivory Classic. Casual: `silver-08` Lavender, `silver-09` Mint, `silver-10` Coral. All static (no animation) with Light and Dark variants, same rules as the first 4. Files: `api/_lib/bio-templates.js` (CSS), `api/bio.js` (`TEMPLATE_TIERS`), `template.html` (`TEMPLATES` gallery). Needs 6 new rows in `bio_templates` (`min_tier = 'silver'`) because the database trigger validates `template_id` against that table. No new Tailwind classes, no CSS rebuild.
 
 ### Changed
