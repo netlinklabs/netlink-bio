@@ -10,6 +10,7 @@ const ACCOUNT_MENU = {
       items: [
         { icon: 'palette', label: 'Theme', type: 'theme-select' },
         { icon: 'fingerprint', label: 'Account & Identity', href: 'identity' },
+        { icon: 'credit-card', label: 'Plans & Billing', href: 'plans' },
         { icon: 'shield', label: 'Privacy & Data', href: 'privacy' },
       ],
     },
