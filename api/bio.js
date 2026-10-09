@@ -247,13 +247,16 @@ async function handler(req, res) {
   const showCv = profile.show_cv !== false;
   const showDonate = profile.show_donate === true && !!walletAddress;
   const iconShape = profile.link_icon_shape === 'rounded' ? 'rounded' : 'circle';
-  const themePreset = profile.theme_preset === 'dark' ? 'dark' : 'light';
   // Preview mode (?preview=<template id>), used by the preview window in
   // template.html. Shows this profile with a template that is not saved yet.
   // The tier check is the same as for a saved template, so a plan can only
   // preview what it could apply. Nothing is written, no view is counted, the
   // page is noindex and never cached, and clicks are blocked (script below).
   const isPreview = typeof req.query.preview === 'string' && req.query.preview.trim() !== '';
+  // In preview mode ?theme=light|dark overrides the saved Light/Dark choice, so the
+  // preview window can show both looks. Ignored on normal pages.
+  const previewTheme = isPreview && (req.query.theme === 'dark' || req.query.theme === 'light') ? req.query.theme : null;
+  const themePreset = previewTheme || (profile.theme_preset === 'dark' ? 'dark' : 'light');
   const templateId = isPreview
     ? effectiveTemplateId({ template_id: req.query.preview.trim(), tier: profile.tier })
     : effectiveTemplateId(profile);
