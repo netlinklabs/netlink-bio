@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`plans.html`: header verification badge is back.** The profile query for the app header did not ask for `identity_verified_at` and `business_verified_at`, so `nav.js` could not show the green check for KYC members (Gold, Verified Profile). Both columns are now selected, so the header looks the same as on the other app pages (same green check as the public bio page).
+
+### Changed
+- **`plans.html`: simpler top and roomier cards on phones.** Removed the "Netlink Plans" title, the intro text and the "Back to Dashboard" link (the app nav and Account menu already cover navigation). The page now starts with a small "Choose Your Plan" heading. Side space on phones is 28px (was 16px) and card padding is 20px (was 24px), so the cards no longer touch the screen edge. Desktop spacing is unchanged. Plain CSS in the page, no Tailwind rebuild.
+
 ### Added
 - **Account menu: new "Plans & Billing" item (opens `/plans`).** Added in `shared/account-menu.js`, right under "Account & Identity", with the `credit-card` icon, so every page that uses `nav.js` shows it. This is the in-app entry to the plans page. Bumped `account-menu.js?v=4` to `?v=5` on the pages that use a version number (`dashboard.html` and `analytics.html` load it without one).
 
