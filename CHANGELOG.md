@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`plans.html`: more space between the plan cards on phones.** The stacked cards had a 16px gap, which the badge on each card's top edge and the outline of the current plan almost used up, so the cards looked stuck together. The gap is now 40px between stacked cards. Desktop (3 columns) keeps 16px. Plain CSS in the page, no Tailwind rebuild.
+
+### Changed
 - **App header (`shared/nav.js`): shorter verification label, no stray dot.** The KYC badge now reads "Verified" (was "Verified Profile (KYC)"), so a verified Gold member sees "Gold • Verified" with the green check. Members without a badge see only the plan name ("Basic", "Silver", "Gold"), without the "•". "Verified Business" and "Previously Verified" are unchanged. Bumped `nav.js?v=6` to `?v=7` on the app pages that use a version number (`dashboard.html` loads it without one).
 
 ### Fixed
