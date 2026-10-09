@@ -92,35 +92,32 @@
         html .tpl-thumb.tpl-art { background: var(--tb); border-color: var(--tbc); gap: 5px; overflow: hidden; }
         html .tpl-thumb.tpl-art .dot { width: 22px; height: 22px; background: var(--ta); }
         html .tpl-thumb.tpl-art .mini { width: 70%; height: 11px; background: var(--tc); border: var(--tbw, 1px) solid var(--tbc); border-left: var(--tlw, var(--tbw, 1px)) solid var(--tl, var(--tbc)); border-radius: var(--tr); box-shadow: var(--ts, none); }
-        /* Template preview window: bottom sheet on phones (70% of the screen),
-           centered panel on tablet and desktop. Plain CSS on purpose, so no
-           Tailwind rebuild is needed. */
-        .tp-overlay { position: fixed; inset: 0; z-index: 100; display: none; align-items: flex-end; justify-content: center; background: rgba(15,23,42,0.55); }
+        /* Template preview window: the user's page is shown inside a phone-like
+           frame, centered over a dimmed screen, and scrolls like on a phone.
+           On a phone the whole window (title, frame, buttons) takes about 70%
+           of the screen area; on tablet and desktop the frame keeps phone
+           size and does not cover the screen. Plain CSS, no Tailwind rebuild. */
+        .tp-overlay { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); background: rgba(2,6,23,0.72); }
         .tp-overlay.open { display: flex; }
-        .tp-panel { width: 100%; height: 70vh; height: 70dvh; display: flex; flex-direction: column; background: #ffffff; color: #0f172a; border-radius: 20px 20px 0 0; overflow: hidden; box-shadow: 0 -10px 40px rgba(0,0,0,0.25); }
-        html.dark .tp-panel { background: #1e293b; color: #f8fafc; }
-        .tp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px 10px; }
+        .tp-panel { width: min(390px, 84vw); height: 83vh; height: min(83dvh, 820px); display: flex; flex-direction: column; color: #ffffff; }
+        .tp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 6px 8px; }
         .tp-title { font-size: 14px; font-weight: 700; }
-        .tp-status { font-size: 12px; font-weight: 600; color: #64748b; }
-        .tp-progress { height: 4px; background: rgba(100,116,139,0.2); transition: opacity 0.3s; }
+        .tp-status { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); }
+        .tp-progress { height: 4px; margin: 0 6px 10px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.25); transition: opacity 0.3s; }
         .tp-progress.done { opacity: 0; }
-        .tp-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.2s linear; }
-        .tp-body { position: relative; flex: 1; min-height: 0; background: #ffffff; }
-        .tp-body iframe { display: block; width: 100%; height: 100%; border: 0; background: #ffffff; }
+        .tp-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.2s linear; }
+        .tp-body { position: relative; flex: 1; min-height: 0; border: 8px solid #0b1120; border-radius: 34px; overflow: hidden; background: #ffffff; box-shadow: 0 0 0 1px rgba(255,255,255,0.18), 0 24px 60px rgba(0,0,0,0.55); }
+        .tp-body iframe { display: block; width: 100%; height: 100%; border: 0; border-radius: 26px; background: #ffffff; }
         .tp-cover { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: #f8fafc; color: #475569; font-size: 13px; transition: opacity 0.25s; }
         html.dark .tp-cover { background: #0f172a; color: #94a3b8; }
         .tp-cover.hide { opacity: 0; pointer-events: none; }
         .tp-spin { width: 28px; height: 28px; border: 3px solid rgba(59,130,246,0.25); border-top-color: #3b82f6; border-radius: 50%; animation: tp-spin 0.8s linear infinite; }
         .tp-cover.failed .tp-spin { display: none; }
         @keyframes tp-spin { to { transform: rotate(360deg); } }
-        .tp-actions { display: flex; gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(100,116,139,0.2); background: inherit; }
-        .tp-btn { flex: 1; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid rgba(100,116,139,0.35); background: transparent; color: inherit; }
-        .tp-btn.primary { background: #3b82f6; border-color: #3b82f6; color: #ffffff; }
+        .tp-actions { display: flex; gap: 10px; padding: 12px 0 0; }
+        .tp-btn { flex: 1; padding: 12px 16px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.12); color: #ffffff; }
+        .tp-btn.primary { background: #3b82f6; border-color: #3b82f6; }
         .tp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        @media (min-width: 640px) {
-            .tp-overlay { align-items: center; }
-            .tp-panel { width: 440px; max-width: 92vw; height: min(78vh, 780px); height: min(78dvh, 780px); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
-        }
         .tpl-desc { display: block; font-size: 11px; line-height: 1.3; color: #64748b; margin-top: 2px; }
         html.dark .tpl-desc { color: #94a3b8; }
     </style>
