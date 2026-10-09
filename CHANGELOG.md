@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **Account menu: new "Plans & Billing" item (opens `/plans`).** Added in `shared/account-menu.js`, right under "Account & Identity", with the `credit-card` icon, so every page that uses `nav.js` shows it. This is the in-app entry to the plans page. Bumped `account-menu.js?v=4` to `?v=5` on the pages that use a version number (`dashboard.html` and `analytics.html` load it without one).
+
+### Changed
+- **`plans.html` is now an in-app page (was public).** `PAGE-TYPE` changed from `public` to `app`. The website header and footer (`site-nav`) are gone; the page now uses the app look (`tailwind.css`, dark mode, `NetlinkNav` bottom nav, `app-lock.js`) with a "Back to Dashboard" link. Signed out visitors are sent to `login` (before, the page worked signed out). The Basic card no longer has a "Get Started Free" button (it is now a disabled "Free plan" / "Current Plan" label). Prices, features and the checkout link (`/checkout?type=plan&tier=...&period=...`) are unchanged. All existing Upgrade, Renew and "See plans" links already pointed to `/plans`, so no other file changed. Page styles stay plain CSS in the page (design tokens defined locally, light and dark), so no Tailwind rebuild was needed. Still `noindex, nofollow`. A public pricing page can be added later as its own file (for example `pricing.html`) that sends signed in users to `/plans`. `docs/payment-rules.md` updated.
+
 ### Changed
 - **`changelog.html` (public): template update.** Added three entries under October 2026: 41 templates for Link in Bio (11 Silver, 30 Gold, each with Light and Dark; Basic uses the Standard look; Silver applies 11; Gold applies all 41), preview before apply (Silver can preview Gold, Apply locked), and the Appearance switch plus clearer padlock. English only, no em dash.
 
