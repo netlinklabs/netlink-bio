@@ -82,6 +82,84 @@ function silver04() {
   + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 3px var(--nl-border);}`;
 }
 
+// Navy Executive: formal navy and white, square cards with a navy accent bar.
+function silver05() {
+  const s = 'body.tpl-silver-05';
+  return theme('silver-05',
+    { '--nl-bg': '#f1f5f9', '--nl-card': '#ffffff', '--nl-text': '#0f172a', '--nl-text-muted': '#475569', '--nl-text-muted-2': '#334155', '--nl-border': 'rgba(30,58,138,.16)',
+      background: 'linear-gradient(180deg,#e2e8f0 0%,#f1f5f9 50%,#f8fafc 100%)' },
+    { '--nl-bg': '#0b1220', '--nl-card': '#111c33', '--nl-text': '#e2e8f0', '--nl-text-muted': '#94a3b8', '--nl-text-muted-2': '#cbd5e1', '--nl-border': 'rgba(147,197,253,.18)',
+      background: 'linear-gradient(180deg,#0f1b33 0%,#0b1220 100%)' })
+  + `${s} .link-card{border-radius:4px;border-left:5px solid #1e3a8a;box-shadow:0 4px 12px -8px rgba(15,23,42,.45);}`
+  + `${s} .link-card:hover{border-color:#3b82f6;border-left-color:#1d4ed8;}`
+  + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 3px rgba(30,58,138,.45);}`;
+}
+
+// Graphite: calm grey and bone white, flat cards with a thin outline and no shadow.
+function silver06() {
+  const s = 'body.tpl-silver-06';
+  return theme('silver-06',
+    { '--nl-bg': '#f5f5f4', '--nl-card': '#ffffff', '--nl-text': '#1c1917', '--nl-text-muted': '#57534e', '--nl-text-muted-2': '#44403c', '--nl-border': 'rgba(28,25,23,.16)',
+      background: 'linear-gradient(180deg,#fafaf9 0%,#f5f5f4 100%)' },
+    { '--nl-bg': '#171717', '--nl-card': '#262626', '--nl-text': '#fafafa', '--nl-text-muted': '#a3a3a3', '--nl-text-muted-2': '#d4d4d4', '--nl-border': 'rgba(255,255,255,.16)',
+      background: 'linear-gradient(180deg,#1c1c1c 0%,#141414 100%)' })
+  + `${s} .link-card{border-radius:8px;border:1px solid var(--nl-border);box-shadow:none;}`
+  + `${s} .link-card:hover{border-color:#78716c;}`
+  + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 3px rgba(68,64,60,.35);}`;
+}
+
+// Ivory Classic: cream paper with fine old gold outlines.
+function silver07() {
+  const s = 'body.tpl-silver-07';
+  return theme('silver-07',
+    { '--nl-bg': '#fefce8', '--nl-card': '#fffdf7', '--nl-text': '#422006', '--nl-text-muted': '#8a6d3b', '--nl-text-muted-2': '#6b4f1d', '--nl-border': 'rgba(161,98,7,.35)',
+      background: 'linear-gradient(180deg,#fffbeb 0%,#fefce8 55%,#fef9e7 100%)' },
+    { '--nl-bg': '#1c1409', '--nl-card': '#2a1f0e', '--nl-text': '#fef3c7', '--nl-text-muted': '#c9a96a', '--nl-text-muted-2': '#e6cf9c', '--nl-border': 'rgba(217,119,6,.4)',
+      background: 'linear-gradient(180deg,#241a0b 0%,#1c1409 100%)' })
+  + `${s} .link-card{border-radius:8px;border:1px solid var(--nl-border);box-shadow:0 6px 14px -10px rgba(161,98,7,.5);}`
+  + `${s} .link-card:hover{border-color:#b45309;}`
+  + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 3px rgba(180,83,9,.4);}`;
+}
+
+// Lavender: soft purple, medium rounded cards with a faint purple shadow.
+function silver08() {
+  const s = 'body.tpl-silver-08';
+  return theme('silver-08',
+    { '--nl-bg': '#faf5ff', '--nl-card': '#ffffff', '--nl-text': '#3b0764', '--nl-text-muted': '#7e5a9b', '--nl-text-muted-2': '#5e3a7e', '--nl-border': 'rgba(147,51,234,.15)',
+      background: 'linear-gradient(180deg,#f3e8ff 0%,#faf5ff 55%,#fdf4ff 100%)' },
+    { '--nl-bg': '#1a1030', '--nl-card': '#2a1a4a', '--nl-text': '#f3e8ff', '--nl-text-muted': '#b9a0d6', '--nl-text-muted-2': '#d8c4ee', '--nl-border': 'rgba(192,132,252,.2)',
+      background: 'linear-gradient(180deg,#22123f 0%,#1a1030 100%)' })
+  + `${s} .link-card{border-radius:16px;box-shadow:0 8px 18px -10px rgba(147,51,234,.45);}`
+  + `${s} .link-card:hover{border-color:#a855f7;}`
+  + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 4px rgba(168,85,247,.35);}`;
+}
+
+// Mint: fresh teal and white, wide pill cards with a soft shadow.
+function silver09() {
+  const s = 'body.tpl-silver-09';
+  return theme('silver-09',
+    { '--nl-bg': '#f0fdfa', '--nl-card': '#ffffff', '--nl-text': '#134e4a', '--nl-text-muted': '#5b8a85', '--nl-text-muted-2': '#3f6e69', '--nl-border': 'rgba(13,148,136,.16)',
+      background: 'linear-gradient(180deg,#ccfbf1 0%,#f0fdfa 50%,#f8fffe 100%)' },
+    { '--nl-bg': '#04201d', '--nl-card': '#0b3330', '--nl-text': '#ccfbf1', '--nl-text-muted': '#85bdb6', '--nl-text-muted-2': '#b0dcd6', '--nl-border': 'rgba(94,234,212,.18)',
+      background: 'linear-gradient(180deg,#052e2b 0%,#04201d 100%)' })
+  + `${s} .link-card{border-radius:40px;padding:14px 24px;box-shadow:0 8px 18px -10px rgba(13,148,136,.45);}`
+  + `${s} .link-card:hover{border-color:#2dd4bf;}`
+  + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 4px rgba(45,212,191,.4);}`;
+}
+
+// Coral: bright warm orange, big rounded cards with a thick coral outline.
+function silver10() {
+  const s = 'body.tpl-silver-10';
+  return theme('silver-10',
+    { '--nl-bg': '#fff7ed', '--nl-card': '#ffffff', '--nl-text': '#431407', '--nl-text-muted': '#9a5b3a', '--nl-text-muted-2': '#7c3f20', '--nl-border': '#fb923c',
+      background: 'linear-gradient(160deg,#ffedd5 0%,#fff7ed 55%,#fffbf5 100%)' },
+    { '--nl-bg': '#1f0e07', '--nl-card': '#3a1c10', '--nl-text': '#ffedd5', '--nl-text-muted': '#d4a283', '--nl-text-muted-2': '#efc5a8', '--nl-border': 'rgba(251,146,60,.65)',
+      background: 'linear-gradient(160deg,#2a1208 0%,#1f0e07 100%)' })
+  + `${s} .link-card{border:2px solid var(--nl-border);border-radius:24px;box-shadow:0 8px 18px -12px rgba(234,88,12,.55);}`
+  + `${s} .link-card:hover{border-color:#ea580c;}`
+  + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 4px rgba(251,146,60,.45);}`;
+}
+
 // ---------------------------------------------------------------------------
 // GOLD (premium): motion, glass, gradient borders and glow.
 // ---------------------------------------------------------------------------
@@ -197,6 +275,8 @@ function gold06() {
 
 const BUILDERS = {
   'silver-01': silver01, 'silver-02': silver02, 'silver-03': silver03, 'silver-04': silver04,
+  'silver-05': silver05, 'silver-06': silver06, 'silver-07': silver07,
+  'silver-08': silver08, 'silver-09': silver09, 'silver-10': silver10,
   'gold-01': gold01, 'gold-02': gold02, 'gold-03': gold03,
   'gold-04': gold04, 'gold-05': gold05, 'gold-06': gold06,
 };

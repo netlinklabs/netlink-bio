@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **6 new Silver bio templates (Silver now has 10).** Professional: `silver-05` Navy Executive, `silver-06` Graphite, `silver-07` Ivory Classic. Casual: `silver-08` Lavender, `silver-09` Mint, `silver-10` Coral. All static (no animation) with Light and Dark variants, same rules as the first 4. Files: `api/_lib/bio-templates.js` (CSS), `api/bio.js` (`TEMPLATE_TIERS`), `template.html` (`TEMPLATES` gallery). Needs 6 new rows in `bio_templates` (`min_tier = 'silver'`) because the database trigger validates `template_id` against that table. No new Tailwind classes, no CSS rebuild.
+
 ### Changed
 - **Two more tester accounts are treated as demo profiles.** Added `rh777` and `rusmiati_hadiansyah` to `DEMO_USERNAMES` in `api/_lib/demo-profiles.js`. Their `/{username}` and `/cv/{username}` pages are left out of `sitemap.xml` and get `noindex, nofollow` with no schema.org Person data, same as `yourname`, `michelletan` and `alandmusic`. No database change.
 - **`admin.html` regrouped into 4 main tabs and easier on mobile.** Main tabs are now Overview, Finance, Community and Audit log. Orders and Payments are sub-tabs of Finance. Ambassadors and Rewards are sub-tabs of Community. In Overview the Users section now sits above Finance. Role rules are unchanged (Payments and Rewards need finance or super_admin, Ambassadors need support or super_admin, Audit log is super_admin only). The unmatched payments badge and the pending ambassadors badge show on both the sub-tab and its main tab. Overview tiles still jump to the right sub-tab. Mobile: tabs fill the width, pill-style sub-tabs, 16px form fields (no iOS zoom), full-width toast. No new Tailwind classes, so no CSS rebuild.
