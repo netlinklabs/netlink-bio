@@ -41,8 +41,26 @@
         .b-gray { background: rgba(100,116,139,0.15); color: #475569; }
         html.dark .b-ok { color: #34d399; } html.dark .b-warn { color: #fbbf24; } html.dark .b-bad { color: #f87171; } html.dark .b-info { color: #93c5fd; } html.dark .b-gray { color: #cbd5e1; }
 
-        .tab-btn { padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
+        /* Main tabs: fill the width on mobile, scroll only if they ever overflow */
+        .tabs-bar { display: flex; gap: 4px; margin-bottom: 12px; padding: 4px; border-radius: 14px; background: rgba(100,116,139,0.12); overflow-x: auto; scrollbar-width: none; }
+        .tabs-bar::-webkit-scrollbar { display: none; }
+        .tab-btn { flex: 1 0 auto; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: #64748b; white-space: nowrap; text-align: center; }
         .tab-btn.active { background: #3b82f6; color: #fff; }
+        /* Sub-tabs inside Finance and Community */
+        .subtabs { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
+        .subtabs::-webkit-scrollbar { display: none; }
+        .subtabs:empty { display: none; }
+        .sub-btn { padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #64748b; border: 1px solid rgba(100,116,139,0.3); white-space: nowrap; }
+        .sub-btn.active { background: rgba(59,130,246,0.12); color: #2563eb; border-color: #3b82f6; }
+        html.dark .sub-btn.active { color: #93c5fd; }
+        @media (max-width: 639px) {
+            main { padding-left: 12px !important; padding-right: 12px !important; }
+            .tab-btn { padding: 9px 8px; font-size: 12.5px; }
+            .row { padding: 12px; }
+            .btn { min-height: 40px; }
+            .field { min-height: 40px; font-size: 16px; }
+            .toast { left: 12px; right: 12px; max-width: none; }
+        }
         .row { display: block; width: 100%; text-align: left; padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,0.06); }
         .row:last-child { border-bottom: 0; }
         button.row:hover { background: rgba(59,130,246,0.05); }
@@ -182,14 +200,10 @@
                 <button id="printBtn" type="button" class="print-btn hidden" title="Print or save the report as PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
             </div>
         </div>
-        <p class="text-sm text-muted mb-4">Orders, payments, ambassadors and audit log</p>
-
-        <div id="deniedView" class="hidden card rounded-2xl p-5">
-            <p class="text-sm text-secondary">You do not have access to this page.</p>
-        </div>
+        <p class="text-sm text-muted mb-4">Overview, finance, community and audit log</p>
 
         <div id="adminView" class="hidden">
-            <div id="tabs" class="flex gap-2 mb-4 overflow-x-auto"></div>
+            <div id="tabs" class="tabs-bar"></div>
 
             <!-- Overview -->
             <section id="tab-overview" class="hidden">
@@ -203,6 +217,9 @@
                 <div id="overview"><p class="text-sm text-muted">Loading...</p></div>
             </section>
 
+            <!-- Finance: Orders + Payments -->
+            <section id="tab-finance" class="hidden">
+            <div id="subtabs-finance" class="subtabs"></div>
             <!-- Orders -->
             <section id="tab-orders" class="hidden">
                 <div class="flex flex-col sm:flex-row gap-2 mb-3">
@@ -235,7 +252,11 @@
                 <div id="syncResult" class="hidden text-xs text-muted mb-3"></div>
                 <div id="paymentList" class="card rounded-2xl overflow-hidden"></div>
             </section>
+            </section>
 
+            <!-- Community: Ambassadors + Rewards -->
+            <section id="tab-community" class="hidden">
+            <div id="subtabs-community" class="subtabs"></div>
             <!-- Ambassadors -->
             <section id="tab-ambassadors" class="hidden">
                 <div class="flex flex-col sm:flex-row gap-2 mb-3">
@@ -271,6 +292,7 @@
                     <button id="rwDetectBtn" type="button" class="btn btn-ghost">Detect payments</button>
                 </div>
                 <div id="rwList" class="card rounded-2xl overflow-hidden"></div>
+            </section>
             </section>
 
             <!-- Audit -->
@@ -308,7 +330,7 @@
         }
 
         function esc(v) { return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-        function showAuthError(msg) { $('authGateText').textContent = 'Something went wrong: ' + msg; }
+        function showAuthError(msg) { if (window.__leaving) return; $('authGateText').textContent = 'Something went wrong: ' + msg; }
         window.addEventListener('error', (e) => showAuthError(e.message));
         window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
         function showToast(message, isError) {
@@ -321,9 +343,12 @@
         const has = (...r) => r.some((x) => roles.includes(x));
         const isFinance = () => has('super_admin', 'finance');
 
+        // Anyone without admin access (signed out, no role, or rejected by the server) goes to the home page.
+        function leaveAdmin() { window.__leaving = true; window.location.replace('index.html'); }
+
         async function api(action, { method = 'GET', body, query = '' } = {}) {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) { window.location.href = 'login'; throw new Error('Signed out'); }
+            if (!session) { leaveAdmin(); throw new Error('Signed out'); }
             const res = await fetch(`/api/orders?action=${action}${query}`, {
                 method,
                 headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
@@ -346,34 +371,65 @@
         window.copyText = copy;
 
         // ---------- tabs ----------
+        // Main tabs: Overview, Finance, Community, Audit log. Finance and Community hold sub-tabs.
+        const SUBTAB_PARENT = { orders: 'finance', payments: 'finance', ambassadors: 'community', rewards: 'community' };
+        const subActive = { finance: 'orders', community: null };
+        let mainTabs = [];
+        let subTabs = { finance: [], community: [] };
+
         function buildTabs() {
-            const tabs = [];
-            if (isFinance()) tabs.push({ id: 'overview', label: 'Overview' });
-            tabs.push({ id: 'orders', label: 'Orders' });
-            if (isFinance()) tabs.push({ id: 'payments', label: 'Payments' });
-            if (has('super_admin', 'support')) tabs.push({ id: 'ambassadors', label: 'Ambassadors' });
-            if (isFinance()) tabs.push({ id: 'rewards', label: 'Rewards' });
-            if (has('super_admin')) tabs.push({ id: 'audit', label: 'Audit log' });
-            $('tabs').innerHTML = tabs.map((t) => `<button class="tab-btn" data-tab="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
+            mainTabs = [];
+            if (isFinance()) mainTabs.push({ id: 'overview', label: 'Overview' });
+            mainTabs.push({ id: 'finance', label: 'Finance' });
+            if (has('super_admin', 'support') || isFinance()) mainTabs.push({ id: 'community', label: 'Community' });
+            if (has('super_admin')) mainTabs.push({ id: 'audit', label: 'Audit log' });
+
+            subTabs.finance = [{ id: 'orders', label: 'Orders' }];
+            if (isFinance()) subTabs.finance.push({ id: 'payments', label: 'Payments' });
+            subTabs.community = [];
+            if (has('super_admin', 'support')) subTabs.community.push({ id: 'ambassadors', label: 'Ambassadors' });
+            if (isFinance()) subTabs.community.push({ id: 'rewards', label: 'Rewards' });
+            subActive.finance = subTabs.finance[0].id;
+            subActive.community = subTabs.community.length ? subTabs.community[0].id : null;
+
+            $('tabs').innerHTML = mainTabs.map((t) => `<button class="tab-btn" data-tab="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
             $('tabs').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-            switchTab(tabs[0].id);
+            ['finance', 'community'].forEach((g) => {
+                const box = $(`subtabs-${g}`);
+                box.innerHTML = subTabs[g].map((t) => `<button class="sub-btn" data-sub="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
+                box.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => switchSub(g, b.dataset.sub)));
+            });
+            switchTab(mainTabs[0].id);
+        }
+
+        function loadSub(sub) {
+            if (sub === 'orders') loadOrders();
+            if (sub === 'payments') loadPayments();
+            if (sub === 'ambassadors') loadAmbassadors();
+            if (sub === 'rewards') loadRewards();
+        }
+
+        function switchSub(group, sub) {
+            subActive[group] = sub;
+            subTabs[group].forEach((t) => show(`tab-${t.id}`, t.id === sub));
+            $(`subtabs-${group}`).querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.sub === sub));
+            loadSub(sub);
         }
 
         function switchTab(id) {
+            // Old shortcut names (orders, payments, ambassadors, rewards) open the matching sub-tab.
+            if (SUBTAB_PARENT[id]) { const g = SUBTAB_PARENT[id]; subActive[g] = id; id = g; }
             activeTab = id;
-            ['overview', 'orders', 'payments', 'ambassadors', 'rewards', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
+            ['overview', 'finance', 'community', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
             $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
             if (id === 'overview') loadOverview();
-            if (id === 'orders') loadOrders();
-            if (id === 'payments') loadPayments();
-            if (id === 'ambassadors') loadAmbassadors();
-            if (id === 'rewards') loadRewards();
+            if (id === 'finance' || id === 'community') { if (subActive[id]) switchSub(id, subActive[id]); }
             if (id === 'audit') loadAudit();
         }
 
         function setUnmatchedBadge(n) {
-            const el = $('badge-payments');
-            if (el) el.innerHTML = n ? ` <span class="badge b-warn" style="margin-left:4px">${Number(n)}</span>` : '';
+            const html = n ? ` <span class="badge b-warn" style="margin-left:4px">${Number(n)}</span>` : '';
+            ['badge-payments', 'badge-finance'].forEach((id) => { const el = $(id); if (el) el.innerHTML = html; });
         }
 
 
@@ -835,13 +891,6 @@
             const kycPct = u.total ? (u.kyc / u.total) * 100 : 0;
             let h = '';
 
-            h += `<div class="ov-title">Finance</div><div class="tiles">
-                ${tile(fmtN(f.orders_in_range), 'Orders, ' + rangeName, fmtN(f.orders_total) + ' in total', { go: 'orders' })}
-                ${tile('$' + Number(f.revenue_in_range).toFixed(2), 'Paid USDC, ' + rangeName, fmtN(f.paid_in_range) + ' paid orders (tests excluded)', { go: 'payments' })}
-                ${tile(fmtN(f.unmatched_payments), 'Payments to review', f.awaiting ? fmtN(f.awaiting) + ' orders awaiting payment' : 'Nothing waiting', { go: 'payments', alert: f.unmatched_payments > 0 })}
-                ${has('super_admin') ? tile(fmtN(f.audit_in_range), 'Audit log entries, ' + rangeName, '', { go: 'audit' }) : tile(fmtN(f.awaiting), 'Awaiting payment', '')}
-            </div><div id="incomeBlock"><p class="text-xs text-muted mb-2">Loading income...</p></div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
-
             h += `<div class="ov-title">Users</div><div class="tiles">
                 ${tile(fmtN(u.total), 'Total users', 'All accounts, KYC verified or not', { wide: true })}
                 ${tile(fmtN(u.kyc), 'KYC verified', fmtN(u.kyc_in_range) + ' new, ' + rangeName)}
@@ -852,6 +901,13 @@
             <div class="tiles">${tiers.map((t) => tile(fmtN(u.tiers[t] || 0), TIER_LABEL[t] + ' users', 'Current plan')).join('')}</div>
             ${countriesHtml(u)}
             ${chartHtml('New users and KYC verified', d.buckets, d.unit, [{ name: 'New users', values: u.series_new, color: 'var(--series-1)' }, { name: 'KYC verified', values: u.series_kyc, color: 'var(--series-2)' }])}`;
+
+            h += `<div class="ov-title">Finance</div><div class="tiles">
+                ${tile(fmtN(f.orders_in_range), 'Orders, ' + rangeName, fmtN(f.orders_total) + ' in total', { go: 'orders' })}
+                ${tile('$' + Number(f.revenue_in_range).toFixed(2), 'Paid USDC, ' + rangeName, fmtN(f.paid_in_range) + ' paid orders (tests excluded)', { go: 'payments' })}
+                ${tile(fmtN(f.unmatched_payments), 'Payments to review', f.awaiting ? fmtN(f.awaiting) + ' orders awaiting payment' : 'Nothing waiting', { go: 'payments', alert: f.unmatched_payments > 0 })}
+                ${has('super_admin') ? tile(fmtN(f.audit_in_range), 'Audit log entries, ' + rangeName, '', { go: 'audit' }) : tile(fmtN(f.awaiting), 'Awaiting payment', '')}
+            </div><div id="incomeBlock"><p class="text-xs text-muted mb-2">Loading income...</p></div>${chartHtml('Orders', d.buckets, d.unit, [{ name: 'Orders', values: f.series_orders, color: 'var(--series-1)' }])}`;
 
             const types = Object.entries(p.tx_by_type || {}).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${esc(k)} ${fmtN(v)}`).join(' · ');
             h += `<div class="ov-title">Netlink Pay</div><div class="tiles">
@@ -1243,8 +1299,8 @@
         function renderAmbCounts(counts) {
             if (!counts) return;
             const open = (counts.pending || 0);
-            const el = $('badge-ambassadors');
-            if (el) el.innerHTML = open ? ` <span class="badge b-warn" style="margin-left:4px">${Number(open)}</span>` : '';
+            const html = open ? ` <span class="badge b-warn" style="margin-left:4px">${Number(open)}</span>` : '';
+            ['badge-ambassadors', 'badge-community'].forEach((id) => { const el = $(id); if (el) el.innerHTML = html; });
             $('ambCounts').textContent = Object.keys(AMB_STATUS_LABEL).map((k) => `${AMB_STATUS_LABEL[k]} ${counts[k] || 0}`).join(' · ');
         }
 
@@ -1574,7 +1630,7 @@
             try {
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
                 if (error) throw error;
-                if (!session) { window.location.href = 'login'; return; }
+                if (!session) { leaveAdmin(); return; }
                 currentUser = session.user;
                 const { data: profile } = await supabaseClient
                     .from('profiles')
@@ -1583,10 +1639,11 @@
                 if (window.NetlinkNav && profile) NetlinkNav.init({ activePage: null, profile, supabaseClient, userId: currentUser.id });
 
                 currentProfileName = (profile?.display_name || '').trim() || profile?.username || '';
-                const me = await api('admin-me');
+                let me;
+                try { me = await api('admin-me'); } catch (e) { if (e.status === 401 || e.status === 403) { leaveAdmin(); return; } throw e; }
                 roles = me.roles || [];
+                if (!roles.length) { leaveAdmin(); return; }
                 $('authGate').style.display = 'none';
-                if (!roles.length) { show('deniedView', true); return; }
                 $('roleBadges').innerHTML = roles.map((r) => `<span class="badge b-info">${esc(r.replace('_', ' '))}</span>`).join('');
                 show('adminView', true);
                 if (isFinance()) show('printBtn', true);
