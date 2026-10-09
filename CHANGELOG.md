@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`plans.html`: the KYC add-on card follows the verification status.** A verified user still saw "Order KYC Verification". The page now also reads `identity_verification_status`: `approved` shows "KYC verification: completed" (no button), `pending` shows "in review" with a "Check status" button to `/identity`, `resubmission_needed` shows "Continue verification" to `/identity`, `declined` shows a contact-support note (no button). Not started keeps the $2.5 order card. Plain CSS and script in the page, no Tailwind rebuild.
+
 ### Added
 - **New in-app page `billing.html` (current plan and order history).** Shows the current plan with its end date and a list of the user's orders (plans and KYC), newest first, each with the order number, date, amount in USDC and a status label (Paid, Awaiting payment, Partly paid, Under review, Expired, Cancelled, Refunded). Each row opens `checkout?order=<id>`. Empty state links to `/plans`. App page (`PAGE-TYPE: app`), `noindex`, login required, plain CSS (no Tailwind rebuild).
 - **`api/orders.js`: new `action=list`.** Returns the caller's own orders (max 50, newest first) with only the fields a history row needs: no payer or finance wallet addresses and no transaction hashes. Same session check as the other actions. No new function file (the Vercel function limit is unchanged).
