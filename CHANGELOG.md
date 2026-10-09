@@ -8,6 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **Two more tester accounts are treated as demo profiles.** Added `rh777` and `rusmiati_hadiansyah` to `DEMO_USERNAMES` in `api/_lib/demo-profiles.js`. Their `/{username}` and `/cv/{username}` pages are left out of `sitemap.xml` and get `noindex, nofollow` with no schema.org Person data, same as `yourname`, `michelletan` and `alandmusic`. No database change.
 - **`admin.html` regrouped into 4 main tabs and easier on mobile.** Main tabs are now Overview, Finance, Community and Audit log. Orders and Payments are sub-tabs of Finance. Ambassadors and Rewards are sub-tabs of Community. In Overview the Users section now sits above Finance. Role rules are unchanged (Payments and Rewards need finance or super_admin, Ambassadors need support or super_admin, Audit log is super_admin only). The unmatched payments badge and the pending ambassadors badge show on both the sub-tab and its main tab. Overview tiles still jump to the right sub-tab. Mobile: tabs fill the width, pill-style sub-tabs, 16px form fields (no iOS zoom), full-width toast. No new Tailwind classes, so no CSS rebuild.
 
 ### Security
