@@ -167,6 +167,8 @@ function extractYouTubeId(url) {
 // (templateCss), injected at the end of the page <style>.
 const TEMPLATE_TIERS = {
   'silver-01': 'silver', 'silver-02': 'silver', 'silver-03': 'silver', 'silver-04': 'silver',
+  'silver-05': 'silver', 'silver-06': 'silver', 'silver-07': 'silver',
+  'silver-08': 'silver', 'silver-09': 'silver', 'silver-10': 'silver',
   'gold-01': 'gold', 'gold-02': 'gold', 'gold-03': 'gold',
   'gold-04': 'gold', 'gold-05': 'gold', 'gold-06': 'gold',
 };
