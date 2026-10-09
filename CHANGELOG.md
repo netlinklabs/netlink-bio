@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`template.html`: Light/Dark is now an Appearance switch, separate from templates.** Before, the Light and Dark cards cleared the chosen template, which was confusing because every template has a Light and a Dark version. Now an Appearance switch (Light | Dark) sits above the template list and only saves `theme_preset`; the chosen template stays. The two cards were replaced by one **Standard** card (no template, plain Light or Dark look). The preview window has its own Light/Dark switch (disabled while the page loads, preview only): **Apply** saves the template and the chosen Light or Dark together in one update, **Close** discards both. Basic users, and users whose plan ended, are unchanged: `bio.js` already ignores a template the plan no longer allows, so the page falls back to the standard look in the saved Light or Dark, and Basic users set Light or Dark in the dashboard. `api/bio.js`: in `?preview=` mode a `theme=light|dark` parameter overrides the saved look (ignored on normal pages). No database change, no new Tailwind classes, no CSS rebuild.
+
+### Changed
 - **`template.html`: template previews now match the real look, Gold templates are shown locked, tier badge moved.** The small preview on each card used to be drawn in the Light colors only, so a Dark profile saw (for example) a pink Sunset card but got a dark red page. Every template now has a Light and a Dark preview that follow the current look (Light/Dark card). Silver users now also see all Gold templates, dimmed with a lock; tapping one shows "Upgrade to Gold to unlock it" (no preview, and the server still rejects Gold previews for Silver). The Silver or Gold badge moved from the top right corner to the bottom center, under the description. Plain CSS, no new Tailwind classes, no CSS rebuild, no database or `bio.js` change.
 
 ### Added

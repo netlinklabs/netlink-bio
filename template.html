@@ -123,6 +123,17 @@
         .tpl-card.locked { cursor: pointer; }
         .tpl-card.locked .tpl-thumb { filter: saturate(0.55); opacity: 0.85; }
         .tpl-card.locked:hover { transform: none; }
+        .tpl-appearance { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 12px; }
+        .tpl-appearance-label { font-size: 12px; font-weight: 600; color: #475569; }
+        html.dark .tpl-appearance-label { color: #94a3b8; }
+        .tpl-seg { display: inline-flex; padding: 3px; border-radius: 12px; background: rgba(100,116,139,0.15); }
+        .tpl-seg button { padding: 6px 18px; border: 0; border-radius: 9px; font-size: 13px; font-weight: 600; color: #64748b; background: transparent; cursor: pointer; }
+        .tpl-seg button.active { background: #3b82f6; color: #ffffff; }
+        .tpl-seg button:disabled { opacity: 0.55; cursor: not-allowed; }
+        .tpl-seg.on-dark { background: rgba(255,255,255,0.14); }
+        .tpl-seg.on-dark button { color: rgba(255,255,255,0.75); }
+        .tpl-seg.on-dark button.active { color: #ffffff; }
+        .tp-theme { display: flex; justify-content: center; padding: 12px 0 0; }
         .tpl-desc { display: block; font-size: 11px; line-height: 1.3; color: #64748b; margin-top: 2px; }
         html.dark .tpl-desc { color: #94a3b8; }
     </style>
@@ -148,6 +159,12 @@
             <div class="tp-body">
                 <iframe id="tpFrame" title="Template preview" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
                 <div id="tpCover" class="tp-cover"><div class="tp-spin"></div><p id="tpCoverText">Loading your page. Please wait until it reaches 100%.</p></div>
+            </div>
+            <div class="tp-theme">
+                <div class="tpl-seg on-dark" role="group" aria-label="Preview appearance">
+                    <button type="button" id="tpLight" onclick="setPreviewTheme('light')" disabled>Light</button>
+                    <button type="button" id="tpDark" onclick="setPreviewTheme('dark')" disabled>Dark</button>
+                </div>
             </div>
             <div class="tp-actions">
                 <button type="button" id="tpApply" class="tp-btn primary" disabled onclick="applyTemplatePreview()">Apply</button>
@@ -195,6 +212,13 @@
         <!-- Templates -->
         <div class="card rounded-2xl p-4 lg:p-6 mb-4">
             <h3 class="font-semibold text-primary text-sm mb-1 flex items-center gap-2"><i data-lucide="layout-template" class="w-4 h-4 text-purple-500"></i> Templates</h3>
+            <div class="tpl-appearance" role="group" aria-label="Appearance">
+                <span class="tpl-appearance-label">Appearance</span>
+                <div class="tpl-seg">
+                    <button type="button" id="appLight" onclick="setAppearance('light')">Light</button>
+                    <button type="button" id="appDark" onclick="setAppearance('dark')">Dark</button>
+                </div>
+            </div>
             <p id="templateIntro" class="text-xs text-muted mb-3"></p>
             <p id="templateNotice" class="tpl-notice hidden" role="status"></p>
             <div id="templateGrid" class="grid grid-cols-2 gap-3"></div>
@@ -399,15 +423,20 @@
             notice.classList.toggle('hidden', !templateUnavailable);
             document.getElementById('templateIntro').textContent =
                 (tier === 'gold' ? 'All Silver and Gold templates are unlocked for you.' : 'Silver templates are unlocked for you. Gold templates are locked until you upgrade to Gold.')
-                + ' Templates use your current look (' + (theme === 'dark' ? 'Dark' : 'Light') + '). Tap a template to preview it before you apply it.';
+                + ' Choose Light or Dark above, then tap a template to preview it before you apply it.';
+            document.getElementById('appLight').classList.toggle('active', theme === 'light');
+            document.getElementById('appDark').classList.toggle('active', theme === 'dark');
 
-            const baseCards = ['light', 'dark'].map((t) => `
-                <button type="button" class="tpl-card ${baseActive && theme === t ? 'selected' : ''}" data-id="base-${t}" onclick="selectBaseTheme('${t}')">
+            // One "Standard" card replaces the old Light and Dark cards: it means
+            // no template. Light or Dark is the Appearance switch above, and it
+            // keeps the chosen template.
+            const standardCard = `
+                <button type="button" class="tpl-card ${baseActive ? 'selected' : ''}" data-id="standard" onclick="selectStandard()">
                     <span class="tpl-check">&#10003;</span>
-                    <div class="tpl-thumb base-${t}"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
-                    <span class="text-sm font-medium text-primary">${t === 'dark' ? 'Dark' : 'Light'}</span>
-                    <span class="tpl-desc">Standard look</span>
-                </button>`).join('');
+                    <div class="tpl-thumb base-${theme}"><div class="dot"></div><div class="bar"></div><div class="bar short"></div></div>
+                    <span class="text-sm font-medium text-primary">Standard</span>
+                    <span class="tpl-desc">No template, plain ${theme === 'dark' ? 'Dark' : 'Light'} look</span>
+                </button>`;
 
             const lockIcon = '<span class="tpl-lock" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>';
             const templateCards = TEMPLATES.map((t) => {
@@ -423,40 +452,63 @@
                 </button>`;
             }).join('');
 
-            document.getElementById('templateGrid').innerHTML = baseCards + templateCards;
+            document.getElementById('templateGrid').innerHTML = standardCard + templateCards;
         }
 
-        // Light or Dark card: saves theme_preset and clears template_id.
-        async function selectBaseTheme(theme) {
+        // Appearance switch: saves only theme_preset. The chosen template stays.
+        async function setAppearance(theme) {
+            if (!currentProfile || currentTheme() === theme) return;
             const prevTheme = currentProfile.theme_preset || 'light';
-            const prevTemplate = currentProfile.template_id || null;
-            if (!prevTemplate && currentTheme() === theme) return;
             currentProfile.theme_preset = theme;
-            currentProfile.template_id = null;
             renderTemplates();
-            const { error } = await supabaseClient.from('profiles').update({ theme_preset: theme, template_id: null }).eq('id', currentUser.id);
+            const { error } = await supabaseClient.from('profiles').update({ theme_preset: theme }).eq('id', currentUser.id);
             if (error) {
                 console.error(error);
                 currentProfile.theme_preset = prevTheme;
+                renderTemplates();
+                showToast('Could not save your appearance. Please try again.', true);
+                return;
+            }
+            showToast(theme === 'dark' ? 'Dark appearance saved' : 'Light appearance saved');
+        }
+
+        // Standard card: removes the template, keeps Light or Dark.
+        async function selectStandard() {
+            const prevTemplate = currentProfile.template_id || null;
+            if (!prevTemplate) return;
+            currentProfile.template_id = null;
+            renderTemplates();
+            const { error } = await supabaseClient.from('profiles').update({ template_id: null }).eq('id', currentUser.id);
+            if (error) {
+                console.error(error);
                 currentProfile.template_id = prevTemplate;
                 renderTemplates();
                 showToast('Could not save your look. Please try again.', true);
                 return;
             }
-            showToast(theme === 'dark' ? 'Dark look applied' : 'Light look applied');
+            showToast('Standard look applied');
         }
 
-        async function selectTemplate(id) {
+        // Saves a template. `theme` (optional) is the Light or Dark choice made in
+        // the preview window and is saved together with the template.
+        async function selectTemplate(id, theme) {
             const tpl = TEMPLATES.find((t) => t.id === id);
             if (!tpl || !canUseTemplate(tpl)) { showToast('This template is not available on your plan', true); return false; }
             const previous = currentProfile.template_id || null;
-            if (previous === id) return true;
+            const previousTheme = currentProfile.theme_preset || 'light';
+            const nextTheme = theme === 'dark' || theme === 'light' ? theme : null;
+            const themeChanged = !!nextTheme && nextTheme !== currentTheme();
+            if (previous === id && !themeChanged) return true;
+            const payload = { template_id: id };
+            if (themeChanged) payload.theme_preset = nextTheme;
             currentProfile.template_id = id;
+            if (themeChanged) currentProfile.theme_preset = nextTheme;
             renderTemplates();
-            const { error } = await supabaseClient.from('profiles').update({ template_id: id }).eq('id', currentUser.id);
+            const { error } = await supabaseClient.from('profiles').update(payload).eq('id', currentUser.id);
             if (error) {
                 console.error(error);
                 currentProfile.template_id = previous;
+                currentProfile.theme_preset = previousTheme;
                 renderTemplates();
                 showToast('Could not save template. Please try again.', true);
                 return false;
@@ -467,11 +519,11 @@
 
         // ---------------- Template preview window ----------------
         // Clicking a template opens the user's real public page in an iframe
-        // with ?preview=<id> (api/bio.js renders it with that template without
+        // with ?preview=<id>&theme=<light|dark> (api/bio.js renders it with that template without
         // saving anything). The progress bar and the cover keep the user from
         // tapping around until the page has fully loaded. Apply saves, Close
         // discards.
-        const tpState = { id: null, timer: null, timeout: null, pct: 0, applying: false };
+        const tpState = { id: null, theme: 'light', timer: null, timeout: null, pct: 0, applying: false };
 
         function tpSetProgress(pct) {
             tpState.pct = pct;
@@ -493,12 +545,22 @@
             cover.classList.add('failed');
             document.getElementById('tpCoverText').textContent = message;
             document.getElementById('tpStatus').textContent = 'Failed';
+            tpSetThemeButtons(true);
         }
 
         function showLockedTemplate(id) {
             const tpl = TEMPLATES.find((t) => t.id === id);
             const label = tpl ? TIER_LABEL[tpl.tier] : 'higher';
             showToast('This is a ' + label + ' template. Upgrade to ' + label + ' to unlock it.', true);
+        }
+
+        function tpSetThemeButtons(enabled) {
+            const light = document.getElementById('tpLight');
+            const dark = document.getElementById('tpDark');
+            light.classList.toggle('active', tpState.theme === 'light');
+            dark.classList.toggle('active', tpState.theme === 'dark');
+            light.disabled = !enabled;
+            dark.disabled = !enabled;
         }
 
         function openTemplatePreview(id) {
@@ -508,8 +570,17 @@
             if (!currentProfile?.username) { showToast('Set your username first to preview templates', true); return; }
 
             tpState.id = id;
+            tpState.theme = currentTheme();
             tpState.applying = false;
             document.getElementById('tpTitle').textContent = tpl.name + ' preview';
+            document.getElementById('tpOverlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            loadTemplatePreview();
+        }
+
+        // (Re)loads the iframe with the chosen template and Light or Dark look.
+        function loadTemplatePreview() {
+            tpStopTimers();
             const cover = document.getElementById('tpCover');
             cover.classList.remove('hide', 'failed');
             document.getElementById('tpCoverText').textContent = 'Loading your page. Please wait until it reaches 100%.';
@@ -517,10 +588,8 @@
             const apply = document.getElementById('tpApply');
             apply.disabled = true;
             apply.textContent = 'Apply';
+            tpSetThemeButtons(false);
             tpSetProgress(0);
-
-            document.getElementById('tpOverlay').classList.add('open');
-            document.body.style.overflow = 'hidden';
 
             // Slow ease toward 90%; the real load event takes it to 100%.
             tpState.timer = setInterval(() => {
@@ -530,7 +599,15 @@
 
             const frame = document.getElementById('tpFrame');
             frame.onload = onTemplatePreviewLoaded;
-            frame.src = '/' + encodeURIComponent(currentProfile.username) + '?preview=' + encodeURIComponent(id);
+            frame.src = '/' + encodeURIComponent(currentProfile.username) + '?preview=' + encodeURIComponent(tpState.id) + '&theme=' + tpState.theme;
+        }
+
+        // Light or Dark switch inside the preview window: preview only, nothing is
+        // saved until Apply.
+        function setPreviewTheme(theme) {
+            if (!tpState.id || tpState.applying || tpState.theme === theme) return;
+            tpState.theme = theme;
+            loadTemplatePreview();
         }
 
         function onTemplatePreviewLoaded() {
@@ -542,7 +619,7 @@
                 // rendered with this exact template (the server only accepts
                 // templates the plan allows).
                 const cls = frame.contentDocument && frame.contentDocument.body && frame.contentDocument.body.classList;
-                ok = !!cls && cls.contains('tpl-' + tpState.id);
+                ok = !!cls && cls.contains('tpl-' + tpState.id) && cls.contains('theme-' + tpState.theme);
             } catch (e) { ok = false; }
             if (!ok) { tpFail('The preview could not be loaded. Close this window and try again.'); return; }
 
@@ -553,6 +630,7 @@
                 document.getElementById('tpCover').classList.add('hide');
                 document.getElementById('tpProgress').classList.add('done');
                 document.getElementById('tpApply').disabled = false;
+                tpSetThemeButtons(true);
             }, 350);
         }
 
@@ -562,7 +640,7 @@
             const apply = document.getElementById('tpApply');
             apply.disabled = true;
             apply.textContent = 'Applying...';
-            const ok = await selectTemplate(tpState.id);
+            const ok = await selectTemplate(tpState.id, tpState.theme);
             tpState.applying = false;
             if (ok) { closeTemplatePreview(); return; }
             apply.disabled = false;
@@ -825,7 +903,8 @@
         }
 
         window.selectTemplate = selectTemplate;
-        window.selectBaseTheme = selectBaseTheme;
+        window.setAppearance = setAppearance;
+        window.selectStandard = selectStandard;
         window.handleBannerFile = handleBannerFile;
         window.closeCropModal = closeCropModal;
         window.saveCroppedBanner = saveCroppedBanner;
