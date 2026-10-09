@@ -160,6 +160,19 @@ function silver10() {
   + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 4px rgba(251,146,60,.45);}`;
 }
 
+// Creator: for content creators. Hot pink and violet, cards with a thick colored bottom edge.
+function silver11() {
+  const s = 'body.tpl-silver-11';
+  return theme('silver-11',
+    { '--nl-bg': '#fdf2f8', '--nl-card': '#ffffff', '--nl-text': '#3b0764', '--nl-text-muted': '#8a5a9e', '--nl-text-muted-2': '#6b3a82', '--nl-border': 'rgba(217,70,239,.22)',
+      background: 'linear-gradient(160deg,#fce7f3 0%,#f3e8ff 55%,#fdf4ff 100%)' },
+    { '--nl-bg': '#1a0724', '--nl-card': '#2e1040', '--nl-text': '#fae8ff', '--nl-text-muted': '#c79ad8', '--nl-text-muted-2': '#e6c4f2', '--nl-border': 'rgba(232,121,249,.28)',
+      background: 'linear-gradient(160deg,#2a0b3a 0%,#1a0724 100%)' })
+  + `${s} .link-card{border-radius:18px;box-shadow:inset 0 -4px 0 #ec4899,0 8px 18px -10px rgba(192,38,211,.5);}`
+  + `${s} .link-card:hover{border-color:#d946ef;box-shadow:inset 0 -4px 0 #a855f7,0 10px 20px -10px rgba(168,85,247,.6);}`
+  + `${s} .avatar,${s} .avatar-fallback{box-shadow:0 0 0 4px rgba(236,72,153,.45);}`;
+}
+
 // ---------------------------------------------------------------------------
 // GOLD (premium): motion, glass, gradient borders and glow.
 // ---------------------------------------------------------------------------
@@ -502,7 +515,7 @@ const goldNewBuilders = Object.fromEntries(Object.entries(GOLD_NEW).map(([id, [f
 const BUILDERS = {
   'silver-01': silver01, 'silver-02': silver02, 'silver-03': silver03, 'silver-04': silver04,
   'silver-05': silver05, 'silver-06': silver06, 'silver-07': silver07,
-  'silver-08': silver08, 'silver-09': silver09, 'silver-10': silver10,
+  'silver-08': silver08, 'silver-09': silver09, 'silver-10': silver10, 'silver-11': silver11,
   'gold-01': gold01, 'gold-02': gold02, 'gold-03': gold03,
   'gold-04': gold04, 'gold-05': gold05, 'gold-06': gold06,
   ...goldNewBuilders,
