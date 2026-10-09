@@ -248,7 +248,15 @@ async function handler(req, res) {
   const showDonate = profile.show_donate === true && !!walletAddress;
   const iconShape = profile.link_icon_shape === 'rounded' ? 'rounded' : 'circle';
   const themePreset = profile.theme_preset === 'dark' ? 'dark' : 'light';
-  const templateId = effectiveTemplateId(profile);
+  // Preview mode (?preview=<template id>), used by the preview window in
+  // template.html. Shows this profile with a template that is not saved yet.
+  // The tier check is the same as for a saved template, so a plan can only
+  // preview what it could apply. Nothing is written, no view is counted, the
+  // page is noindex and never cached, and clicks are blocked (script below).
+  const isPreview = typeof req.query.preview === 'string' && req.query.preview.trim() !== '';
+  const templateId = isPreview
+    ? effectiveTemplateId({ template_id: req.query.preview.trim(), tier: profile.tier })
+    : effectiveTemplateId(profile);
   const bannerUrl = effectiveBannerUrl(profile);
   // Cache-buster for the OG image: social platforms and the CDN cache
   // /api/og for a long time, so the banner's upload timestamp (?t=...) is
@@ -442,7 +450,7 @@ async function handler(req, res) {
 <link rel="canonical" href="${pageUrl}">
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
 <link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
-${isDemoProfile(profile.username)
+${isDemoProfile(profile.username) || isPreview
   // Demo/mockup profile (api/_lib/demo-profiles.js): keep it out of search
   // indexes and don't describe it to crawlers/AI as a real Person.
   ? '<meta name="robots" content="noindex, nofollow">'
@@ -731,6 +739,18 @@ ${isDemoProfile(profile.username)
   </script>
 </body>
 </html>`;
+
+  if (isPreview) {
+    // Preview: not a real visit, so no analytics event; blocks every click so
+    // links, buttons and video cannot navigate or track anything inside the
+    // preview window.
+    const previewGuard = '<script>document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("a,button,[onclick]")){e.preventDefault();e.stopImmediatePropagation();}},true);</script>';
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.status(200).send(html.replace('</body>', previewGuard + '</body>'));
+    return;
+  }
 
   // Registered via waitUntil() inside recordEvent -- runs in the background,
   // doesn't delay the response.
