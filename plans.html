@@ -223,9 +223,9 @@
         </div>
 
         <div class="addon-note">
-          <strong>KYC verification: $2.5 one-time add-on</strong>
-          Available from any tier (Basic, Silver, or Gold), not bundled into or required by a specific plan. Verified users get a trust badge on their profile.
-          <button type="button" class="plan-cta cta-addon" onclick="window.location.href='/checkout?type=kyc'">Order KYC Verification</button>
+          <strong id="kycTitle">KYC verification: $2.5 one-time add-on</strong>
+          <span id="kycText">Available from any tier (Basic, Silver, or Gold), not bundled into or required by a specific plan. Verified users get a trust badge on their profile.</span>
+          <button type="button" id="kycBtn" class="plan-cta cta-addon" onclick="window.location.href='/checkout?type=kyc'">Order KYC Verification</button>
         </div>
 
         <p class="plans-footnote">
@@ -326,6 +326,38 @@
         }
       }
 
+      // KYC add-on card follows the verification status, so a verified user is not asked to order again.
+      function applyKyc(profile) {
+        var status = (profile && profile.identity_verification_status) || 'not_started';
+        var title = document.getElementById('kycTitle');
+        var text = document.getElementById('kycText');
+        var btn = document.getElementById('kycBtn');
+        if (!title || !text || !btn) return;
+        function go(label, href) {
+          if (!href) { btn.style.display = 'none'; return; }
+          btn.style.display = '';
+          btn.textContent = label;
+          btn.onclick = function () { window.location.href = href; };
+        }
+        if (status === 'approved') {
+          title.textContent = 'KYC verification: completed';
+          text.textContent = 'Your identity is verified. Your profile shows the Verified badge.';
+          go('', null);
+        } else if (status === 'pending') {
+          title.textContent = 'KYC verification: in review';
+          text.textContent = 'Your documents are being reviewed. This can take up to 1 business day.';
+          go('Check status', '/identity');
+        } else if (status === 'resubmission_needed') {
+          title.textContent = 'KYC verification: action needed';
+          text.textContent = 'We could not verify your documents. Please submit them again.';
+          go('Continue verification', '/identity');
+        } else if (status === 'declined') {
+          title.textContent = 'KYC verification: rejected';
+          text.textContent = 'Contact support if you think this is a mistake.';
+          go('', null);
+        }
+      }
+
       function gateText(msg) { var el = document.getElementById('authGateText'); if (el) el.textContent = msg; }
       function openGate() { document.getElementById('authGate').style.display = 'none'; }
 
@@ -336,11 +368,12 @@
         if (!session) { window.location.href = 'login'; return null; }
         // RLS: a signed in user can only read their own profile row.
         return client.from('profiles')
-          .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency, identity_verified_at, business_verified_at')
+          .select('username, display_name, avatar_url, tier, tier_expires_at, net_id, local_currency, identity_verification_status, identity_verified_at, business_verified_at')
           .eq('id', session.user.id).single()
           .then(function (p) {
             if (p.error) throw p.error;
             apply(p.data);
+            applyKyc(p.data);
             if (window.NetlinkNav) NetlinkNav.init({ activePage: null, profile: p.data, supabaseClient: client, userId: session.user.id });
             openGate();
             if (window.lucide) lucide.createIcons();
