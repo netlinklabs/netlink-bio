@@ -1,4 +1,4 @@
--- NOT APPLIED YET (needs approval before running on production).
+-- Applied to production 2026-10-09 (1 row added).
 -- Reserve the name of the new billing page so nobody can register it as a username
 -- or landing page slug (billing.html would shadow it). reserved_usernames is enforced
 -- by triggers on profiles.username and landing_pages.slug.
