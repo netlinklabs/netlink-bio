@@ -121,9 +121,12 @@
         .tp-btn.primary { background: #3b82f6; border-color: #3b82f6; }
         .tp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         html .tpl-thumb.tpl-art { position: relative; }
-        .tpl-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,0.72); color: #ffffff; }
+        .tpl-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #b45309; border: 2px solid #f59e0b; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+        html.dark .tpl-lock { background: #0f172a; color: #fbbf24; border-color: #fbbf24; }
+        .tp-note { display: none; margin: 8px 0 0; font-size: 12px; text-align: center; color: #fde68a; }
+        .tp-note.show { display: block; }
         .tpl-card.locked { cursor: pointer; }
-        .tpl-card.locked .tpl-thumb { filter: saturate(0.55); opacity: 0.85; }
+        .tpl-card.locked .tpl-thumb { filter: saturate(0.7); opacity: 0.92; }
         .tpl-card.locked:hover { transform: none; }
         .tpl-appearance { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 12px; }
         .tpl-appearance-label { font-size: 12px; font-weight: 600; color: #475569; }
@@ -168,6 +171,7 @@
                     <button type="button" id="tpDark" onclick="setPreviewTheme('dark')" disabled>Dark</button>
                 </div>
             </div>
+            <p id="tpNote" class="tp-note">Preview only. Upgrade to Gold to apply this template.</p>
             <div class="tp-actions">
                 <button type="button" id="tpApply" class="tp-btn primary" disabled onclick="applyTemplatePreview()">Apply</button>
                 <button type="button" id="tpClose" class="tp-btn" onclick="closeTemplatePreview()">Close</button>
@@ -314,6 +318,78 @@
             { id: 'gold-06', name: 'Holographic', desc: 'Iridescent, rainbow border', tier: 'gold',
               thumb: { b: 'linear-gradient(120deg,#fbc2eb,#a6c1ee,#c2ffd8,#ffd6a5)', c: '#fff', bd: '#a18cd1', bw: '2px', r: '6px', s: '0 3px 8px -3px rgba(161,140,209,.9)', a: '#fff' },
               dark: { b: 'linear-gradient(120deg,#1b1035,#0f2a4a,#10332f,#34163a)', c: '#17122e', bd: '#a18cd1', bw: '2px', r: '6px', s: '0 3px 8px -3px rgba(161,140,209,.7)', a: '#c4b5fd' } },
+            { id: 'gold-07', name: 'Platinum Shine', desc: 'Silver metal, shining name', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#f8fafc,#e2e8f0)', c: '#fff', bd: '#94a3b8', bw: '2px', r: '5px', a: '#64748b' },
+              dark: { b: 'linear-gradient(180deg,#111827,#05070b)', c: '#141a26', bd: '#cbd5e1', bw: '2px', r: '5px', a: '#e2e8f0' } },
+            { id: 'gold-08', name: 'Emerald Luxe', desc: 'Emerald and gold, shining name', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#ecfdf5,#d1fae5)', c: '#fff', bd: '#b8860b', bw: '2px', r: '5px', a: '#047857' },
+              dark: { b: 'radial-gradient(circle at 50% 0%,#0d3a29,#04130e 70%)', c: '#0a2018', bd: '#d4af37', bw: '2px', r: '5px', a: '#d4af37' } },
+            { id: 'gold-09', name: 'Obsidian', desc: 'Deep black, glowing edge', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#f8fafc,#e2e8f0)', c: '#fff', bd: '#0f172a', bw: '1px', r: '4px', a: '#0f172a' },
+              dark: { b: '#000', c: '#0b0b0d', bd: '#ffffff', bw: '1px', r: '4px', a: '#fff' } },
+            { id: 'gold-10', name: 'Champagne', desc: 'Soft cream, gentle shimmer', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#fdf8ef,#f7ead2)', c: '#fff', bd: '#e8cf9f', bw: '2px', r: '8px', a: '#a07c4a' },
+              dark: { b: 'linear-gradient(180deg,#241c13,#15110c)', c: '#261f17', bd: '#e8cf9f', bw: '2px', r: '8px', a: '#e8cf9f' } },
+            { id: 'gold-11', name: 'Copper', desc: 'Warm copper, shining name', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#fff1e6,#ffe2cc)', c: '#fff', bd: '#b45309', bw: '2px', r: '5px', a: '#b45309' },
+              dark: { b: 'radial-gradient(circle at 50% 0%,#3a1c0f,#1a0f0a 70%)', c: '#2a1810', bd: '#ea9a6a', bw: '2px', r: '5px', a: '#ea9a6a' } },
+            { id: 'gold-12', name: 'Cyber Pulse', desc: 'Magenta and cyan, pulsing glow', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#fdf4ff,#ecfeff)', c: '#fff', bd: '#c026d3', bw: '1px', r: '4px', a: '#0891b2' },
+              dark: { b: '#07030f', c: '#110820', bd: '#e879f9', bw: '1px', r: '4px', a: '#22d3ee' } },
+            { id: 'gold-13', name: 'Circuit', desc: 'Circuit board, running border', tier: 'gold',
+              thumb: { b: 'radial-gradient(circle,rgba(16,185,129,.4) 1px,transparent 2px) 0 0/10px 10px,#ecfdf5', c: '#fff', bd: '#059669', bw: '2px', r: '5px', a: '#0d9488' },
+              dark: { b: 'radial-gradient(circle,rgba(52,211,153,.5) 1px,transparent 2px) 0 0/10px 10px,#03120c', c: '#08241a', bd: '#34d399', bw: '2px', r: '5px', a: '#a7f3d0' } },
+            { id: 'gold-14', name: 'Hologram Grid', desc: 'Sliding grid, frosted cards', tier: 'gold',
+              thumb: { b: 'linear-gradient(rgba(124,58,237,.18) 1px,transparent 1px) 0 0/10px 10px,linear-gradient(90deg,rgba(124,58,237,.18) 1px,transparent 1px) 0 0/10px 10px,#f5f3ff', c: 'rgba(255,255,255,.7)', bd: '#7c3aed', bw: '1px', r: '7px', a: '#2563eb' },
+              dark: { b: 'linear-gradient(rgba(139,92,246,.3) 1px,transparent 1px) 0 0/10px 10px,linear-gradient(90deg,rgba(139,92,246,.3) 1px,transparent 1px) 0 0/10px 10px,#0a0820', c: 'rgba(20,16,58,.7)', bd: '#8b5cf6', bw: '1px', r: '7px', a: '#38bdf8' } },
+            { id: 'gold-15', name: 'Starfield', desc: 'Night sky, twinkling stars', tier: 'gold',
+              thumb: { b: 'radial-gradient(1px 1px at 20% 30%,#6366f1,transparent),radial-gradient(1px 1px at 70% 20%,#a855f7,transparent),radial-gradient(1px 1px at 50% 80%,#6366f1,transparent),linear-gradient(180deg,#e0e7ff,#f5f3ff)', c: '#fff', bd: '#a5b4fc', bw: '1px', r: '7px', a: '#6366f1' },
+              dark: { b: 'radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 20%,#bae6fd,transparent),radial-gradient(1px 1px at 50% 80%,#fff,transparent),radial-gradient(circle at 50% 0%,#101a3a,#030617 75%)', c: '#0b1230', bd: 'rgba(147,197,253,.4)', bw: '1px', r: '7px', a: '#fff' } },
+            { id: 'gold-16', name: 'Deep Space', desc: 'Slow nebula, frosted cards', tier: 'gold',
+              thumb: { b: 'radial-gradient(circle at 20% 20%,rgba(167,139,250,.7),transparent 55%),radial-gradient(circle at 80% 40%,rgba(96,165,250,.65),transparent 55%),#f5f3ff', c: 'rgba(255,255,255,.65)', bd: 'rgba(255,255,255,.9)', bw: '1px', r: '8px', a: '#fff' },
+              dark: { b: 'radial-gradient(circle at 20% 20%,rgba(109,40,217,.8),transparent 55%),radial-gradient(circle at 80% 40%,rgba(29,78,216,.7),transparent 55%),#04030f', c: 'rgba(13,10,36,.6)', bd: 'rgba(255,255,255,.22)', bw: '1px', r: '8px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-17', name: 'Watercolor Bloom', desc: 'Soft pastel paint, round cards', tier: 'gold',
+              thumb: { b: 'radial-gradient(circle at 20% 25%,rgba(251,182,206,.9),transparent 55%),radial-gradient(circle at 80% 30%,rgba(167,216,245,.9),transparent 55%),radial-gradient(circle at 50% 95%,rgba(253,224,171,.9),transparent 55%),#fffaf5', c: 'rgba(255,255,255,.75)', bd: 'rgba(255,255,255,.9)', bw: '1px', r: '12px', a: '#fff' },
+              dark: { b: 'radial-gradient(circle at 20% 25%,rgba(190,100,140,.7),transparent 55%),radial-gradient(circle at 80% 30%,rgba(80,130,190,.7),transparent 55%),#181220', c: 'rgba(36,26,48,.7)', bd: 'rgba(255,255,255,.2)', bw: '1px', r: '12px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-18', name: 'Candy Glass', desc: 'Pastel glass, glossy sweep', tier: 'gold',
+              thumb: { b: 'linear-gradient(135deg,#ffd1dc,#d1e8ff,#e0ffd1)', c: 'rgba(255,255,255,.65)', bd: 'rgba(255,255,255,.95)', bw: '1px', r: '10px', a: '#f472b6' },
+              dark: { b: 'linear-gradient(135deg,#3b1f4a,#1f3350,#1f4a3a)', c: 'rgba(255,255,255,.12)', bd: 'rgba(255,255,255,.3)', bw: '1px', r: '10px', a: '#f472b6' } },
+            { id: 'gold-19', name: 'Sunrise Flow', desc: 'Slow dawn colors', tier: 'gold',
+              thumb: { b: 'linear-gradient(135deg,#fdba74,#fb7185,#c084fc)', c: 'rgba(255,255,255,.6)', bd: 'rgba(255,255,255,.9)', bw: '1px', r: '8px', a: '#fff' },
+              dark: { b: 'linear-gradient(135deg,#7c2d12,#9f1239,#581c87)', c: 'rgba(42,18,32,.6)', bd: 'rgba(255,255,255,.22)', bw: '1px', r: '8px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-20', name: 'Ocean Waves', desc: 'Gentle waves at the top', tier: 'gold',
+              thumb: { b: 'radial-gradient(ellipse 14px 7px at 25% 14%,rgba(14,165,233,.7) 90%,transparent),radial-gradient(ellipse 14px 7px at 75% 14%,rgba(6,182,212,.6) 90%,transparent),linear-gradient(180deg,#e0f2fe,#ecfeff)', c: '#fff', bd: '#7dd3fc', bw: '1px', r: '8px', a: '#0ea5e9' },
+              dark: { b: 'radial-gradient(ellipse 14px 7px at 25% 14%,rgba(56,189,248,.6) 90%,transparent),radial-gradient(ellipse 14px 7px at 75% 14%,rgba(14,116,144,.8) 90%,transparent),linear-gradient(180deg,#082f49,#04182b)', c: '#0a2a45', bd: 'rgba(125,211,252,.4)', bw: '1px', r: '8px', a: '#38bdf8' } },
+            { id: 'gold-21', name: 'Sakura Drift', desc: 'Falling pink petals', tier: 'gold',
+              thumb: { b: 'radial-gradient(ellipse 3px 2px at 20% 20%,#f9a8c0 90%,transparent),radial-gradient(ellipse 3px 2px at 75% 40%,#fbcfe8 90%,transparent),radial-gradient(ellipse 3px 2px at 40% 75%,#f9a8c0 90%,transparent),linear-gradient(180deg,#fff1f5,#ffe4ec)', c: '#fff', bd: '#fbcfe8', bw: '1px', r: '10px', a: '#f472b6' },
+              dark: { b: 'radial-gradient(ellipse 3px 2px at 20% 20%,#f472b6 90%,transparent),radial-gradient(ellipse 3px 2px at 75% 40%,#fbcfe8 90%,transparent),radial-gradient(ellipse 3px 2px at 40% 75%,#f472b6 90%,transparent),linear-gradient(180deg,#220f1c,#1a0d16)', c: '#2a1624', bd: 'rgba(244,114,182,.4)', bw: '1px', r: '10px', a: '#f472b6' } },
+            { id: 'gold-22', name: 'Sapphire Night', desc: 'Deep blue, shining name', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#eff6ff,#dbeafe)', c: '#fff', bd: '#1d4ed8', bw: '2px', r: '7px', a: '#1d4ed8' },
+              dark: { b: 'radial-gradient(circle at 50% 0%,#0f2358,#050b1f 70%)', c: '#0b1636', bd: '#60a5fa', bw: '2px', r: '7px', a: '#60a5fa' } },
+            { id: 'gold-23', name: 'Ruby Velvet', desc: 'Rich red, spinning border', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#fff1f2,#ffe4e6)', c: '#fff', bd: '#be123c', bw: '2px', r: '7px', a: '#be123c' },
+              dark: { b: 'radial-gradient(circle at 50% 0%,#3a0a16,#1a050a 70%)', c: '#2a0b13', bd: '#fb7185', bw: '2px', r: '7px', a: '#fb7185' } },
+            { id: 'gold-24', name: 'Neon Tokyo', desc: 'Pink neon on a city grid', tier: 'gold',
+              thumb: { b: 'linear-gradient(rgba(219,39,119,.16) 1px,transparent 1px) 0 0/9px 9px,linear-gradient(90deg,rgba(219,39,119,.16) 1px,transparent 1px) 0 0/9px 9px,#fff7fb', c: '#fff', bd: '#db2777', bw: '1px', r: '3px', a: '#ca8a04' },
+              dark: { b: 'linear-gradient(rgba(255,45,149,.22) 1px,transparent 1px) 0 0/9px 9px,linear-gradient(90deg,rgba(255,45,149,.22) 1px,transparent 1px) 0 0/9px 9px,#0a0612', c: '#140a22', bd: '#ff2d95', bw: '1px', r: '3px', a: '#fde047' } },
+            { id: 'gold-25', name: 'Plasma Flow', desc: 'Purple and orange, slow flow', tier: 'gold',
+              thumb: { b: 'linear-gradient(135deg,#c4b5fd,#fdba74,#f0abfc)', c: 'rgba(255,255,255,.6)', bd: 'rgba(255,255,255,.9)', bw: '1px', r: '7px', a: '#fff' },
+              dark: { b: 'linear-gradient(135deg,#3b0764,#7c2d12,#831843)', c: 'rgba(30,11,48,.6)', bd: 'rgba(255,255,255,.22)', bw: '1px', r: '7px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-26', name: 'Golden Hour', desc: 'Warm sunset glow', tier: 'gold',
+              thumb: { b: 'radial-gradient(circle at 20% 25%,rgba(253,186,116,.9),transparent 55%),radial-gradient(circle at 80% 30%,rgba(252,211,77,.85),transparent 55%),radial-gradient(circle at 50% 95%,rgba(251,146,60,.7),transparent 55%),#fffbeb', c: 'rgba(255,255,255,.7)', bd: 'rgba(255,255,255,.9)', bw: '1px', r: '8px', a: '#fff' },
+              dark: { b: 'radial-gradient(circle at 20% 25%,rgba(234,88,12,.65),transparent 55%),radial-gradient(circle at 80% 30%,rgba(202,138,4,.55),transparent 55%),radial-gradient(circle at 50% 95%,rgba(190,18,60,.45),transparent 55%),#1c1008', c: 'rgba(42,26,14,.65)', bd: 'rgba(255,255,255,.2)', bw: '1px', r: '8px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-27', name: 'Northern Frost', desc: 'Icy aurora, frosted cards', tier: 'gold',
+              thumb: { b: 'radial-gradient(circle at 20% 25%,rgba(125,211,252,.85),transparent 55%),radial-gradient(circle at 80% 30%,rgba(165,243,252,.85),transparent 55%),radial-gradient(circle at 50% 95%,rgba(196,181,253,.7),transparent 55%),#f0f9ff', c: 'rgba(255,255,255,.7)', bd: 'rgba(255,255,255,.9)', bw: '1px', r: '8px', a: '#fff' },
+              dark: { b: 'radial-gradient(circle at 20% 25%,rgba(34,211,238,.45),transparent 55%),radial-gradient(circle at 80% 30%,rgba(52,211,153,.45),transparent 55%),radial-gradient(circle at 50% 95%,rgba(129,140,248,.5),transparent 55%),#04121c', c: 'rgba(10,32,48,.65)', bd: 'rgba(255,255,255,.2)', bw: '1px', r: '8px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-28', name: 'Lava Glow', desc: 'Molten red and orange', tier: 'gold',
+              thumb: { b: 'linear-gradient(135deg,#fecaca,#fed7aa,#fda4af)', c: 'rgba(255,255,255,.6)', bd: '#c2410c', bw: '1px', r: '5px', a: '#ea580c' },
+              dark: { b: 'linear-gradient(135deg,#450a0a,#9a3412,#7f1d1d)', c: 'rgba(42,12,10,.65)', bd: '#ea580c', bw: '1px', r: '5px', a: '#f97316' } },
+            { id: 'gold-29', name: 'Jungle Mist', desc: 'Green mist, frosted cards', tier: 'gold',
+              thumb: { b: 'radial-gradient(circle at 20% 25%,rgba(134,239,172,.9),transparent 55%),radial-gradient(circle at 80% 30%,rgba(190,242,100,.8),transparent 55%),radial-gradient(circle at 50% 95%,rgba(45,212,191,.7),transparent 55%),#f0fdf4', c: 'rgba(255,255,255,.7)', bd: 'rgba(255,255,255,.9)', bw: '1px', r: '8px', a: '#fff' },
+              dark: { b: 'radial-gradient(circle at 20% 25%,rgba(22,163,74,.5),transparent 55%),radial-gradient(circle at 80% 30%,rgba(13,148,136,.5),transparent 55%),radial-gradient(circle at 50% 95%,rgba(101,163,13,.4),transparent 55%),#03120a', c: 'rgba(10,34,20,.65)', bd: 'rgba(255,255,255,.18)', bw: '1px', r: '8px', a: 'rgba(255,255,255,.9)' } },
+            { id: 'gold-30', name: 'Twilight Bloom', desc: 'Pink and violet, flowing border', tier: 'gold',
+              thumb: { b: 'linear-gradient(180deg,#fdf2f8,#ede9fe)', c: '#fff', bd: '#ec4899', bw: '2px', r: '10px', a: '#8b5cf6' },
+              dark: { b: 'linear-gradient(180deg,#1a0a2a,#14081f)', c: '#201030', bd: '#f472b6', bw: '2px', r: '10px', a: '#a78bfa' } },
         ];
         const TIER_RANK = { basic: 0, silver: 1, gold: 2 };
         const TIER_LABEL = { silver: 'Silver', gold: 'Gold' };
@@ -444,12 +520,12 @@
                     <span class="tpl-desc">No template, plain ${theme === 'dark' ? 'Dark' : 'Light'} look</span>
                 </button>`;
 
-            const lockIcon = '<span class="tpl-lock" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>';
+            const lockIcon = '<span class="tpl-lock" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>';
             const templateCards = TEMPLATES.map((t) => {
                 const locked = !canUseTemplate(t);
                 const selected = !locked && !templateUnavailable && selectedTemplate === t.id;
                 return `
-                <button type="button" class="tpl-card ${selected ? 'selected' : ''} ${locked ? 'locked' : ''}" data-id="${t.id}" onclick="${locked ? "showLockedTemplate('" + t.id + "')" : "openTemplatePreview('" + t.id + "')"}"${locked ? ' aria-disabled="true"' : ''}>
+                <button type="button" class="tpl-card ${selected ? 'selected' : ''} ${locked ? 'locked' : ''}" data-id="${t.id}" onclick="openTemplatePreview('${t.id}')"${locked ? ' aria-label="' + t.name + ', ' + TIER_LABEL[t.tier] + ' only, preview available"' : ''}>
                     <span class="tpl-check">&#10003;</span>
                     <div class="tpl-thumb tpl-art" style="${templateThumbStyle(theme === 'dark' ? t.dark : t.thumb)}"><div class="dot"></div><div class="mini"></div><div class="mini"></div>${locked ? lockIcon : ''}</div>
                     <span class="text-sm font-medium text-primary">${t.name}</span>
@@ -529,7 +605,7 @@
         // saving anything). The progress bar and the cover keep the user from
         // tapping around until the page has fully loaded. Apply saves, Close
         // discards.
-        const tpState = { id: null, theme: 'light', timer: null, timeout: null, pct: 0, applying: false };
+        const tpState = { id: null, theme: 'light', timer: null, timeout: null, pct: 0, applying: false, locked: false };
 
         function tpSetProgress(pct) {
             tpState.pct = pct;
@@ -554,12 +630,6 @@
             tpSetThemeButtons(true);
         }
 
-        function showLockedTemplate(id) {
-            const tpl = TEMPLATES.find((t) => t.id === id);
-            const label = tpl ? TIER_LABEL[tpl.tier] : 'higher';
-            showToast('This is a ' + label + ' template. Upgrade to ' + label + ' to unlock it.', 'info');
-        }
-
         function tpSetThemeButtons(enabled) {
             const light = document.getElementById('tpLight');
             const dark = document.getElementById('tpDark');
@@ -572,12 +642,15 @@
         function openTemplatePreview(id) {
             if (tpState.id) return;
             const tpl = TEMPLATES.find((t) => t.id === id);
-            if (!tpl || !canUseTemplate(tpl)) { showToast('This template is not available on your plan', true); return; }
+            if (!tpl) return;
             if (!currentProfile?.username) { showToast('Set your username first to preview templates', true); return; }
 
             tpState.id = id;
             tpState.theme = currentTheme();
             tpState.applying = false;
+            tpState.locked = !canUseTemplate(tpl);
+            document.getElementById('tpNote').textContent = 'Preview only. Upgrade to ' + TIER_LABEL[tpl.tier] + ' to apply this template.';
+            document.getElementById('tpNote').classList.toggle('show', tpState.locked);
             document.getElementById('tpTitle').textContent = tpl.name + ' preview';
             document.getElementById('tpOverlay').classList.add('open');
             document.body.style.overflow = 'hidden';
@@ -593,7 +666,7 @@
             document.getElementById('tpProgress').classList.remove('done');
             const apply = document.getElementById('tpApply');
             apply.disabled = true;
-            apply.textContent = 'Apply';
+            apply.textContent = tpState.locked ? 'Apply (locked)' : 'Apply';
             tpSetThemeButtons(false);
             tpSetProgress(0);
 
@@ -635,13 +708,14 @@
                 if (!tpState.id) return;
                 document.getElementById('tpCover').classList.add('hide');
                 document.getElementById('tpProgress').classList.add('done');
-                document.getElementById('tpApply').disabled = false;
+                // A locked (higher plan) template can be previewed but never applied.
+                document.getElementById('tpApply').disabled = tpState.locked;
                 tpSetThemeButtons(true);
             }, 350);
         }
 
         async function applyTemplatePreview() {
-            if (!tpState.id || tpState.applying) return;
+            if (!tpState.id || tpState.applying || tpState.locked) return;
             tpState.applying = true;
             const apply = document.getElementById('tpApply');
             apply.disabled = true;
@@ -660,6 +734,8 @@
             const frame = document.getElementById('tpFrame');
             frame.onload = null;
             frame.src = 'about:blank';
+            tpState.locked = false;
+            document.getElementById('tpNote').classList.remove('show');
             document.getElementById('tpOverlay').classList.remove('open');
             document.body.style.overflow = '';
         }
