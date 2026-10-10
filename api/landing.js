@@ -147,7 +147,7 @@ async function handler(req, res) {
   const blocksHtml = renderBlocks(content);
   const hasGallery = blocks.some((b) => b.type === 'gallery');
   // Video cards (tap to play) and the product detail popup need a little shared script.
-  const hasInteractive = blocks.some((b) => b.type === 'video' || b.type === 'products');
+  const hasInteractive = blocks.some((b) => b.type === 'video' || b.type === 'products' || b.type === 'wallet');
   const hasProducts = blocks.some((b) => b.type === 'products');
 
   const heroBlock = blocks.find((b) => b.type === 'hero' && b.data && safeImageUrl(b.data.image));

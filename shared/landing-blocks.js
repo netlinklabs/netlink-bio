@@ -42,6 +42,7 @@ export const BLOCK_TYPES = [
   { type: 'social', label: 'Social Links', icon: 'fa-solid fa-share-nodes', desc: 'Instagram, TikTok, YouTube and more' },
   { type: 'cta', label: 'Call to Action', icon: 'fa-solid fa-bullhorn', desc: 'Big message with one button' },
   { type: 'team', label: 'Team', icon: 'fa-solid fa-users', desc: 'People with photo, name and role' },
+  { type: 'wallet', label: 'Wallet Card', icon: 'fa-solid fa-wallet', desc: 'Receive USDC donations or payments' },
   { type: 'divider', label: 'Divider', icon: 'fa-solid fa-grip-lines', desc: 'Line, dots or empty space' },
 ];
 
@@ -202,6 +203,7 @@ export function defaultBlockData(type) {
     case 'social': return { title: 'Follow us', align: 'center', bg: 'white', links: [{ platform: 'instagram', url: '' }] };
     case 'cta': return { headline: '', text: '', buttonLabel: '', buttonUrl: '', style: 'brand', align: 'center' };
     case 'team': return { title: 'Our Team', columns: 4, bg: 'white', items: [{ name: '', role: '', photo: '' }] };
+    case 'wallet': return { title: 'Receive Crypto Payment', desc: 'USDC on Polygon Network', address: '', bg: 'white' };
     case 'divider': return { style: 'line', size: 'medium' };
     default: return {};
   }
@@ -238,6 +240,11 @@ function productItems(d) {
 function teamItems(d) {
   return (Array.isArray(d.items) ? d.items : []).filter((it) => it && str(it.name).trim()).slice(0, MAX_TEAM_MEMBERS);
 }
+// EVM address (Polygon): 0x followed by 40 hex characters.
+export function isWalletAddress(value) {
+  return /^0x[a-fA-F0-9]{40}$/.test(String(value || '').trim());
+}
+
 function socialLinks(d) {
   return (Array.isArray(d.links) ? d.links : []).filter((l) => l && SOCIAL_DEFS.some((def) => def.key === l.platform) && safeHttpUrl(l.url)).slice(0, MAX_SOCIAL_LINKS);
 }
@@ -261,6 +268,7 @@ function isEmpty(block, preview) {
     case 'social': return socialLinks(d).length === 0;
     case 'cta': return !str(d.headline).trim() && !str(d.text).trim();
     case 'team': return teamItems(d).length === 0;
+    case 'wallet': return !isWalletAddress(d.address);
     case 'divider': return false;
     default: return true;
   }
@@ -283,6 +291,7 @@ const EMPTY_HINTS = {
   social: 'Social Links: add a link.',
   cta: 'Call to Action: add a headline or text.',
   team: 'Team: add at least one person.',
+  wallet: 'Wallet Card: add a valid wallet address (0x...).',
 };
 
 // ---------- block renderers ----------
@@ -542,6 +551,28 @@ const RENDERERS = {
     return wrap(block, d, titleHtml(d) + '<div class="team-grid" style="--cols:' + cols + ';">' + cards + '</div>');
   },
 
+  wallet(block, d) {
+    const addr = String(d.address || '').trim();
+    if (!isWalletAddress(addr)) return '';
+    const title = str(d.title, 80).trim() || 'Receive Crypto Payment';
+    const desc = str(d.desc, 140).trim();
+    const qr = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(addr);
+    const inner = '<div class="wc-wrap"><button type="button" class="wc-card" onclick="openWallet(this)" aria-haspopup="dialog">' +
+      '<span class="wc-shimmer"></span>' +
+      '<span class="wc-ring"><span class="wc-icon"><img src="/assets/usdc-logo.png" alt="USDC"></span></span>' +
+      '<span class="wc-text"><span class="wc-badges"><span class="wc-badge">&#9889; Instant</span><span class="wc-badge">Tap to pay</span></span>' +
+      '<span class="wc-title">' + escapeHtml(title) + '</span>' +
+      (desc ? '<span class="wc-desc">' + escapeHtml(desc) + '</span>' : '') + '</span></button>' +
+      '<div class="wc-modal" onclick="if(event.target===this)closeWallet(this)"><div class="wc-box" role="dialog" aria-modal="true">' +
+      '<button type="button" class="wc-x" onclick="closeWallet(this)" aria-label="Close">&times;</button>' +
+      '<h3>' + escapeHtml(title) + '</h3>' +
+      '<div class="wc-qr"><img src="' + escapeHtml(qr) + '" alt="Wallet QR code" loading="lazy"></div>' +
+      '<p class="wc-addr">' + escapeHtml(addr) + '</p>' +
+      '<button type="button" class="wc-copy" data-addr="' + escapeHtml(addr) + '" onclick="copyWalletAddr(this)">Copy address</button>' +
+      '<p class="wc-note">Send USDC on the Polygon (PoS) network only.</p></div></div></div>';
+    return wrap(block, d, inner);
+  },
+
   divider(block, d) {
     const style = oneOf(d.style, ['line', 'dots', 'space'], 'line');
     const size = oneOf(d.size, ['small', 'medium', 'large'], 'medium');
@@ -638,6 +669,11 @@ export const BLOCKS_JS = '(function(){' +
   'window.pdSlide=function(btn,dir){var s=btn.parentNode.querySelector(".pd-slides");if(s)s.scrollBy({left:dir*s.clientWidth,behavior:"smooth"});};' +
   'document.addEventListener("scroll",function(e){var s=e.target;if(!s||!s.classList||!s.classList.contains("pd-slides"))return;var c=s.parentNode.querySelector(".pd-count");if(c)c.textContent=(Math.round(s.scrollLeft/s.clientWidth)+1)+" / "+s.children.length;},true);' +
   'document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("productModal"))closeProduct();});' +
+  'window.openWallet=function(btn){var m=btn.parentNode.querySelector(".wc-modal");if(!m)return;if(window.trackClick)trackClick();m.classList.add("active");};' +
+  'window.closeWallet=function(el){var m=el.closest(".wc-modal");if(m)m.classList.remove("active");};' +
+  'window.copyWalletAddr=function(btn){var a=btn.getAttribute("data-addr");var done=function(){var o=btn.getAttribute("data-label")||btn.textContent;btn.setAttribute("data-label",o);btn.textContent="Copied!";setTimeout(function(){btn.textContent=o;},1500);};' +
+  'if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(a).then(done);}else{var t=document.createElement("textarea");t.value=a;document.body.appendChild(t);t.select();try{document.execCommand("copy");done();}catch(e){}document.body.removeChild(t);}};' +
+  'document.addEventListener("keydown",function(e){if(e.key==="Escape"){var m=document.querySelector(".wc-modal.active");if(m)m.classList.remove("active");}});' +
   '})();';
 
 // ---------- shared CSS ----------
@@ -816,6 +852,34 @@ export const BLOCKS_CSS = `
 .cta-text { font-size: 15px; line-height: 1.6; opacity: 0.9; max-width: 560px; }
 .cta-box.center .cta-text { margin-left: auto; margin-right: auto; }
 .cta-btn { display: inline-block; margin-top: 20px; padding: 13px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; background: var(--on-primary); color: var(--primary); }
+
+/* wallet card (receive USDC), colours follow the page brand color */
+.wc-wrap { max-width: 520px; margin: 0 auto; }
+.wc-card { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; width: 100%; padding: 18px; border: 0; border-radius: 18px; background: var(--primary); color: var(--on-primary); text-align: left; cursor: pointer; font: inherit; box-shadow: 0 8px 24px rgba(0,0,0,0.14); transition: transform .2s, box-shadow .2s; }
+.wc-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.2); }
+.wc-shimmer { position: absolute; top: 0; left: -60%; width: 50%; height: 100%; background: linear-gradient(120deg, transparent, rgba(255,255,255,0.18), transparent); transform: skewX(-20deg); animation: wc-sweep 3.2s ease-in-out infinite; pointer-events: none; }
+@keyframes wc-sweep { 0% { left: -60%; } 55% { left: 130%; } 100% { left: 130%; } }
+.wc-ring { position: relative; flex-shrink: 0; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.wc-ring::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid currentColor; opacity: 0; animation: wc-pulse 2.2s ease-out infinite; }
+@keyframes wc-pulse { 0% { transform: scale(0.92); opacity: 0.5; } 70% { transform: scale(1.22); opacity: 0; } 100% { transform: scale(1.22); opacity: 0; } }
+.wc-icon { position: relative; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid rgba(255,255,255,0.6); overflow: hidden; z-index: 1; }
+.wc-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wc-text { display: flex; flex-direction: column; min-width: 0; position: relative; z-index: 1; }
+.wc-badges { display: flex; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+.wc-badge { font-size: 10px; font-weight: 700; border-radius: 999px; padding: 2px 8px; letter-spacing: 0.2px; background: rgba(128,128,128,0.28); background: color-mix(in srgb, var(--on-primary) 18%, transparent); }
+.wc-title { font-size: 16px; font-weight: 700; line-height: 1.25; word-break: break-word; }
+.wc-desc { font-size: 12.5px; opacity: 0.85; margin-top: 3px; line-height: 1.4; word-break: break-word; }
+.wc-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+.wc-modal.active { display: flex; }
+.wc-box { position: relative; background: #fff; color: #212121; border-radius: 20px; padding: 28px 24px 22px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+.wc-x { position: absolute; top: 10px; right: 14px; border: 0; background: none; font-size: 24px; line-height: 1; color: #888; cursor: pointer; }
+.wc-box h3 { font-size: 17px; font-weight: 700; margin: 0 0 16px; padding: 0 18px; word-break: break-word; }
+.wc-qr { display: inline-block; background: #fff; padding: 12px; border-radius: 16px; border: 2px solid var(--primary); margin-bottom: 16px; }
+.wc-qr img { display: block; width: 180px; height: 180px; }
+.wc-addr { font-size: 12px; color: #555; word-break: break-all; background: #f4f4f5; border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; }
+.wc-copy { width: 100%; padding: 11px; border: 0; border-radius: 10px; background: var(--primary); color: var(--on-primary); font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
+.wc-note { font-size: 11.5px; color: #777; margin-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .wc-shimmer, .wc-ring::before { animation: none; } }
 
 /* team */
 .team-grid { --gap: 16px; --n: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap); }

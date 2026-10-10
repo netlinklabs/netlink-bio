@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **New landing page module: Wallet Card (`shared/landing-blocks.js`, `page-builder.html`, `api/landing.js`).** A card to receive USDC donations or payments, like the "Receive Crypto Payment" card on the link in bio page. Tap the card to open a popup with a QR code, the wallet address, a Copy address button and a note to use the Polygon (PoS) network only. The same USDC logo (`/assets/usdc-logo.png`) and the same shimmer and pulse look as the bio card. The card and the popup buttons use the page brand color (`--primary`), and the text color follows `--on-primary`, so they match any palette.
+  - **Editor:** Card title, Short description, Wallet address (Polygon) and Background. A new Wallet Card starts with the wallet saved on the user's profile, and a "Use my wallet from my profile" button fills it again. The address must be 0x plus 40 hex characters. A wrong address shows a warning in the editor.
+  - **Public page:** a Wallet Card with an empty or invalid address is not shown. The popup code (open, close, Escape, copy) is in `BLOCKS_JS`, and `api/landing.js` loads it when the page has a Wallet Card. Opening the card counts as a click in the page stats.
+  - The address is stored in the block itself (no database change). `page-builder.html` now also reads `wallet_address` from the user's own profile row.
+
 ### Changed
 - **Landing page meta tags (`api/landing.js`).** From the OpenGraph checker results on `/page/yourbrand`: added `og:site_name` ("Netlink"), `<link rel="canonical">`, `apple-touch-icon` and `og:image:alt`, and shortened the meta and `og:description` text to about 155 characters at a word boundary (it was 191, and up to 300). JSON-LD keeps the full text. Same tags `api/bio.js` already had.
 
