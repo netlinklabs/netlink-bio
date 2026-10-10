@@ -8,6 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Fixed
+- **`pay.html`, `pay2.html`, `pay5.html`: a gas sponsored wallet can now send its whole POL balance.** The Send form always showed the red "Leave at least 0.01 POL in your wallet for gas." error when sending POL, even when the wallet was confirmed gas sponsored (`window.isGasSponsored === true`) and needs no POL for gas. `goToSendConfirm()` now keeps no reserve for a confirmed sponsored wallet and only rejects an amount above the balance ("Insufficient balance."). Wallets that are not sponsored, or whose status is still unknown, keep the 0.01 POL reserve. Only the POL check in `goToSendConfirm()` changed, identically in the three files. No Tailwind rebuild.
 - **`plans.html`: the KYC add-on card follows the verification status.** A verified user still saw "Order KYC Verification". The page now also reads `identity_verification_status`: `approved` shows "KYC verification: completed" (no button), `pending` shows "in review" with a "Check status" button to `/identity`, `resubmission_needed` shows "Continue verification" to `/identity`, `declined` shows a contact-support note (no button). Not started keeps the $2.5 order card. Plain CSS and script in the page, no Tailwind rebuild.
 
 ### Added
