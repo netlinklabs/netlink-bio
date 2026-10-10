@@ -1605,13 +1605,13 @@ window.openNetlinkPay = openNetlinkPay;
 
             currentLandingPage = data;
             showToast('Landing page created — opening editor...');
-            window.open(`page-builder?id=${data.id}`, '_blank');
+            window.location.href = `page-builder?id=${data.id}`;
             await loadLandingPageCard();
         }
 
         function editLandingPage() {
             if (!currentLandingPage) { showToast('No landing page found'); return; }
-            window.open(`page-builder?id=${currentLandingPage.id}`, '_blank');
+            window.location.href = `page-builder?id=${currentLandingPage.id}`;
         }
 
         function previewLandingPage() {

@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`page-builder.html`: compact editor header, "Add Module" visible on open.** The header is now one row (back arrow, small logo, email, plan badge, close) plus one row of buttons (Plan, Preview, Update). Modules moved to the top of the sidebar. Page URL, Logo, Page Info and Brand Color moved into a collapsed "Page Settings" section, which opens by itself when the URL is missing or rejected on Update.
+- **`dashboard.html`: the landing page Edit and Create buttons open the editor in the same window** (`window.location.href`) instead of a new tab, so the installed app no longer shows the blue bar with an X above the editor. The editor has a back arrow to `dashboard`.
+
+### Changed
 - **`page-builder.html`: the landing page is now built from dynamic modules.** The editor starts empty. "Add Module" opens a type picker (Hero, Text, Image + Text, Gallery, Cards, Full Image, Location, Opening Hours, Contact). Each module can be edited, moved up or down, duplicated and deleted, up to 30 per page. Content model is now `{v:2, ..., blocks:[{id,type,data}]}`; array order is page order. Old-format pages (only 2 tester accounts) open empty and render header and footer only.
 - **`page-builder.html`: the "Unsaved Changes Found" modal is gone.** The draft is saved in the browser only (IndexedDB, one key per user, nothing sent to the server) and restored automatically on open. A draft is dropped when the server copy is newer. A "Discard unpublished changes" link replaces "Start Fresh" and asks for confirmation. The old `pageBuilderDraft` localStorage key is removed.
 - **`api/landing.js` rewritten to render the module list** through the new shared `shared/landing-blocks.js`, so the editor preview and `/page/:slug` use the same code. Tier gate, analytics, watermark and tracking scripts are unchanged. Pages with no visible module get `noindex`.
