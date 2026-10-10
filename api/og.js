@@ -1,6 +1,7 @@
 // api/og.js
 // Dynamically generates the Open Graph preview image shown when a
-// bio or CV link is shared on Facebook, WhatsApp, Telegram, etc.
+// bio, CV or landing page link is shared on Facebook, WhatsApp, Telegram, etc.
+// type=page renders the hero banner of a Gold landing page (see renderPageCard).
 //
 // Node runtime (not Edge): @vercel/og (Satori + resvg) only outputs PNG, and a
 // PNG of a photo banner is ~1MB+, which WhatsApp and Meta's scraper reject or
@@ -60,13 +61,13 @@ async function loadAvatar(url) {
   }
 }
 
-async function fetchBannerOnce(url) {
+async function fetchBannerOnce(url, maxBytes = BANNER_MAX_BYTES) {
   const res = await fetch(url, { signal: AbortSignal.timeout(BANNER_FETCH_TIMEOUT_MS) });
   if (!res.ok) return null;
   const type = (res.headers.get('content-type') || '').split(';')[0].trim();
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return null;
   const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length === 0 || buf.length > BANNER_MAX_BYTES) return null;
+  if (buf.length === 0 || buf.length > maxBytes) return null;
   return buf;
 }
 
@@ -111,6 +112,152 @@ const FALLBACK_IMAGE = '/assets/netlink-og.png';
 const CACHE_OK = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
 // A card that lost its banner (host slow/failing) must not be pinned in caches.
 const CACHE_DEGRADED = 'public, max-age=30, s-maxage=30';
+
+// ---------------------------------------------------------------------------
+// Landing page card (type=page): the hero banner of a Gold landing page
+// (netlink.bio/page/:slug) with a dark overlay, the business name and tagline
+// at the bottom left and the Netlink logo at the top right.
+// ---------------------------------------------------------------------------
+
+// The server only fetches hero images that live in our own public storage, so
+// this endpoint cannot be used to make the server request arbitrary URLs.
+const STORAGE_PUBLIC_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/`;
+const PAGE_HERO_MAX_BYTES = 4 * 1024 * 1024;
+
+// Dark overlay: 40% black at the top to 70% black at the bottom (55% on
+// average), so the title and tagline at the bottom stay readable on any photo.
+const OVERLAY_TOP = 0.4;
+const OVERLAY_BOTTOM = 0.7;
+
+function pageOverlaySvg() {
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><defs>` +
+    `<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="#000" stop-opacity="${OVERLAY_TOP}"/>` +
+    `<stop offset="1" stop-color="#000" stop-opacity="${OVERLAY_BOTTOM}"/>` +
+    `</linearGradient></defs><rect width="1200" height="630" fill="url(#g)"/></svg>`
+  );
+}
+
+function safeHexColor(value, fallback) {
+  return /^#[0-9a-fA-F]{6}$/.test(String(value || '')) ? String(value) : fallback;
+}
+
+async function fetchLandingPage(slug) {
+  if (!/^[a-z0-9_-]{1,25}$/.test(slug)) return null;
+  const path = `landing_pages_public?slug=eq.${encodeURIComponent(slug)}&select=slug,title,content,tier`;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: supabaseAuthHeaders(path, SUPABASE_KEY),
+  });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  const page = rows[0];
+  // Same rule as api/landing.js: the page is only public while the owner is on Gold.
+  return page && page.tier === 'gold' ? page : null;
+}
+
+// Wide hero image first (desktop crop), then the square one.
+function pickHeroUrl(content) {
+  const blocks = Array.isArray(content && content.blocks) ? content.blocks : [];
+  const hero = blocks.find((b) => b && b.type === 'hero' && b.data);
+  if (!hero) return '';
+  for (const key of ['imageDesktop', 'image']) {
+    const u = String((hero.data && hero.data[key]) || '').trim();
+    if (u.startsWith(STORAGE_PUBLIC_PREFIX) && u.length <= 2000) return u;
+  }
+  return '';
+}
+
+// Background for the page card as a 1200x630 JPEG-ready buffer: the hero photo
+// (cover-cropped) or, when there is no usable hero, a gradient of the page
+// colour. The dark overlay is composited on top in both cases.
+async function loadPageBackground(heroUrl, primary, sharp) {
+  let raw = null;
+  if (heroUrl) {
+    for (let attempt = 0; attempt < 2 && !raw; attempt++) {
+      const started = Date.now();
+      try { raw = await fetchBannerOnce(heroUrl, PAGE_HERO_MAX_BYTES); } catch (e) { /* retry decision below */ }
+      if (!raw && Date.now() - started > 1000) break;
+    }
+  }
+  let base = null;
+  if (raw) {
+    try {
+      base = await sharp(raw).resize(1200, 630, { fit: 'cover', position: 'centre' }).toBuffer();
+    } catch (e) {
+      console.error('[og] hero decode failed', e && e.message);
+    }
+  }
+  const degraded = !!heroUrl && !base;
+  if (!base) {
+    const grad = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><defs>` +
+      `<linearGradient id="p" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${primary}"/>` +
+      `<stop offset="1.4" stop-color="#1c1c1c"/></linearGradient></defs>` +
+      `<rect width="1200" height="630" fill="url(#p)"/></svg>`
+    );
+    base = await sharp(grad).resize(1200, 630).png().toBuffer();
+  }
+  const withOverlay = await sharp(base).composite([{ input: pageOverlaySvg() }]).toBuffer();
+  return { background: withOverlay, degraded };
+}
+
+function clip(text, max) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  return t.length > max ? t.slice(0, max - 1).trimEnd() + '…' : t;
+}
+
+function buildPageCard({ logo, title, tagline }) {
+  return h('div', {
+      style: {
+        height: '100%', width: '100%', display: 'flex', flexDirection: 'column',
+        justifyContent: 'flex-end', padding: '0 72px 64px', position: 'relative',
+      },
+    },
+      logo
+        ? h('img', { src: logo, width: LOGO_W, height: LOGO_H, style: { position: 'absolute', top: 44, right: 56, width: LOGO_W, height: LOGO_H } })
+        : null,
+      h('div', { style: { display: 'flex', fontSize: 66, fontWeight: 800, color: 'white', lineHeight: 1.1, maxWidth: 1000 } }, title),
+      tagline
+        ? h('div', { style: { display: 'flex', fontSize: 32, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3, marginTop: 16, maxWidth: 1000 } }, tagline)
+        : null
+    );
+}
+
+async function renderPageCard(page, ms) {
+  const lap = (k, since) => { ms[k] = Date.now() - since; };
+  const content = (page && page.content) || {};
+  const title = clip(content.name || page.title || 'Netlink', 56);
+  const tagline = clip(content.tagline, 100);
+  const primary = safeHexColor(content.primary, '#5D4037');
+
+  const sharp = (await import('sharp')).default;
+  let t = Date.now();
+  const { background, degraded } = await loadPageBackground(pickHeroUrl(content), primary, sharp);
+  lap('assets', t);
+
+  t = Date.now();
+  const { ImageResponse } = await import('@vercel/og');
+  const element = buildPageCard({ logo: OG_LOGO_DATA_URI, title, tagline });
+  const png = Buffer.from(await new ImageResponse(element, { width: 1200, height: 630 }).arrayBuffer());
+  lap('satori', t);
+
+  t = Date.now();
+  let body = png;
+  let contentType = 'image/png';
+  let cache = degraded ? CACHE_DEGRADED : CACHE_OK;
+  try {
+    body = await sharp(background).composite([{ input: png }])
+      .jpeg({ quality: 80, mozjpeg: false, chromaSubsampling: '4:2:0' })
+      .toBuffer();
+    contentType = 'image/jpeg';
+  } catch (e) {
+    console.error('[og] page jpeg conversion failed, sending PNG', e && e.message);
+    cache = CACHE_DEGRADED;
+  }
+  lap('jpeg', t);
+  return { body, contentType, cache, degraded, banner: !degraded };
+}
 
 // Renders the card for a profile and returns the finished image plus what the
 // caller needs for caching/storing decisions. `ms` collects stage timings.
@@ -233,6 +380,28 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Cache-Control', 'no-store');
       res.end(JSON.stringify({ status }));
+      return;
+    }
+
+    // Landing page card (netlink.bio/page/:slug).
+    if (searchParams.get('type') === 'page') {
+      const slug = (searchParams.get('slug') || '').toLowerCase().trim();
+      const page = slug ? await fetchLandingPage(slug) : null;
+      if (!page) {
+        res.statusCode = 302;
+        res.setHeader('Location', FALLBACK_IMAGE);
+        res.setHeader('Cache-Control', CACHE_DEGRADED);
+        res.end();
+        return;
+      }
+      const pr = await renderPageCard(page, ms);
+      ms.total = Date.now() - t0;
+      console.log('[og-timing] ' + JSON.stringify({ slug, type: 'page', banner: pr.banner, kb: Math.round(pr.body.length / 1024), ms }));
+      res.statusCode = 200;
+      res.setHeader('Content-Type', pr.contentType);
+      res.setHeader('Content-Length', String(pr.body.length));
+      res.setHeader('Cache-Control', pr.cache);
+      res.end(pr.body);
       return;
     }
 
