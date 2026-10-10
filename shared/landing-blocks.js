@@ -147,7 +147,7 @@ export function getChannelHref(key, value) {
 
 export function defaultBlockData(type) {
   switch (type) {
-    case 'hero': return { image: '', focusX: 50, focusY: 50, height: 'standard', headline: '', subtitle: '', badge: '', buttonLabel: '', buttonUrl: '', align: 'left' };
+    case 'hero': return { image: '', imageDesktop: '', headline: '', subtitle: '', badge: '', buttonLabel: '', buttonUrl: '', align: 'left' };
     case 'text': return { title: 'About', body: '', align: 'left', bg: 'white' };
     case 'imagetext': return { title: '', body: '', image: '', imagePosition: 'left', buttonLabel: '', buttonUrl: '', bg: 'white' };
     case 'gallery': return { title: 'Gallery', images: [], columns: 3, bg: 'soft' };
@@ -234,12 +234,24 @@ const RENDERERS = {
     const badge = str(d.badge, 60).trim();
     const sub = str(d.subtitle, 300).trim();
     const btn = linkButton(d.buttonLabel, d.buttonUrl, 'btn-primary');
-    // Focus point (0-100 each) decides which part of the photo stays visible when the banner crops it.
-    const fx = clampInt(d.focusX, 0, 100, 50);
-    const fy = clampInt(d.focusY, 0, 100, 50);
-    const height = oneOf(d.height, ['compact', 'standard', 'tall'], 'standard');
-    return '<section class="blk blk-hero h-' + height + '" data-block-id="' + escapeHtml(block.id) + '">' +
-      '<div class="hero-bg">' + (img ? '<img src="' + escapeHtml(img) + '" alt="' + escapeHtml(ctx.name) + '" style="object-position:' + fx + '% ' + fy + '%">' : '') + '</div>' +
+    const imgD = safeImageUrl(d.imageDesktop, ctx.preview);
+    // Cropped mode: the person cropped one image for phones and tablets (square) and one for
+    // desktop (wide) when uploading, so the banner shows exactly what they chose on both.
+    // Older heroes only have `image`; they keep the legacy fixed height + focus point rendering.
+    const cropped = !!(img && imgD);
+    let bg, cls;
+    if (cropped) {
+      cls = 'blk blk-hero hero-cropped';
+      bg = '<picture><source media="(min-width: 1024px)" srcset="' + escapeHtml(imgD) + '"><img src="' + escapeHtml(img) + '" alt="' + escapeHtml(ctx.name) + '"></picture>';
+    } else {
+      const fx = clampInt(d.focusX, 0, 100, 50);
+      const fy = clampInt(d.focusY, 0, 100, 50);
+      const height = oneOf(d.height, ['compact', 'standard', 'tall'], 'standard');
+      cls = 'blk blk-hero h-' + height;
+      bg = img ? '<img src="' + escapeHtml(img) + '" alt="' + escapeHtml(ctx.name) + '" style="object-position:' + fx + '% ' + fy + '%">' : '';
+    }
+    return '<section class="' + cls + '" data-block-id="' + escapeHtml(block.id) + '">' +
+      '<div class="hero-bg">' + bg + '</div>' +
       '<div class="hero-overlay"></div>' +
       '<div class="hero-content-wrap ' + align + '"><div class="section-inner hero-content">' +
       (badge ? '<span class="hero-badge">' + escapeHtml(badge) + '</span>' : '') +
@@ -416,6 +428,8 @@ export const BLOCKS_CSS = `
 .blk-hero { position: relative; height: 380px; overflow: hidden; padding: 0; }
 .blk-hero.h-compact { height: 280px; }
 .blk-hero.h-tall { height: 520px; }
+.blk-hero.hero-cropped { height: auto; aspect-ratio: 1 / 1; min-height: 320px; max-height: 560px; }
+.hero-bg picture { display: block; width: 100%; height: 100%; }
 .hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg, var(--primary) 0%, #1c1c1c 140%); }
 .hero-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hero-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); z-index: 2; pointer-events: none; }
@@ -498,6 +512,7 @@ export const BLOCKS_CSS = `
   .blk-hero { height: 500px; }
   .blk-hero.h-compact { height: 400px; }
   .blk-hero.h-tall { height: 720px; }
+  .blk-hero.hero-cropped { aspect-ratio: 12 / 5; min-height: 0; max-height: 640px; }
   .hero-title { font-size: 48px; }
   .hero-subtitle { font-size: 18px; }
   .blk { padding: 60px 40px; }

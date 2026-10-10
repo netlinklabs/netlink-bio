@@ -174,10 +174,24 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .dev-frame { position: relative; flex-shrink: 0; border-radius: 18px; overflow: hidden; border: 1px solid rgba(var(--w),0.2); box-shadow: 0 8px 30px rgba(0,0,0,0.25); background: #fff; }
 .dev-frame iframe { border: 0; display: block; transform-origin: top left; background: #fff; }
 
-/* Hero focus picker */
-.focus-box { position: relative; display: inline-block; line-height: 0; max-width: 100%; border-radius: 10px; overflow: hidden; cursor: crosshair; touch-action: none; user-select: none; background: rgba(var(--w),0.06); border: 1px solid rgba(var(--w),0.12); margin-top: 4px; }
-.focus-box img { display: block; width: auto; height: auto; max-width: 100%; max-height: 240px; pointer-events: none; }
-.focus-dot { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 3px solid #fff; background: rgba(59,130,246,0.55); box-shadow: 0 0 0 2px rgba(0,0,0,0.45); pointer-events: none; }
+/* Crop modal (hero banner) */
+#cropModal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(10,10,10,0.95); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+#cropModal.active { display: flex; }
+.crop-box { max-width: 460px; text-align: left; padding: 22px; max-height: 94vh; overflow-y: auto; }
+.crop-box .modal-title { font-size: 18px; margin-bottom: 12px; }
+.crop-tabs { display: flex; width: 100%; margin-bottom: 10px; }
+.crop-tabs button { flex: 1; justify-content: center; }
+.crop-hint { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.crop-stage { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #0f172a; touch-action: none; cursor: grab; user-select: none; }
+.crop-stage.dragging { cursor: grabbing; }
+.crop-stage img { position: absolute; left: 0; top: 0; max-width: none; max-height: none; pointer-events: none; will-change: transform; }
+.crop-stage::after { content: ''; position: absolute; inset: 0; border: 2px solid rgba(255,255,255,0.85); border-radius: 12px; pointer-events: none; }
+.crop-zoom { display: flex; align-items: center; gap: 12px; margin: 14px 0; color: var(--muted); font-size: 12px; }
+.crop-zoom input { flex: 1; accent-color: #3b82f6; }
+.hero-thumbs { display: flex; gap: 10px; margin-top: 6px; }
+.hero-thumbs figure { margin: 0; min-width: 0; }
+.hero-thumbs img { display: block; max-width: 100%; border-radius: 8px; border: 1px solid rgba(var(--w),0.15); background: rgba(var(--w),0.06); }
+.hero-thumbs figcaption { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
 /* Live URL card */
 .live-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 14px; background: var(--card); border: 1px solid rgba(var(--w),0.1); border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
@@ -615,6 +629,24 @@ window.LB = LB;
 <p class="progress-text" id="progressText">0%</p>
 <div id="updateActions" class="modal-actions" style="display: none;"><div class="share-row"><button type="button" onclick="copyPageUrl()"><i class="fa-solid fa-copy"></i> Copy</button><button type="button" onclick="sharePageUrl()"><i class="fa-solid fa-share-nodes"></i> Share</button><button type="button" onclick="openPageUrl()"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open</button></div><button onclick="closeUpdateModal()" class="sidebar-btn btn-gold">Done</button></div>
 <div id="retryActions" class="modal-actions" style="display: none;"><button onclick="retryUpdate()" class="sidebar-btn btn-gold">Try Again</button><button onclick="closeUpdateModal()" class="sidebar-btn btn-outline">Close</button></div>
+</div>
+</div>
+
+<div id="cropModal">
+<div class="modal-box crop-box">
+<h3 class="modal-title">Crop your banner</h3>
+<div class="dev-seg crop-tabs">
+<button type="button" id="cropTabMobile" class="active" onclick="setCropTab('mobile')"><i class="fa-solid fa-mobile-screen"></i> Mobile</button>
+<button type="button" id="cropTabDesktop" onclick="setCropTab('desktop')"><i class="fa-solid fa-desktop"></i> Desktop</button>
+</div>
+<p class="crop-hint" id="cropHint"></p>
+<div id="cropStage" class="crop-stage"><img id="cropImg" alt="Banner crop"></div>
+<div class="crop-zoom"><span>Zoom</span><input id="cropZoom" type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom"></div>
+<p id="cropError" class="field-hint warning hidden"></p>
+<div class="modal-actions" style="flex-direction:row;margin-top:16px;">
+<button type="button" onclick="closeCropModal()" class="sidebar-btn btn-outline">Cancel</button>
+<button type="button" onclick="applyCropToHero()" class="sidebar-btn btn-gold">Apply</button>
+</div>
 </div>
 </div>
 
@@ -1458,65 +1490,171 @@ return '<div class="mini"><button onclick="' + upCall + '"' + (i === 0 ? ' disab
 '<button class="danger" onclick="' + delCall + '"><i class="fa-solid fa-trash-can"></i></button></div>';
 }
 
-const HERO_HEIGHTS = [['compact', 'Compact'], ['standard', 'Standard'], ['tall', 'Tall (shows more of the photo)']];
+// ---------- hero banner: crop for mobile and desktop ----------
+// The person crops the photo twice when uploading: a square one for phones and tablets and a
+// wide one for desktop. Both are stored, so the banner looks the same as in the crop box.
+const CROP_SPECS = {
+mobile: { ratio: 1, outW: 1080, outH: 1080, hint: 'Phones and tablets. Drag the photo to choose what shows, use the slider to zoom.' },
+desktop: { ratio: 12 / 5, outW: 1920, outH: 800, hint: 'Computers and large screens. Drag the photo to choose what shows, use the slider to zoom.' },
+};
+const crop = { id: null, tab: 'mobile', url: null, natW: 0, natH: 0, tabs: {}, dragging: false, lastX: 0, lastY: 0 };
 
-// Upload guide, plus a focus picker once a photo is set: tap or drag on the photo to choose
-// the part that must stay visible when the banner crops it on different screens.
-function heroImageHelp(id, d) {
+function heroImageField(id, d) {
+const fid = 'file-' + id + '-image';
+const input = '<input type="file" id="' + fid + '" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="heroPickFile(\'' + id + '\', this)">';
+const label = '<label class="sidebar-input-label">Banner image (a dark overlay is added for readability)</label>';
 if (!d.image) {
-return '<p class="field-hint" style="margin-top:8px;"><i class="fa-regular fa-lightbulb"></i> Best: a landscape photo, 1600 x 900 or wider. Keep faces and key objects near the center.</p>';
+return '<div class="field">' + label + '<div class="logo-upload-area" style="padding:16px;margin-bottom:0;" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-cloud-arrow-up" style="font-size:24px;color:rgba(var(--w),0.4);"></i><p style="margin-top:8px;">Click to upload banner photo</p></div>' + input +
+'<p class="field-hint" style="margin-top:8px;"><i class="fa-regular fa-lightbulb"></i> Best: a landscape photo, 1600 x 900 or wider. You will crop it for mobile and desktop next.</p></div>';
 }
-const fx = Math.min(100, Math.max(0, parseInt(d.focusX, 10) || 0)), fy = Math.min(100, Math.max(0, parseInt(d.focusY, 10) || 0));
-return '<div class="field"><label class="sidebar-input-label">Focus point</label>' +
-'<div class="focus-box" onpointerdown="heroFocusDown(event, \'' + id + '\')" onpointermove="heroFocusMove(event, \'' + id + '\')" onpointerup="heroFocusUp(event)" onpointercancel="heroFocusUp(event)">' +
-'<img src="' + esc(d.image) + '" alt="" draggable="false" onload="heroImgLoaded(this)">' +
-'<span class="focus-dot" style="left:' + fx + '%;top:' + fy + '%;"></span></div>' +
-'<p class="field-hint focus-note" style="margin-top:6px;">Tap or drag on the photo to choose what stays in view.</p>' +
-'<button type="button" class="link-btn" style="margin-top:2px;" onclick="heroFocusReset(\'' + id + '\')">Reset to center</button></div>';
-}
-
-function heroImgLoaded(img) {
-const box = img.closest('.focus-box');
-const note = box && box.parentElement.querySelector('.focus-note');
-if (!note || !img.naturalHeight) return;
-const ratio = img.naturalWidth / img.naturalHeight;
-if (ratio < 1.2) {
-note.classList.add('warning');
-note.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> This photo is portrait or square, so parts will be cropped. Set the focus point, or pick a taller banner.';
-} else {
-note.classList.remove('warning');
-}
+const both = !!d.imageDesktop;
+const thumbs = '<div class="hero-thumbs"><figure style="width:' + (both ? '34%' : '50%') + ';"><img src="' + esc(d.image) + '" alt=""><figcaption>' + (both ? 'Mobile' : 'Current image') + '</figcaption></figure>' +
+(both ? '<figure style="flex:1;"><img src="' + esc(d.imageDesktop) + '" alt=""><figcaption>Desktop</figcaption></figure>' : '') + '</div>';
+const legacy = both ? '' : '<p class="field-hint warning" style="margin-top:8px;"><i class="fa-solid fa-triangle-exclamation"></i> Upload this photo again to crop it for mobile and desktop.</p>';
+return '<div class="field">' + label + thumbs + legacy + input +
+'<div class="mod-footer" style="margin-top:10px;"><button type="button" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-crop-simple"></i> Change photo</button><button type="button" class="danger" onclick="heroRemoveImage(\'' + id + '\')"><i class="fa-solid fa-trash-can"></i> Remove</button></div></div>';
 }
 
-let focusDragging = false;
-function heroFocusSet(e, id) {
-const box = e.currentTarget;
-const r = box.getBoundingClientRect();
-const x = Math.round(Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100)));
-const y = Math.round(Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100)));
-const dot = box.querySelector('.focus-dot');
-dot.style.left = x + '%'; dot.style.top = y + '%';
+function heroRemoveImage(id) {
 const b = getBlock(id); if (!b) return;
-b.data.focusX = x; b.data.focusY = y;
-refreshBlockPreview(id);
-scheduleDraftSave();
-}
-function heroFocusDown(e, id) { focusDragging = true; e.currentTarget.setPointerCapture(e.pointerId); heroFocusSet(e, id); }
-function heroFocusMove(e, id) { if (focusDragging) heroFocusSet(e, id); }
-function heroFocusUp(e) { focusDragging = false; }
-function heroFocusReset(id) {
-const b = getBlock(id); if (!b) return;
-b.data.focusX = 50; b.data.focusY = 50;
+b.data.image = ''; b.data.imageDesktop = '';
 renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function heroPickFile(id, input) {
+const file = input.files && input.files[0];
+input.value = '';
+if (!file) return;
+if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { showToast('Please choose a JPG, PNG or WebP image'); return; }
+if (file.size > 20 * 1024 * 1024) { showToast('Image is too large (max 20 MB).'); return; }
+openCropModal(id, file);
+}
+
+function setCropError(text) {
+const el = document.getElementById('cropError');
+el.innerHTML = text ? '<i class="fa-solid fa-triangle-exclamation"></i> ' + text : '';
+el.classList.toggle('hidden', !text);
+}
+
+function openCropModal(id, file) {
+if (crop.url) URL.revokeObjectURL(crop.url);
+crop.id = id;
+crop.url = URL.createObjectURL(file);
+setCropError('');
+const img = document.getElementById('cropImg');
+img.onload = () => {
+crop.natW = img.naturalWidth; crop.natH = img.naturalHeight;
+const stageW = document.getElementById('cropStage').clientWidth;
+// Each tab keeps its own position and zoom. The image always covers the stage (no gaps).
+['mobile', 'desktop'].forEach(t => {
+const stageH = stageW / CROP_SPECS[t].ratio;
+const minScale = Math.max(stageW / crop.natW, stageH / crop.natH);
+crop.tabs[t] = { stageW, stageH, minScale, scale: minScale, zoom: 1, x: (stageW - crop.natW * minScale) / 2, y: (stageH - crop.natH * minScale) / 2 };
+});
+setCropTab('mobile');
+};
+img.onerror = () => { closeCropModal(); showToast('Could not read this image. Try another one.'); };
+document.getElementById('cropModal').classList.add('active');
+img.src = crop.url;
+}
+
+function closeCropModal() {
+document.getElementById('cropModal').classList.remove('active');
+if (crop.url) { URL.revokeObjectURL(crop.url); crop.url = null; }
+document.getElementById('cropImg').removeAttribute('src');
+crop.id = null;
+}
+
+function setCropTab(t) {
+crop.tab = t;
+document.getElementById('cropTabMobile').classList.toggle('active', t === 'mobile');
+document.getElementById('cropTabDesktop').classList.toggle('active', t === 'desktop');
+document.getElementById('cropHint').textContent = CROP_SPECS[t].hint;
+document.getElementById('cropStage').style.aspectRatio = String(CROP_SPECS[t].ratio);
+document.getElementById('cropZoom').value = crop.tabs[t].zoom;
+applyCrop();
+}
+
+function applyCrop() {
+const s = crop.tabs[crop.tab]; if (!s) return;
+const w = crop.natW * s.scale, h = crop.natH * s.scale;
+s.x = Math.min(0, Math.max(s.stageW - w, s.x));
+s.y = Math.min(0, Math.max(s.stageH - h, s.y));
+const img = document.getElementById('cropImg');
+img.style.width = w + 'px';
+img.style.height = h + 'px';
+img.style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px)';
+}
+
+function setCropZoom(zoom) {
+const s = crop.tabs[crop.tab]; if (!s) return;
+const cx = (s.stageW / 2 - s.x) / s.scale, cy = (s.stageH / 2 - s.y) / s.scale;
+s.zoom = zoom;
+s.scale = s.minScale * zoom;
+s.x = s.stageW / 2 - cx * s.scale;
+s.y = s.stageH / 2 - cy * s.scale;
+applyCrop();
+}
+
+(function initCropGestures() {
+const stage = document.getElementById('cropStage');
+const zoom = document.getElementById('cropZoom');
+stage.addEventListener('pointerdown', (e) => {
+crop.dragging = true; crop.lastX = e.clientX; crop.lastY = e.clientY;
+stage.setPointerCapture(e.pointerId);
+stage.classList.add('dragging');
+});
+stage.addEventListener('pointermove', (e) => {
+if (!crop.dragging) return;
+const s = crop.tabs[crop.tab]; if (!s) return;
+s.x += e.clientX - crop.lastX; s.y += e.clientY - crop.lastY;
+crop.lastX = e.clientX; crop.lastY = e.clientY;
+applyCrop();
+});
+const stop = () => { crop.dragging = false; stage.classList.remove('dragging'); };
+stage.addEventListener('pointerup', stop);
+stage.addEventListener('pointercancel', stop);
+stage.addEventListener('wheel', (e) => {
+e.preventDefault();
+const next = Math.min(4, Math.max(1, parseFloat(zoom.value) - e.deltaY * 0.002));
+zoom.value = next; setCropZoom(next);
+}, { passive: false });
+zoom.addEventListener('input', () => setCropZoom(parseFloat(zoom.value)));
+})();
+
+// Draws the visible crop area of one tab into a JPEG data URL of the output size.
+function renderCropTab(t) {
+const s = crop.tabs[t], spec = CROP_SPECS[t];
+const canvas = document.createElement('canvas');
+canvas.width = spec.outW; canvas.height = spec.outH;
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = '#ffffff';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.drawImage(document.getElementById('cropImg'), -s.x / s.scale, -s.y / s.scale, s.stageW / s.scale, s.stageH / s.scale, 0, 0, spec.outW, spec.outH);
+return canvas.toDataURL('image/jpeg', 0.82);
+}
+
+function applyCropToHero() {
+const b = getBlock(crop.id);
+if (!b) { closeCropModal(); return; }
+try {
+b.data.image = renderCropTab('mobile');
+b.data.imageDesktop = renderCropTab('desktop');
+} catch (err) {
+setCropError('Could not crop this image. Try another one.');
+return;
+}
+closeCropModal();
+renderModuleList();
+refreshBlockPreview(b.id);
+scheduleDraftSave();
 }
 
 function editorHtml(b) {
 const id = b.id, d = b.data;
 switch (b.type) {
 case 'hero':
-return fImage(id, 'image', 'Banner image (a dark overlay is added for readability)', d.image) +
-heroImageHelp(id, d) +
-fSelect(id, 'height', 'Banner height', d.height, HERO_HEIGHTS) +
+return heroImageField(id, d) +
 fText(id, 'headline', 'Headline', d.headline, 'e.g. Crafted with Heart') +
 fText(id, 'subtitle', 'Subtitle', d.subtitle, 'One short sentence', 300) +
 fText(id, 'badge', 'Badge (optional)', d.badge, 'e.g. Open Today', 60) +
@@ -1780,6 +1918,7 @@ const add = (holder, key, tag) => { if (typeof holder[key] === 'string' && holde
 add(state, 'logoImage', 'logo');
 state.blocks.forEach(b => {
 if (typeof b.data.image === 'string') add(b.data, 'image', b.id);
+if (typeof b.data.imageDesktop === 'string') add(b.data, 'imageDesktop', b.id + '-d');
 (b.data.images || []).forEach(g => add(g, 'src', b.id + '-g'));
 });
 for (let i = 0; i < jobs.length; i++) {
@@ -1802,6 +1941,7 @@ if (part) used.add(decodeURIComponent(part.split('?')[0]));
 note(content.logoImage);
 content.blocks.forEach(b => {
 note(b.data.image);
+note(b.data.imageDesktop);
 (b.data.images || []).forEach(g => note(g.src));
 });
 const { data: files } = await supabaseClient.storage.from('landing-images').list(currentUser.id, { limit: 1000 });

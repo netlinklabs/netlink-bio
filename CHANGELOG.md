@@ -7,6 +7,10 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`page-builder.html`: the hero focus point and banner height options are replaced by a crop box.** After choosing a banner photo, a crop modal opens (same drag + zoom approach as the banner crop in `template.html`) with two tabs: Mobile (square, used for phones and tablets) and Desktop (wide 12:5). Both crops are saved at upload time (1080x1080 and 1920x800 JPEG), so the banner looks the same as in the crop box. Hero data gets a new `imageDesktop` field; `image` is the mobile crop. "Change photo" and "Remove" replace the old focus controls.
+- **`shared/landing-blocks.js`: cropped heroes render with `<picture>`** (desktop image from 1024px up) and a fixed aspect ratio (1:1 up to 560px high on phones and tablets, 12:5 up to 640px high on desktop). Heroes without `imageDesktop` (uploaded before this change) keep the old fixed height and focus point rendering, and show a hint to upload the photo again.
+
 ### Added
 - **Hero image controls in the page builder.** (1) Focus point: after a photo is added, tap or drag on it to choose what stays visible when the banner crops it (saved as `focusX`/`focusY`, rendered as `object-position`). (2) Upload guide under the image field ("landscape, 1600 x 900 or wider") and a warning when the photo is portrait or square. (3) "Banner height" option: Compact, Standard (unchanged default), Tall, with matching heights for phone, tablet and desktop in `shared/landing-blocks.js`. Existing heroes keep their look (focus 50/50, Standard).
 - **Phone / Desktop preview.** The Preview button opens a full screen preview with a Phone and Desktop switch. The page renders in an iframe of the real device width (390px or 1280px, scaled to fit), so responsive CSS behaves like on that device.
