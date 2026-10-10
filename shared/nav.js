@@ -322,7 +322,23 @@
       btn.addEventListener('click', () => {
         if (btn.dataset.locked === 'true') { toast('Coming soon'); return; }
         const href = btn.dataset.href;
-        if (href) window.location.href = href;
+        if (!href) return;
+        // Same page + anchor (e.g. "dashboard#cvCard" while already on the
+        // dashboard): a plain location change only updates the hash, so the
+        // sheet would stay open and cover the target. Close the sheet and
+        // scroll to the target instead. Any other case navigates as before.
+        const [hrefPath, hrefHash] = href.split('#');
+        const clean = (v) => v.replace(/^\/+/, '').replace(/\.html$/, '');
+        if (hrefHash && clean(hrefPath) === clean(window.location.pathname)) {
+          const target = document.getElementById(hrefHash);
+          if (target) {
+            closeAccountSheet();
+            history.replaceState(null, '', '#' + hrefHash);
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+          }
+        }
+        window.location.href = href;
       });
     });
 
