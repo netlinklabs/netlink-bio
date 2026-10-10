@@ -12,7 +12,7 @@
 //     logoImage, logoShape, showLogoText,
 //     blocks: [ { id, type, data }, ... ] }   <- array order = page order
 
-export const MAX_BLOCKS = 30;
+export const MAX_BLOCKS = 20;
 export const MAX_GALLERY_IMAGES = 10;
 export const MAX_CARD_ITEMS = 20;
 export const MAX_HOURS_ROWS = 10;
