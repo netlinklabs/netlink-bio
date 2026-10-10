@@ -254,7 +254,8 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .small-add { margin-top: 10px; font-size: 12px; padding: 10px; }
 .type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; overflow-y: auto; padding-right: 4px; }
 .type-card { text-align: left; background: var(--card); border: 1px solid rgba(var(--w),0.1); border-radius: 12px; padding: 14px; color: var(--fg); cursor: pointer; font-family: inherit; transition: background 0.2s, transform 0.2s; }
-.type-card:hover { background: rgba(var(--w),0.12); transform: translateY(-2px); }
+.type-card:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.type-card:hover:not(:disabled) { background: rgba(var(--w),0.12); transform: translateY(-2px); }
 .type-card i { font-size: 20px; color: var(--accent); margin-bottom: 8px; display: block; }
 .type-card b { display: block; font-size: 13px; margin-bottom: 4px; }
 .type-card span { display: block; font-size: 11px; color: rgba(var(--w),0.5); line-height: 1.4; }
@@ -805,6 +806,8 @@ if (b.type === 'contact') data.channels = Object.assign(LB.defaultBlockData('con
 ['images', 'items', 'rows'].forEach(k => { if (k in base && !Array.isArray(data[k])) data[k] = base[k]; });
 s.blocks.push({ id, type: b.type, data });
 });
+// One hero at most, always first.
+s.blocks = LB.orderBlocks(s.blocks);
 return s;
 }
 
@@ -1380,12 +1383,12 @@ return '<div class="mod-item' + (open ? ' open' : '') + '" id="mod-' + b.id + '"
 '<div class="mod-ico"><i class="' + meta.icon + '"></i></div>' +
 '<div class="mod-info" onclick="toggleBlock(\'' + b.id + '\')"><b>' + meta.label + '</b><span data-sum="' + b.id + '">' + esc(summaryOf(b)) + '</span></div>' +
 '<div class="mod-actions">' +
-'<button onclick="moveBlock(\'' + b.id + '\', -1)"' + (i === 0 ? ' disabled' : '') + ' title="Move up"><i class="fa-solid fa-arrow-up"></i></button>' +
-'<button onclick="moveBlock(\'' + b.id + '\', 1)"' + (i === state.blocks.length - 1 ? ' disabled' : '') + ' title="Move down"><i class="fa-solid fa-arrow-down"></i></button>' +
+'<button onclick="moveBlock(\'' + b.id + '\', -1)"' + (!canMove(i, -1) ? ' disabled' : '') + ' title="Move up"><i class="fa-solid fa-arrow-up"></i></button>' +
+'<button onclick="moveBlock(\'' + b.id + '\', 1)"' + (!canMove(i, 1) ? ' disabled' : '') + ' title="Move down"><i class="fa-solid fa-arrow-down"></i></button>' +
 '<button onclick="toggleBlock(\'' + b.id + '\')" title="' + (open ? 'Close' : 'Edit') + '"><i class="fa-solid ' + (open ? 'fa-chevron-up' : 'fa-pen') + '"></i></button>' +
 '</div></div>' +
 (open ? '<div class="mod-editor">' + editorHtml(b) +
-'<div class="mod-footer"><button onclick="duplicateBlock(\'' + b.id + '\')"><i class="fa-regular fa-copy"></i> Duplicate</button>' +
+'<div class="mod-footer">' + (b.type === 'hero' ? '' : '<button onclick="duplicateBlock(\'' + b.id + '\')"><i class="fa-regular fa-copy"></i> Duplicate</button>') +
 '<button class="danger" onclick="deleteBlock(\'' + b.id + '\')"><i class="fa-solid fa-trash-can"></i> Delete</button>' +
 '<button onclick="toggleBlock(\'' + b.id + '\')">Done</button></div></div>' : '') +
 '</div>';
@@ -1400,10 +1403,18 @@ if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 }
 
+// The hero is pinned to the top: it cannot move, and nothing can move above it.
+function canMove(i, dir) {
+const j = i + dir;
+if (i < 0 || j < 0 || j >= state.blocks.length) return false;
+if (state.blocks[i].type === 'hero' || state.blocks[j].type === 'hero') return false;
+return true;
+}
+
 function moveBlock(id, dir) {
 const i = state.blocks.findIndex(b => b.id === id);
+if (!canMove(i, dir)) return;
 const j = i + dir;
-if (i < 0 || j < 0 || j >= state.blocks.length) return;
 const tmp = state.blocks[i]; state.blocks[i] = state.blocks[j]; state.blocks[j] = tmp;
 renderModuleList();
 renderPreview();
@@ -1413,7 +1424,7 @@ scheduleDraftSave();
 function duplicateBlock(id) {
 if (state.blocks.length >= LB.MAX_BLOCKS) { showToast('Maximum ' + LB.MAX_BLOCKS + ' modules.'); return; }
 const i = state.blocks.findIndex(b => b.id === id);
-if (i < 0) return;
+if (i < 0 || state.blocks[i].type === 'hero') return;
 const copy = { id: newId(), type: state.blocks[i].type, data: JSON.parse(JSON.stringify(state.blocks[i].data)) };
 state.blocks.splice(i + 1, 0, copy);
 openBlockId = copy.id;
@@ -1436,11 +1447,11 @@ scheduleDraftSave();
 function openAddModule() {
 if (state.blocks.length >= LB.MAX_BLOCKS) { showToast('Maximum ' + LB.MAX_BLOCKS + ' modules.'); return; }
 const grid = document.getElementById('typeGrid');
-if (!grid.innerHTML) {
-grid.innerHTML = LB.BLOCK_TYPES.map(t =>
-'<button class="type-card" onclick="addBlock(\'' + t.type + '\')"><i class="' + t.icon + '"></i><b>' + t.label + '</b><span>' + t.desc + '</span></button>'
-).join('');
-}
+const hasHero = state.blocks.some(b => b.type === 'hero');
+grid.innerHTML = LB.BLOCK_TYPES.map(t => {
+const off = t.type === 'hero' && hasHero;
+return '<button class="type-card" ' + (off ? 'disabled' : 'onclick="addBlock(\'' + t.type + '\')"') + '><i class="' + t.icon + '"></i><b>' + t.label + '</b><span>' + (off ? 'Already added. A page has one hero, at the top.' : t.desc) + '</span></button>';
+}).join('');
 document.getElementById('addModuleModal').classList.add('active');
 }
 
@@ -1448,8 +1459,9 @@ function closeAddModule() { document.getElementById('addModuleModal').classList.
 
 function addBlock(type) {
 if (state.blocks.length >= LB.MAX_BLOCKS) return;
+if (type === 'hero' && state.blocks.some(b => b.type === 'hero')) return;
 const block = { id: newId(), type, data: LB.defaultBlockData(type) };
-state.blocks.push(block);
+if (type === 'hero') state.blocks.unshift(block); else state.blocks.push(block);
 openBlockId = block.id;
 closeAddModule();
 renderModuleList();

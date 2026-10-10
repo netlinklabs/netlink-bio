@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`page-builder.html`: a page has one hero and it is always first.** The hero module no longer has a Duplicate button and cannot be moved. Nothing can be moved above it. In "Add Module" the Hero card is disabled once a hero exists, and a new hero is inserted at the top. `shared/landing-blocks.js` has a new `orderBlocks()` used by `renderBlocks()` and by the editor when it loads a page: it keeps the first hero, puts it first and drops extra heroes, so the editor and the public page always agree.
+
 ### Changed
 - **`page-builder.html`: the hero focus point and banner height options are replaced by a crop box.** After choosing a banner photo, a crop modal opens (same drag + zoom approach as the banner crop in `template.html`) with two tabs: Mobile (square, used for phones and tablets) and Desktop (wide 12:5). Both crops are saved at upload time (1080x1080 and 1920x800 JPEG), so the banner looks the same as in the crop box. Hero data gets a new `imageDesktop` field; `image` is the mobile crop. "Change photo" and "Remove" replace the old focus controls.
 - **`shared/landing-blocks.js`: cropped heroes render with `<picture>`** (desktop image from 1024px up) and a fixed aspect ratio (1:1 up to 560px high on phones and tablets, 12:5 up to 640px high on desktop). Heroes without `imageDesktop` (uploaded before this change) keep the old fixed height and focus point rendering, and show a hint to upload the photo again.

@@ -364,8 +364,16 @@ export function renderBlock(block, content, opts) {
   return RENDERERS[safe.type](safe, safe.data, ctx);
 }
 
+// A page has at most one hero and it always comes first. Extra heroes are dropped.
+export function orderBlocks(blocks) {
+  const list = Array.isArray(blocks) ? blocks.slice(0, MAX_BLOCKS) : [];
+  const hero = list.find((b) => b && b.type === 'hero');
+  if (!hero) return list;
+  return [hero].concat(list.filter((b) => !b || b.type !== 'hero'));
+}
+
 export function renderBlocks(content, opts) {
-  const blocks = Array.isArray((content || {}).blocks) ? content.blocks.slice(0, MAX_BLOCKS) : [];
+  const blocks = orderBlocks((content || {}).blocks);
   return blocks.map((b) => renderBlock(b, content, opts)).join('\n');
 }
 
