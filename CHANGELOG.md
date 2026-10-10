@@ -13,6 +13,7 @@ older entries in older-dated files) if what you are looking for is not below.
 - **Products**: cards with a 1:1 cropped photo, title, price and short text. Tapping a card opens a detail popup with the full (uncropped) photo, price, full description and an optional button. The popup colors follow the page brand color
 - **Testimonials, Team**: item photos use the shared crop box with a square 600x600 crop (circle avatar on Testimonials). **FAQ** uses native `<details>` (no script). **Social Links** has 12 platforms and only accepts http(s) links. **Divider**: line, dots or empty space in 3 heights
 - **`api/landing.js`**: loads the small shared script (`BLOCKS_JS`) and the product popup markup only when a page has a Video or Products module
+- **Storage: `landing-images` bucket now limits each file to 2 MB and to JPEG, PNG and WebP** (`supabase/migrations/20261010_landing_images_bucket_limits.sql`, already applied to production). Before this the bucket had no size or type limit
 - **`page-builder.html`**: the device preview iframe now uses `sandbox="allow-scripts"` so video cards and the product popup work there. Item photos are uploaded and cleaned up like other images (`photo`, `image`, `imageFull`)
 
 ### Changed
