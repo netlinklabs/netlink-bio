@@ -16,6 +16,14 @@ const ACCOUNT_MENU = {
       ],
     },
     {
+      title: 'Profile',
+      items: [
+        { icon: 'link', label: 'Link in Bio', href: 'dashboard#profileCard' },
+        { icon: 'briefcase', label: 'Professional CV', href: 'dashboard#cvCard' },
+        { icon: 'layout-template', label: 'Landing Page', href: 'page-builder' },
+      ],
+    },
+    {
       title: 'Wallet',
       items: [
         { icon: 'coins', label: 'Local Currency', type: 'currency-select' },
