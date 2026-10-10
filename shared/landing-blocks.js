@@ -201,7 +201,7 @@ export function defaultBlockData(type) {
     case 'products': return { title: 'Our Packages', columns: 2, bg: 'white', items: [{ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }] };
     case 'social': return { title: 'Follow us', align: 'center', bg: 'white', links: [{ platform: 'instagram', url: '' }] };
     case 'cta': return { headline: '', text: '', buttonLabel: '', buttonUrl: '', style: 'brand', align: 'center' };
-    case 'team': return { title: 'Our Team', bg: 'white', items: [{ name: '', role: '', photo: '' }] };
+    case 'team': return { title: 'Our Team', columns: 4, bg: 'white', items: [{ name: '', role: '', photo: '' }] };
     case 'divider': return { style: 'line', size: 'medium' };
     default: return {};
   }
@@ -360,9 +360,24 @@ const RENDERERS = {
 
   gallery(block, d, ctx) {
     const cols = clampInt(d.columns, 2, 4, 3);
-    const items = galleryImages(d, ctx.preview).map((g, i) =>
-      '<div class="gallery-item" data-g="' + escapeHtml(block.id) + '" onclick="openLightbox(this)"><img src="' +
-      escapeHtml(safeImageUrl(g.src, ctx.preview)) + '" alt="' + escapeHtml(ctx.name) + ' photo ' + (i + 1) + '" loading="lazy"></div>'
+    const imgs = galleryImages(d, ctx.preview);
+    const last = imgs.length - 1;
+    // A short last row gets its last photo stretched to fill it (phone has 2 columns, desktop has `cols`).
+    // Alone in its row it gets a wide ratio; with neighbours it simply stretches to their height.
+    const fill = (n, c) => {
+      const rem = n % c;
+      if (rem === 0) return null;
+      return rem === 1 ? { span: c, ratio: c + ' / 1' } : { span: c - rem + 1, ratio: 'auto' };
+    };
+    const fm = fill(imgs.length, 2);
+    const fd = fill(imgs.length, cols);
+    const lastStyle = (fm ? '--sm:' + fm.span + ';--am:' + fm.ratio + ';' : '') + (fd ? '--sd:' + fd.span + ';--ad:' + fd.ratio + ';' : '');
+    const items = imgs.map((g, i) => {
+      const isFill = i === last && lastStyle;
+      return '<div class="gallery-item' + (isFill ? ' gl' : '') + '"' + (isFill ? ' style="' + lastStyle + '"' : '') +
+        ' data-g="' + escapeHtml(block.id) + '" onclick="openLightbox(this)"><img src="' +
+        escapeHtml(safeImageUrl(g.src, ctx.preview)) + '" alt="' + escapeHtml(ctx.name) + ' photo ' + (i + 1) + '" loading="lazy"></div>';
+    }
     ).join('');
     return wrap(block, d, titleHtml(d) + '<div class="gallery-grid" style="--cols:' + cols + ';">' + items + '</div>');
   },
@@ -523,7 +538,8 @@ const RENDERERS = {
         (photo ? '<img src="' + escapeHtml(photo) + '" alt="' + escapeHtml(name) + '" loading="lazy">' : '<span>' + escapeHtml(name.charAt(0).toUpperCase()) + '</span>') +
         '</div><h4>' + escapeHtml(name) + '</h4>' + (role ? '<p>' + escapeHtml(role) + '</p>' : '') + '</div>';
     }).join('');
-    return wrap(block, d, titleHtml(d) + '<div class="team-grid">' + cards + '</div>');
+    const cols = clampInt(d.columns, 2, 4, 4);
+    return wrap(block, d, titleHtml(d) + '<div class="team-grid" style="--cols:' + cols + ';">' + cards + '</div>');
   },
 
   divider(block, d) {
@@ -677,6 +693,9 @@ export const BLOCKS_CSS = `
 .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .gallery-item { aspect-ratio: 1; border-radius: 16px; overflow: hidden; position: relative; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Last photo of a short row stretches to fill it (set by the renderer through --sm/--am and --sd/--ad). */
+.gallery-item.gl { grid-column: span var(--sm, 1); aspect-ratio: var(--am, 1); align-self: stretch; }
+.gallery-item.gl img { position: absolute; inset: 0; } /* the photo must not set the height, the row or the ratio does */
 
 .cards-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .service-card { background: white; border-radius: 16px; padding: 20px; display: flex; align-items: flex-start; gap: 16px; border: 1px solid #f0f0f0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
@@ -752,7 +771,9 @@ export const BLOCKS_CSS = `
 .tm-card figcaption em { display: block; font-size: 12px; color: #888; font-style: normal; }
 
 /* products (square photo, detail popup) */
-.pr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+/* Flex instead of grid so a short last row is centered, not left aligned with a hole on the right. */
+.pr-grid { --gap: 12px; --n: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap); }
+.pr-grid > .pr-card { flex: 0 0 calc((100% - var(--gap) * (var(--n) - 1)) / var(--n)); min-width: 0; }
 .pr-card { display: flex; flex-direction: column; text-align: left; padding: 0; border: 1px solid #f0f0f0; background: #fff; border-radius: 16px; overflow: hidden; cursor: pointer; font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: transform 0.2s, box-shadow 0.2s; }
 .pr-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
 .pr-img { display: block; aspect-ratio: 1; background: #f0f0f0; }
@@ -797,8 +818,8 @@ export const BLOCKS_CSS = `
 .cta-btn { display: inline-block; margin-top: 20px; padding: 13px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; background: var(--on-primary); color: var(--primary); }
 
 /* team */
-.team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.team-card { text-align: center; }
+.team-grid { --gap: 16px; --n: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap); }
+.team-card { text-align: center; flex: 0 0 calc((100% - var(--gap) * (var(--n) - 1)) / var(--n)); min-width: 0; }
 .team-photo { aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: var(--tint); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 10px; }
 .team-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .team-card h4 { font-size: 15px; font-weight: 700; color: #212121; }
@@ -815,14 +836,15 @@ export const BLOCKS_CSS = `
 
 @media (min-width: 768px) {
   .gallery-grid { grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 16px; }
+  .gallery-item.gl { grid-column: span var(--sd, 1); aspect-ratio: var(--ad, 1); }
   .cards-grid { grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 16px; }
   .vid-grid.grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .tm-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .pr-grid { grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 16px; }
+  .pr-grid { --gap: 16px; --n: var(--cols, 2); }
   .pr-title, .pd-price { font-size: 15px; }
   #productModal { align-items: center; }
   .pd-sheet { border-radius: 20px; }
-  .team-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .team-grid { --gap: 20px; --n: var(--cols, 4); }
   .cta-box { padding: 48px 40px; }
   .cta-title { font-size: 30px; }
   .blk-hero { height: 440px; }
