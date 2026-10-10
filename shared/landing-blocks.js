@@ -147,7 +147,7 @@ export function getChannelHref(key, value) {
 
 export function defaultBlockData(type) {
   switch (type) {
-    case 'hero': return { image: '', headline: '', subtitle: '', badge: '', buttonLabel: '', buttonUrl: '', align: 'left' };
+    case 'hero': return { image: '', focusX: 50, focusY: 50, height: 'standard', headline: '', subtitle: '', badge: '', buttonLabel: '', buttonUrl: '', align: 'left' };
     case 'text': return { title: 'About', body: '', align: 'left', bg: 'white' };
     case 'imagetext': return { title: '', body: '', image: '', imagePosition: 'left', buttonLabel: '', buttonUrl: '', bg: 'white' };
     case 'gallery': return { title: 'Gallery', images: [], columns: 3, bg: 'soft' };
@@ -234,8 +234,12 @@ const RENDERERS = {
     const badge = str(d.badge, 60).trim();
     const sub = str(d.subtitle, 300).trim();
     const btn = linkButton(d.buttonLabel, d.buttonUrl, 'btn-primary');
-    return '<section class="blk blk-hero" data-block-id="' + escapeHtml(block.id) + '">' +
-      '<div class="hero-bg">' + (img ? '<img src="' + escapeHtml(img) + '" alt="' + escapeHtml(ctx.name) + '">' : '') + '</div>' +
+    // Focus point (0-100 each) decides which part of the photo stays visible when the banner crops it.
+    const fx = clampInt(d.focusX, 0, 100, 50);
+    const fy = clampInt(d.focusY, 0, 100, 50);
+    const height = oneOf(d.height, ['compact', 'standard', 'tall'], 'standard');
+    return '<section class="blk blk-hero h-' + height + '" data-block-id="' + escapeHtml(block.id) + '">' +
+      '<div class="hero-bg">' + (img ? '<img src="' + escapeHtml(img) + '" alt="' + escapeHtml(ctx.name) + '" style="object-position:' + fx + '% ' + fy + '%">' : '') + '</div>' +
       '<div class="hero-overlay"></div>' +
       '<div class="hero-content-wrap ' + align + '"><div class="section-inner hero-content">' +
       (badge ? '<span class="hero-badge">' + escapeHtml(badge) + '</span>' : '') +
@@ -410,6 +414,8 @@ export const BLOCKS_CSS = `
 .blk-empty { margin: 16px 24px; padding: 28px 24px; border: 2px dashed #d8d8d8; border-radius: 12px; text-align: center; color: #999; font-size: 13px; }
 
 .blk-hero { position: relative; height: 380px; overflow: hidden; padding: 0; }
+.blk-hero.h-compact { height: 280px; }
+.blk-hero.h-tall { height: 520px; }
 .hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg, var(--primary) 0%, #1c1c1c 140%); }
 .hero-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hero-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); z-index: 2; pointer-events: none; }
@@ -478,6 +484,8 @@ export const BLOCKS_CSS = `
   .gallery-grid { grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 16px; }
   .cards-grid { grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 16px; }
   .blk-hero { height: 440px; }
+  .blk-hero.h-compact { height: 340px; }
+  .blk-hero.h-tall { height: 620px; }
   .hero-title { font-size: 40px; }
   .hero-subtitle { font-size: 16px; }
   .it-wrap { flex-direction: row; align-items: center; gap: 32px; }
@@ -488,6 +496,8 @@ export const BLOCKS_CSS = `
   .gallery-grid { gap: 20px; }
   .cards-grid { gap: 20px; }
   .blk-hero { height: 500px; }
+  .blk-hero.h-compact { height: 400px; }
+  .blk-hero.h-tall { height: 720px; }
   .hero-title { font-size: 48px; }
   .hero-subtitle { font-size: 18px; }
   .blk { padding: 60px 40px; }
