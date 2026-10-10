@@ -17,7 +17,7 @@ import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { sitemapHandler } from './_lib/sitemap.js';
 import { withStats } from './_lib/stats.js';
 import {
-  MAX_BLOCKS, BLOCKS_CSS, LIGHTBOX_HTML, LIGHTBOX_JS,
+  MAX_BLOCKS, BLOCKS_CSS, LIGHTBOX_HTML, LIGHTBOX_JS, PRODUCT_MODAL_HTML, BLOCKS_JS,
   renderHeader, renderBlocks, pageVars, safeImageUrl,
 } from '../shared/landing-blocks.js';
 
@@ -133,6 +133,9 @@ async function handler(req, res) {
   const headerHtml = renderHeader(content);
   const blocksHtml = renderBlocks(content);
   const hasGallery = blocks.some((b) => b.type === 'gallery');
+  // Video cards (tap to play) and the product detail popup need a little shared script.
+  const hasInteractive = blocks.some((b) => b.type === 'video' || b.type === 'products');
+  const hasProducts = blocks.some((b) => b.type === 'products');
 
   const heroBlock = blocks.find((b) => b.type === 'hero' && b.data && safeImageUrl(b.data.image));
   const ogImage = safeImageUrl(c.logoImage) || (heroBlock ? safeImageUrl(heroBlock.data.image) : '');
@@ -174,6 +177,7 @@ ${blocksHtml.trim() ? '' : '<meta name="robots" content="noindex">'}
 </head>
 <body>
 ${hasGallery ? LIGHTBOX_HTML : ''}
+${hasProducts ? PRODUCT_MODAL_HTML : ''}
 <div id="previewArea" style="${escapeHtml(pageVars(c))}">
 ${headerHtml}
 ${blocksHtml}
@@ -187,6 +191,7 @@ ${showWatermark(page) ? `<a href="https://netlink.bio" target="_blank" rel="noop
 </footer>
 </div>
 ${hasGallery ? `<script>${LIGHTBOX_JS}</script>` : ''}
+${hasInteractive ? `<script>${BLOCKS_JS}</script>` : ''}
 <script>
 // Fire-and-forget click tracking (Gold Landing Page stats). Resolved by
 // slug server-side, same pattern as api/bio.js's trackClick.

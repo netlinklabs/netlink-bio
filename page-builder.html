@@ -251,6 +251,18 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .sub-head .mini .danger:hover:not(:disabled) { background: rgba(239,83,80,0.2); color: #ef5350; }
 .icon-choose { width: 100%; background: rgba(var(--w),0.05); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: 1px solid rgba(var(--w),0.1); color: rgba(var(--w),0.85); font-size: 12px; font-family: inherit; }
 .icon-choose i.main { width: 30px; height: 30px; background: rgba(var(--w),0.1); border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 14px; }
+.item-photo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.item-photo img, .item-photo-empty { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: rgba(var(--w),0.08); display: flex; align-items: center; justify-content: center; color: rgba(var(--w),0.4); font-size: 20px; }
+.more-photos { margin: 0 0 8px; }
+.more-label { display: block; font-size: 11px; color: rgba(var(--w),0.5); margin-bottom: 6px; }
+.more-row { display: flex; gap: 8px; }
+.more-thumb { position: relative; width: 56px; height: 56px; }
+.more-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block; }
+.more-thumb button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: none; background: #ef5350; color: #fff; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.more-add { width: 56px; height: 56px; border-radius: 8px; border: 1px dashed rgba(var(--w),0.3); background: transparent; color: rgba(var(--w),0.6); cursor: pointer; font-size: 16px; }
+.item-photo-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.item-photo-actions button { border: 1px solid rgba(var(--w),0.12); background: rgba(var(--w),0.06); color: var(--fg); border-radius: 8px; padding: 7px 10px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.item-photo-actions .danger:hover { background: rgba(239,83,80,0.2); color: #ef5350; }
 .small-add { margin-top: 10px; font-size: 12px; padding: 10px; }
 .type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; overflow-y: auto; padding-right: 4px; }
 .type-card { text-align: left; background: var(--card); border: 1px solid rgba(var(--w),0.1); border-radius: 12px; padding: 14px; color: var(--fg); cursor: pointer; font-family: inherit; transition: background 0.2s, transform 0.2s; }
@@ -611,7 +623,7 @@ window.LB = LB;
 <label class="sidebar-label">Page Modules</label>
 <div id="moduleList" class="mod-list"></div>
 <button id="addModuleBtn" onclick="openAddModule()" class="sidebar-btn btn-gold"><i class="fa-solid fa-plus"></i> Add Module</button>
-<p class="gallery-limit" id="moduleCount">0 / 30 modules</p>
+<p class="gallery-limit" id="moduleCount">0 / 20 modules</p>
 </div>
 
 <div class="draft-note">
@@ -660,7 +672,7 @@ window.LB = LB;
 </div>
 <button type="button" class="dev-close" onclick="closeDevicePreview()" aria-label="Close preview">✕</button>
 </div>
-<div class="dev-stage" id="devStage"><div class="dev-frame" id="devFrame"><iframe id="devIframe" title="Page preview" sandbox></iframe></div></div>
+<div class="dev-stage" id="devStage"><div class="dev-frame" id="devFrame"><iframe id="devIframe" title="Page preview" sandbox="allow-scripts"></iframe></div></div>
 </div>
 
 <div id="addModuleModal">
@@ -803,7 +815,10 @@ const base = LB.defaultBlockData(b.type);
 const saved = (b.data && typeof b.data === 'object') ? b.data : {};
 const data = Object.assign(base, saved);
 if (b.type === 'contact') data.channels = Object.assign(LB.defaultBlockData('contact').channels, saved.channels || {});
-['images', 'items', 'rows'].forEach(k => { if (k in base && !Array.isArray(data[k])) data[k] = base[k]; });
+['images', 'items', 'rows', 'links'].forEach(k => {
+if (k in base && !Array.isArray(data[k])) data[k] = base[k];
+if (Array.isArray(data[k])) data[k] = data[k].filter(x => x && typeof x === 'object');
+});
 s.blocks.push({ id, type: b.type, data });
 });
 // One hero at most, always first.
@@ -1095,7 +1110,7 @@ const body = '<div id="previewArea" style="' + LB.escapeHtml(LB.pageVars(state))
 '<footer class="page-footer"><div class="section-inner"><a>Made with Netlink</a></div></footer></div>';
 return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
 '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">' +
-'<style>' + PREVIEW_BASE_CSS + LB.BLOCKS_CSS + '</style></head><body>' + body + '</body></html>';
+'<style>' + PREVIEW_BASE_CSS + LB.BLOCKS_CSS + '</style></head><body>' + body + LB.PRODUCT_MODAL_HTML + '<script>function trackClick(){}<\/script><script>' + LB.BLOCKS_JS + '<\/script></body></html>';
 }
 
 function layoutDevicePreview() {
@@ -1354,6 +1369,14 @@ case 'image': t = d.caption || (d.image ? 'Image added' : ''); break;
 case 'location': t = [d.addressLine, d.addressCity].filter(Boolean).join(', '); break;
 case 'hours': t = d.rows.map(r => r.label).filter(Boolean).join(', '); break;
 case 'contact': t = LB.CONTACT_CHANNEL_DEFS.filter(c => d.channels[c.key] && d.channels[c.key].checked && d.channels[c.key].value).map(c => c.key).join(', '); break;
+case 'video': t = d.items.filter(i => i.url).length ? d.items.filter(i => i.url).length + ' video(s)' : ''; break;
+case 'faq': t = d.items.filter(i => i.q).map(i => i.q).join(', '); break;
+case 'testimonials': t = d.items.filter(i => i.name).map(i => i.name).join(', ') || (d.items.some(i => i.text) ? 'Review added' : ''); break;
+case 'products': t = d.items.filter(i => i.title).map(i => i.title).join(', '); break;
+case 'social': t = d.links.filter(l => l.url).map(l => l.platform).join(', '); break;
+case 'cta': t = d.headline || d.text; break;
+case 'team': t = d.items.filter(i => i.name).map(i => i.name).join(', '); break;
+case 'divider': t = ({ line: 'Line', dots: 'Dots', space: 'Space' })[d.style] + ', ' + d.size; break;
 }
 return String(t || '').trim() || 'Empty, tap to edit';
 }
@@ -1509,8 +1532,10 @@ const CROP_SPECS = {
 mobile: { ratio: 1, outW: 1080, outH: 1080, hint: 'Phones and tablets. Drag the photo to choose what shows, use the slider to zoom.' },
 desktop: { ratio: 12 / 5, outW: 1920, outH: 800, hint: 'Computers and large screens. Drag the photo to choose what shows, use the slider to zoom.' },
 square: { ratio: 1, outW: 1200, outH: 1200, hint: 'The photo is shown as a square. Drag it to choose what shows, use the slider to zoom.' },
+avatar: { ratio: 1, outW: 600, outH: 600, hint: 'The photo is shown as a square or circle. Drag it to choose what shows, use the slider to zoom.' },
+product: { ratio: 1, outW: 1000, outH: 1000, hint: 'This square shows on the card. Visitors see the full photo in the details popup. Drag to choose what shows on the card.' },
 };
-const crop = { id: null, tab: 'mobile', names: ['mobile', 'desktop'], url: null, natW: 0, natH: 0, tabs: {}, dragging: false, lastX: 0, lastY: 0 };
+const crop = { id: null, idx: null, kind: 'hero', file: null, tab: 'mobile', names: ['mobile', 'desktop'], url: null, natW: 0, natH: 0, tabs: {}, dragging: false, lastX: 0, lastY: 0 };
 
 function heroImageField(id, d) {
 const fid = 'file-' + id + '-image';
@@ -1553,13 +1578,13 @@ b.data.image = ''; b.data.imageDesktop = '';
 renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
 }
 
-function cropPickFile(id, input) {
+function cropPickFile(id, input, idx) {
 const file = input.files && input.files[0];
 input.value = '';
 if (!file) return;
 if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { showToast('Please choose a JPG, PNG or WebP image'); return; }
 if (file.size > 20 * 1024 * 1024) { showToast('Image is too large (max 20 MB).'); return; }
-openCropModal(id, file);
+openCropModal(id, file, idx);
 }
 
 function setCropError(text) {
@@ -1568,12 +1593,16 @@ el.innerHTML = text ? '<i class="fa-solid fa-triangle-exclamation"></i> ' + text
 el.classList.toggle('hidden', !text);
 }
 
-function openCropModal(id, file) {
+function openCropModal(id, file, idx) {
 if (crop.url) URL.revokeObjectURL(crop.url);
 crop.id = id;
+crop.idx = typeof idx === 'number' ? idx : null;
+crop.file = file;
 const blk = getBlock(id);
-// Hero: two crops (mobile + desktop). Image + Text: one square crop.
-crop.names = blk && blk.type === 'imagetext' ? ['square'] : ['mobile', 'desktop'];
+// Hero: two crops (mobile + desktop). Image + Text: one square crop. Items of other modules: one square crop.
+const KIND = { hero: 'hero', imagetext: 'square', testimonials: 'avatar', team: 'avatar', products: 'product' };
+crop.kind = (blk && KIND[blk.type]) || 'hero';
+crop.names = crop.kind === 'hero' ? ['mobile', 'desktop'] : [crop.kind === 'square' ? 'square' : crop.kind];
 document.querySelector('.crop-tabs').style.display = crop.names.length > 1 ? 'flex' : 'none';
 document.querySelector('#cropModal .modal-title').textContent = crop.names.length > 1 ? 'Crop your banner' : 'Crop your photo';
 crop.url = URL.createObjectURL(file);
@@ -1599,7 +1628,7 @@ function closeCropModal() {
 document.getElementById('cropModal').classList.remove('active');
 if (crop.url) { URL.revokeObjectURL(crop.url); crop.url = null; }
 document.getElementById('cropImg').removeAttribute('src');
-crop.id = null;
+crop.id = null; crop.idx = null; crop.file = null;
 }
 
 function setCropTab(t) {
@@ -1673,11 +1702,19 @@ ctx.drawImage(document.getElementById('cropImg'), -s.x / s.scale, -s.y / s.scale
 return canvas.toDataURL('image/jpeg', 0.82);
 }
 
-function applyCropToBlock() {
+async function applyCropToBlock() {
 const b = getBlock(crop.id);
 if (!b) { closeCropModal(); return; }
 try {
-if (b.type === 'imagetext') {
+const item = crop.idx !== null && b.data.items ? b.data.items[crop.idx] : null;
+if (crop.idx !== null && !item) { closeCropModal(); return; }
+if (crop.kind === 'avatar') {
+item.photo = renderCropTab('avatar');
+} else if (crop.kind === 'product') {
+item.image = renderCropTab('product');
+// The popup shows the whole photo, so a compressed copy of the original is kept too.
+item.imageFull = await readPhoto(crop.file, 1600);
+} else if (b.type === 'imagetext') {
 b.data.image = renderCropTab('square');
 b.data.imageSquare = true;
 } else {
@@ -1741,6 +1778,30 @@ case 'contact':
 return fText(id, 'title', 'Title', d.title, 'e.g. Contact Us') +
 fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) +
 contactEditorHtml(b);
+case 'video':
+return fText(id, 'title', 'Title', d.title, 'e.g. Property tour') +
+'<div class="row2">' + fSelect(id, 'layout', 'Layout', d.layout, [['single', '1 per row'], ['grid', '2 columns (desktop)']]) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
+videoEditorHtml(b);
+case 'faq':
+return fText(id, 'title', 'Title', d.title, 'e.g. Questions') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + faqEditorHtml(b);
+case 'testimonials':
+return fText(id, 'title', 'Title', d.title, 'e.g. What clients say') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + testimonialsEditorHtml(b);
+case 'products':
+return fText(id, 'title', 'Title', d.title, 'e.g. Our packages') +
+'<div class="row2">' + fSelect(id, 'columns', 'Columns (desktop)', d.columns, [[1, '1 column'], [2, '2 columns'], [3, '3 columns']], true) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
+productsEditorHtml(b);
+case 'social':
+return fText(id, 'title', 'Title (optional)', d.title, 'e.g. Follow us') +
+'<div class="row2">' + fSelect(id, 'align', 'Align', d.align, ALIGN_OPTIONS) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' + socialEditorHtml(b);
+case 'cta':
+return fText(id, 'headline', 'Headline', d.headline, 'e.g. Ready to talk?') +
+fArea(id, 'text', 'Text (optional)', d.text, 'One or two short sentences', 500) +
+'<div class="row2">' + fText(id, 'buttonLabel', 'Button label', d.buttonLabel, 'e.g. Chat now', 60) + fUrl(id, 'buttonUrl', 'Button link', d.buttonUrl) + '</div>' +
+'<div class="row2">' + fSelect(id, 'style', 'Style', d.style, [['brand', 'Brand color'], ['light', 'Light']]) + fSelect(id, 'align', 'Text align', d.align, ALIGN_OPTIONS) + '</div>';
+case 'team':
+return fText(id, 'title', 'Title', d.title, 'e.g. Our team') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + teamEditorHtml(b);
+case 'divider':
+return '<div class="row2">' + fSelect(id, 'style', 'Style', d.style, [['line', 'Line'], ['dots', 'Dots'], ['space', 'Empty space']]) + fSelect(id, 'size', 'Height', d.size, [['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]) + '</div>';
 }
 return '';
 }
@@ -1848,6 +1909,177 @@ const ch = b.data.channels[def.key] || { checked: false, value: '' };
 return '<div class="field"><label class="module-toggle" style="padding:6px 0;"><input type="checkbox"' + (ch.checked ? ' checked' : '') + ' onchange="onChannel(\'' + id + '\', \'' + def.key + '\', \'checked\', this.checked)"><span style="display:flex;align-items:center;gap:8px;"><i class="' + def.icon + '" style="width:16px;text-align:center;"></i> ' + def.label.replace(/^(Chat on|Message on|Add on) /, '') + '</span></label>' +
 '<input type="text" class="sidebar-input" maxlength="200" placeholder="' + esc(CHANNEL_PLACEHOLDERS[def.key]) + '" value="' + esc(ch.value) + '" oninput="onChannel(\'' + id + '\', \'' + def.key + '\', \'value\', this.value)"></div>';
 }).join('');
+}
+
+// ---------- new modules: video, faq, testimonials, products, social, cta, team, divider ----------
+
+const LIST_DEFS = {
+video: { key: 'items', max: () => LB.MAX_VIDEO_ITEMS, make: () => ({ url: '', title: '', channel: '' }), label: 'Video' },
+faq: { key: 'items', max: () => LB.MAX_FAQ_ITEMS, make: () => ({ q: '', a: '' }), label: 'Question' },
+testimonials: { key: 'items', max: () => LB.MAX_TESTIMONIALS, make: () => ({ name: '', role: '', text: '', rating: 5, photo: '' }), label: 'Review' },
+products: { key: 'items', max: () => LB.MAX_PRODUCTS, make: () => ({ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }), label: 'Item' },
+social: { key: 'links', max: () => LB.MAX_SOCIAL_LINKS, make: () => ({ platform: 'instagram', url: '' }), label: 'Link' },
+team: { key: 'items', max: () => LB.MAX_TEAM_MEMBERS, make: () => ({ name: '', role: '', photo: '' }), label: 'Person' },
+};
+
+function addListItem(id) {
+const b = getBlock(id), def = b && LIST_DEFS[b.type]; if (!def) return;
+if (b.data[def.key].length >= def.max()) return;
+b.data[def.key].push(def.make());
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+function removeListItem(id, i) {
+const b = getBlock(id), def = b && LIST_DEFS[b.type]; if (!def) return;
+b.data[def.key].splice(i, 1);
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+function moveListItem(id, i, dir) {
+const b = getBlock(id), def = b && LIST_DEFS[b.type]; if (!def) return;
+const arr = b.data[def.key], j = i + dir;
+if (j < 0 || j >= arr.length) return;
+const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function liHead(id, i, n, label) {
+return '<div class="sub-head"><span>' + label + ' ' + (i + 1) + '</span>' +
+miniButtons('moveListItem(\'' + id + '\', ' + i + ', -1)', 'moveListItem(\'' + id + '\', ' + i + ', 1)', 'removeListItem(\'' + id + '\', ' + i + ')', i, n) + '</div>';
+}
+const LI_STYLE = 'padding:10px;margin:0 0 8px;font-size:13px;';
+function liText(id, listKey, i, key, ph, val, max, type) {
+return '<input type="' + (type || 'text') + '" class="sidebar-input" style="' + LI_STYLE + '" maxlength="' + (max || 200) + '" placeholder="' + esc(ph) + '" value="' + esc(val) + '" oninput="onListField(\'' + id + '\', \'' + listKey + '\', ' + i + ', \'' + key + '\', this.value)">';
+}
+function liArea(id, listKey, i, key, ph, val, max) {
+return '<textarea class="sidebar-textarea" style="' + LI_STYLE + 'min-height:70px;" maxlength="' + (max || 800) + '" placeholder="' + esc(ph) + '" oninput="onListField(\'' + id + '\', \'' + listKey + '\', ' + i + ', \'' + key + '\', this.value)">' + esc(val) + '</textarea>';
+}
+function listFooter(b) {
+const def = LIST_DEFS[b.type], n = b.data[def.key].length;
+return n < def.max()
+? '<button onclick="addListItem(\'' + b.id + '\')" class="sidebar-btn btn-outline small-add">+ Add ' + def.label + '</button>'
+: '<p class="gallery-limit">Maximum ' + def.max() + '.</p>';
+}
+
+// Small photo row inside an item: thumbnail, upload/change and remove. The crop box opens after picking a file.
+function itemPhotoField(id, i, photo, label) {
+const fid = 'file-' + id + '-' + i + '-photo';
+const input = '<input type="file" id="' + fid + '" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="cropPickFile(\'' + id + '\', this, ' + i + ')">';
+return '<div class="item-photo">' + (photo ? '<img src="' + esc(photo) + '" alt="">' : '<span class="item-photo-empty"><i class="fa-regular fa-image"></i></span>') +
+'<div class="item-photo-actions"><button type="button" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-crop-simple"></i> ' + (photo ? 'Change photo' : label) + '</button>' +
+(photo ? '<button type="button" class="danger" onclick="itemRemovePhoto(\'' + id + '\', ' + i + ')"><i class="fa-solid fa-trash-can"></i> Remove</button>' : '') + '</div>' + input + '</div>';
+}
+
+function itemRemovePhoto(id, i) {
+const b = getBlock(id); if (!b || !b.data.items[i]) return;
+const it = b.data.items[i];
+if (b.type === 'products') { it.image = ''; it.imageFull = ''; it.moreImages = []; } else { it.photo = ''; }
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function videoEditorHtml(b) {
+const id = b.id, items = b.data.items;
+const rows = items.map((it, i) => {
+const bad = it.url && !LB.extractYouTubeId(it.url);
+return '<div class="sub-card">' + liHead(id, i, items.length, 'Video') +
+'<input type="url" class="sidebar-input" style="' + LI_STYLE + '" maxlength="500" placeholder="https://youtube.com/watch?v=..." value="' + esc(it.url) + '" oninput="onListField(\'' + id + '\', \'items\', ' + i + ', \'url\', this.value)" onchange="videoUrlChanged(\'' + id + '\', ' + i + ')">' +
+(bad ? '<p class="field-hint warning" style="margin:0 0 8px;"><i class="fa-solid fa-triangle-exclamation"></i> Not a YouTube link. It will show as a plain link.</p>' : '') +
+liText(id, 'items', i, 'title', 'Title (empty = YouTube title)', it.title, 150) + '</div>';
+}).join('');
+return rows + listFooter(b);
+}
+
+// Title and channel come from YouTube's free oEmbed endpoint (same as the link in bio page). Best effort only.
+async function videoUrlChanged(id, i) {
+const b = getBlock(id); if (!b || !b.data.items[i]) return;
+const it = b.data.items[i], url = it.url;
+if (LB.extractYouTubeId(url) && (!it.title || !it.channel)) {
+for (const base of ['https://www.youtube.com/oembed?format=json&url=', 'https://noembed.com/embed?url=']) {
+try {
+const res = await fetch(base + encodeURIComponent(url));
+if (!res.ok) continue;
+const j = await res.json();
+if (j && (j.title || j.author_name) && it.url === url) {
+if (!it.title) it.title = String(j.title || '').slice(0, 150);
+it.channel = String(j.author_name || '').slice(0, 100);
+break;
+}
+} catch (e) { /* try the next endpoint */ }
+}
+}
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function faqEditorHtml(b) {
+const id = b.id, items = b.data.items;
+return items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Question') +
+liText(id, 'items', i, 'q', 'Question', it.q, 200) + liArea(id, 'items', i, 'a', 'Answer', it.a, 2000) + '</div>').join('') + listFooter(b);
+}
+
+function testimonialsEditorHtml(b) {
+const id = b.id, items = b.data.items;
+return items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Review') +
+liArea(id, 'items', i, 'text', 'What did they say?', it.text, 800) +
+liText(id, 'items', i, 'name', 'Name', it.name, 80) + liText(id, 'items', i, 'role', 'Role or place (optional)', it.role, 100) +
+'<select class="sidebar-select" style="' + LI_STYLE + '" onchange="onListField(\'' + id + '\', \'items\', ' + i + ', \'rating\', parseInt(this.value, 10))">' +
+[5, 4, 3, 2, 1, 0].map(n => '<option value="' + n + '"' + (parseInt(it.rating, 10) === n ? ' selected' : '') + '>' + (n ? n + (n === 1 ? ' star' : ' stars') : 'No stars') + '</option>').join('') + '</select>' +
+itemPhotoField(id, i, it.photo, 'Add photo (optional)') + '</div>').join('') + listFooter(b);
+}
+
+// Extra photos (no crop): shown only in the popup as slides. Up to MAX_PRODUCT_PHOTOS in total with the main photo.
+function moreProductPhotosHtml(id, i, it) {
+if (!it.image) return '';
+const more = Array.isArray(it.moreImages) ? it.moreImages : [];
+const fid = 'file-' + id + '-' + i + '-more';
+const thumbs = more.map((u, k) => '<div class="more-thumb"><img src="' + esc(u) + '" alt=""><button type="button" onclick="removeMorePhoto(\'' + id + '\', ' + i + ', ' + k + ')" aria-label="Remove photo"><i class="fa-solid fa-xmark"></i></button></div>').join('');
+const room = LB.MAX_PRODUCT_PHOTOS - 1 - more.length;
+const add = room > 0
+? '<button type="button" class="more-add" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-plus"></i></button><input type="file" id="' + fid + '" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" onchange="addMorePhotos(\'' + id + '\', ' + i + ', this)">'
+: '';
+return '<div class="more-photos"><span class="more-label">More photos for the popup (' + (1 + more.length) + ' / ' + LB.MAX_PRODUCT_PHOTOS + ')</span><div class="more-row">' + thumbs + add + '</div></div>';
+}
+
+async function addMorePhotos(id, i, input) {
+const b = getBlock(id), it = b && b.data.items[i];
+const files = Array.from(input.files); input.value = '';
+if (!it) return;
+if (!Array.isArray(it.moreImages)) it.moreImages = [];
+const room = LB.MAX_PRODUCT_PHOTOS - 1 - it.moreImages.length;
+for (const f of files.slice(0, Math.max(0, room))) {
+try { it.moreImages.push(await readPhoto(f, 1600)); } catch (e) { showToast(e.message); }
+}
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function removeMorePhoto(id, i, k) {
+const b = getBlock(id), it = b && b.data.items[i]; if (!it || !Array.isArray(it.moreImages)) return;
+it.moreImages.splice(k, 1);
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function productsEditorHtml(b) {
+const id = b.id, items = b.data.items;
+return '<p class="field-hint" style="margin:8px 0 0;"><i class="fa-regular fa-lightbulb"></i> The card shows a square photo. Visitors tap a card to see the full photos (up to 3), price and full text.</p>' +
+items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Item') +
+itemPhotoField(id, i, it.image, 'Add photo') + moreProductPhotosHtml(id, i, it) +
+liText(id, 'items', i, 'title', 'Title', it.title, 120) +
+liText(id, 'items', i, 'price', 'Price (number, e.g. 2500000, optional)', it.price, 40) +
+liArea(id, 'items', i, 'desc', 'Description (full text shows in the popup)', it.desc, 1500) +
+liText(id, 'items', i, 'buttonLabel', 'Button label in popup (optional)', it.buttonLabel, 60) +
+liText(id, 'items', i, 'buttonUrl', 'Button link, https://...', it.buttonUrl, 2000, 'url') + '</div>').join('') + listFooter(b);
+}
+
+function socialEditorHtml(b) {
+const id = b.id, links = b.data.links;
+return links.map((l, i) => '<div class="sub-card">' + liHead(id, i, links.length, 'Link') +
+'<select class="sidebar-select" style="' + LI_STYLE + '" onchange="onListField(\'' + id + '\', \'links\', ' + i + ', \'platform\', this.value)">' +
+LB.SOCIAL_DEFS.map(d => '<option value="' + d.key + '"' + (d.key === l.platform ? ' selected' : '') + '>' + d.label + '</option>').join('') + '</select>' +
+liText(id, 'links', i, 'url', 'https://...', l.url, 2000, 'url') + '</div>').join('') + listFooter(b);
+}
+
+function teamEditorHtml(b) {
+const id = b.id, items = b.data.items;
+return items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Person') +
+itemPhotoField(id, i, it.photo, 'Add photo') +
+liText(id, 'items', i, 'name', 'Name', it.name, 80) + liText(id, 'items', i, 'role', 'Role (e.g. Senior Lawyer)', it.role, 100) + '</div>').join('') + listFooter(b);
 }
 
 // ----- field change handlers -----
@@ -1964,6 +2196,7 @@ state.blocks.forEach(b => {
 if (typeof b.data.image === 'string') add(b.data, 'image', b.id);
 if (typeof b.data.imageDesktop === 'string') add(b.data, 'imageDesktop', b.id + '-d');
 (b.data.images || []).forEach(g => add(g, 'src', b.id + '-g'));
+(b.data.items || []).forEach(it => { add(it, 'photo', b.id + '-p'); add(it, 'image', b.id + '-i'); add(it, 'imageFull', b.id + '-f'); if (Array.isArray(it.moreImages)) it.moreImages.forEach((u, k) => add(it.moreImages, k, b.id + '-m')); });
 });
 for (let i = 0; i < jobs.length; i++) {
 setUpdateProgress(20 + (60 * i / jobs.length), 'Uploading image ' + (i + 1) + ' of ' + jobs.length + '...');
@@ -1987,6 +2220,7 @@ content.blocks.forEach(b => {
 note(b.data.image);
 note(b.data.imageDesktop);
 (b.data.images || []).forEach(g => note(g.src));
+(b.data.items || []).forEach(it => { note(it.photo); note(it.image); note(it.imageFull); (Array.isArray(it.moreImages) ? it.moreImages : []).forEach(note); });
 });
 const { data: files } = await supabaseClient.storage.from('landing-images').list(currentUser.id, { limit: 1000 });
 const stale = (files || []).filter(f => f.name && !used.has(f.name)).map(f => currentUser.id + '/' + f.name);
@@ -2138,6 +2372,11 @@ document.body.insertAdjacentHTML('beforeend', LB.LIGHTBOX_HTML);
 const lbScript = document.createElement('script');
 lbScript.textContent = LB.LIGHTBOX_JS;
 document.body.appendChild(lbScript);
+// Product detail popup and tap-to-play video cards.
+document.body.insertAdjacentHTML('beforeend', LB.PRODUCT_MODAL_HTML);
+const blkScript = document.createElement('script');
+blkScript.textContent = LB.BLOCKS_JS;
+document.body.appendChild(blkScript);
 const style = document.createElement('style');
 style.textContent = LB.BLOCKS_CSS;
 document.head.appendChild(style);

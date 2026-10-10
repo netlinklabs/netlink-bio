@@ -7,6 +7,17 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **Landing page builder: 8 new modules** (Gold): Video, FAQ, Testimonials, Products, Social Links, Call to Action, Team and Divider. Rendering lives in `shared/landing-blocks.js`, so the editor preview and `/page/:slug` match
+- **Video**: YouTube links only, tap to play with `youtube-nocookie.com`, same card look and link rules as the link in bio page. Up to 13 videos, 1 per row or 2 columns on desktop. Title and channel are filled from YouTube oEmbed when empty
+- **Products**: cards with a 1:1 cropped photo, title, price and short text. Tapping a card opens a detail popup with the full (uncropped) photo, price, full description and an optional button. The popup colors follow the page brand color
+- **Products: up to 3 photos per item.** The main photo is cropped 1:1 for the card (plus a full copy), and up to 2 more photos (no crop, 1600px) show only in the popup as swipe slides with arrows and a counter. Removing the main photo removes the extra ones too. Stored as `moreImages` on the item; uploads and orphan cleanup cover them
+- **Testimonials, Team**: item photos use the shared crop box with a square 600x600 crop (circle avatar on Testimonials). **FAQ** uses native `<details>` (no script). **Social Links** has 12 platforms and only accepts http(s) links. **Divider**: line, dots or empty space in 3 heights
+- **`api/landing.js`**: loads the small shared script (`BLOCKS_JS`) and the product popup markup only when a page has a Video or Products module
+- **Storage: `landing-images` bucket now limits each file to 2 MB and to JPEG, PNG and WebP** (`supabase/migrations/20261010_landing_images_bucket_limits.sql`, already applied to production). Before this the bucket had no size or type limit
+- **Landing page builder: module limit lowered from 30 to 20 per page** (`MAX_BLOCKS` in `shared/landing-blocks.js`, used by the editor and `/page/:slug`)
+- **`page-builder.html`**: the device preview iframe now uses `sandbox="allow-scripts"` so video cards and the product popup work there. Item photos are uploaded and cleaned up like other images (`photo`, `image`, `imageFull`)
+
 ### Changed
 - **`page-builder.html`: Image + Text photos are cropped to a square.** Choosing a photo opens the same crop box as the hero (drag + zoom), with a single square view (no Mobile/Desktop tabs) and saves a 1200x1200 JPEG. The module data gets `imageSquare: true`. "Change photo" and "Remove" replace the old image field. The crop modal and its functions are now shared between the hero and Image + Text (`cropPickFile`, `applyCropToBlock`).
 - **`shared/landing-blocks.js`: square Image + Text photos get the `sq` class** (max 480px wide when stacked on phones, half width next to the text on larger screens). Photos uploaded before this change keep their own shape and show a hint to upload again.
