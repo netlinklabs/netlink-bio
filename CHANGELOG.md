@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`page-builder.html`: the 12 Brand Color choices are now a curated, more muted palette.** Replaced the bright set (red, green, amber, pink, purple and others) with tones based on current website and brand color guidance (earthy and warm neutrals, calm greens, deep jewel blues, soft mauve and plum): Espresso `#5D4037`, Terracotta `#B0553A`, Dusty rose `#B0546E`, Plum `#6B4E8C`, Sage `#4F7360`, Forest `#1F5C4A`, Teal `#1B7A7A`, Sapphire `#1F4E8C`, Midnight `#1F2A44`, Ochre `#A8680F`, Warm sand `#C9B08A` and Charcoal `#212121`. Espresso (the default) and Charcoal are unchanged, so pages using them still show the active swatch. Eleven colors keep white text with contrast 4.5 or higher. Warm sand is light, so the page switches to dark text automatically (contrast 7.7). Each swatch has a `title` and `aria-label`. Saved pages keep their color, the old swatches (for example `#1A237E`) simply no longer show as active in the editor. No JS change.
+
 ### Added
 - **`page-builder.html`: 6 more Brand Color choices.** Added Light brown `#8D6E63`, Pink `#D81B60`, Purple `#7E57C2`, Teal `#00796B`, Coral `#D84315` and Slate `#455A64` after the existing six, so the palette also suits women owned and other businesses. All six keep readable white text on the brand color (contrast 4.6 or higher). The picker now wraps to two rows. No JS change: `setPrimary()` and the active state already work on any `.color-btn`. Saved pages are not affected. The swatches are only added to the editor, `primary` accepts any hex color.
 
