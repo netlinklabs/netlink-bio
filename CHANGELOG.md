@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **Landing page social preview image (`api/og.js`, `api/landing.js`).** Sharing `netlink.bio/page/:slug` now shows a 1200x630 card built from the page hero banner, like the link in bio card on Gold accounts. The banner gets a dark gradient overlay (40% black at the top to 70% at the bottom, 55% on average), the business name and tagline sit at the bottom left, and the Netlink logo is at the top right. The wide desktop crop of the hero is used first, then the square one. If the hero has no image, the card uses a gradient of the page color. `api/landing.js` points `og:image` and `twitter:image` to `/api/og?type=page&slug=...&r=N&v=<updated_at>`, so the card refreshes after every edit. Only hero images stored in our own public storage are fetched. A page whose owner is no longer on Gold gets the static Netlink image. No new serverless function.
+
 ### Fixed
 - **Landing page hero filled only the left part of the screen in Chrome mobile "Desktop site" (`shared/landing-blocks.js`).** Desktop site mode uses a viewport of about 980px, between the 768px and 1024px breakpoints. In that range the cropped hero kept its square (1:1) box capped at 560px high, so it shrank to a 560px wide square with white space on the right. The cropped hero is now full width and uses the wide image and 12:5 ratio from 768px up (was 1024px). Phones (under 768px) are unchanged. Heroes without crop images are unchanged.
 

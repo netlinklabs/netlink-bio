@@ -16,6 +16,7 @@ import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { sitemapHandler } from './_lib/sitemap.js';
 import { withStats } from './_lib/stats.js';
+import { OG_RENDER_VERSION } from './_lib/og-shared.js';
 import {
   MAX_BLOCKS, BLOCKS_CSS, LIGHTBOX_HTML, LIGHTBOX_JS, PRODUCT_MODAL_HTML, BLOCKS_JS,
   renderHeader, renderBlocks, pageVars, safeImageUrl,
@@ -139,6 +140,10 @@ async function handler(req, res) {
 
   const heroBlock = blocks.find((b) => b.type === 'hero' && b.data && safeImageUrl(b.data.image));
   const ogImage = safeImageUrl(c.logoImage) || (heroBlock ? safeImageUrl(heroBlock.data.image) : '');
+  // Social preview: api/og.js renders the hero banner with the name, tagline and Netlink logo.
+  // `v` (updated_at) makes the URL change after every edit, so caches never serve an old card.
+  const ogVer = Date.parse(page.updated_at) || 0;
+  const ogCard = `https://netlink.bio/api/og?type=page&slug=${encodeURIComponent(page.slug)}&r=${OG_RENDER_VERSION}&v=${ogVer}`;
 
   // ---- JSON-LD (schema.org) ----
   // @type comes from BUSINESS_TYPE_SCHEMA, keyed by the `business_type`
@@ -167,7 +172,12 @@ async function handler(req, res) {
 <meta name="description" content="${escapeHtml(desc || `${businessName} on Netlink`)}">
 <meta property="og:title" content="${escapeHtml(businessName)}">
 <meta property="og:description" content="${escapeHtml(desc || tagline)}">
-${ogImage ? `<meta property="og:image" content="${escapeHtml(ogImage)}">` : ''}
+<meta property="og:type" content="website">
+<meta property="og:image" content="${escapeHtml(ogCard)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${escapeHtml(ogCard)}">
 <meta property="og:url" content="${pageUrl}">
 ${blocksHtml.trim() ? '' : '<meta name="robots" content="noindex">'}
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
