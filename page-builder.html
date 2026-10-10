@@ -646,7 +646,7 @@ window.LB = LB;
 <p id="cropError" class="field-hint warning hidden"></p>
 <div class="modal-actions" style="flex-direction:row;margin-top:16px;">
 <button type="button" onclick="closeCropModal()" class="sidebar-btn btn-outline">Cancel</button>
-<button type="button" onclick="applyCropToHero()" class="sidebar-btn btn-gold">Apply</button>
+<button type="button" onclick="applyCropToBlock()" class="sidebar-btn btn-gold">Apply</button>
 </div>
 </div>
 </div>
@@ -1508,12 +1508,13 @@ return '<div class="mini"><button onclick="' + upCall + '"' + (i === 0 ? ' disab
 const CROP_SPECS = {
 mobile: { ratio: 1, outW: 1080, outH: 1080, hint: 'Phones and tablets. Drag the photo to choose what shows, use the slider to zoom.' },
 desktop: { ratio: 12 / 5, outW: 1920, outH: 800, hint: 'Computers and large screens. Drag the photo to choose what shows, use the slider to zoom.' },
+square: { ratio: 1, outW: 1200, outH: 1200, hint: 'The photo is shown as a square. Drag it to choose what shows, use the slider to zoom.' },
 };
-const crop = { id: null, tab: 'mobile', url: null, natW: 0, natH: 0, tabs: {}, dragging: false, lastX: 0, lastY: 0 };
+const crop = { id: null, tab: 'mobile', names: ['mobile', 'desktop'], url: null, natW: 0, natH: 0, tabs: {}, dragging: false, lastX: 0, lastY: 0 };
 
 function heroImageField(id, d) {
 const fid = 'file-' + id + '-image';
-const input = '<input type="file" id="' + fid + '" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="heroPickFile(\'' + id + '\', this)">';
+const input = '<input type="file" id="' + fid + '" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="cropPickFile(\'' + id + '\', this)">';
 const label = '<label class="sidebar-input-label">Banner image (a dark overlay is added for readability)</label>';
 if (!d.image) {
 return '<div class="field">' + label + '<div class="logo-upload-area" style="padding:16px;margin-bottom:0;" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-cloud-arrow-up" style="font-size:24px;color:rgba(var(--w),0.4);"></i><p style="margin-top:8px;">Click to upload banner photo</p></div>' + input +
@@ -1527,13 +1528,32 @@ return '<div class="field">' + label + thumbs + legacy + input +
 '<div class="mod-footer" style="margin-top:10px;"><button type="button" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-crop-simple"></i> Change photo</button><button type="button" class="danger" onclick="heroRemoveImage(\'' + id + '\')"><i class="fa-solid fa-trash-can"></i> Remove</button></div></div>';
 }
 
+function squareImageField(id, d) {
+const fid = 'file-' + id + '-image';
+const input = '<input type="file" id="' + fid + '" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="cropPickFile(\'' + id + '\', this)">';
+const label = '<label class="sidebar-input-label">Image (shown as a square)</label>';
+if (!d.image) {
+return '<div class="field">' + label + '<div class="logo-upload-area" style="padding:16px;margin-bottom:0;" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-cloud-arrow-up" style="font-size:24px;color:rgba(var(--w),0.4);"></i><p style="margin-top:8px;">Click to upload photo</p></div>' + input +
+'<p class="field-hint" style="margin-top:8px;"><i class="fa-regular fa-lightbulb"></i> Any photo works. You will crop it to a square next.</p></div>';
+}
+const legacy = d.imageSquare === true ? '' : '<p class="field-hint warning" style="margin-top:8px;"><i class="fa-solid fa-triangle-exclamation"></i> Upload this photo again to crop it to a square.</p>';
+return '<div class="field">' + label + '<div class="hero-thumbs"><figure style="width:50%;"><img src="' + esc(d.image) + '" alt=""><figcaption>' + (d.imageSquare === true ? 'Square' : 'Current image') + '</figcaption></figure></div>' + legacy + input +
+'<div class="mod-footer" style="margin-top:10px;"><button type="button" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-crop-simple"></i> Change photo</button><button type="button" class="danger" onclick="squareRemoveImage(\'' + id + '\')"><i class="fa-solid fa-trash-can"></i> Remove</button></div></div>';
+}
+
+function squareRemoveImage(id) {
+const b = getBlock(id); if (!b) return;
+b.data.image = ''; b.data.imageSquare = false;
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
 function heroRemoveImage(id) {
 const b = getBlock(id); if (!b) return;
 b.data.image = ''; b.data.imageDesktop = '';
 renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
 }
 
-function heroPickFile(id, input) {
+function cropPickFile(id, input) {
 const file = input.files && input.files[0];
 input.value = '';
 if (!file) return;
@@ -1551,6 +1571,11 @@ el.classList.toggle('hidden', !text);
 function openCropModal(id, file) {
 if (crop.url) URL.revokeObjectURL(crop.url);
 crop.id = id;
+const blk = getBlock(id);
+// Hero: two crops (mobile + desktop). Image + Text: one square crop.
+crop.names = blk && blk.type === 'imagetext' ? ['square'] : ['mobile', 'desktop'];
+document.querySelector('.crop-tabs').style.display = crop.names.length > 1 ? 'flex' : 'none';
+document.querySelector('#cropModal .modal-title').textContent = crop.names.length > 1 ? 'Crop your banner' : 'Crop your photo';
 crop.url = URL.createObjectURL(file);
 setCropError('');
 const img = document.getElementById('cropImg');
@@ -1558,12 +1583,12 @@ img.onload = () => {
 crop.natW = img.naturalWidth; crop.natH = img.naturalHeight;
 const stageW = document.getElementById('cropStage').clientWidth;
 // Each tab keeps its own position and zoom. The image always covers the stage (no gaps).
-['mobile', 'desktop'].forEach(t => {
+crop.names.forEach(t => {
 const stageH = stageW / CROP_SPECS[t].ratio;
 const minScale = Math.max(stageW / crop.natW, stageH / crop.natH);
 crop.tabs[t] = { stageW, stageH, minScale, scale: minScale, zoom: 1, x: (stageW - crop.natW * minScale) / 2, y: (stageH - crop.natH * minScale) / 2 };
 });
-setCropTab('mobile');
+setCropTab(crop.names[0]);
 };
 img.onerror = () => { closeCropModal(); showToast('Could not read this image. Try another one.'); };
 document.getElementById('cropModal').classList.add('active');
@@ -1579,8 +1604,10 @@ crop.id = null;
 
 function setCropTab(t) {
 crop.tab = t;
+if (crop.names.length > 1) {
 document.getElementById('cropTabMobile').classList.toggle('active', t === 'mobile');
 document.getElementById('cropTabDesktop').classList.toggle('active', t === 'desktop');
+}
 document.getElementById('cropHint').textContent = CROP_SPECS[t].hint;
 document.getElementById('cropStage').style.aspectRatio = String(CROP_SPECS[t].ratio);
 document.getElementById('cropZoom').value = crop.tabs[t].zoom;
@@ -1646,12 +1673,17 @@ ctx.drawImage(document.getElementById('cropImg'), -s.x / s.scale, -s.y / s.scale
 return canvas.toDataURL('image/jpeg', 0.82);
 }
 
-function applyCropToHero() {
+function applyCropToBlock() {
 const b = getBlock(crop.id);
 if (!b) { closeCropModal(); return; }
 try {
+if (b.type === 'imagetext') {
+b.data.image = renderCropTab('square');
+b.data.imageSquare = true;
+} else {
 b.data.image = renderCropTab('mobile');
 b.data.imageDesktop = renderCropTab('desktop');
+}
 } catch (err) {
 setCropError('Could not crop this image. Try another one.');
 return;
@@ -1679,7 +1711,7 @@ fArea(id, 'body', 'Text', d.body, 'Write your text here...') +
 case 'imagetext':
 return fText(id, 'title', 'Title', d.title, 'e.g. Our story') +
 fArea(id, 'body', 'Text', d.body, 'Write your text here...') +
-fImage(id, 'image', 'Image', d.image) +
+squareImageField(id, d) +
 '<div class="row2">' + fSelect(id, 'imagePosition', 'Image position', d.imagePosition, [['left', 'Left'], ['right', 'Right']]) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
 '<div class="row2">' + fText(id, 'buttonLabel', 'Button label', d.buttonLabel, 'optional', 60) + fUrl(id, 'buttonUrl', 'Button link', d.buttonUrl) + '</div>';
 case 'gallery':

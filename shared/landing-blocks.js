@@ -149,7 +149,7 @@ export function defaultBlockData(type) {
   switch (type) {
     case 'hero': return { image: '', imageDesktop: '', headline: '', subtitle: '', badge: '', buttonLabel: '', buttonUrl: '', align: 'left' };
     case 'text': return { title: 'About', body: '', align: 'left', bg: 'white' };
-    case 'imagetext': return { title: '', body: '', image: '', imagePosition: 'left', buttonLabel: '', buttonUrl: '', bg: 'white' };
+    case 'imagetext': return { title: '', body: '', image: '', imageSquare: false, imagePosition: 'left', buttonLabel: '', buttonUrl: '', bg: 'white' };
     case 'gallery': return { title: 'Gallery', images: [], columns: 3, bg: 'soft' };
     case 'cards': return { title: 'Our Services', columns: 2, bg: 'tint', items: [{ title: '', desc: '', price: '', icon: 'fa-solid fa-star' }] };
     case 'image': return { image: '', caption: '', bg: 'white' };
@@ -270,7 +270,8 @@ const RENDERERS = {
     const img = safeImageUrl(d.image, ctx.preview);
     const pos = oneOf(d.imagePosition, ['left', 'right'], 'left');
     const btn = linkButton(d.buttonLabel, d.buttonUrl, 'btn-solid');
-    const imgHtml = img ? '<div class="it-img"><img src="' + escapeHtml(img) + '" alt="' + escapeHtml(str(d.title, 200) || ctx.name) + '" loading="lazy"></div>' : '';
+    // imageSquare: the person cropped the photo to 1:1 when uploading (older photos keep their own shape).
+    const imgHtml = img ? '<div class="it-img' + (d.imageSquare === true ? ' sq' : '') + '"><img src="' + escapeHtml(img) + '" alt="' + escapeHtml(str(d.title, 200) || ctx.name) + '" loading="lazy"></div>' : '';
     const body = str(d.body, 5000).trim();
     const textHtml = (str(d.title).trim() || body || btn)
       ? '<div class="it-text">' + (str(d.title).trim() ? '<h3 class="it-title">' + escapeHtml(str(d.title, 200)) + '</h3>' : '') +
@@ -455,6 +456,7 @@ export const BLOCKS_CSS = `
 
 .it-wrap { display: flex; flex-direction: column; gap: 24px; }
 .it-img img { width: 100%; height: auto; display: block; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+.it-img.sq { width: 100%; max-width: 480px; margin: 0 auto; }
 .it-title { font-size: 20px; font-weight: 700; color: #212121; margin-bottom: 10px; }
 
 .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -513,6 +515,7 @@ export const BLOCKS_CSS = `
   .it-wrap { flex-direction: row; align-items: center; gap: 32px; }
   .it-wrap.right { flex-direction: row-reverse; }
   .it-img, .it-text { flex: 1; min-width: 0; }
+  .it-img.sq { max-width: none; margin: 0; }
 }
 @media (min-width: 1024px) {
   .gallery-grid { gap: 20px; }

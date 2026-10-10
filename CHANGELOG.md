@@ -7,6 +7,10 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`page-builder.html`: Image + Text photos are cropped to a square.** Choosing a photo opens the same crop box as the hero (drag + zoom), with a single square view (no Mobile/Desktop tabs) and saves a 1200x1200 JPEG. The module data gets `imageSquare: true`. "Change photo" and "Remove" replace the old image field. The crop modal and its functions are now shared between the hero and Image + Text (`cropPickFile`, `applyCropToBlock`).
+- **`shared/landing-blocks.js`: square Image + Text photos get the `sq` class** (max 480px wide when stacked on phones, half width next to the text on larger screens). Photos uploaded before this change keep their own shape and show a hint to upload again.
+
 ### Fixed
 - **`page-builder.html`: a page has one hero and it is always first.** The hero module no longer has a Duplicate button and cannot be moved. Nothing can be moved above it. In "Add Module" the Hero card is disabled once a hero exists, and a new hero is inserted at the top. `shared/landing-blocks.js` has a new `orderBlocks()` used by `renderBlocks()` and by the editor when it loads a page: it keeps the first hero, puts it first and drops extra heroes, so the editor and the public page always agree.
 
