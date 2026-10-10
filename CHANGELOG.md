@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **Landing page hero filled only the left part of the screen in Chrome mobile "Desktop site" (`shared/landing-blocks.js`).** Desktop site mode uses a viewport of about 980px, between the 768px and 1024px breakpoints. In that range the cropped hero kept its square (1:1) box capped at 560px high, so it shrank to a 560px wide square with white space on the right. The cropped hero is now full width and uses the wide image and 12:5 ratio from 768px up (was 1024px). Phones (under 768px) are unchanged. Heroes without crop images are unchanged.
+
 ### Changed
 - **Landing page grids: no more empty hole in a short last row (`shared/landing-blocks.js`, `page-builder.html`).** Used by both the editor preview and the published page.
   - **Team:** new **Columns (desktop)** option (2, 3 or 4, default 4). Team used to be fixed at 3 columns on desktop, so 4 people showed as 3 + 1. Existing team blocks have no saved value and now use 4 columns (a team of 4 is one row). Phone stays at 2 columns.
