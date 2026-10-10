@@ -8,6 +8,13 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **Landing page grids: no more empty hole in a short last row (`shared/landing-blocks.js`, `page-builder.html`).** Used by both the editor preview and the published page.
+  - **Team:** new **Columns (desktop)** option (2, 3 or 4, default 4). Team used to be fixed at 3 columns on desktop, so 4 people showed as 3 + 1. Existing team blocks have no saved value and now use 4 columns (a team of 4 is one row). Phone stays at 2 columns.
+  - **Team and Products:** the grids are now centered flex rows instead of CSS grid, so a short last row is centered, not left aligned with a hole on the right. Card width is unchanged (`(100% - gaps) / columns`). The Products **Columns (desktop)** option still works.
+  - **Gallery:** the last photo of a short row stretches to fill it. On phone (2 columns) an odd photo count gives a wide last photo. On desktop it fills the rest of the row (for example 5 photos in 3 columns: the 5th spans 2 columns at the same height as its neighbour, 4 photos in 3 columns: the 4th spans the full row). Set by the renderer through `--sm/--am` (phone) and `--sd/--ad` (desktop) on the last `.gallery-item.gl`. The lightbox is unchanged.
+  - Checked in headless Chromium at 1280px and 390px with 3, 4, 5, 6 and 7 items: last rows are centered (equal left and right gap), the stretched gallery photo has the same bottom edge as its neighbours. Saved content is not changed.
+
+### Changed
 - **`page-builder.html`: the 12 Brand Color choices are now a curated, more muted palette.** Replaced the bright set (red, green, amber, pink, purple and others) with tones based on current website and brand color guidance (earthy and warm neutrals, calm greens, deep jewel blues, soft mauve and plum): Espresso `#5D4037`, Terracotta `#B0553A`, Dusty rose `#B0546E`, Plum `#6B4E8C`, Sage `#4F7360`, Forest `#1F5C4A`, Teal `#1B7A7A`, Sapphire `#1F4E8C`, Midnight `#1F2A44`, Ochre `#A8680F`, Warm sand `#C9B08A` and Charcoal `#212121`. Espresso (the default) and Charcoal are unchanged, so pages using them still show the active swatch. Eleven colors keep white text with contrast 4.5 or higher. Warm sand is light, so the page switches to dark text automatically (contrast 7.7). Each swatch has a `title` and `aria-label`. Saved pages keep their color, the old swatches (for example `#1A237E`) simply no longer show as active in the editor. No JS change.
 
 ### Added

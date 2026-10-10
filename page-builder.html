@@ -1805,7 +1805,9 @@ fArea(id, 'text', 'Text (optional)', d.text, 'One or two short sentences', 500) 
 '<div class="row2">' + fText(id, 'buttonLabel', 'Button label', d.buttonLabel, 'e.g. Chat now', 60) + fUrl(id, 'buttonUrl', 'Button link', d.buttonUrl) + '</div>' +
 '<div class="row2">' + fSelect(id, 'style', 'Style', d.style, [['brand', 'Brand color'], ['light', 'Light']]) + fSelect(id, 'align', 'Text align', d.align, ALIGN_OPTIONS) + '</div>';
 case 'team':
-return fText(id, 'title', 'Title', d.title, 'e.g. Our team') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + teamEditorHtml(b);
+return fText(id, 'title', 'Title', d.title, 'e.g. Our team') +
+'<div class="row2">' + fSelect(id, 'columns', 'Columns (desktop)', d.columns || 4, [[2, '2 columns'], [3, '3 columns'], [4, '4 columns']], true) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
+teamEditorHtml(b);
 case 'divider':
 return '<div class="row2">' + fSelect(id, 'style', 'Style', d.style, [['line', 'Line'], ['dots', 'Dots'], ['space', 'Empty space']]) + fSelect(id, 'size', 'Height', d.size, [['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]) + '</div>';
 }
