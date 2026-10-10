@@ -253,6 +253,13 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .icon-choose i.main { width: 30px; height: 30px; background: rgba(var(--w),0.1); border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 14px; }
 .item-photo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .item-photo img, .item-photo-empty { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: rgba(var(--w),0.08); display: flex; align-items: center; justify-content: center; color: rgba(var(--w),0.4); font-size: 20px; }
+.more-photos { margin: 0 0 8px; }
+.more-label { display: block; font-size: 11px; color: rgba(var(--w),0.5); margin-bottom: 6px; }
+.more-row { display: flex; gap: 8px; }
+.more-thumb { position: relative; width: 56px; height: 56px; }
+.more-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block; }
+.more-thumb button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: none; background: #ef5350; color: #fff; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.more-add { width: 56px; height: 56px; border-radius: 8px; border: 1px dashed rgba(var(--w),0.3); background: transparent; color: rgba(var(--w),0.6); cursor: pointer; font-size: 16px; }
 .item-photo-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .item-photo-actions button { border: 1px solid rgba(var(--w),0.12); background: rgba(var(--w),0.06); color: var(--fg); border-radius: 8px; padding: 7px 10px; font-size: 12px; cursor: pointer; font-family: inherit; }
 .item-photo-actions .danger:hover { background: rgba(239,83,80,0.2); color: #ef5350; }
@@ -1910,7 +1917,7 @@ const LIST_DEFS = {
 video: { key: 'items', max: () => LB.MAX_VIDEO_ITEMS, make: () => ({ url: '', title: '', channel: '' }), label: 'Video' },
 faq: { key: 'items', max: () => LB.MAX_FAQ_ITEMS, make: () => ({ q: '', a: '' }), label: 'Question' },
 testimonials: { key: 'items', max: () => LB.MAX_TESTIMONIALS, make: () => ({ name: '', role: '', text: '', rating: 5, photo: '' }), label: 'Review' },
-products: { key: 'items', max: () => LB.MAX_PRODUCTS, make: () => ({ title: '', price: '', desc: '', image: '', imageFull: '', buttonLabel: '', buttonUrl: '' }), label: 'Item' },
+products: { key: 'items', max: () => LB.MAX_PRODUCTS, make: () => ({ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }), label: 'Item' },
 social: { key: 'links', max: () => LB.MAX_SOCIAL_LINKS, make: () => ({ platform: 'instagram', url: '' }), label: 'Link' },
 team: { key: 'items', max: () => LB.MAX_TEAM_MEMBERS, make: () => ({ name: '', role: '', photo: '' }), label: 'Person' },
 };
@@ -1964,7 +1971,7 @@ return '<div class="item-photo">' + (photo ? '<img src="' + esc(photo) + '" alt=
 function itemRemovePhoto(id, i) {
 const b = getBlock(id); if (!b || !b.data.items[i]) return;
 const it = b.data.items[i];
-if (b.type === 'products') { it.image = ''; it.imageFull = ''; } else { it.photo = ''; }
+if (b.type === 'products') { it.image = ''; it.imageFull = ''; it.moreImages = []; } else { it.photo = ''; }
 renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
 }
 
@@ -2017,11 +2024,42 @@ liText(id, 'items', i, 'name', 'Name', it.name, 80) + liText(id, 'items', i, 'ro
 itemPhotoField(id, i, it.photo, 'Add photo (optional)') + '</div>').join('') + listFooter(b);
 }
 
+// Extra photos (no crop): shown only in the popup as slides. Up to MAX_PRODUCT_PHOTOS in total with the main photo.
+function moreProductPhotosHtml(id, i, it) {
+if (!it.image) return '';
+const more = Array.isArray(it.moreImages) ? it.moreImages : [];
+const fid = 'file-' + id + '-' + i + '-more';
+const thumbs = more.map((u, k) => '<div class="more-thumb"><img src="' + esc(u) + '" alt=""><button type="button" onclick="removeMorePhoto(\'' + id + '\', ' + i + ', ' + k + ')" aria-label="Remove photo"><i class="fa-solid fa-xmark"></i></button></div>').join('');
+const room = LB.MAX_PRODUCT_PHOTOS - 1 - more.length;
+const add = room > 0
+? '<button type="button" class="more-add" onclick="document.getElementById(\'' + fid + '\').click()"><i class="fa-solid fa-plus"></i></button><input type="file" id="' + fid + '" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" onchange="addMorePhotos(\'' + id + '\', ' + i + ', this)">'
+: '';
+return '<div class="more-photos"><span class="more-label">More photos for the popup (' + (1 + more.length) + ' / ' + LB.MAX_PRODUCT_PHOTOS + ')</span><div class="more-row">' + thumbs + add + '</div></div>';
+}
+
+async function addMorePhotos(id, i, input) {
+const b = getBlock(id), it = b && b.data.items[i];
+const files = Array.from(input.files); input.value = '';
+if (!it) return;
+if (!Array.isArray(it.moreImages)) it.moreImages = [];
+const room = LB.MAX_PRODUCT_PHOTOS - 1 - it.moreImages.length;
+for (const f of files.slice(0, Math.max(0, room))) {
+try { it.moreImages.push(await readPhoto(f, 1600)); } catch (e) { showToast(e.message); }
+}
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function removeMorePhoto(id, i, k) {
+const b = getBlock(id), it = b && b.data.items[i]; if (!it || !Array.isArray(it.moreImages)) return;
+it.moreImages.splice(k, 1);
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
 function productsEditorHtml(b) {
 const id = b.id, items = b.data.items;
-return '<p class="field-hint" style="margin:8px 0 0;"><i class="fa-regular fa-lightbulb"></i> The card shows a square photo. Visitors tap a card to see the full photo, price and full text.</p>' +
+return '<p class="field-hint" style="margin:8px 0 0;"><i class="fa-regular fa-lightbulb"></i> The card shows a square photo. Visitors tap a card to see the full photos (up to 3), price and full text.</p>' +
 items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Item') +
-itemPhotoField(id, i, it.image, 'Add photo') +
+itemPhotoField(id, i, it.image, 'Add photo') + moreProductPhotosHtml(id, i, it) +
 liText(id, 'items', i, 'title', 'Title', it.title, 120) +
 liText(id, 'items', i, 'price', 'Price (number, e.g. 2500000, optional)', it.price, 40) +
 liArea(id, 'items', i, 'desc', 'Description (full text shows in the popup)', it.desc, 1500) +
@@ -2158,7 +2196,7 @@ state.blocks.forEach(b => {
 if (typeof b.data.image === 'string') add(b.data, 'image', b.id);
 if (typeof b.data.imageDesktop === 'string') add(b.data, 'imageDesktop', b.id + '-d');
 (b.data.images || []).forEach(g => add(g, 'src', b.id + '-g'));
-(b.data.items || []).forEach(it => { add(it, 'photo', b.id + '-p'); add(it, 'image', b.id + '-i'); add(it, 'imageFull', b.id + '-f'); });
+(b.data.items || []).forEach(it => { add(it, 'photo', b.id + '-p'); add(it, 'image', b.id + '-i'); add(it, 'imageFull', b.id + '-f'); if (Array.isArray(it.moreImages)) it.moreImages.forEach((u, k) => add(it.moreImages, k, b.id + '-m')); });
 });
 for (let i = 0; i < jobs.length; i++) {
 setUpdateProgress(20 + (60 * i / jobs.length), 'Uploading image ' + (i + 1) + ' of ' + jobs.length + '...');
@@ -2182,7 +2220,7 @@ content.blocks.forEach(b => {
 note(b.data.image);
 note(b.data.imageDesktop);
 (b.data.images || []).forEach(g => note(g.src));
-(b.data.items || []).forEach(it => { note(it.photo); note(it.image); note(it.imageFull); });
+(b.data.items || []).forEach(it => { note(it.photo); note(it.image); note(it.imageFull); (Array.isArray(it.moreImages) ? it.moreImages : []).forEach(note); });
 });
 const { data: files } = await supabaseClient.storage.from('landing-images').list(currentUser.id, { limit: 1000 });
 const stale = (files || []).filter(f => f.name && !used.has(f.name)).map(f => currentUser.id + '/' + f.name);

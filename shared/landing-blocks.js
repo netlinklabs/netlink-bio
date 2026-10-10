@@ -20,6 +20,7 @@ export const MAX_VIDEO_ITEMS = 13;   // same as the Gold limit on the link in bi
 export const MAX_FAQ_ITEMS = 20;
 export const MAX_TESTIMONIALS = 12;
 export const MAX_PRODUCTS = 12;
+export const MAX_PRODUCT_PHOTOS = 3; // main photo (cropped 1:1 on the card) + 2 more shown in the popup
 export const MAX_TEAM_MEMBERS = 12;
 export const MAX_SOCIAL_LINKS = 12;
 
@@ -197,7 +198,7 @@ export function defaultBlockData(type) {
     case 'video': return { title: 'Videos', layout: 'single', bg: 'white', items: [{ url: '', title: '', channel: '' }] };
     case 'faq': return { title: 'Frequently Asked Questions', bg: 'white', items: [{ q: '', a: '' }] };
     case 'testimonials': return { title: 'What clients say', bg: 'soft', items: [{ name: '', role: '', text: '', rating: 5, photo: '' }] };
-    case 'products': return { title: 'Our Packages', columns: 2, bg: 'white', items: [{ title: '', price: '', desc: '', image: '', imageFull: '', buttonLabel: '', buttonUrl: '' }] };
+    case 'products': return { title: 'Our Packages', columns: 2, bg: 'white', items: [{ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }] };
     case 'social': return { title: 'Follow us', align: 'center', bg: 'white', links: [{ platform: 'instagram', url: '' }] };
     case 'cta': return { headline: '', text: '', buttonLabel: '', buttonUrl: '', style: 'brand', align: 'center' };
     case 'team': return { title: 'Our Team', bg: 'white', items: [{ name: '', role: '', photo: '' }] };
@@ -476,11 +477,18 @@ const RENDERERS = {
     }).join('');
     // Full data for the popup lives in hidden templates, so no extra requests are needed.
     const details = productItems(d).map((it, i) => {
-      const full = safeImageUrl(it.imageFull, ctx.preview) || safeImageUrl(it.image, ctx.preview);
+      const main = safeImageUrl(it.imageFull, ctx.preview) || safeImageUrl(it.image, ctx.preview);
+      const more = (Array.isArray(it.moreImages) ? it.moreImages : []).map((u) => safeImageUrl(u, ctx.preview)).filter(Boolean);
+      const photos = (main ? [main] : []).concat(more).slice(0, MAX_PRODUCT_PHOTOS);
+      const alt = escapeHtml(str(it.title, 120));
+      const slides = photos.map((u) => '<div class="pd-slide"><img src="' + escapeHtml(u) + '" alt="' + alt + '"></div>').join('');
+      const nav = photos.length > 1
+        ? '<button type="button" class="pd-nav prev" onclick="pdSlide(this,-1)" aria-label="Previous photo">&#10094;</button><button type="button" class="pd-nav next" onclick="pdSlide(this,1)" aria-label="Next photo">&#10095;</button><span class="pd-count">1 / ' + photos.length + '</span>'
+        : '';
       const price = formatPrice(it.price, ctx.currency);
       const btn = linkButton(it.buttonLabel, it.buttonUrl, 'btn-solid');
       return '<template data-pd="' + escapeHtml(block.id) + '-' + i + '">' +
-        (full ? '<div class="pd-img"><img src="' + escapeHtml(full) + '" alt="' + escapeHtml(str(it.title, 120)) + '"></div>' : '') +
+        (photos.length ? '<div class="pd-img"><div class="pd-slides">' + slides + '</div>' + nav + '</div>' : '') +
         '<div class="pd-body"><h3>' + escapeHtml(str(it.title, 120)) + '</h3>' + (price ? '<div class="pd-price">' + price + '</div>' : '') +
         (str(it.desc).trim() ? '<p class="text-body">' + escapeHtml(str(it.desc, 1500)) + '</p>' : '') + btn + '</div></template>';
     }).join('');
@@ -611,6 +619,8 @@ export const BLOCKS_JS = '(function(){' +
   'document.body.style.overflow="hidden";};' +
   'window.closeProduct=function(e){if(e&&e.target&&e.currentTarget&&e.target!==e.currentTarget)return;' +
   'document.getElementById("productModal").classList.remove("active");document.getElementById("productBody").innerHTML="";document.body.style.overflow="";};' +
+  'window.pdSlide=function(btn,dir){var s=btn.parentNode.querySelector(".pd-slides");if(s)s.scrollBy({left:dir*s.clientWidth,behavior:"smooth"});};' +
+  'document.addEventListener("scroll",function(e){var s=e.target;if(!s||!s.classList||!s.classList.contains("pd-slides"))return;var c=s.parentNode.querySelector(".pd-count");if(c)c.textContent=(Math.round(s.scrollLeft/s.clientWidth)+1)+" / "+s.children.length;},true);' +
   'document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("productModal"))closeProduct();});' +
   '})();';
 
@@ -756,8 +766,15 @@ export const BLOCKS_CSS = `
 #productModal.active { display: flex; }
 .pd-sheet { position: relative; background: #fff; width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; border-radius: 20px 20px 0 0; }
 .pd-close { position: absolute; top: 10px; right: 10px; z-index: 2; width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(0,0,0,0.55); color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.pd-img { background: #f0f0f0; }
-.pd-img img { width: 100%; height: auto; max-height: 60vh; object-fit: contain; display: block; margin: 0 auto; }
+.pd-img { background: #f0f0f0; position: relative; }
+.pd-slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.pd-slides::-webkit-scrollbar { display: none; }
+.pd-slide { flex: 0 0 100%; scroll-snap-align: center; display: flex; align-items: center; justify-content: center; }
+.pd-slide img { width: 100%; height: auto; max-height: 60vh; object-fit: contain; display: block; }
+.pd-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #fff; font-size: 14px; cursor: pointer; }
+.pd-nav.prev { left: 10px; }
+.pd-nav.next { right: 10px; }
+.pd-count { position: absolute; left: 10px; bottom: 10px; background: rgba(0,0,0,0.55); color: #fff; font-size: 12px; padding: 3px 9px; border-radius: 12px; }
 .pd-body { padding: 20px 22px 26px; }
 .pd-body h3 { font-size: 20px; font-weight: 700; color: #212121; margin-bottom: 6px; }
 .pd-price { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
