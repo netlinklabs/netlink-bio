@@ -128,6 +128,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .icon-btn { aspect-ratio: 1; border-radius: 12px; background: #3A3A3A; border: 1px solid rgba(255,255,255,0.08); color: #E0E0E0; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
 .icon-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
+/* Page settings (collapsed by default so Add Module stays in view) */
+.settings-box { margin-bottom: 20px; background: #3A3A3A; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+.settings-box summary { list-style: none; cursor: pointer; padding: 12px 14px; color: #F5F5F5; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.settings-box summary::-webkit-details-marker { display: none; }
+.settings-box summary::after { content: '\25BE'; margin-left: auto; color: rgba(255,255,255,0.5); transition: transform 0.2s; }
+.settings-box[open] summary::after { transform: rotate(180deg); }
+.settings-hint { color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 400; }
+.settings-body { padding: 4px 14px 0; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; }
+.sidebar-content { padding: 16px !important; }
+
 /* Module list */
 .mod-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 .mod-empty { padding: 20px 16px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; color: rgba(255,255,255,0.5); font-size: 13px; text-align: center; line-height: 1.5; }
@@ -198,33 +208,35 @@ window.LB = LB;
 <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div id="sidebar">
-<div class="sidebar-header" style="flex-direction: column; align-items: stretch; gap: 14px; padding: 16px 24px;">
-<div style="display:flex;align-items:center;justify-content:space-between;">
-<img src="/assets/netlinkbio-darkBG.png" alt="Netlink" style="height:40px;width:auto;flex-shrink:0;">
+<div class="sidebar-header" style="flex-direction: column; align-items: stretch; gap: 10px; padding: 10px 16px;">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+<a href="dashboard" aria-label="Back to dashboard" style="color:rgba(255,255,255,0.8);font-size:14px;text-decoration:none;flex-shrink:0;padding:4px 2px;"><i class="fa-solid fa-arrow-left"></i></a>
+<img src="/assets/netlinkbio-darkBG.png" alt="Netlink" style="height:22px;width:auto;flex-shrink:0;">
+<div style="flex:1;min-width:0;text-align:right;">
+<span id="accountEmail" style="color:rgba(255,255,255,0.5);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;"></span>
+</div>
+<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(224,224,224,0.15);color:#E0E0E0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.03em;flex-shrink:0;"><i class="fa-solid fa-star" style="font-size:9px;"></i> <span id="planBadgeText">Gold Plan</span></span>
 <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
 </div>
-<div style="display:flex;align-items:center;gap:10px;">
-<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-<i class="fa-solid fa-user" style="color:rgba(255,255,255,0.5);font-size:13px;"></i>
-</div>
-<div style="flex:1;min-width:0;">
-<p style="color:#F5F5F5;font-size:13px;font-weight:600;line-height:1.2;">Your Account</p>
-<p id="accountEmail" style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">user@example.com</p>
-<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(224,224,224,0.15);color:#E0E0E0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;">
-<i class="fa-solid fa-star" style="font-size:9px;"></i> <span id="planBadgeText">Silver Plan</span>
-</span>
-</div>
-</div>
-<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-<button type="button" onclick="window.location.href='plans'" style="flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;">Manage Plan</button>
-<div style="display:flex;gap:8px;">
-<button type="button" onclick="previewPage()" style="flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fa-solid fa-eye" style="font-size:10px;"></i> Preview</button>
-<button type="button" onclick="startUpdatePage()" style="flex-shrink:0;background:#E0E0E0;border:none;color:#2D2D2D;font-size:11px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fa-solid fa-check" style="font-size:10px;"></i> Update</button>
-</div>
+<div style="display:flex;gap:6px;">
+<button type="button" onclick="window.location.href='plans'" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);flex-shrink:0;font-size:11px;font-weight:600;padding:7px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px;flex:1;">Plan</button>
+<button type="button" onclick="previewPage()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);flex-shrink:0;font-size:11px;font-weight:600;padding:7px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px;flex:1;"><i class="fa-solid fa-eye" style="font-size:10px;"></i> Preview</button>
+<button type="button" onclick="startUpdatePage()" style="background:#E0E0E0;border:none;color:#2D2D2D;font-weight:700;flex-shrink:0;font-size:11px;font-weight:600;padding:7px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px;flex:1;"><i class="fa-solid fa-check" style="font-size:10px;"></i> Update</button>
 </div>
 </div>
 <div class="sidebar-content">
 
+<div class="sidebar-section">
+<label class="sidebar-label">Modules</label>
+<div id="moduleList" class="mod-list"></div>
+<button id="addModuleBtn" onclick="openAddModule()" class="sidebar-btn btn-gold"><i class="fa-solid fa-plus"></i> Add Module</button>
+<p class="gallery-limit" id="moduleCount">0 / 30 modules</p>
+</div>
+
+
+<details id="settingsBox" class="settings-box">
+<summary><i class="fa-solid fa-sliders"></i> Page Settings <span class="settings-hint">URL, logo, info, color</span></summary>
+<div class="settings-body">
 <div class="sidebar-section">
 <label class="sidebar-label">Page URL</label>
 <div style="display: flex; align-items: center; border: 2px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 6px; background: rgba(255,255,255,0.03);">
@@ -505,12 +517,8 @@ window.LB = LB;
 </div>
 </div>
 
-<div class="sidebar-section">
-<label class="sidebar-label">Modules</label>
-<div id="moduleList" class="mod-list"></div>
-<button id="addModuleBtn" onclick="openAddModule()" class="sidebar-btn btn-gold"><i class="fa-solid fa-plus"></i> Add Module</button>
-<p class="gallery-limit" id="moduleCount">0 / 30 modules</p>
 </div>
+</details>
 
 <div class="draft-note">
 <span id="draftStatus">No unpublished changes.</span><br>
@@ -1551,7 +1559,10 @@ console.warn('Orphan image cleanup skipped:', err);
 }
 }
 
+function openSettings() { const b = document.getElementById('settingsBox'); if (b) b.open = true; }
+
 function startUpdatePage() {
+if (!state.slug) openSettings();
 const modal = document.getElementById('updateModal');
 modal.classList.add('active');
 document.getElementById('updateTitle').textContent = 'Updating...';
@@ -1625,6 +1636,7 @@ setTimeout(showUpdateSuccess, 400);
 console.error('Failed to update landing page:', err);
 // Photos that already uploaded are now URLs in `state`, so keep them in the draft.
 draftSaveNow();
+if (/url|slug/i.test(err.message || '')) openSettings();
 showUpdateError(err.message);
 }
 }
