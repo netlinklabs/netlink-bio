@@ -547,6 +547,14 @@
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
                         </button>
                     </div>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <button onclick="copyLandingPageLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Link
+                        </button>
+                        <button onclick="shareLandingPageLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1619,6 +1627,30 @@ window.openNetlinkPay = openNetlinkPay;
             if (!currentLandingPage.slug) { showToast('Set a URL slug in the editor first'); return; }
             if (!currentLandingPage.is_published) { showToast('Publish your page first — tap Update Page in the editor'); return; }
             window.open(`https://netlink.bio/page/${currentLandingPage.slug}`, '_blank');
+        }
+
+        // Public URL of the landing page, or '' (with a toast) when it is not live yet.
+        function getLandingPageUrl() {
+            if (!currentLandingPage) { showToast('No landing page found'); return ''; }
+            if (!currentLandingPage.slug) { showToast('Set a URL slug in the editor first'); return ''; }
+            if (!currentLandingPage.is_published) { showToast('Publish your page first, tap Update in the editor'); return ''; }
+            return `https://netlink.bio/page/${currentLandingPage.slug}`;
+        }
+
+        function copyLandingPageLink() {
+            const url = getLandingPageUrl();
+            if (!url) return;
+            navigator.clipboard.writeText(url).then(() => showToast('Link copied!'));
+        }
+
+        function shareLandingPageLink() {
+            const url = getLandingPageUrl();
+            if (!url) return;
+            if (navigator.share) {
+                navigator.share({ title: currentLandingPage.title || 'My page', url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => showToast('Link copied to share!'));
+            }
         }
 
         async function deleteLandingPage() {

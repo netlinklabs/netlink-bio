@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **Copy and share the landing page URL.** `page-builder.html`: a "Live URL" card above Page Settings with Copy, Share and Open buttons (disabled with "Not published yet" until the page has been published; it shows the published slug, not unsaved edits). The "Updated!" screen has the same three buttons. `dashboard.html`: the landing page card has "Copy Link" and "Share" buttons. Share uses `navigator.share` and falls back to copying the link. No new Tailwind classes, so no CSS rebuild.
+
 ### Changed
 - **`page-builder.html`: the editor follows the app theme (light, dark or system).** It reads the same `theme` key in localStorage and sets the same `dark` class as `shared/nav.js`, and reacts to system and cross-tab changes. All editor colors are CSS variables now (`--bg`, `--card`, `--fg`, `--muted`, `--accent`, and `--w`/`--ac` for translucent tints). The public page preview is not themed.
 - **`page-builder.html`: app style header.** Fixed 72px header with the same colors, avatar, name and plan line as `shared/nav.js`, plus a clear blue "Dashboard" button to go back. The sidebar and preview start below it. Plan, Preview, Update and close sit in one row at the top of the sidebar. The page still does not load `nav.js` (permanently excluded).

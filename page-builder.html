@@ -161,6 +161,20 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .icon-btn { aspect-ratio: 1; border-radius: 12px; background: var(--card); border: 1px solid rgba(var(--w),0.08); color: var(--accent); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
 .icon-btn:hover { background: rgba(var(--w),0.15); transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
+/* Live URL card */
+.live-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 14px; background: var(--card); border: 1px solid rgba(var(--w),0.1); border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.live-info { flex: 1; min-width: 0; }
+.live-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.live-url { display: block; font-size: 14px; font-weight: 600; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-url.off { color: var(--muted); font-weight: 500; }
+.live-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.live-actions button { width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(var(--w),0.15); background: transparent; color: var(--fg); cursor: pointer; font-size: 14px; }
+.live-actions button:hover:not(:disabled) { background: rgba(var(--w),0.08); }
+.live-actions button:disabled { opacity: 0.35; cursor: not-allowed; }
+.share-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.share-row button { flex: 1; padding: 10px 6px; border-radius: 10px; border: 1px solid rgba(var(--w),0.2); background: transparent; color: var(--fg); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.share-row button:hover { background: rgba(var(--w),0.08); }
+
 /* Page settings (collapsed by default so Add Module stays in view) */
 .settings-box { margin-bottom: 28px; background: var(--card); border: 1px solid rgba(var(--w),0.1); border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
 .settings-box summary { list-style: none; cursor: pointer; padding: 18px; color: var(--fg); display: flex; align-items: center; gap: 14px; }
@@ -262,6 +276,18 @@ window.LB = LB;
 <button class="sidebar-close" onclick="toggleSidebar()" aria-label="Close editor">✕</button>
 </div>
 <div class="sidebar-content">
+<div class="live-card">
+<div class="live-info">
+<span class="live-label">Live URL</span>
+<span id="liveUrlText" class="live-url off">Not published yet</span>
+</div>
+<div class="live-actions">
+<button type="button" id="liveCopyBtn" onclick="copyPageUrl()" aria-label="Copy page URL" disabled><i class="fa-solid fa-copy"></i></button>
+<button type="button" id="liveShareBtn" onclick="sharePageUrl()" aria-label="Share page" disabled><i class="fa-solid fa-share-nodes"></i></button>
+<button type="button" id="liveOpenBtn" onclick="openPageUrl()" aria-label="Open page" disabled><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+</div>
+</div>
+
 <details id="settingsBox" class="settings-box">
 <summary><span class="settings-ico"><i class="fa-solid fa-sliders"></i></span><span class="settings-txt"><b>Page Settings</b><span id="settingsSummaryText">Set your page URL, logo and info</span></span></summary>
 <div class="settings-body">
@@ -569,7 +595,7 @@ window.LB = LB;
 <p class="modal-status" id="updateStatus">Uploading images...</p>
 <div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
 <p class="progress-text" id="progressText">0%</p>
-<div id="updateActions" class="modal-actions" style="display: none;"><button onclick="closeUpdateModal()" class="sidebar-btn btn-gold">Done</button></div>
+<div id="updateActions" class="modal-actions" style="display: none;"><div class="share-row"><button type="button" onclick="copyPageUrl()"><i class="fa-solid fa-copy"></i> Copy</button><button type="button" onclick="sharePageUrl()"><i class="fa-solid fa-share-nodes"></i> Share</button><button type="button" onclick="openPageUrl()"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open</button></div><button onclick="closeUpdateModal()" class="sidebar-btn btn-gold">Done</button></div>
 <div id="retryActions" class="modal-actions" style="display: none;"><button onclick="retryUpdate()" class="sidebar-btn btn-gold">Try Again</button><button onclick="closeUpdateModal()" class="sidebar-btn btn-outline">Close</button></div>
 </div>
 </div>
@@ -725,6 +751,41 @@ return s;
 // page-builder.html is opened from dashboard.html (window.open), so a plain
 // getSession() is enough here (same pattern as identity.html / privacy.html).
 let hdrProfile = null;
+let publishedSlug = ''; // slug of the live page; empty until the page has been published
+
+// ---------- copy / share the live page URL ----------
+function pageUrl() { return publishedSlug ? 'https://netlink.bio/page/' + publishedSlug : ''; }
+
+function updateLiveCard() {
+const url = pageUrl();
+const t = document.getElementById('liveUrlText');
+t.textContent = url ? url.replace('https://', '') : 'Not published yet';
+t.classList.toggle('off', !url);
+['liveCopyBtn', 'liveShareBtn', 'liveOpenBtn'].forEach(id => { document.getElementById(id).disabled = !url; });
+}
+
+function copyPageUrl() {
+const url = pageUrl();
+if (!url) { showToast('Publish your page first'); return; }
+navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => showToast('Could not copy the link'));
+}
+
+function sharePageUrl() {
+const url = pageUrl();
+if (!url) { showToast('Publish your page first'); return; }
+if (navigator.share) {
+navigator.share({ title: state.name || 'My page', url }).catch(() => {});
+} else {
+copyPageUrl();
+}
+}
+
+function openPageUrl() {
+const url = pageUrl();
+if (!url) { showToast('Publish your page first'); return; }
+window.open(url, '_blank', 'noopener');
+}
+
 // Same content as the shared app header: avatar, name and plan.
 function fillAppHeader(profile) {
 const label = (profile && (profile.display_name || profile.username)) || (currentUser && currentUser.email) || 'Account';
@@ -787,13 +848,14 @@ async function fetchServerState() {
 try {
 const { data: page, error } = await supabaseClient
 .from('landing_pages')
-.select('id, slug, content, updated_at')
+.select('id, slug, content, updated_at, is_published')
 .eq('user_id', currentUser.id)
 .maybeSingle();
 if (error) throw error;
 if (page) {
 landingPageId = page.id;
 serverUpdatedAt = page.updated_at || null;
+publishedSlug = page.is_published ? (page.slug || '') : '';
 const s = normalizeContent(page.content);
 if (!s.slug) s.slug = page.slug || '';
 return s;
@@ -1684,6 +1746,8 @@ if (upsertErr) throw upsertErr;
 
 landingPageId = row.id;
 serverUpdatedAt = row.updated_at || null;
+publishedSlug = slug;
+updateLiveCard();
 clearTimeout(draftTimer);
 await draftDel();
 hasDraft = false;
@@ -1732,6 +1796,7 @@ syncLogoUi();
 updateNameHint();
 updateDraftStatus();
 updateSettingsSummary();
+updateLiveCard();
 renderModuleList();
 renderPreview();
 if (state.slug) {
