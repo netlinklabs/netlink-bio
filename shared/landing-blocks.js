@@ -320,7 +320,7 @@ const RENDERERS = {
     let bg, cls;
     if (cropped) {
       cls = 'blk blk-hero hero-cropped';
-      bg = '<picture><source media="(min-width: 1024px)" srcset="' + escapeHtml(imgD) + '"><img src="' + escapeHtml(img) + '" alt="' + escapeHtml(ctx.name) + '"></picture>';
+      bg = '<picture><source media="(min-width: 768px)" srcset="' + escapeHtml(imgD) + '"><img src="' + escapeHtml(img) + '" alt="' + escapeHtml(ctx.name) + '"></picture>';
     } else {
       const fx = clampInt(d.focusX, 0, 100, 50);
       const fy = clampInt(d.focusY, 0, 100, 50);
@@ -668,7 +668,7 @@ export const BLOCKS_CSS = `
 .blk-hero { position: relative; height: 380px; overflow: hidden; padding: 0; }
 .blk-hero.h-compact { height: 280px; }
 .blk-hero.h-tall { height: 520px; }
-.blk-hero.hero-cropped { height: auto; aspect-ratio: 1 / 1; min-height: 320px; max-height: 560px; }
+.blk-hero.hero-cropped { width: 100%; height: auto; aspect-ratio: 1 / 1; min-height: 320px; max-height: 560px; }
 .hero-bg picture { display: block; width: 100%; height: 100%; }
 .hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg, var(--primary) 0%, #1c1c1c 140%); }
 .hero-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -848,6 +848,8 @@ export const BLOCKS_CSS = `
   .cta-box { padding: 48px 40px; }
   .cta-title { font-size: 30px; }
   .blk-hero { height: 440px; }
+  /* Cropped hero: wide image and 12:5 box from 768px up, so Desktop site mode (about 980px) fills the full width */
+  .blk-hero.hero-cropped { aspect-ratio: 12 / 5; min-height: 0; max-height: 640px; }
   .blk-hero.h-compact { height: 340px; }
   .blk-hero.h-tall { height: 620px; }
   .hero-title { font-size: 40px; }
@@ -863,7 +865,6 @@ export const BLOCKS_CSS = `
   .blk-hero { height: 500px; }
   .blk-hero.h-compact { height: 400px; }
   .blk-hero.h-tall { height: 720px; }
-  .blk-hero.hero-cropped { aspect-ratio: 12 / 5; min-height: 0; max-height: 640px; }
   .hero-title { font-size: 48px; }
   .hero-subtitle { font-size: 18px; }
   .blk { padding: 60px 40px; }
