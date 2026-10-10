@@ -1074,6 +1074,7 @@
         // transfer). openSendModal() below points this elsewhere when it
         // gates the Send form itself behind a re-auth first.
         let pendingReauthResume = null;
+        let sendReauthOnly = false; // true when the Send modal is used only to confirm identity for another action (Swap)
         let currentLocalCurrency = 'USD';
         let fxRateCache = { currency: null, rate: null, fetchedAt: 0 };
         let polPriceCache = { usdPrice: null, fetchedAt: 0 };
@@ -1953,6 +1954,7 @@
         window.openSendModal = async function () {
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); return; }
             if (!window.currentWalletAddress) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
+            sendReauthOnly = false;
             document.getElementById('sendToAddress').value = '';
             document.getElementById('sendAmount').value = '';
             document.getElementById('sendFormError').classList.add('hidden');
@@ -2003,9 +2005,41 @@
             };
             renderGoogleConfirmButton();
         };
+        // Opens the identity confirmation screen (Send modal, confirm step only)
+        // when there is no live Sequence session for the current wallet, then
+        // runs onReady() after the user confirms. Returns true if the session
+        // is already valid (caller continues itself), false if re-auth started.
+        // Used by Swap so the user is asked BEFORE the confirm modal, not
+        // after swiping with a "Not signed in" error.
+        window.ensureWalletSession = async function (onReady) {
+            const sessionCheck = await sessionMatchesCurrentWallet();
+            if (sessionCheck.valid) return true;
+            sendReauthOnly = true;
+            document.getElementById('sendModalTitle').textContent = 'Confirm your identity';
+            document.getElementById('sendStepForm').classList.add('hidden');
+            document.getElementById('sendStepConfirm').classList.remove('hidden');
+            document.getElementById('sendConfirmPending').classList.add('hidden');
+            document.getElementById('sendConfirmSuccess').classList.add('hidden');
+            document.getElementById('sendProgressWrap').classList.add('hidden');
+            resetSendConfirmEmail();
+            collapseSendConfirmEmail();
+            document.getElementById('sendConfirmStatus').textContent = sessionCheck.mismatched
+                ? 'A different wallet session was detected in this browser. Please confirm your identity again to continue.'
+                : 'Confirm your identity to continue.';
+            pendingReauthResume = async function () {
+                closeSendModal();
+                await onReady();
+            };
+            document.getElementById('sendModal').classList.add('active');
+            renderGoogleConfirmButton();
+            return false;
+        };
+
         window.closeSendModal = function () {
             document.getElementById('sendModal').classList.remove('active');
             pendingReauthResume = null;
+            sendReauthOnly = false;
+            document.getElementById('sendModalTitle').textContent = 'Send';
             window.orderPay = null;
             applySendOrderMode();
         };
@@ -2390,6 +2424,7 @@
         };
 
         window.backToSendForm = function () {
+            if (sendReauthOnly) { closeSendModal(); return; }
             document.getElementById('sendStepConfirm').classList.add('hidden');
             document.getElementById('sendConfirmPending').classList.remove('hidden');
             document.getElementById('sendStepForm').classList.remove('hidden');
@@ -3318,9 +3353,12 @@
         let swipeCurrentX = 0;
         const SWIPE_THRESHOLD = 0.75;
 
-        window.openSwapConfirmModal = function () {
+        window.openSwapConfirmModal = async function (skipSessionCheck) {
             if (window.hasPendingDeletion) { showToast('Swapping is disabled while account deletion is pending'); return; }
             if (!swapQuoteData) return;
+            // No live wallet session (e.g. right after a fresh login): ask the
+            // user to confirm identity now, then reopen this modal.
+            if (skipSessionCheck !== true && !(await window.ensureWalletSession(() => window.openSwapConfirmModal(true)))) return;
             const amount = document.getElementById('swapFromAmount').value.trim();
             const toAmount = document.getElementById('swapToAmount').textContent;
             document.getElementById('confirmFromAmount').textContent = amount;
@@ -3547,6 +3585,15 @@
                 }, 4500);
             } catch (err) {
                 console.error(err);
+                if (/not signed in/i.test(String(err?.message || ''))) {
+                    // Session dropped after the modal opened: close it and ask for identity confirmation.
+                    closeSwapConfirmModal();
+                    btn.disabled = false;
+                    btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
+                    showToast('Please confirm your identity to continue.');
+                    window.ensureWalletSession(() => window.openSwapConfirmModal(true));
+                    return;
+                }
                 errorEl.textContent = String(err?.message || 'Swap failed — please try again.');
                 errorEl.classList.remove('hidden');
                 btn.disabled = false;
