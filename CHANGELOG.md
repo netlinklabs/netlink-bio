@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **Landing page meta tags (`api/landing.js`).** From the OpenGraph checker results on `/page/yourbrand`: added `og:site_name` ("Netlink"), `<link rel="canonical">`, `apple-touch-icon` and `og:image:alt`, and shortened the meta and `og:description` text to about 155 characters at a word boundary (it was 191, and up to 300). JSON-LD keeps the full text. Same tags `api/bio.js` already had.
+
 ### Added
 - **Landing page social preview image (`api/og.js`, `api/landing.js`).** Sharing `netlink.bio/page/:slug` now shows a 1200x630 card built from the page hero banner, like the link in bio card on Gold accounts. The banner gets a dark gradient overlay (40% black at the top to 70% at the bottom, 55% on average), the business name and tagline sit at the bottom left, and the Netlink logo is at the top right. The wide desktop crop of the hero is used first, then the square one. If the hero has no image, the card uses a gradient of the page color. `api/landing.js` points `og:image` and `twitter:image` to `/api/og?type=page&slug=...&r=N&v=<updated_at>`, so the card refreshes after every edit. Only hero images stored in our own public storage are fetched. A page whose owner is no longer on Gold gets the static Netlink image. No new serverless function.
 

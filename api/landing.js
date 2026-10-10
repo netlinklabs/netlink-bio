@@ -78,6 +78,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 ${BLOCKS_CSS}
 `;
 
+// Cuts text to at most `max` characters at a word boundary and adds "..." when it was shortened.
+function shortenAtWord(text, max) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:!?-]+$/, '') + '\u2026';
+}
+
 async function handler(req, res) {
   if (req.query.action === 'sitemap') return sitemapHandler(req, res);
   const slug = (req.query.slug || '').toLowerCase().trim();
@@ -130,6 +139,9 @@ async function handler(req, res) {
   // Meta description: first text-like block, else the tagline.
   const textBlock = blocks.find((b) => (b.type === 'text' || b.type === 'imagetext') && b.data && String(b.data.body || '').trim());
   const desc = textBlock ? String(textBlock.data.body).trim().slice(0, 300) : tagline;
+  // Search results and social cards show about 155 characters, so the meta tags get a shorter,
+  // word-aligned copy. JSON-LD keeps the full text.
+  const metaDesc = shortenAtWord(desc, 155);
 
   const headerHtml = renderHeader(content);
   const blocksHtml = renderBlocks(content);
@@ -169,18 +181,22 @@ async function handler(req, res) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(businessName)}${tagline ? `, ${escapeHtml(tagline)}` : ''} | Netlink</title>
-<meta name="description" content="${escapeHtml(desc || `${businessName} on Netlink`)}">
+<meta name="description" content="${escapeHtml(metaDesc || `${businessName} on Netlink`)}">
+<link rel="canonical" href="${pageUrl}">
 <meta property="og:title" content="${escapeHtml(businessName)}">
-<meta property="og:description" content="${escapeHtml(desc || tagline)}">
+<meta property="og:description" content="${escapeHtml(metaDesc || tagline)}">
+<meta property="og:site_name" content="Netlink">
 <meta property="og:type" content="website">
 <meta property="og:image" content="${escapeHtml(ogCard)}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${escapeHtml(businessName)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="${escapeHtml(ogCard)}">
 <meta property="og:url" content="${pageUrl}">
 ${blocksHtml.trim() ? '' : '<meta name="robots" content="noindex">'}
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
+<link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script type="application/ld+json">${jsonForScript(jsonLd)}</script>
 <style>${PAGE_CSS}</style>
