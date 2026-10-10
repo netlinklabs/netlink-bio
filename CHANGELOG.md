@@ -8,6 +8,11 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`page-builder.html`: the editor follows the app theme (light, dark or system).** It reads the same `theme` key in localStorage and sets the same `dark` class as `shared/nav.js`, and reacts to system and cross-tab changes. All editor colors are CSS variables now (`--bg`, `--card`, `--fg`, `--muted`, `--accent`, and `--w`/`--ac` for translucent tints). The public page preview is not themed.
+- **`page-builder.html`: app style header.** Fixed 72px header with the same colors, avatar, name and plan line as `shared/nav.js`, plus a clear blue "Dashboard" button to go back. The sidebar and preview start below it. Plan, Preview, Update and close sit in one row at the top of the sidebar. The page still does not load `nav.js` (permanently excluded).
+- **`page-builder.html`: Page Settings is now a larger card above Page Modules.** It shows the page URL as its subtitle. The module list comes next, with the Add Module button under it.
+
+### Changed
 - **`page-builder.html`: compact editor header, "Add Module" visible on open.** The header is now one row (back arrow, small logo, email, plan badge, close) plus one row of buttons (Plan, Preview, Update). Modules moved to the top of the sidebar. Page URL, Logo, Page Info and Brand Color moved into a collapsed "Page Settings" section, which opens by itself when the URL is missing or rejected on Update.
 - **`dashboard.html`: the landing page Edit and Create buttons open the editor in the same window** (`window.location.href`) instead of a new tab, so the installed app no longer shows the blue bar with an X above the editor. The editor has a back arrow to `dashboard`.
 
