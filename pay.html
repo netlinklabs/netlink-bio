@@ -369,6 +369,11 @@
 
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .pct-row{display:flex;gap:6px}
+        .pct-btn{flex:1;padding:6px 0;font-size:12px;font-weight:600;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:#f1f5f9;color:#475569;cursor:pointer;transition:background .15s}
+        .pct-btn:hover{background:#e2e8f0}
+        html.dark .pct-btn{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.08);color:#94a3b8}
+        html.dark .pct-btn:hover{background:rgba(255,255,255,0.1)}
 
         /* Send / Receive buttons. Height matches the old py-2.5 + text-sm (40px).
            Light theme: elegant dark gray. Dark theme: blue like the main USDC card. */
@@ -552,6 +557,12 @@
                         </button>
                     </div>
                     <p id="swapFromBalance" class="text-xs text-muted mt-2">Balance: 0.00</p>
+                <div class="pct-row" style="margin-top:10px">
+                    <button type="button" class="pct-btn" onclick="setSwapPercent(25)">25%</button>
+                    <button type="button" class="pct-btn" onclick="setSwapPercent(50)">50%</button>
+                    <button type="button" class="pct-btn" onclick="setSwapPercent(75)">75%</button>
+                    <button type="button" class="pct-btn" onclick="setSwapPercent(100)">Max</button>
+                </div>
                 </div>
 
                 <!-- Swap Flip Button - Centered Divider -->
@@ -872,6 +883,12 @@
 
                 <label class="text-xs font-medium text-secondary block mb-1.5">Amount</label>
                 <input id="sendAmount" type="number" step="any" min="0" placeholder="0.00" class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary mb-4">
+            <div id="sendPctRow" class="pct-row" style="margin:-6px 0 14px">
+                <button type="button" class="pct-btn" onclick="setSendPercent(25)">25%</button>
+                <button type="button" class="pct-btn" onclick="setSendPercent(50)">50%</button>
+                <button type="button" class="pct-btn" onclick="setSendPercent(75)">75%</button>
+                <button type="button" class="pct-btn" onclick="setSendPercent(100)">Max</button>
+            </div>
 
                 <p id="sendFormError" class="text-xs text-red-500 mb-3 hidden"></p>
 
@@ -2026,6 +2043,7 @@
             to.readOnly = !!op;
             amt.readOnly = !!op;
             document.getElementById('sendTokenBtn').disabled = !!op;
+            document.getElementById('sendPctRow').style.display = op ? 'none' : '';
             to.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('hidden', !!op));
             if (op) {
                 to.value = op.pay_to;
@@ -2203,6 +2221,21 @@
 
         window.toggleSendTokenDropdown = function () {
             document.getElementById('sendTokenDropdown').classList.toggle('hidden');
+        };
+
+        window.setSendPercent = function (pct) {
+            const token = document.getElementById('sendTokenSelect').value;
+            const balanceStr = String(getBalanceForToken(token) || '0');
+            const balance = parseFloat(balanceStr);
+            // POL keeps the 0.01 reserve unless gas is confirmed sponsored
+            const reserve = (token === 'POL' && window.isGasSponsored !== true) ? 0.01 : 0;
+            const usable = Math.max(0, balance - reserve);
+            let value;
+            if (pct >= 100 && reserve === 0) value = balanceStr;
+            else value = String(Math.floor(Math.min(balance * pct / 100, usable) * 1e6) / 1e6);
+            if (!(parseFloat(value) > 0)) { showSendError('Insufficient balance.'); return; }
+            document.getElementById('sendAmount').value = value;
+            document.getElementById('sendFormError').classList.add('hidden');
         };
 
         window.selectSendToken = function (token) {
@@ -3139,6 +3172,15 @@
             btn.textContent = 'Enter an amount';
             btn.className = 'w-full mt-4 py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl transition text-sm cursor-not-allowed';
         }
+
+        window.setSwapPercent = function (pct) {
+            const balance = parseFloat(getSwapBalance(swapFrom) || '0');
+            if (!(balance > 0)) return;
+            const value = Math.floor(balance * pct / 100 * 1e6) / 1e6;
+            if (!(value > 0)) return;
+            document.getElementById('swapFromAmount').value = String(value);
+            onSwapAmountInput();
+        };
 
         window.onSwapAmountInput = function () {
             clearTimeout(swapDebounceTimer);
