@@ -7,6 +7,18 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`page-builder.html`: the landing page is now built from dynamic modules.** The editor starts empty. "Add Module" opens a type picker (Hero, Text, Image + Text, Gallery, Cards, Full Image, Location, Opening Hours, Contact). Each module can be edited, moved up or down, duplicated and deleted, up to 30 per page. Content model is now `{v:2, ..., blocks:[{id,type,data}]}`; array order is page order. Old-format pages (only 2 tester accounts) open empty and render header and footer only.
+- **`page-builder.html`: the "Unsaved Changes Found" modal is gone.** The draft is saved in the browser only (IndexedDB, one key per user, nothing sent to the server) and restored automatically on open. A draft is dropped when the server copy is newer. A "Discard unpublished changes" link replaces "Start Fresh" and asks for confirmation. The old `pageBuilderDraft` localStorage key is removed.
+- **`api/landing.js` rewritten to render the module list** through the new shared `shared/landing-blocks.js`, so the editor preview and `/page/:slug` use the same code. Tier gate, analytics, watermark and tracking scripts are unchanged. Pages with no visible module get `noindex`.
+- **Image handling in the builder.** Photos are compressed when picked (JPEG, white background so transparent PNGs stay light) and uploaded on Update under unique names; unreferenced images of the user are cleaned up after a successful publish.
+
+### Added
+- **`shared/landing-blocks.js`:** shared renderer (escaping, safe URLs, icon whitelist, lightbox, CSS) used by the browser and by the serverless function.
+
+### Removed
+- Fake "Open now" status, hero scroll buttons, per business type copy presets and the Secondary color option in the page builder.
+
 ### Fixed
 - **`pay.html`, `pay2.html`, `pay5.html`: Send and Swap now ask to confirm identity up front when there is no live Sequence session.** After a fresh login the wallet session is dropped, so Swap looked normal until the final swipe failed with "Not signed in". Now: (1) Swap checks `sessionMatchesCurrentWallet()` when "Swap ... to ..." is tapped and, if invalid, shows the existing identity screen (Google or email code) titled "Confirm your identity", then opens the swap confirm modal; (2) a late "Not signed in" error during the swipe closes the confirm modal and starts the same flow instead of showing the raw error; (3) `pay2.html` and `pay5.html` get the same Send gate that `pay.html` already had (identity check when the Send modal opens, `pendingReauthResume`, Cancel and close reset). New helper `window.ensureWalletSession(onReady)` and a reauth-only mode of the Send modal. No Tailwind rebuild.
 - **`pay.html`, `pay2.html`, `pay5.html`: a gas sponsored wallet can now send its whole POL balance.** The Send form always showed the red "Leave at least 0.01 POL in your wallet for gas." error when sending POL, even when the wallet was confirmed gas sponsored (`window.isGasSponsored === true`) and needs no POL for gas. `goToSendConfirm()` now keeps no reserve for a confirmed sponsored wallet and only rejects an amount above the balance ("Insufficient balance."). Wallets that are not sponsored, or whose status is still unknown, keep the 0.01 POL reserve. Only the POL check in `goToSendConfirm()` changed, identically in the three files. No Tailwind rebuild.
