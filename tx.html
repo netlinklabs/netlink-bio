@@ -526,7 +526,9 @@
             const tokenLogo = getTokenLogo(tx.token);
             const ordForReceipt = orderForTx(tx); const noteText = tx.note || (ordForReceipt ? `${ORDER_LABELS[ordForReceipt.type] || 'Order payment'}, order ${ordForReceipt.order_no}` : '');
             const dateStr = formatPolygonScanDate(tx.occurred_at);
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://polygonscan.com/tx/' + tx.hash)}`;
+            // QR is drawn here as a PNG (shared/qr.js), not by an outside service. PNG is what html2canvas captures best.
+            let qrUrl = '';
+            try { qrUrl = (await import('/shared/qr.js?v=1')).qrPngDataUri('https://polygonscan.com/tx/' + tx.hash); } catch (e) { console.error('QR failed', e); }
 
             content.innerHTML = `
                 <div class="receipt-sheet" id="receiptSheet">
@@ -584,7 +586,7 @@
                             <div class="hash-text">${tx.hash}</div>
                         </div>
                         <div class="qr-wrap" style="flex: 0 0 34%; max-width: 34%;">
-                            <img src="${qrUrl}" alt="QR Code" crossorigin="anonymous" onerror="this.style.display='none'">
+                            ${qrUrl ? `<img src="${qrUrl}" alt="QR Code">` : ''}
                         </div>
                     </div>
                     <div class="footer-text" style="max-width: 55%;">This document summarizes an on-chain transaction recorded on the Polygon Network.</div>

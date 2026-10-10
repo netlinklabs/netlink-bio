@@ -581,7 +581,9 @@
                 $('extAmount').textContent = Number(o.remaining_usdc).toFixed(2);
                 $('extPayTo').textContent = o.pay_to_address;
                 $('extPayer').textContent = o.payer_address;
-                $('extQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(o.pay_to_address)}`;
+                // QR is drawn in the browser (shared/qr.js), not by an outside service, so nobody else can swap the address in it.
+                const payTo = o.pay_to_address;
+                import('/shared/qr.js?v=1').then((m) => { $('extQr').src = m.qrSvgDataUri(payTo); }).catch((e) => console.error('QR failed', e));
                 if (o.claimed_tx_hash) $('txHashInput').value = o.claimed_tx_hash;
             }
 
