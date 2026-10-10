@@ -2056,7 +2056,10 @@
             const address = window.currentWalletAddress;
             if (!address) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
             document.getElementById('receiveAddress').textContent = address;
-            document.getElementById('receiveQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(address)}`;
+            // QR is drawn in the browser (shared/qr.js), not by an outside service, so nobody else can swap the address in it.
+            const qrImg = document.getElementById('receiveQr');
+            qrImg.removeAttribute('src');
+            import('/shared/qr.js?v=1').then((m) => { if (window.currentWalletAddress === address) qrImg.src = m.qrSvgDataUri(address); }).catch((e) => console.error('QR failed', e));
             document.getElementById('receiveModal').classList.add('active');
         };
         window.closeReceiveModal = function () {

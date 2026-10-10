@@ -12,6 +12,8 @@
 //     logoImage, logoShape, showLogoText,
 //     blocks: [ { id, type, data }, ... ] }   <- array order = page order
 
+import { qrSvgDataUri } from './qr.js';
+
 export const MAX_BLOCKS = 20;
 export const MAX_GALLERY_IMAGES = 10;
 export const MAX_CARD_ITEMS = 20;
@@ -556,7 +558,8 @@ const RENDERERS = {
     if (!isWalletAddress(addr)) return '';
     const title = str(d.title, 80).trim() || 'Receive Crypto Payment';
     const desc = str(d.desc, 140).trim();
-    const qr = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(addr);
+    // Built here, not by an outside QR service, so nobody else can change the address in the QR.
+    const qr = qrSvgDataUri(addr);
     const inner = '<div class="wc-wrap"><button type="button" class="wc-card" onclick="openWallet(this)" aria-haspopup="dialog">' +
       '<span class="wc-shimmer"></span>' +
       '<span class="wc-ring"><span class="wc-icon"><img src="/assets/usdc-logo.png" alt="USDC"></span></span>' +

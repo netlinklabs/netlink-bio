@@ -12,6 +12,7 @@ import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { withStats, logBioNotFound } from './_lib/stats.js';
 import { waitUntil } from '@vercel/functions';
+import { qrSvgDataUri } from '../shared/qr.js';
 import { OG_RENDER_VERSION, hasOgColumns, currentStoredOgUrl } from './_lib/og-shared.js';
 import { templateCss } from './_lib/bio-templates.js';
 
@@ -425,7 +426,7 @@ async function handler(req, res) {
       <div class="modal-box donate-modal-box">
         <button class="modal-close" onclick="closeDonateModal()">&times;</button>
         <h3>Support ${escapeHtml(displayName)}</h3>
-        <div class="qr-frame"><img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(walletAddress)}" alt="Wallet QR code"></div>
+        <div class="qr-frame"><img class="qr-code" src="${qrSvgDataUri(walletAddress)}" alt="Wallet QR code"></div>
         <p class="wallet-address">${escapeHtml(walletAddress)}</p>
         <button class="copy-btn" onclick="copyWallet()">Copy address</button>
         <p class="wallet-note">Polygon (PoS) Network</p>

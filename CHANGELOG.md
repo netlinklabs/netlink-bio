@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Security
+- **QR codes are now drawn by us, not by `api.qrserver.com` (`shared/qr.js`, `shared/vendor/qrcode-generator.js`).** The QR image used to come from an outside service. If that service were hacked it could return a QR with another wallet address, and anyone scanning it would pay the attacker (crypto payments cannot be undone). Now the QR is built from the same address that is shown as text, and no address leaves our servers or the browser. Replaced in: the donate card on the link in bio page (`api/bio.js`), the Wallet Card on landing pages (`shared/landing-blocks.js`), the Receive popup in `pay.html`, `pay2.html` and `pay5.html`, the receipt in `tx.html` (PNG, so the saved image and PDF capture it reliably), and the external payment QR in `checkout.html`.
+  - `shared/qr.js` exports `qrSvg`, `qrSvgDataUri` (server and browser) and `qrPngDataUri` (browser). The QR math is the MIT licensed `qrcode-generator` 2.0.4 library, copied unchanged into `shared/vendor/`. Browser pages load it only when a QR is needed (`import('/shared/qr.js?v=1')`). Bump the `?v=` when `shared/qr.js` changes.
+  - Checked by decoding the output with a QR reader: wallet addresses and a polygonscan link decode back to the exact text, as an SVG image and as a PNG made in Chromium.
+  - Not changed: the wallet pages still load `html5-qrcode` (the scanner for Send) from `unpkg.com` without a pinned version. Flagged for a separate change.
+
 ### Added
 - **New landing page module: Wallet Card (`shared/landing-blocks.js`, `page-builder.html`, `api/landing.js`).** A card to receive USDC donations or payments, like the "Receive Crypto Payment" card on the link in bio page. Tap the card to open a popup with a QR code, the wallet address, a Copy address button and a note to use the Polygon (PoS) network only. The same USDC logo (`/assets/usdc-logo.png`) and the same shimmer and pulse look as the bio card. The card and the popup buttons use the page brand color (`--primary`), and the text color follows `--on-primary`, so they match any palette.
   - **Editor:** Card title, Short description, Wallet address (Polygon) and Background. A new Wallet Card starts with the wallet saved on the user's profile, and a "Use my wallet from my profile" button fills it again. The address must be 0x plus 40 hex characters. A wrong address shows a warning in the editor.
