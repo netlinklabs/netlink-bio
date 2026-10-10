@@ -913,7 +913,7 @@ if (!session) { window.location.href = 'login'; return false; }
 currentUser = session.user;
 
 try {
-const { data } = await supabaseClient.from('profiles').select('tier, display_name, username, avatar_url').eq('id', currentUser.id).single();
+const { data } = await supabaseClient.from('profiles').select('tier, display_name, username, avatar_url, wallet_address').eq('id', currentUser.id).single();
 if (data?.tier) myTier = data.tier;
 if (data) hdrProfile = data;
 } catch (err) {
@@ -1382,6 +1382,7 @@ case 'products': t = d.items.filter(i => i.title).map(i => i.title).join(', '); 
 case 'social': t = d.links.filter(l => l.url).map(l => l.platform).join(', '); break;
 case 'cta': t = d.headline || d.text; break;
 case 'team': t = d.items.filter(i => i.name).map(i => i.name).join(', '); break;
+case 'wallet': t = d.title || (d.address ? 'Wallet added' : ''); break;
 case 'divider': t = ({ line: 'Line', dots: 'Dots', space: 'Space' })[d.style] + ', ' + d.size; break;
 }
 return String(t || '').trim() || 'Empty, tap to edit';
@@ -1490,6 +1491,8 @@ function addBlock(type) {
 if (state.blocks.length >= LB.MAX_BLOCKS) return;
 if (type === 'hero' && state.blocks.some(b => b.type === 'hero')) return;
 const block = { id: newId(), type, data: LB.defaultBlockData(type) };
+// A new Wallet Card starts with the user's own wallet from the profile, when there is one.
+if (type === 'wallet' && hdrProfile && LB.isWalletAddress(hdrProfile.wallet_address)) block.data.address = hdrProfile.wallet_address;
 if (type === 'hero') state.blocks.unshift(block); else state.blocks.push(block);
 openBlockId = block.id;
 closeAddModule();
@@ -1808,6 +1811,11 @@ case 'team':
 return fText(id, 'title', 'Title', d.title, 'e.g. Our team') +
 '<div class="row2">' + fSelect(id, 'columns', 'Columns (desktop)', d.columns || 4, [[2, '2 columns'], [3, '3 columns'], [4, '4 columns']], true) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
 teamEditorHtml(b);
+case 'wallet':
+return fText(id, 'title', 'Card title', d.title, 'e.g. Support our work', 80) +
+fText(id, 'desc', 'Short description', d.desc, 'e.g. USDC on Polygon Network', 140) +
+walletAddressField(id, d.address) +
+fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS);
 case 'divider':
 return '<div class="row2">' + fSelect(id, 'style', 'Style', d.style, [['line', 'Line'], ['dots', 'Dots'], ['space', 'Empty space']]) + fSelect(id, 'size', 'Height', d.size, [['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]) + '</div>';
 }
@@ -2081,6 +2089,31 @@ return links.map((l, i) => '<div class="sub-card">' + liHead(id, i, links.length
 '<select class="sidebar-select" style="' + LI_STYLE + '" onchange="onListField(\'' + id + '\', \'links\', ' + i + ', \'platform\', this.value)">' +
 LB.SOCIAL_DEFS.map(d => '<option value="' + d.key + '"' + (d.key === l.platform ? ' selected' : '') + '>' + d.label + '</option>').join('') + '</select>' +
 liText(id, 'links', i, 'url', 'https://...', l.url, 2000, 'url') + '</div>').join('') + listFooter(b);
+}
+
+function walletAddressField(id, val) {
+const ok = !val || LB.isWalletAddress(val);
+const mine = hdrProfile && LB.isWalletAddress(hdrProfile.wallet_address) ? hdrProfile.wallet_address : '';
+return '<div class="field"><label class="sidebar-input-label">Wallet address (Polygon)</label>' +
+'<input type="text" class="sidebar-input" id="wal-' + id + '" maxlength="42" placeholder="0x..." autocomplete="off" spellcheck="false" value="' + esc(val) + '" oninput="onWalletInput(\'' + id + '\', this.value)">' +
+(mine ? '<button type="button" class="sidebar-btn btn-outline small-add" style="margin-top:8px;" onclick="useMyWallet(\'' + id + '\')"><i class="fa-solid fa-wallet"></i> Use my wallet from my profile</button>' : '') +
+'<p id="walhint-' + id + '" class="field-hint' + (ok ? '' : ' warning') + '">' + (ok ? '<i class="fa-regular fa-lightbulb"></i> Visitors will pay USDC on the Polygon network to this address. Double check it.' : '<i class="fa-solid fa-triangle-exclamation"></i> Not a valid address. It starts with 0x and has 42 characters.') + '</p></div>';
+}
+function onWalletInput(id, value) {
+const v = String(value || '').trim();
+onField(id, 'address', v);
+const hint = document.getElementById('walhint-' + id);
+if (hint) {
+const ok = !v || LB.isWalletAddress(v);
+hint.classList.toggle('warning', !ok);
+hint.innerHTML = ok ? '<i class="fa-regular fa-lightbulb"></i> Visitors will pay USDC on the Polygon network to this address. Double check it.' : '<i class="fa-solid fa-triangle-exclamation"></i> Not a valid address. It starts with 0x and has 42 characters.';
+}
+}
+function useMyWallet(id) {
+if (!hdrProfile || !LB.isWalletAddress(hdrProfile.wallet_address)) return;
+const input = document.getElementById('wal-' + id);
+if (input) input.value = hdrProfile.wallet_address;
+onWalletInput(id, hdrProfile.wallet_address);
 }
 
 function teamEditorHtml(b) {
