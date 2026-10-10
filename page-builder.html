@@ -216,7 +216,7 @@ window.LB = LB;
 </div>
 </div>
 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-<button type="button" onclick="alert('Subscription management is coming soon!')" style="flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;">Manage Plan</button>
+<button type="button" onclick="window.location.href='plans'" style="flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;">Manage Plan</button>
 <div style="display:flex;gap:8px;">
 <button type="button" onclick="previewPage()" style="flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fa-solid fa-eye" style="font-size:10px;"></i> Preview</button>
 <button type="button" onclick="startUpdatePage()" style="flex-shrink:0;background:#E0E0E0;border:none;color:#2D2D2D;font-size:11px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fa-solid fa-check" style="font-size:10px;"></i> Update</button>
@@ -600,7 +600,7 @@ const RESERVED_USERNAMES = [
 'reset-password', 'template', 'verification', 'api', 'cv', 'page', 'assets', 'shared', 'sitemap',
 'robots', 'manifest', 'llms',
 ];
-let myTier = 'silver'; // safe fallback
+let myTier = 'basic'; // safe fallback: no access until the tier is confirmed
 
 const faIcons = [
     {v: 'fa-solid fa-coffee', l: 'Coffee/Cafe'}, {v: 'fa-solid fa-utensils', l: 'Restaurant/Food'},
@@ -681,6 +681,15 @@ return s;
 
 // page-builder.html is opened from dashboard.html (window.open), so a plain
 // getSession() is enough here (same pattern as identity.html / privacy.html).
+function showGoldOnly() {
+document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#2D2D2D;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">' +
+'<div style="max-width:380px;text-align:center;color:#F5F5F5;">' +
+'<h1 style="font-size:22px;margin-bottom:12px;">Landing Page is a Gold feature</h1>' +
+'<p style="font-size:14px;color:rgba(255,255,255,0.6);line-height:1.6;margin-bottom:24px;">Upgrade to the Gold plan to build and publish your landing page.</p>' +
+'<a href="plans" style="display:inline-block;background:#E0E0E0;color:#2D2D2D;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;text-decoration:none;">View Plans</a>' +
+'</div></div>';
+}
+
 async function initAuth() {
 try {
 const { data: { session }, error } = await supabaseClient.auth.getSession();
@@ -696,6 +705,8 @@ if (data?.tier) myTier = data.tier;
 console.error('Failed to fetch user tier:', err);
 }
 document.getElementById('planBadgeText').textContent = (TIER_LABEL[myTier] || 'Basic') + ' Plan';
+// Landing Page is a Gold feature. Anyone else sees an upgrade notice instead of the editor.
+if (myTier !== 'gold') { showGoldOnly(); return false; }
 return true;
 } catch (err) {
 console.error('Auth check failed:', err);

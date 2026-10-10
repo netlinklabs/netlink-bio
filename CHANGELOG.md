@@ -13,6 +13,9 @@ older entries in older-dated files) if what you are looking for is not below.
 - **`api/landing.js` rewritten to render the module list** through the new shared `shared/landing-blocks.js`, so the editor preview and `/page/:slug` use the same code. Tier gate, analytics, watermark and tracking scripts are unchanged. Pages with no visible module get `noindex`.
 - **Image handling in the builder.** Photos are compressed when picked (JPEG, white background so transparent PNGs stay light) and uploaded on Update under unique names; unreferenced images of the user are cleaned up after a successful publish.
 
+- **`page-builder.html`: only Gold can open the editor.** Other plans see a "Landing Page is a Gold feature" notice with a link to `plans`. The tier fallback is now `basic`, so a failed tier lookup also blocks. `api/landing.js` now serves a public page only when the owner is on Gold (Platinum is disabled).
+- **`page-builder.html`: "Manage Plan" opens `plans`** instead of the "coming soon" alert.
+
 ### Added
 - **`shared/landing-blocks.js`:** shared renderer (escaping, safe URLs, icon whitelist, lightbox, CSS) used by the browser and by the serverless function.
 

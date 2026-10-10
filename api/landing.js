@@ -104,7 +104,7 @@ async function handler(req, res) {
     // Landing Page is a Gold feature. When the owner's plan has ended (tier is back to Basic or
     // Silver) the page data is kept, but the public page is switched off with a neutral notice.
     // It comes back by itself when the owner is on Gold again.
-    if (page.tier !== 'gold' && page.tier !== 'platinum') {
+    if (page.tier !== 'gold') {
       res.status(404).setHeader('Content-Type', 'text/html').send(notFoundPage({
         title: 'Page not active',
         heading: 'This page is not active',
