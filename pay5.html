@@ -2258,8 +2258,10 @@
             }
             const balance = parseFloat(getBalanceForToken(token));
             if (token === 'POL') {
-                if (amountNum > balance - 0.01) {
-                    showSendError('Leave at least 0.01 POL in your wallet for gas.');
+                // Gas sponsored: no POL has to stay behind, so the full balance can be sent.
+                const reserve = window.isGasSponsored === true ? 0 : 0.01;
+                if (amountNum > balance - reserve) {
+                    showSendError(reserve ? 'Leave at least 0.01 POL in your wallet for gas.' : 'Insufficient balance.');
                     return;
                 }
             } else {
