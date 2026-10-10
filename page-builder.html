@@ -161,6 +161,24 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .icon-btn { aspect-ratio: 1; border-radius: 12px; background: var(--card); border: 1px solid rgba(var(--w),0.08); color: var(--accent); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
 .icon-btn:hover { background: rgba(var(--w),0.15); transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
+/* Phone / desktop preview */
+#deviceModal { display: none; position: fixed; inset: 0; z-index: 90; background: var(--bg); flex-direction: column; }
+#deviceModal.active { display: flex; }
+.dev-bar { height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: var(--hdr); border-bottom: 1px solid var(--hdr-line); }
+.dev-title { color: var(--fg); font-size: 15px; font-weight: 700; flex: 1; }
+.dev-seg { display: inline-flex; padding: 3px; border-radius: 12px; background: rgba(var(--w),0.08); }
+.dev-seg button { border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.dev-seg button.active { background: var(--card); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.dev-close { width: 40px; height: 40px; border: none; border-radius: 50%; background: transparent; color: var(--fg); font-size: 20px; cursor: pointer; }
+.dev-stage { flex: 1; min-height: 0; overflow: auto; padding: 12px; display: flex; justify-content: center; align-items: flex-start; }
+.dev-frame { position: relative; flex-shrink: 0; border-radius: 18px; overflow: hidden; border: 1px solid rgba(var(--w),0.2); box-shadow: 0 8px 30px rgba(0,0,0,0.25); background: #fff; }
+.dev-frame iframe { border: 0; display: block; transform-origin: top left; background: #fff; }
+
+/* Hero focus picker */
+.focus-box { position: relative; display: inline-block; line-height: 0; max-width: 100%; border-radius: 10px; overflow: hidden; cursor: crosshair; touch-action: none; user-select: none; background: rgba(var(--w),0.06); border: 1px solid rgba(var(--w),0.12); margin-top: 4px; }
+.focus-box img { display: block; width: auto; height: auto; max-width: 100%; max-height: 240px; pointer-events: none; }
+.focus-dot { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 3px solid #fff; background: rgba(59,130,246,0.55); box-shadow: 0 0 0 2px rgba(0,0,0,0.45); pointer-events: none; }
+
 /* Live URL card */
 .live-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 14px; background: var(--card); border: 1px solid rgba(var(--w),0.1); border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
 .live-info { flex: 1; min-width: 0; }
@@ -271,7 +289,7 @@ window.LB = LB;
 <div id="sidebar">
 <div class="sidebar-header" style="padding: 12px 16px; gap: 8px;">
 <button type="button" onclick="window.location.href='plans'" style="background:transparent;border:1px solid rgba(var(--w),0.2);color:rgba(var(--w),0.85);flex:1;font-size:12px;font-weight:600;padding:9px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;">Plan</button>
-<button type="button" onclick="previewPage()" style="background:transparent;border:1px solid rgba(var(--w),0.2);color:rgba(var(--w),0.85);flex:1;font-size:12px;font-weight:600;padding:9px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="fa-solid fa-eye" style="font-size:11px;"></i> Preview</button>
+<button type="button" onclick="openDevicePreview()" style="background:transparent;border:1px solid rgba(var(--w),0.2);color:rgba(var(--w),0.85);flex:1;font-size:12px;font-weight:600;padding:9px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="fa-solid fa-eye" style="font-size:11px;"></i> Preview</button>
 <button type="button" onclick="startUpdatePage()" style="background:var(--accent);border:1px solid transparent;color:var(--accent-fg);font-weight:700;flex:1;font-size:12px;font-weight:600;padding:9px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="fa-solid fa-check" style="font-size:11px;"></i> Update</button>
 <button class="sidebar-close" onclick="toggleSidebar()" aria-label="Close editor">✕</button>
 </div>
@@ -598,6 +616,18 @@ window.LB = LB;
 <div id="updateActions" class="modal-actions" style="display: none;"><div class="share-row"><button type="button" onclick="copyPageUrl()"><i class="fa-solid fa-copy"></i> Copy</button><button type="button" onclick="sharePageUrl()"><i class="fa-solid fa-share-nodes"></i> Share</button><button type="button" onclick="openPageUrl()"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open</button></div><button onclick="closeUpdateModal()" class="sidebar-btn btn-gold">Done</button></div>
 <div id="retryActions" class="modal-actions" style="display: none;"><button onclick="retryUpdate()" class="sidebar-btn btn-gold">Try Again</button><button onclick="closeUpdateModal()" class="sidebar-btn btn-outline">Close</button></div>
 </div>
+</div>
+
+<div id="deviceModal">
+<div class="dev-bar">
+<span class="dev-title">Preview</span>
+<div class="dev-seg">
+<button type="button" id="devPhoneBtn" class="active" onclick="setDevice('phone')"><i class="fa-solid fa-mobile-screen"></i> Phone</button>
+<button type="button" id="devDesktopBtn" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i> Desktop</button>
+</div>
+<button type="button" class="dev-close" onclick="closeDevicePreview()" aria-label="Close preview">✕</button>
+</div>
+<div class="dev-stage" id="devStage"><div class="dev-frame" id="devFrame"><iframe id="devIframe" title="Page preview" sandbox></iframe></div></div>
 </div>
 
 <div id="addModuleModal">
@@ -1019,7 +1049,54 @@ editIcon.style.display = 'block'; closeIcon.style.display = 'none'; previewArea.
 }
 }
 
-function previewPage() { if (sidebarOpen) toggleSidebar(); }
+// Phone / desktop preview. The page is rendered inside an iframe of the real device width, so the
+// responsive CSS (media queries) behaves exactly like on that device.
+let devMode = 'phone';
+const DEVICE_WIDTH = { phone: 390, desktop: 1280 };
+const PREVIEW_BASE_CSS = '* { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; overflow-x: hidden; } #previewArea { width: 100%; background: white; min-height: 100vh; } .hidden { display: none !important; } .blk-empty { display: none !important; } .page-footer { padding: 32px 24px; text-align: center; background: #f8f8f8; border-top: 1px solid #f0f0f0; } .page-footer a { font-size: 13px; color: #999; font-weight: 500; text-decoration: none; }';
+
+function buildPreviewDoc() {
+const body = '<div id="previewArea" style="' + LB.escapeHtml(LB.pageVars(state)) + '">' + LB.renderHeader(state, { preview: true }) + LB.renderBlocks(state, { preview: true }) +
+'<footer class="page-footer"><div class="section-inner"><a>Made with Netlink</a></div></footer></div>';
+return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+'<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">' +
+'<style>' + PREVIEW_BASE_CSS + LB.BLOCKS_CSS + '</style></head><body>' + body + '</body></html>';
+}
+
+function layoutDevicePreview() {
+const stage = document.getElementById('devStage');
+const frame = document.getElementById('devFrame');
+const iframe = document.getElementById('devIframe');
+const w = DEVICE_WIDTH[devMode];
+const availW = stage.clientWidth - 24, availH = stage.clientHeight - 24;
+const scale = Math.min(1, availW / w);
+iframe.style.width = w + 'px';
+iframe.style.height = Math.floor(availH / scale) + 'px';
+iframe.style.transform = 'scale(' + scale + ')';
+frame.style.width = Math.floor(w * scale) + 'px';
+frame.style.height = availH + 'px';
+}
+
+function setDevice(mode) {
+devMode = mode;
+document.getElementById('devPhoneBtn').classList.toggle('active', mode === 'phone');
+document.getElementById('devDesktopBtn').classList.toggle('active', mode === 'desktop');
+layoutDevicePreview();
+}
+
+function openDevicePreview() {
+if (sidebarOpen) toggleSidebar();
+document.getElementById('devIframe').srcdoc = buildPreviewDoc();
+document.getElementById('deviceModal').classList.add('active');
+layoutDevicePreview();
+}
+
+function closeDevicePreview() {
+document.getElementById('deviceModal').classList.remove('active');
+document.getElementById('devIframe').srcdoc = '';
+}
+
+window.addEventListener('resize', () => { if (document.getElementById('deviceModal').classList.contains('active')) layoutDevicePreview(); });
 
 function setFieldHint(hintId, isEmpty, filledText, emptyText) {
 const el = document.getElementById(hintId);
@@ -1381,11 +1458,65 @@ return '<div class="mini"><button onclick="' + upCall + '"' + (i === 0 ? ' disab
 '<button class="danger" onclick="' + delCall + '"><i class="fa-solid fa-trash-can"></i></button></div>';
 }
 
+const HERO_HEIGHTS = [['compact', 'Compact'], ['standard', 'Standard'], ['tall', 'Tall (shows more of the photo)']];
+
+// Upload guide, plus a focus picker once a photo is set: tap or drag on the photo to choose
+// the part that must stay visible when the banner crops it on different screens.
+function heroImageHelp(id, d) {
+if (!d.image) {
+return '<p class="field-hint" style="margin-top:8px;"><i class="fa-regular fa-lightbulb"></i> Best: a landscape photo, 1600 x 900 or wider. Keep faces and key objects near the center.</p>';
+}
+const fx = Math.min(100, Math.max(0, parseInt(d.focusX, 10) || 0)), fy = Math.min(100, Math.max(0, parseInt(d.focusY, 10) || 0));
+return '<div class="field"><label class="sidebar-input-label">Focus point</label>' +
+'<div class="focus-box" onpointerdown="heroFocusDown(event, \'' + id + '\')" onpointermove="heroFocusMove(event, \'' + id + '\')" onpointerup="heroFocusUp(event)" onpointercancel="heroFocusUp(event)">' +
+'<img src="' + esc(d.image) + '" alt="" draggable="false" onload="heroImgLoaded(this)">' +
+'<span class="focus-dot" style="left:' + fx + '%;top:' + fy + '%;"></span></div>' +
+'<p class="field-hint focus-note" style="margin-top:6px;">Tap or drag on the photo to choose what stays in view.</p>' +
+'<button type="button" class="link-btn" style="margin-top:2px;" onclick="heroFocusReset(\'' + id + '\')">Reset to center</button></div>';
+}
+
+function heroImgLoaded(img) {
+const box = img.closest('.focus-box');
+const note = box && box.parentElement.querySelector('.focus-note');
+if (!note || !img.naturalHeight) return;
+const ratio = img.naturalWidth / img.naturalHeight;
+if (ratio < 1.2) {
+note.classList.add('warning');
+note.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> This photo is portrait or square, so parts will be cropped. Set the focus point, or pick a taller banner.';
+} else {
+note.classList.remove('warning');
+}
+}
+
+let focusDragging = false;
+function heroFocusSet(e, id) {
+const box = e.currentTarget;
+const r = box.getBoundingClientRect();
+const x = Math.round(Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100)));
+const y = Math.round(Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100)));
+const dot = box.querySelector('.focus-dot');
+dot.style.left = x + '%'; dot.style.top = y + '%';
+const b = getBlock(id); if (!b) return;
+b.data.focusX = x; b.data.focusY = y;
+refreshBlockPreview(id);
+scheduleDraftSave();
+}
+function heroFocusDown(e, id) { focusDragging = true; e.currentTarget.setPointerCapture(e.pointerId); heroFocusSet(e, id); }
+function heroFocusMove(e, id) { if (focusDragging) heroFocusSet(e, id); }
+function heroFocusUp(e) { focusDragging = false; }
+function heroFocusReset(id) {
+const b = getBlock(id); if (!b) return;
+b.data.focusX = 50; b.data.focusY = 50;
+renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
 function editorHtml(b) {
 const id = b.id, d = b.data;
 switch (b.type) {
 case 'hero':
 return fImage(id, 'image', 'Banner image (a dark overlay is added for readability)', d.image) +
+heroImageHelp(id, d) +
+fSelect(id, 'height', 'Banner height', d.height, HERO_HEIGHTS) +
 fText(id, 'headline', 'Headline', d.headline, 'e.g. Crafted with Heart') +
 fText(id, 'subtitle', 'Subtitle', d.subtitle, 'One short sentence', 300) +
 fText(id, 'badge', 'Badge (optional)', d.badge, 'e.g. Open Today', 60) +

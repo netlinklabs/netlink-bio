@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Added
+- **Hero image controls in the page builder.** (1) Focus point: after a photo is added, tap or drag on it to choose what stays visible when the banner crops it (saved as `focusX`/`focusY`, rendered as `object-position`). (2) Upload guide under the image field ("landscape, 1600 x 900 or wider") and a warning when the photo is portrait or square. (3) "Banner height" option: Compact, Standard (unchanged default), Tall, with matching heights for phone, tablet and desktop in `shared/landing-blocks.js`. Existing heroes keep their look (focus 50/50, Standard).
+- **Phone / Desktop preview.** The Preview button opens a full screen preview with a Phone and Desktop switch. The page renders in an iframe of the real device width (390px or 1280px, scaled to fit), so responsive CSS behaves like on that device.
+
+### Added
 - **Copy and share the landing page URL.** `page-builder.html`: a "Live URL" card above Page Settings with Copy, Share and Open buttons (disabled with "Not published yet" until the page has been published; it shows the published slug, not unsaved edits). The "Updated!" screen has the same three buttons. `dashboard.html`: the landing page card has "Copy Link" and "Share" buttons. Share uses `navigator.share` and falls back to copying the link. No new Tailwind classes, so no CSS rebuild.
 
 ### Changed
