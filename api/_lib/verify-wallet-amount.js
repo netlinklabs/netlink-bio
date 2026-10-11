@@ -20,7 +20,7 @@
 // Alchemy rate limit (HTTP 429): small batches with a pause, retry with back-off; if it persists the
 // run stops cleanly (rateLimited: true) and the rows stay unchecked for the next run.
 //
-// Known limits: tolerance is 0.0001 for POL sends/exports and 0.01 for everything else (2% for swaps, whose output comes from a quote);
+// Known limits: tolerance is 0.0001 for sends (any token) and POL exports, and 0.01 for everything else (2% for swaps, whose output comes from a quote);
 // the Sequence relayer fee transfer is ignored, as in api/wallet.js; amounts are compared as
 // numbers, which is fine at these sizes.
 //
@@ -112,10 +112,11 @@ export function evaluateRow(row, legs) {
 
   const dir = row.type === 'receive' ? 'in' : row.type === 'send' || row.type === 'export' ? 'out' : null;
   if (!dir) return { status: 'unchecked', note: `Type ${row.type} is not compared` };
-  // Tolerance is per case, not a percentage. POL sends and exports are recorded with their full
-  // precision, so they must match almost exactly. Incoming rows (api/wallet.js fromWei) and NET or
-  // USDC sends keep 2 decimals, and cutting digits off loses less than 0.01, so 0.01 is the limit.
-  const exact = row.token === 'POL' && row.type !== 'receive';
+  // Tolerance is per case, not a percentage. Sends (any token) are recorded exactly as typed, and
+  // POL exports at full precision, so they must match almost exactly (0.0001). Incoming rows
+  // (fromWei in api/wallet.js) and NET or USDC exports (balances read with fromWei) keep only 2
+  // decimals, and cutting digits off loses less than 0.01, so 0.01 is the limit there.
+  const exact = row.type === 'send' || (row.type === 'export' && row.token === 'POL');
   const r = side(legs, row.token, dir, amount, 0, exact ? 0.0001 : 0.01);
   if (!r.found) return { status: 'unchecked', note: `No ${row.token} transfer for this wallet found in the tx` };
   if (r.ok) return { status: 'match', note: 'Amount found on-chain' };
