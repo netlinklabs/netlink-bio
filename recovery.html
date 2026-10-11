@@ -858,6 +858,8 @@
                     ? googleAccounts.map(a => a.email || a.issuer || 'unknown').join(', ')
                     : (googleAccounts[0]?.email || googleAccounts[0]?.issuer);
 
+                syncWalletEmailsFromSequence(accounts); // best-effort, never blocks the page
+
                 list.innerHTML = '';
                 list.innerHTML += methodRow('mail', 'Google', hasGoogle, googleSub);
                 list.innerHTML += methodRow('at-sign', 'Email', hasEmail, accounts.find(a => (a.type || '').toLowerCase().includes('email'))?.issuer);
@@ -878,6 +880,34 @@
             } catch (err) {
                 console.error('Failed to list accounts:', err);
                 list.innerHTML = '<p class="text-xs text-red-500">Could not load your sign-in methods.</p>';
+            }
+        }
+
+        // Keeps the profile's record of linked sign-in methods in step with what
+        // Sequence reports (the gate decides which methods to offer from this
+        // record, see walletSignInMethods()). Fills a column ONLY when it is empty
+        // (the .is(col, null) filter also guards against a race), never overwrites,
+        // and ignores anything that does not look like an email address.
+        // Best-effort: a failure is logged and nothing else changes.
+        async function syncWalletEmailsFromSequence(accounts) {
+            try {
+                if (!currentUser?.id) return;
+                const looksLikeEmail = (v) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+                const pick = (pred) => (accounts.find(pred)?.email || '').trim();
+                const googleEmail = pick(a => (a.type || '').toLowerCase().includes('oidc') || (a.issuer || '').toLowerCase().includes('google'));
+                const emailEmail = pick(a => (a.type || '').toLowerCase().includes('email') && !(a.issuer || '').toLowerCase().includes('google'));
+                const fills = [];
+                if (looksLikeEmail(googleEmail)) fills.push(['wallet_google_email', googleEmail]);
+                if (looksLikeEmail(emailEmail)) fills.push(['wallet_recovery_email', emailEmail]);
+                for (const [col, value] of fills) {
+                    if (currentProfile && currentProfile[col]) continue;
+                    const { error } = await supabaseClient
+                        .from('profiles').update({ [col]: value }).eq('id', currentUser.id).is(col, null);
+                    if (error) { console.error('Non-critical: failed to sync ' + col + ':', error); continue; }
+                    if (currentProfile && !currentProfile[col]) currentProfile[col] = value;
+                }
+            } catch (err) {
+                console.error('Non-critical: wallet email sync failed:', err);
             }
         }
 

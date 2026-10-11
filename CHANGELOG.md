@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`recovery.html`: the profile's record of linked sign-in methods now follows what Sequence reports.** When the Sign-in methods list loads (valid wallet session), a linked Google or email identity that is missing from the profile is filled into `wallet_google_email` / `wallet_recovery_email`.
+  - Why: the identity gate offers Google and email based on those two columns. A wallet could have both linked in Sequence while the profile only had one (found on `ramlanhadiansyah`), which would hide a valid option in the gate.
+  - Safe by design: fills a column only when it is empty (`.is(col, null)`), never overwrites, ignores values that are not an email address, and is best-effort (a failure is only logged).
+  - It runs per user, when they open `recovery.html` with a valid session. Other accounts get corrected the same way on their own visit.
+  - Static check only (script syntax). Not tested in a browser. The email field name on Sequence email accounts (`email`) is assumed; if Sequence does not return it, nothing is written.
+
 ### Fixed
 - **Logout now also drops the wallet (Sequence) session on `recovery.html` and on the app-lock screen.** The wallet session is browser-global. `shared/nav.js` drops it on Logout only when the page exposes `window.sequenceWaas`, and `recovery.html` did not, so logging out there left the previous account's wallet session in the browser. The app-lock screen's Logout button never dropped it either.
   - `recovery.html`: added `window.sequenceWaas = sequenceWaas;` so the existing Logout code in `shared/nav.js` works there.
