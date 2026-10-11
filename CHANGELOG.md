@@ -8,6 +8,11 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`pay.html`, `pay2.html`, `pay5.html`, `recovery.html`: the locked email in the identity gate is now plain text, not a form field.** It shows "We will send a code to" and the email. The value still sits in a hidden input, so the code flow is unchanged. With several saved emails the dropdown stays.
+- **`pay.html`, `pay2.html`, `pay5.html`: removed the empty bar under the "Send" title on the identity gate and the Swap identity step.** It was the transfer summary card with nothing inside. It is now hidden whenever it has no visible content (CSS `:has()`), and still shows on the real Confirm Send step.
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
+### Changed
 - **`pay.html`, `pay2.html`, `pay5.html`, `recovery.html`: the email code step of the identity gate no longer lets you type an email.** The field is locked to the email that opens this account's wallet, so the code always goes to the right inbox and no code is wasted on a wrong address.
   - Where it applies: Send identity gate (pay pages), sign-in gate and Emergency Export confirmation (`recovery.html`).
   - Email source: `wallet_recovery_email`, `wallet_google_email`, then the Netlink account email. One match shows a read-only field. Older wallets with several saved emails show a dropdown (no free typing).

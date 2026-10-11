@@ -645,20 +645,34 @@
             }
             const oldSel = document.getElementById(inputId + 'Select');
             if (oldSel) oldSel.remove();
+            const oldTxt0 = document.getElementById(inputId + 'Text');
+            if (oldTxt0) oldTxt0.remove();
             if (!list.length) return;
             el.value = list[0];
             el.readOnly = true;
-            el.classList.add('opacity-80', 'cursor-not-allowed');
             if (list.length > 1) {
                 const sel = document.createElement('select');
                 sel.id = inputId + 'Select';
-                sel.className = el.className.replace('opacity-80', '').replace('cursor-not-allowed', '');
+                sel.className = el.className.replace('hidden', '').trim();
                 list.forEach((v) => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
                 sel.addEventListener('change', () => { el.value = sel.value; });
                 el.classList.add('hidden');
                 el.parentNode.insertBefore(sel, el);
             } else {
-                el.classList.remove('hidden');
+                // Single email: plain text (not a form field), the value stays in the hidden input.
+                el.classList.add('hidden');
+                const txt = document.createElement('div');
+                txt.id = inputId + 'Text';
+                txt.className = 'mb-3 text-center';
+                const lbl = document.createElement('p');
+                lbl.className = 'text-xs text-muted mb-1';
+                lbl.textContent = 'We will send a code to';
+                const em = document.createElement('p');
+                em.className = 'text-sm font-medium text-primary break-all';
+                em.textContent = list[0];
+                txt.appendChild(lbl);
+                txt.appendChild(em);
+                el.parentNode.insertBefore(txt, el);
             }
         }
 
