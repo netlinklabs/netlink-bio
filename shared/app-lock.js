@@ -385,6 +385,12 @@
 
       document.getElementById('nlal-logout-btn').addEventListener('click', async () => {
         clearLockSession();
+        // Same reason as shared/nav.js's Logout: the Sequence wallet session is
+        // browser-global and must not outlive this login. No-op on pages that
+        // do not load the Sequence SDK.
+        if (window.sequenceWaas) {
+          try { await window.sequenceWaas.dropSession(); } catch (err) { console.error('Failed to drop wallet session on logout:', err); }
+        }
         if (state.supabaseClient) await state.supabaseClient.auth.signOut();
         window.location.href = 'login';
       });
