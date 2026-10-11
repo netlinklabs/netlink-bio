@@ -7,6 +7,14 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`tx.html`: the page number bar no longer pushes the page sideways on phones.** The bar listed every page number (36px each), so with 20+ pages it was wider than the screen and the page scrolled sideways. It now shows only the first page, the last page and the pages around the current one, with "..." in between (for example `< 1 ... 9 10 11 ... 20 >`). Buttons are 34px on phones (30px under 340px wide, 36px from 480px up) with more space between them. Each button has an `aria-label`, and the current page has `aria-current="page"`.
+  - Checked in Chromium at 320, 360, 384 and 414px wide: one row, no sideways scroll, for 3, 4, 5, 7, 20 and 60 pages and for every position (first, second, middle, near last, last).
+  - Not changed: the notification cards keep their old 44px icon, and the rest of the page.
+
+### Changed
+- **`tx.html`: smaller send, receive and swap icons in the activity cards.** The round icon is 38px (was 44px) with a 17px arrow (was 20px), and the gap to the text is a little smaller. Only the transaction cards changed. No new Tailwind classes, so `shared/tailwind.css` is not rebuilt.
+
 ### Security
 - **CSP is now enforced (`vercel.json`).** The header `Content-Security-Policy-Report-Only` (added in #348) is renamed to `Content-Security-Policy`, same policy text. Browsers now block scripts from any origin except `'self'` and `accounts.google.com`, block `object`/`embed`, and stop other sites from framing our pages.
   - Checked by reading the code: all script tags and runtime-injected scripts load from `'self'` or Google Sign-In, Trails and the PDF worker are served from our own paths, `eval`/`new Function` appear only in guarded library fallbacks (pdfjs, html5-qrcode), no external iframes or form actions. Manual check with Eruda on login, dashboard and wallet login showed no CSP messages.
