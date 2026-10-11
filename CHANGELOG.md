@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`recovery.html`: an account with no connected wallet now sees "Connect your wallet first" instead of a sign-in.** Shown when the profile has no `wallet_address` (for example after "Disconnect" in Netlink Pay), with a "Go to Netlink Pay" button.
+  - Why: the sign-in could never succeed there and ended with the misleading "signed you into a different wallet" message.
+  - Nothing else changes: with a connected wallet the gate works as before.
 - **`pay.html`, `pay2.html`, `pay5.html`: the identity gate (Send and Swap) now offers only the sign-in methods that open this account's wallet.** Same rule as `recovery.html`.
   - Google is offered only if the profile has `wallet_google_email`. Email code is offered if the profile has `wallet_recovery_email`, or if there is no Google record.
   - Both linked: Google first, with the "Use email instead" link. Google only: no email link. Email only: goes straight to the email code step (no Google button).
