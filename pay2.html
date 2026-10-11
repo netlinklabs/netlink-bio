@@ -963,7 +963,7 @@
                     <div class="flex gap-2 mb-3">
                         <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
                     </div>
-                    <button type="button" onclick="expandSendConfirmEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
+                    <button type="button" id="sendConfirmUseEmailLink" onclick="expandSendConfirmEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
                         Trouble with Google? Use email instead
                     </button>
                 </div>
@@ -981,7 +981,7 @@
                     <p id="sendConfirmEmailError" class="text-xs text-red-500 mb-3 hidden"></p>
                     <div class="flex gap-2">
                         <button onclick="backToSendForm()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
-                        <button type="button" onclick="collapseSendConfirmEmail()" class="flex-1 py-2.5 text-xs text-muted hover:text-secondary transition">Back to Google</button>
+                        <button type="button" id="sendConfirmBackToGoogleBtn" onclick="collapseSendConfirmEmail()" class="flex-1 py-2.5 text-xs text-muted hover:text-secondary transition">Back to Google</button>
                     </div>
                 </div>
 
@@ -1684,9 +1684,47 @@
             }
         }
 
-        function renderGoogleConfirmButton() {
+        // Which sign-in methods really open THIS account's wallet (same rule as
+        // recovery.html): Google only if the profile recorded a Google wallet email;
+        // email only if an email login is recorded, or Google is not recorded at all.
+        // If the profile cannot be read, offer both (sessionMatchesCurrentWallet()
+        // stays the real check after sign-in).
+        async function getSendGateMethods() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('profiles').select('wallet_google_email, wallet_recovery_email').eq('id', currentUser.id).single();
+                if (error) throw error;
+                const google = !!String(data?.wallet_google_email || '').trim();
+                const email = !!String(data?.wallet_recovery_email || '').trim() || !google;
+                return { google, email };
+            } catch (err) {
+                console.error('Failed to load wallet sign-in methods:', err);
+                return { google: true, email: true };
+            }
+        }
+
+        // Shows only the allowed methods on the identity gate. Both -> Google first with
+        // an email link. Google only -> no email link. Email only -> email step directly.
+        async function applySendGateMethods() {
+            const m = await getSendGateMethods();
+            const trouble = document.getElementById('sendConfirmUseEmailLink');
+            const backToGoogle = document.getElementById('sendConfirmBackToGoogleBtn');
+            if (trouble) trouble.classList.toggle('hidden', !(m.google && m.email));
+            if (backToGoogle) backToGoogle.classList.toggle('hidden', !(m.google && m.email));
+            if (!m.google) {
+                document.getElementById('sendConfirmGoogleStep').classList.add('hidden');
+                document.getElementById('sendConfirmOtpStep').classList.add('hidden');
+                document.getElementById('sendConfirmEmailStep').classList.remove('hidden');
+                await lockWalletEmailInput('sendConfirmEmailInput');
+            }
+            return m;
+        }
+
+        async function renderGoogleConfirmButton() {
             const container = document.getElementById('googleConfirmWrap');
             container.innerHTML = '';
+            const methods = await applySendGateMethods();
+            if (!methods.google) return;
             if (!window.google) {
                 container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
                 return;
@@ -2183,8 +2221,8 @@
                 document.getElementById('sendStepForm').classList.remove('hidden');
             };
             sendGateActive = true;
+            await renderGoogleConfirmButton(); // decide allowed methods BEFORE the gate is visible
             document.getElementById('sendModal').classList.add('active');
-            renderGoogleConfirmButton();
         };
 
         // Opens the identity confirmation screen (Send modal, confirm step only)
@@ -2212,8 +2250,8 @@
                 closeSendModal();
                 await onReady();
             };
+            await renderGoogleConfirmButton(); // decide allowed methods BEFORE the gate is visible
             document.getElementById('sendModal').classList.add('active');
-            renderGoogleConfirmButton();
             return false;
         };
 

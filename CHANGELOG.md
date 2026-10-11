@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`pay.html`, `pay2.html`, `pay5.html`: the identity gate (Send and Swap) now offers only the sign-in methods that open this account's wallet.** Same rule as `recovery.html`.
+  - Google is offered only if the profile has `wallet_google_email`. Email code is offered if the profile has `wallet_recovery_email`, or if there is no Google record.
+  - Both linked: Google first, with the "Use email instead" link. Google only: no email link. Email only: goes straight to the email code step (no Google button).
+  - The methods are decided before the gate becomes visible, so nothing flashes. If the profile cannot be read, both are offered. `sessionMatchesCurrentWallet()` is unchanged and still checks the wallet after sign-in.
 - **`recovery.html`: the profile's record of linked sign-in methods now follows what Sequence reports.** When the Sign-in methods list loads (valid wallet session), a linked Google or email identity that is missing from the profile is filled into `wallet_google_email` / `wallet_recovery_email`.
   - Why: the identity gate offers Google and email based on those two columns. A wallet could have both linked in Sequence while the profile only had one (found on `ramlanhadiansyah`), which would hide a valid option in the gate.
   - Safe by design: fills a column only when it is empty (`.is(col, null)`), never overwrites, ignores values that are not an email address, and is best-effort (a failure is only logged).
