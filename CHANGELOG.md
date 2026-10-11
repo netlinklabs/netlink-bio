@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Security
+- **CSP is now enforced (`vercel.json`).** The header `Content-Security-Policy-Report-Only` (added in #348) is renamed to `Content-Security-Policy`, same policy text. Browsers now block scripts from any origin except `'self'` and `accounts.google.com`, block `object`/`embed`, and stop other sites from framing our pages.
+  - Checked by reading the code: all script tags and runtime-injected scripts load from `'self'` or Google Sign-In, Trails and the PDF worker are served from our own paths, `eval`/`new Function` appear only in guarded library fallbacks (pdfjs, html5-qrcode), no external iframes or form actions. Manual check with Eruda on login, dashboard and wallet login showed no CSP messages.
+  - Still weak: `'unsafe-inline'` stays in `script-src` (removing it needs a bigger refactor).
+  - Rollback: rename the header key back to `Content-Security-Policy-Report-Only`.
+
 ### Changed
 - **`tx.html`: one amount format for the card, the swap row and the receipt.** Rule: at least 2 decimals and up to 6, so 12 shows "12.00", 12.5 "12.50", 12.05 "12.05", 1234 "1,234.00" and 0.000123 "0.000123". Exactly 3 decimals get a 4th (1.567 shows "1.5670", 0.002 "0.0020") so they cannot be read as a thousands group, as happened with a 1.567 NET send. A non-zero amount below 0.000001 shows "<0.000001", never "0.00". Comma for thousands and a point for decimals, the same as Indonesian bank apps (for example "IDR 104,746.00"). Replaces the trimmed-zeros card format and the separate receipt format. The swap row, which showed raw numbers, now uses the same format. Display only, nothing stored changes. Not tested in a browser.
 
