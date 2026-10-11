@@ -334,6 +334,8 @@
           if (target) {
             closeAccountSheet();
             history.replaceState(null, '', '#' + hrefHash);
+            // dashboard.html has collapsible cards: it opens the card first, then scrolls to it by itself.
+            if (typeof window.openDashboardCard === 'function' && window.openDashboardCard(hrefHash)) return;
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
           }

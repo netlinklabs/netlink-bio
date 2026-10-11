@@ -98,6 +98,33 @@
         html body .dash-card-head .progress-bar { background: rgba(255,255,255,0.28); }
         html body .dash-card-head .hover-surface { background: rgba(255,255,255,0.14) !important; border-color: rgba(255,255,255,0.4) !important; color: #ffffff !important; }
         html body .dash-card-head .hover-surface:hover { background: rgba(255,255,255,0.26) !important; }
+
+        /* Collapsible cards (Link in Bio, Professional CV, Landing Page). Only one is open at a time.
+           The header stays visible, the body slides shut with a grid-rows transition (0fr to 1fr). */
+        main { overflow-anchor: none; } /* scroll position is kept by toggleDashCard() instead */
+        .dash-card { scroll-margin-top: 88px; } /* the fixed top bar is 72px tall */
+        .dash-card-head { cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; transition: border-radius 0.4s ease, border-color 0.4s ease, filter 0.2s ease; }
+        .dash-card-head:hover { filter: brightness(1.05); }
+        .dash-card-head:active { filter: brightness(0.96); }
+        .dash-card.is-collapsed .dash-card-head { border-radius: 1rem; border-bottom-color: transparent !important; }
+        .dash-card-icon { width: 2.5rem; height: 2.5rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); }
+        .dash-card-icon svg { color: #ffffff; }
+        .dash-card-toggle { flex-shrink: 0; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.45); color: #ffffff; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
+        .dash-card-toggle:hover { background: rgba(255,255,255,0.3); }
+        .dash-card-toggle:active { transform: scale(0.92); }
+        .dash-card-toggle:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+        .dash-card-toggle svg { width: 1rem; height: 1rem; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .dash-card:not(.is-collapsed) .dash-card-toggle svg { transform: rotate(180deg); }
+        .dash-card-body { display: grid; grid-template-rows: 1fr; opacity: 1; visibility: visible; transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease 0.08s, visibility 0s; }
+        .dash-card.is-collapsed .dash-card-body { grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, visibility 0s 0.4s; }
+        .dash-card-body-inner { min-height: 0; overflow: hidden; }
+        /* "Tap to expand" hint, only visible while the card is collapsed */
+        .dash-card-hint { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease; }
+        .dash-card.is-collapsed .dash-card-hint { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease 0.1s; }
+        .dash-card-hint-inner { min-height: 0; overflow: hidden; }
+        .dash-card-hint-row { display: flex; align-items: center; justify-content: center; gap: 0.375rem; padding-top: 0.875rem; font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.92); }
+        .dash-no-anim .dash-card, .dash-no-anim .dash-card * { transition: none !important; }
+        @media (prefers-reduced-motion: reduce) { .dash-card, .dash-card * { transition: none !important; } }
         .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
@@ -175,13 +202,16 @@
         </div>
 
 
-        <div id="profileCard" class="card rounded-2xl mb-4 lg:mb-6">
+        <div id="profileCard" class="card dash-card rounded-2xl mb-4 lg:mb-6">
             <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                            <i data-lucide="link-2" class="w-5 h-5 text-blue-500"></i> Link in Bio
-                        </h3>
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-lg font-semibold text-primary flex items-center gap-2 min-w-0">
+                                <i data-lucide="link-2" class="w-5 h-5 text-blue-500"></i> Link in Bio
+                            </h3>
+                            <button type="button" class="dash-card-toggle" data-card-title="Link in Bio" aria-controls="profileCardBody" aria-expanded="true" aria-label="Collapse Link in Bio" onclick="toggleDashCard('profileCard')"><i data-lucide="chevron-down"></i></button>
+                        </div>
                         <!-- AI Score: how AI-friendly/discoverable this profile is, based on how
                              complete its content is (not related to "Complete Your Profile" below,
                              which gates the NET reward claim) -->
@@ -195,7 +225,9 @@
                         </div>
                     </div>
                 </div>
+                <div class="dash-card-hint" aria-hidden="true"><div class="dash-card-hint-inner"><div class="dash-card-hint-row"><span>Tap to expand</span><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></div></div></div>
             </div>
+            <div id="profileCardBody" class="dash-card-body"><div class="dash-card-body-inner">
             <div class="p-4 lg:p-6 space-y-5">
 
                 <!-- Username & link settings -->
@@ -385,15 +417,19 @@
                 </div>
 
             </div>
+            </div></div>
         </div>
 
-        <div id="cvCard" class="card rounded-2xl mb-4 lg:mb-6">
+        <div id="cvCard" class="card dash-card is-collapsed rounded-2xl mb-4 lg:mb-6">
             <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Professional CV (Resume)
-                        </h3>
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-lg font-semibold text-primary flex items-center gap-2 min-w-0">
+                                <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Professional CV (Resume)
+                            </h3>
+                            <button type="button" class="dash-card-toggle" data-card-title="Professional CV" aria-controls="cvCardBody" aria-expanded="false" aria-label="Expand Professional CV" onclick="toggleDashCard('cvCard')"><i data-lucide="chevron-down"></i></button>
+                        </div>
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span id="cvAiScoreDot" class="w-1.5 h-1.5 rounded-full flex-shrink-0"></span>
                             <span id="cvAiScoreLabel" class="text-xs font-medium text-secondary">AI Score: 0/100</span>
@@ -416,7 +452,9 @@
                         </div>
                     </div>
                 </div>
+                <div class="dash-card-hint" aria-hidden="true"><div class="dash-card-hint-inner"><div class="dash-card-hint-row"><span>Tap to expand</span><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></div></div></div>
             </div>
+            <div id="cvCardBody" class="dash-card-body"><div class="dash-card-body-inner">
             <div class="p-4 lg:p-6 space-y-5">
 
                 <!-- Personal Details - now collapsed accordion -->
@@ -519,19 +557,23 @@
 
                 <button id="cvSaveBtn" onclick="saveCv()" class="w-full mt-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save CV</button>
             </div>
+            </div></div>
         </div>
 
-        <div id="landingPageCard" class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="globe" class="w-5 h-5 text-purple-500"></i>
-                    </div>
-                    <div>
+        <div id="landingPageCard" class="card dash-card is-collapsed rounded-2xl mb-4 lg:mb-6">
+            <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
+                <div class="flex items-center gap-3">
+                    <div class="dash-card-icon"><i data-lucide="globe" class="w-5 h-5"></i></div>
+                    <div class="flex-1 min-w-0">
                         <h3 class="font-semibold text-primary">Landing Page</h3>
                         <p id="landingPageSubtitle" class="text-sm text-secondary">Available from Gold plan and up</p>
                     </div>
+                    <button type="button" class="dash-card-toggle" data-card-title="Landing Page" aria-controls="landingPageCardBody" aria-expanded="false" aria-label="Expand Landing Page" onclick="toggleDashCard('landingPageCard')"><i data-lucide="chevron-down"></i></button>
                 </div>
+                <div class="dash-card-hint" aria-hidden="true"><div class="dash-card-hint-inner"><div class="dash-card-hint-row"><span>Tap to expand</span><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></div></div></div>
+            </div>
+            <div id="landingPageCardBody" class="dash-card-body"><div class="dash-card-body-inner">
+            <div class="p-4 lg:p-6">
 
                 <!-- Locked state: Basic tier -->
                 <div id="landingPageLocked" class="hidden">
@@ -578,6 +620,7 @@
                     </div>
                 </div>
             </div>
+            </div></div>
         </div>
 
         <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
@@ -917,6 +960,7 @@
             if (currentProfile && currentProfile.username) return;
             const input = document.getElementById('profileUsername');
             if (input) {
+                applyDashCardState('profileCard'); // the username field lives in this card
                 input.value = pending;
                 showToast(`Hit "Save" to lock in netlink.bio/${pending}`);
             }
@@ -929,7 +973,7 @@
         }
 
         function scrollToProfileCard() {
-            document.getElementById('profileCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            openDashboardCard('profileCard');
         }
 
         function getCurrentUsername() {
@@ -1593,11 +1637,11 @@ window.openNetlinkPay = openNetlinkPay;
         }
 
         function scrollToCvCard() {
-            document.getElementById('cvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            openDashboardCard('cvCard');
         }
 
         function scrollToLandingPageCard() {
-            document.getElementById('landingPageCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            openDashboardCard('landingPageCard');
         }
 
         let currentLandingPage = null;
@@ -2890,6 +2934,94 @@ window.openNetlinkPay = openNetlinkPay;
     document.getElementById('countryPickerModal').addEventListener('click', function(e) {
         if (e.target === this) closeCountryPicker();
     });
+
+        // ==========================================
+        // CARD ACCORDION: Link in Bio, Professional CV and Landing Page.
+        // Only one card is open at a time. The blue header always stays visible,
+        // the body collapses. Tapping an open card closes it (all can be closed).
+        // ==========================================
+        const DASH_CARDS = ['profileCard', 'cvCard', 'landingPageCard'];
+        const DASH_CARD_ANIM_MS = 420; // keep in sync with the .dash-card-body transition above
+        let dashCardAnchorRaf = 0;
+
+        function isDashCardOpen(id) {
+            const card = document.getElementById(id);
+            return !!card && !card.classList.contains('is-collapsed');
+        }
+
+        // openId = the card to show open, or null to collapse all of them.
+        function applyDashCardState(openId) {
+            DASH_CARDS.forEach((id) => {
+                const card = document.getElementById(id);
+                if (!card) return;
+                const open = id === openId;
+                card.classList.toggle('is-collapsed', !open);
+                const btn = card.querySelector('.dash-card-toggle');
+                if (btn) {
+                    btn.setAttribute('aria-expanded', String(open));
+                    btn.setAttribute('aria-label', (open ? 'Collapse ' : 'Expand ') + (btn.dataset.cardTitle || 'card'));
+                }
+            });
+            try { sessionStorage.setItem('dashOpenCard', openId || ''); } catch (e) { /* storage blocked */ }
+        }
+
+        // While the cards above shrink or grow, keep the tapped header at the same spot on screen,
+        // so the page does not jump under the finger.
+        function keepDashCardInPlace(head, topBefore) {
+            cancelAnimationFrame(dashCardAnchorRaf);
+            const startedAt = performance.now();
+            const step = (now) => {
+                const diff = head.getBoundingClientRect().top - topBefore;
+                if (Math.abs(diff) > 0.5) window.scrollBy(0, diff);
+                if (now - startedAt < DASH_CARD_ANIM_MS + 60) dashCardAnchorRaf = requestAnimationFrame(step);
+            };
+            dashCardAnchorRaf = requestAnimationFrame(step);
+        }
+        ['wheel', 'touchstart', 'keydown'].forEach((ev) => {
+            window.addEventListener(ev, () => cancelAnimationFrame(dashCardAnchorRaf), { passive: true });
+        });
+
+        function toggleDashCard(id) {
+            const card = document.getElementById(id);
+            if (!card) return;
+            const head = card.querySelector('.dash-card-head');
+            const topBefore = head.getBoundingClientRect().top;
+            applyDashCardState(isDashCardOpen(id) ? null : id);
+            keepDashCardInPlace(head, topBefore);
+        }
+
+        // Used by the Account menu (shared/nav.js) and the scrollTo...Card helpers: open a card, then scroll to it.
+        window.openDashboardCard = function (id) {
+            const card = DASH_CARDS.includes(id) ? document.getElementById(id) : null;
+            if (!card) return false;
+            const wasOpen = isDashCardOpen(id);
+            applyDashCardState(id);
+            setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), wasOpen ? 0 : DASH_CARD_ANIM_MS);
+            return true;
+        };
+
+        // First paint: deep link (#cvCard) wins, then the card used earlier in this tab, else Link in Bio. No animation.
+        function initDashCards() {
+            document.body.classList.add('dash-no-anim');
+            let saved = null;
+            try { saved = sessionStorage.getItem('dashOpenCard'); } catch (e) { /* storage blocked */ }
+            const hash = location.hash.slice(1);
+            let openId = 'profileCard';
+            if (DASH_CARDS.includes(hash)) openId = hash;
+            else if (saved === '') openId = null;
+            else if (DASH_CARDS.includes(saved)) openId = saved;
+            applyDashCardState(openId);
+            requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('dash-no-anim')));
+
+            // A tap on the empty part of a header toggles it too. Buttons, links and inputs keep their own action.
+            document.querySelectorAll('.dash-card-head').forEach((head) => {
+                head.addEventListener('click', (e) => {
+                    if (e.target.closest('button, a, input, label, select, textarea')) return;
+                    toggleDashCard(head.closest('.dash-card').id);
+                });
+            });
+        }
+        initDashCards();
 
         // Tidak perlu panggil manual di sini — onAuthStateChange di atas
         // otomatis fire event INITIAL_SESSION begitu listener didaftarkan,
