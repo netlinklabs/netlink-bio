@@ -20,7 +20,7 @@
 })();
 </script>
 <title>PageBuilder - Responsive Landing Page</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/shared/vendor/fontawesome/css/all.min.css?v=1">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { color-scheme: light; }
@@ -1115,7 +1115,7 @@ function buildPreviewDoc() {
 const body = '<div id="previewArea" style="' + LB.escapeHtml(LB.pageVars(state)) + '">' + LB.renderHeader(state, { preview: true }) + LB.renderBlocks(state, { preview: true }) +
 '<footer class="page-footer"><div class="section-inner"><a>Made with Netlink</a></div></footer></div>';
 return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-'<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">' +
+'<link rel="stylesheet" href="/shared/vendor/fontawesome/css/all.min.css?v=1">' +
 '<style>' + PREVIEW_BASE_CSS + LB.BLOCKS_CSS + '</style></head><body>' + body + LB.PRODUCT_MODAL_HTML + '<script>function trackClick(){}<\/script><script>' + LB.BLOCKS_JS + '<\/script></body></html>';
 }
 
