@@ -13,6 +13,8 @@
     <script src="/shared/vendor/lucide.min.js?v=1" defer></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
+        /* Identity gate has no transfer summary: hide the empty summary card instead of showing a blank bar. */
+        #sendConfirmCard:not(:has(> div:not(.hidden))) { display: none; }
         @keyframes loadingBar {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(300%); }
@@ -935,7 +937,7 @@
             </div>
 
             <div id="sendStepConfirm" class="hidden">
-                <div class="bg-surface rounded-xl p-4 mb-4 text-center">
+                <div id="sendConfirmCard" class="bg-surface rounded-xl p-4 mb-4 text-center">
                     <div id="sendConfirmPending">
                         <p class="text-xs text-muted mb-1">You're sending</p>
                         <p id="confirmAmountLine" class="text-2xl font-bold text-primary mb-2">0.00 NET</p>
@@ -2508,20 +2510,34 @@
             }
             const oldSel = document.getElementById(inputId + 'Select');
             if (oldSel) oldSel.remove();
+            const oldTxt0 = document.getElementById(inputId + 'Text');
+            if (oldTxt0) oldTxt0.remove();
             if (!list.length) return;
             el.value = list[0];
             el.readOnly = true;
-            el.classList.add('opacity-80', 'cursor-not-allowed');
             if (list.length > 1) {
                 const sel = document.createElement('select');
                 sel.id = inputId + 'Select';
-                sel.className = el.className.replace('opacity-80', '').replace('cursor-not-allowed', '');
+                sel.className = el.className.replace('hidden', '').trim();
                 list.forEach((v) => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
                 sel.addEventListener('change', () => { el.value = sel.value; });
                 el.classList.add('hidden');
                 el.parentNode.insertBefore(sel, el);
             } else {
-                el.classList.remove('hidden');
+                // Single email: plain text (not a form field), the value stays in the hidden input.
+                el.classList.add('hidden');
+                const txt = document.createElement('div');
+                txt.id = inputId + 'Text';
+                txt.className = 'mb-3 text-center';
+                const lbl = document.createElement('p');
+                lbl.className = 'text-xs text-muted mb-1';
+                lbl.textContent = 'We will send a code to';
+                const em = document.createElement('p');
+                em.className = 'text-sm font-medium text-primary break-all';
+                em.textContent = list[0];
+                txt.appendChild(lbl);
+                txt.appendChild(em);
+                el.parentNode.insertBefore(txt, el);
             }
         }
 
