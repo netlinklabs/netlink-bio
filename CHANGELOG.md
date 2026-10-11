@@ -8,7 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Fixed
-- **`tx.html`: the transaction card shows 3 decimals for NET and USDC (was 2).** A 0.001 USDC send showed "-0.00 USDC" and 1.567 NET showed "-1.57 NET". POL keeps 4 decimals. Display only. Not tested in a browser.
+- **`tx.html`: the transaction card shows 4 decimals for every token, with a slightly smaller amount.** A 0.001 USDC send showed "-0.00 USDC" and 1.567 NET showed "-1.57 NET". Now POL, NET and USDC all show 4 decimals (for example "-1.5670 NET", "-0.0010 USDC"), so support can explain one rule. The amount font went from 17px bold to 15px semibold with no wrapping (`whitespace-nowrap`) so longer numbers fit on a phone. Only classes already in the built `shared/tailwind.css` are used, so no CSS rebuild. Display only. Not tested in a browser.
 
 ### Security
 - **Amount check: sends of NET and USDC are now exact too (`api/_lib/verify-wallet-amount.js`).** After the per-token change, only POL sends and exports were strict (0.0001); NET and USDC kept 0.01, so a small USDC amount (for example 0.001 recorded as 0.005) still passed. Now every `send` must match within 0.0001, because `pay.html` records the amount exactly as typed. POL exports stay at 0.0001. Incoming rows and NET or USDC exports keep 0.01, because those amounts are read with `fromWei` (2 decimals, truncated). Swaps keep 2%.
