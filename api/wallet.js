@@ -9,7 +9,7 @@
 
 import { withStats } from './_lib/stats.js';
 import { trackAlchemy } from './_lib/usage.js';
-import { verifyOneTx } from './_lib/verify-wallet-tx.js';
+import { verifyOneTxFull } from './_lib/verify-wallet-amount.js';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
@@ -392,7 +392,7 @@ async function handleVerify(req, res) {
     });
     const user = ur.ok ? await ur.json() : null;
     if (!user || !user.id) { res.status(401).json({ error: 'Not signed in' }); return; }
-    const out = await verifyOneTx(user.id, hash);
+    const out = await verifyOneTxFull(user.id, hash);
     if (out.status === 'rate_limited') { res.status(429).json(out); return; }
     res.status(200).json(out);
   } catch (err) {

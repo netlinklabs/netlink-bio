@@ -501,13 +501,16 @@
         // Receipts are only issued for transactions confirmed on Polygon (onchain_verified).
         // The card shows a progress bar while the server checks the transaction, then a
         // Receipt button with a check icon and "Verified".
+        // A receipt needs both: the tx is confirmed on Polygon AND the recorded amount matches the chain.
+        const isReceiptReady = (tx) => tx && tx.onchain_verified === true && tx.onchain_amount_status === 'match';
         const verifyState = {}; // txId -> { phase: 'verifying' | 'failed', pct }
         function verifyStatusHtml(tx) {
             const st = verifyState[tx.id];
             const receiptBtn = `<button onclick="event.stopPropagation(); openReceiptModal('${tx.id}')" class="inline-flex items-center gap-1.5 text-xs font-medium text-secondary hover:text-primary transition"><i data-lucide="receipt" class="w-3 h-3"></i> Receipt</button>`;
             // Order, left to right: Receipt, progress bar (only while verifying), Verified at the far right.
-            if (tx.onchain_verified === true) return receiptBtn + '<span class="ml-auto inline-flex items-center gap-1 text-xs font-medium vok"><i data-lucide="circle-check" class="w-3.5 h-3.5"></i> Verified</span>';
+            if (isReceiptReady(tx)) return receiptBtn + '<span class="ml-auto inline-flex items-center gap-1 text-xs font-medium vok"><i data-lucide="circle-check" class="w-3.5 h-3.5"></i> Verified</span>';
             if (st && st.phase === 'verifying') return receiptBtn + `<span class="vbar" role="progressbar" aria-label="Verifying on Polygon"><span class="vfill" style="width:${st.pct}%"></span></span><span class="text-xs text-muted">Verifying</span>`;
+            if (st && st.phase === 'blocked') return receiptBtn + '<span class="ml-auto text-xs font-medium text-amber-500">Amount not confirmed</span>';
             return receiptBtn;
         }
         function refreshVerifyUI(tx) {
@@ -521,7 +524,7 @@
             if (fill) fill.style.width = pct + '%';
         }
         async function ensureTxVerified(tx) {
-            if (tx.onchain_verified === true) return true;
+            if (isReceiptReady(tx)) return true;
             if (verifyState[tx.id] && verifyState[tx.id].phase === 'verifying') return false;
             verifyState[tx.id] = { phase: 'verifying', pct: 8 };
             refreshVerifyUI(tx);
@@ -535,11 +538,18 @@
                         const out = await r.json();
                         if (out.status === 'verified') {
                             tx.onchain_verified = true;
+                            tx.onchain_amount_status = 'match';
                             setVerifyPct(tx, 100);
                             await new Promise((res) => setTimeout(res, 400));
                             delete verifyState[tx.id];
                             refreshVerifyUI(tx);
                             return true;
+                        }
+                        if (out.status === 'amount_mismatch' || out.status === 'amount_unconfirmed') {
+                            verifyState[tx.id] = { phase: 'blocked', pct: 0 };
+                            refreshVerifyUI(tx);
+                            showToast('Receipt unavailable: the amount could not be confirmed on-chain.');
+                            return false;
                         }
                         if (out.status === 'failed' || out.status === 'not_found') break;
                     }
@@ -556,7 +566,7 @@
         }
         // Fresh transactions are checked automatically, one at a time, so the receipt unlocks without a tap.
         async function autoVerifyRecent() {
-            const recent = allTx.filter((t) => (t.type === 'send' || t.type === 'receive') && t.status === 'success' && t.onchain_verified !== true && t.hash && Date.now() - new Date(t.occurred_at).getTime() < 3600000).slice(0, 3);
+            const recent = allTx.filter((t) => (t.type === 'send' || t.type === 'receive') && t.status === 'success' && !isReceiptReady(t) && t.hash && Date.now() - new Date(t.occurred_at).getTime() < 3600000).slice(0, 3);
             for (const t of recent) { if (!(await ensureTxVerified(t))) break; }
         }
 
@@ -716,7 +726,7 @@
         }
 
         async function downloadReceiptImage() {
-            if (!currentModalTx || currentModalTx.onchain_verified !== true) return;
+            if (!isReceiptReady(currentModalTx)) return;
             const sheet = document.getElementById('receiptSheet');
             if (!sheet) return;
             const btn = document.getElementById('btnImg');
@@ -746,7 +756,7 @@
         }
 
         async function downloadReceiptPDF() {
-            if (!currentModalTx || currentModalTx.onchain_verified !== true) return;
+            if (!isReceiptReady(currentModalTx)) return;
             const btn = document.getElementById('btnPdf');
             const original = btn.innerHTML;
             btn.disabled = true;
@@ -791,7 +801,7 @@
         }
 
         async function shareReceipt() {
-            if (!currentModalTx || currentModalTx.onchain_verified !== true) return;
+            if (!isReceiptReady(currentModalTx)) return;
             const btn = document.getElementById('btnShare');
             const original = btn.innerHTML;
             btn.disabled = true;

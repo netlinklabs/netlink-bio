@@ -7,6 +7,11 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Security
+- **Receipts now also need the recorded amount to match the chain (`tx.html`, `api/wallet.js`, `api/_lib/verify-wallet-amount.js`).** Before, a real transaction hash with a made-up amount could still unlock a receipt, because `onchain_verified` only proves the tx exists and succeeded. Now `GET /api/wallet?action=verify` runs `verifyOneTxFull()`: tx confirmed, then the same amount comparison the daily cron uses (`evaluateRow`), written to `onchain_amount_status`. The receipt unlocks only when the status is `match`, so the progress bar now covers both checks (a few seconds). If the amount differs or no matching transfer is found, the card shows "Amount not confirmed" in amber and no receipt is issued. Extra cost per call: 1 receipt (20 CU) plus 1 or 2 `alchemy_getAssetTransfers` (150 CU each). The 20 calls per user per minute limit still applies.
+  - Data check before this change: 329 of 336 rows were already `match`; 2 old receive rows are `unchecked` and 5 recent sends were still empty (they verify on demand).
+  - Checked: syntax, and `evaluateRow` returns `match` for 10 NET recorded versus 10 on-chain and `mismatch` for 99 versus 10. Not tested in a browser or against live Alchemy: send a small transaction and confirm Receipt and Verified appear within seconds.
+
 ### Changed
 - **`tx.html`: card bottom row layout for receipt verification.** One full-width row: `[View] [Receipt] [progress bar] [check icon Verified]`. The Receipt button always uses the receipt icon (no check icon). The progress bar fills the middle while the transaction is checked and disappears at 100%. Then "Verified" with a check icon stays at the far right.
   - Checked: inline scripts pass a syntax check. Not tested in a browser.
