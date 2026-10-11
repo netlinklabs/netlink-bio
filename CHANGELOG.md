@@ -7,6 +7,15 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`pay.html`, `pay2.html`, `pay5.html`, `recovery.html`: the email code step of the identity gate no longer lets you type an email.** The field is locked to the email that opens this account's wallet, so the code always goes to the right inbox and no code is wasted on a wrong address.
+  - Where it applies: Send identity gate (pay pages), sign-in gate and Emergency Export confirmation (`recovery.html`).
+  - Email source: `wallet_recovery_email`, `wallet_google_email`, then the Netlink account email. One match shows a read-only field. Older wallets with several saved emails show a dropdown (no free typing).
+  - "Use a different email" is now "Send a new code". The "different wallet" error no longer tells you to change the email.
+  - Not changed: Connect Wallet modal (still checked by `checkConnectEmailAllowed()`) and the "Add recovery email" field in `recovery.html` (it adds a new backup email by design).
+  - This is a UI guard only. `sessionMatchesCurrentWallet()` still decides if the wallet session is valid.
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
 ### Fixed
 - **`pay.html`, `pay2.html`, `pay5.html`: the Send identity gate now really blocks the Send form until the wallet session is verified.** Before, pressing Cancel (or the x) on the gate revealed the Send form without confirming identity, and the form flashed briefly while the session was being checked.
   - Cancel on the gate now closes the Send modal. The modal opens only after the session check, so the form is never visible without a verified session.
