@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`tx.html`: card bottom row layout for receipt verification.** One full-width row: `[View] [Receipt] [progress bar] [check icon Verified]`. The Receipt button always uses the receipt icon (no check icon). The progress bar fills the middle while the transaction is checked and disappears at 100%. Then "Verified" with a check icon stays at the far right.
+  - Checked: inline scripts pass a syntax check. Not tested in a browser.
+
+### Changed
 - **`tx.html`: receipt verification now shows a progress bar on the transaction card instead of a toast.** The bottom row of a send or receive card is now `[View] [Receipt with check icon] Verified`. While the server checks the transaction on Polygon, the Receipt button is replaced by a small progress bar and the text "Verifying". Fresh transactions (under 1 hour old, up to 3, one at a time) are checked automatically after the list loads. Older unverified rows keep a plain Receipt button that starts the check on tap. The "Confirming transaction..." toast is gone; only a failure toast remains. Uses the `circle-check` icon (already used in `analytics.html`, so it exists in the pinned lucide).
   - Checked: inline scripts of `tx.html` pass a syntax check. Not tested in a browser: send a small transaction, open Activity, expand the new card and watch the bar fill, then Receipt and Verified appear.
 
