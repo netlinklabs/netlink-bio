@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`tx.html`: the transaction card shows 3 decimals for NET and USDC (was 2).** A 0.001 USDC send showed "-0.00 USDC" and 1.567 NET showed "-1.57 NET". POL keeps 4 decimals. Display only. Not tested in a browser.
+
 ### Security
 - **Amount check: sends of NET and USDC are now exact too (`api/_lib/verify-wallet-amount.js`).** After the per-token change, only POL sends and exports were strict (0.0001); NET and USDC kept 0.01, so a small USDC amount (for example 0.001 recorded as 0.005) still passed. Now every `send` must match within 0.0001, because `pay.html` records the amount exactly as typed. POL exports stay at 0.0001. Incoming rows and NET or USDC exports keep 0.01, because those amounts are read with `fromWei` (2 decimals, truncated). Swaps keep 2%.
   - Checked with a unit test of `evaluateRow`: USDC 0.001 vs 0.005 mismatch, USDC 0.001 exact match, NET 12.34 exact match, NET 12 vs 12.005 mismatch, truncated NET export 5.99 vs 5.999 match, truncated NET receive match. Not tested against live Alchemy: send a small USDC amount and confirm the receipt unlocks.
