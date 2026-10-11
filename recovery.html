@@ -80,7 +80,7 @@
 
             <div id="authGoogleStep">
                 <div id="authGoogleWrap" class="flex items-center justify-center mb-3"></div>
-                <button type="button" onclick="expandAuthEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
+                <button id="authUseEmailLink" type="button" onclick="expandAuthEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
                     Use email instead
                 </button>
             </div>
@@ -93,7 +93,7 @@
                     class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
                     <span id="authEmailBtnText">Continue with email</span>
                 </button>
-                <button type="button" onclick="collapseAuthEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">
+                <button id="authBackToGoogleBtn" type="button" onclick="collapseAuthEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">
                     Back to Google
                 </button>
             </div>
@@ -300,7 +300,7 @@
                     <div class="flex gap-2 mb-3">
                         <button onclick="backToExportReview()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Back</button>
                     </div>
-                    <button type="button" onclick="expandExportEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
+                    <button id="exportUseEmailLink" type="button" onclick="expandExportEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition underline decoration-dotted">
                         Trouble with Google? Use email instead
                     </button>
                 </div>
@@ -315,7 +315,7 @@
                     <p id="exportEmailError" class="text-xs text-red-500 mb-3 hidden"></p>
                     <div class="flex gap-2">
                         <button onclick="backToExportReview()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Back</button>
-                        <button type="button" onclick="collapseExportEmail()" class="flex-1 py-2.5 text-xs text-muted hover:text-secondary transition">Back to Google</button>
+                        <button id="exportBackToGoogleBtn" type="button" onclick="collapseExportEmail()" class="flex-1 py-2.5 text-xs text-muted hover:text-secondary transition">Back to Google</button>
                     </div>
                 </div>
 
@@ -484,7 +484,7 @@
 
             const { data: profile, error: profileErr } = await supabaseClient
                 .from('profiles')
-                .select('username, display_name, avatar_url, tier, wallet_address, net_id, local_currency, business_verified_at, identity_verified_at')
+                .select('username, display_name, avatar_url, tier, wallet_address, wallet_google_email, wallet_recovery_email, net_id, local_currency, business_verified_at, identity_verified_at')
                 .eq('id', currentUser.id).single();
             if (profileErr) throw profileErr;
             currentProfile = profile;
@@ -527,6 +527,33 @@
             return true;
         }
 
+        // Which sign-in methods actually open THIS account's wallet, so a method that
+        // would only create a different, empty wallet is never offered.
+        // Google: only when a Google identity was used for this wallet (wallet_google_email).
+        // Email: when an email identity is linked (wallet_recovery_email), or when the
+        // wallet was not made with Google (email-only wallets). Unknown profile: both.
+        function walletSignInMethods() {
+            if (!currentProfile) return { google: true, email: true };
+            const g = !!currentProfile.wallet_google_email;
+            const r = !!currentProfile.wallet_recovery_email;
+            return { google: g, email: r || !g };
+        }
+
+        async function applyAuthMethods() {
+            const m = walletSignInMethods();
+            document.getElementById('authUseEmailLink').classList.toggle('hidden', !m.email);
+            document.getElementById('authBackToGoogleBtn').classList.toggle('hidden', !m.google);
+            if (!m.google) await expandAuthEmail();
+        }
+
+        async function applyExportMethods() {
+            const m = walletSignInMethods();
+            collapseExportEmail();
+            document.getElementById('exportUseEmailLink').classList.toggle('hidden', !m.email);
+            document.getElementById('exportBackToGoogleBtn').classList.toggle('hidden', !m.google);
+            if (!m.google) await expandExportEmail();
+        }
+
         function showAuthSignInCard(mismatched) {
             document.getElementById('authLoadingState').classList.add('hidden');
             document.getElementById('authSignInCard').classList.remove('hidden');
@@ -536,6 +563,7 @@
             resetAuthGateEmail();
             collapseAuthEmail();
             renderAuthGateGoogleButton();
+            applyAuthMethods();
             if (window.lucide) lucide.createIcons();
         }
 
@@ -575,6 +603,7 @@
             container.style.opacity = '1';
             container.innerHTML = '';
             document.getElementById('authSignInError').classList.add('hidden');
+            if (!walletSignInMethods().google) return; // email-only wallet: no Google button
             if (!window.google) {
                 container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
                 return;
@@ -785,6 +814,8 @@
             if (codeInput) codeInput.value = '';
             document.getElementById('authSignInError').classList.add('hidden');
             document.getElementById('authOtpStep').classList.add('hidden');
+            // "Send a new code" must land back on the email step, not a blank card.
+            if (document.getElementById('authGoogleStep').classList.contains('hidden')) document.getElementById('authEmailStep').classList.remove('hidden');
         };
 
         async function renderMethods() {
@@ -1280,6 +1311,7 @@
             document.getElementById('exportStepReview').classList.add('hidden');
             document.getElementById('exportStepAuth').classList.remove('hidden');
             renderExportGoogleButton();
+            applyExportMethods();
         };
 
         window.backToExportReview = function () {
@@ -1291,6 +1323,7 @@
         function renderExportGoogleButton() {
             const container = document.getElementById('exportGoogleConfirmWrap');
             container.innerHTML = '';
+            if (!walletSignInMethods().google) return; // email-only wallet: no Google button
             if (!window.google) {
                 container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
                 return;

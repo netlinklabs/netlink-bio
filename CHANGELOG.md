@@ -7,6 +7,14 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`recovery.html`: the sign-in gate and Emergency Export now offer only the sign-in methods that open this account's wallet.** Before, Google and email were always both offered, and the wrong one (a method this wallet was not made with) only created a different empty wallet and was then rejected.
+  - Rule: Google is offered only when the profile has `wallet_google_email`. Email is offered when `wallet_recovery_email` is set, or when the wallet was not made with Google. If the profile is unreadable, both stay available.
+  - Email-only wallets (for example `labs_netlinkteam_1843`) now see only the email code step, with the locked email. Google-only wallets see only Google. Wallets with both keep both.
+  - Also fixed: "Send a new code" in the gate could leave a blank card. It now returns to the email step.
+  - Not changed yet: the Send gate on `pay.html`, `pay2.html`, `pay5.html` (same rule planned as a separate change).
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
 ### Fixed
 - **`recovery.html`: the sign-in gate is no longer a dead end.** Choosing Google could leave the card dimmed with no message and no way out when the wallet service did not answer.
   - Google sign-in now times out after 45 seconds with a clear message ("Sign-in is taking too long...") and the button becomes usable again.
