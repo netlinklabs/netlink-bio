@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`tx.html`: the transaction card hides trailing zeros.** Amounts show as written: 12 (not 12.0000), 12.5, 12.55, 12.05, 0.000123 (not 0.0001), up to 6 decimals, with thousands separators. This replaces the fixed 4 decimals from the previous change and matches how wallet apps such as TokenPocket show amounts. The receipt keeps its own rule (at least 2 decimals, so 12.00). Display only. Not tested in a browser.
+
 ### Fixed
 - **`tx.html`: the transaction card shows 4 decimals for every token, with a slightly smaller amount.** A 0.001 USDC send showed "-0.00 USDC" and 1.567 NET showed "-1.57 NET". Now POL, NET and USDC all show 4 decimals (for example "-1.5670 NET", "-0.0010 USDC"), so support can explain one rule. The amount font went from 17px bold to 15px semibold with no wrapping (`whitespace-nowrap`) so longer numbers fit on a phone. Only classes already in the built `shared/tailwind.css` are used, so no CSS rebuild. Display only. Not tested in a browser.
 
