@@ -1265,7 +1265,7 @@
             document.getElementById('exportReviewAddress').textContent = addr;
             document.getElementById('exportReviewUsdc').textContent = formatTokenAmount(window.currentBalances.usdc) + ' USDC';
             document.getElementById('exportReviewNet').textContent = formatTokenAmount(window.currentBalances.net) + ' NET';
-            document.getElementById('exportReviewPol').textContent = '~' + formatTokenAmount(window.currentBalances.pol) + ' POL (minus network fee)';
+            document.getElementById('exportReviewPol').textContent = '~' + formatTokenAmount(window.currentBalances.pol) + (feeCheck.sponsored ? ' POL (network fee sponsored)' : ' POL (minus network fee)');
 
             document.getElementById('exportConfirmSuffix').value = '';
             document.getElementById('exportSuffixError').classList.add('hidden');
@@ -1523,7 +1523,10 @@
             const resp = await sequenceWaas.feeOptions({ network: 'polygon', transactions: txs });
             const feeOptions = resp.data?.feeOptions;
             if (!feeOptions || feeOptions.length === 0) {
-                return { estimatedFeePol: '0', hasEnoughPol: false, txs, error: 'Gas payment options are not available from the relayer right now.' };
+                // No fee options means the relayer sponsors the gas for this wallet
+                // (same reading as checkGasSponsorship() in pay.html). Nothing to
+                // pay, so no POL has to be reserved.
+                return { sponsored: true, estimatedFeePol: '0', requiredPol: '0', hasEnoughPol: true, txs };
             }
             const polFee = feeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC');
             if (!polFee) {
@@ -1590,10 +1593,12 @@
                     throw new Error(`You need at least ~${parseFloat(feeCheck.requiredPol).toFixed(3)} POL to pay the network fee. Please top up a small amount of POL and try again.`);
                 }
                 const estimatedFeePol = feeCheck.estimatedFeePol;
+                const sponsored = !!feeCheck.sponsored;
 
                 // Reserve fee + safety buffer, send the rest of POL.
+                // Sponsored gas: nothing to reserve, the whole POL balance moves.
                 const feeToReserve = (parseFloat(estimatedFeePol) + parseFloat(POL_GAS_SAFETY_BUFFER)).toString();
-                const polToSend = subtractDecimalStrings(polBalance, feeToReserve, 18);
+                const polToSend = sponsored ? polBalance : subtractDecimalStrings(polBalance, feeToReserve, 18);
 
                 if (parseFloat(polToSend) <= 0 && parseFloat(polBalance) > 0) {
                     // Not enough POL to both cover gas AND send a meaningful
@@ -1609,18 +1614,21 @@
                 const finalFeeResp = await sequenceWaas.feeOptions({ network: 'polygon', transactions: finalTxs });
                 const finalFeeQuote = finalFeeResp.data?.feeQuote;
                 const finalFeeOptions = finalFeeResp.data?.feeOptions;
-                if (!finalFeeOptions || finalFeeOptions.length === 0) {
-                    throw new Error('Gas payment options are not available from the relayer right now.');
+                const finalSponsored = !finalFeeOptions || finalFeeOptions.length === 0;
+                // The plan (full POL balance vs POL minus fee) was made from the first
+                // estimate. If sponsorship changed since, stop before sending anything.
+                if (finalSponsored !== sponsored) {
+                    throw new Error('Gas sponsorship changed while preparing the export. Nothing was sent. Please try again.');
                 }
-                const finalPolFee = finalFeeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || finalFeeOptions[0];
+                const sendArgs = { network: 'polygon', transactions: finalTxs };
+                if (!finalSponsored) {
+                    const finalPolFee = finalFeeOptions.find(q => q.token?.symbol === 'POL' || q.token?.symbol === 'MATIC') || finalFeeOptions[0];
+                    sendArgs.transactionsFeeOption = finalPolFee;
+                    sendArgs.transactionsFeeQuote = finalFeeQuote;
+                }
 
                 statusEl.textContent = 'Sending your assets...';
-                const tx = await sequenceWaas.sendTransaction({
-                    network: 'polygon',
-                    transactions: finalTxs,
-                    transactionsFeeOption: finalPolFee,
-                    transactionsFeeQuote: finalFeeQuote,
-                });
+                const tx = await sequenceWaas.sendTransaction(sendArgs);
                 if (!isSentTransactionResponse(tx)) {
                     console.error('Sequence did not return a sent-transaction response:', tx);
                     throw new Error('Transaction was not sent — please try again.');
