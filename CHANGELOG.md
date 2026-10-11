@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`tx.html`: one amount format for the card, the swap row and the receipt.** Rule: at least 2 decimals and up to 6, so 12 shows "12.00", 12.5 "12.50", 12.05 "12.05", 1234 "1,234.00" and 0.000123 "0.000123". Exactly 3 decimals get a 4th (1.567 shows "1.5670", 0.002 "0.0020") so they cannot be read as a thousands group, as happened with a 1.567 NET send. A non-zero amount below 0.000001 shows "<0.000001", never "0.00". Comma for thousands and a point for decimals, the same as Indonesian bank apps (for example "IDR 104,746.00"). Replaces the trimmed-zeros card format and the separate receipt format. The swap row, which showed raw numbers, now uses the same format. Display only, nothing stored changes. Not tested in a browser.
+
+### Changed
 - **`tx.html`: the transaction card hides trailing zeros.** Amounts show as written: 12 (not 12.0000), 12.5, 12.55, 12.05, 0.000123 (not 0.0001), up to 6 decimals, with thousands separators. This replaces the fixed 4 decimals from the previous change and matches how wallet apps such as TokenPocket show amounts. The receipt keeps its own rule (at least 2 decimals, so 12.00). Display only. Not tested in a browser.
 
 ### Fixed
