@@ -2705,11 +2705,6 @@ window.openNetlinkPay = openNetlinkPay;
     <script src="/shared/app-lock.js?v=3"></script>
 
     <script type="module">
-        const WC_PROJECT_ID = 'bf364c8353b9e66611a7c51b35da86d7';
-        const POLYGON_CHAIN_ID = 137;
-        let wcProvider = null;
-        let EthereumProviderClass = null;
-
         function truncateAddress(addr) {
             if (!addr) return '';
             return addr.slice(0, 6) + '...' + addr.slice(-4);
@@ -2765,76 +2760,7 @@ window.openNetlinkPay = openNetlinkPay;
     if (window.lucide) lucide.createIcons();
 }
 
-        async function loadEthereumProvider() {
-            if (EthereumProviderClass) return EthereumProviderClass;
-            
-            const mod = await import("/shared/vendor/walletconnect-ethereum-provider.js?v=1");
-            
-            EthereumProviderClass = mod.EthereumProvider;
-            return EthereumProviderClass;
-        }
-
-        async function getWcProvider() {
-            if (wcProvider) return wcProvider;
-            const EthereumProvider = await loadEthereumProvider();
-            wcProvider = await EthereumProvider.init({
-                projectId: WC_PROJECT_ID,
-                metadata: {
-                    name: 'Netlink.bio',
-                    description: 'One link for everything — bio, CV, and crypto wallet in one page.',
-                    url: 'https://netlink.bio',
-                    icons: ['https://netlink.bio/assets/netlinkbio-icon.png'],
-                },
-                showQrModal: true,
-                optionalChains: [POLYGON_CHAIN_ID],
-                rpcMap: { [POLYGON_CHAIN_ID]: 'https://polygon-rpc.com' },
-            });
-
-            wcProvider.on('accountsChanged', (accounts) => {
-                if (accounts && accounts.length) applyConnectedWallet(accounts[0]);
-            });
-            wcProvider.on('disconnect', () => {
-                renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
-                showToast('Wallet disconnected');
-            });
-
-            return wcProvider;
-        }
-
-        async function applyConnectedWallet(address) {
-            document.getElementById('walletAddressInput').value = address;
-            renderWalletAddressUI(address, true);
-            await saveWallet(); 
-            renderWalletAddressUI(address, true); 
-        }
-
-        async function connectWallet() {
-            const btn = document.getElementById('walletConnectBtn');
-            btn.disabled = true;
-            const original = btn.innerHTML;
-            btn.textContent = 'Loading...';
-            try {
-                const provider = await getWcProvider();
-                btn.textContent = 'Connecting...';
-                await provider.connect();
-                if (provider.accounts && provider.accounts.length) {
-                    await applyConnectedWallet(provider.accounts[0]);
-                }
-            } catch (err) {
-                console.error(err);
-                showToast('Could not load/connect wallet — check your internet connection and try again');
-                btn.innerHTML = original;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
         async function disconnectWallet() {
-            try {
-                if (wcProvider) await wcProvider.disconnect();
-            } catch (err) {
-                console.error(err);
-            }
             renderWalletAddressUI(document.getElementById('walletAddressInput').value, false);
             showToast('Wallet disconnected');
         }
@@ -2844,7 +2770,6 @@ window.openNetlinkPay = openNetlinkPay;
             if (!current) return;
 
             try {
-                if (wcProvider) { await wcProvider.disconnect().catch(() => {}); }
                 const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
                 if (error) {
                     console.error('Supabase error removing wallet:', error);
@@ -2864,7 +2789,6 @@ window.openNetlinkPay = openNetlinkPay;
             }
         }
 
-        window.connectWallet = connectWallet;
         window.disconnectWallet = disconnectWallet;
         window.removeWalletAddress = removeWalletAddress;
     </script>

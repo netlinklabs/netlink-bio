@@ -8,6 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Security
+- **Removed the unused WalletConnect code and its 2 MB bundle (`dashboard.html`, `shared/vendor/`, `vendor-build/`).** The dashboard no longer offers a WalletConnect button (no element with id `walletConnectBtn` exists, nothing called `connectWallet()`), but the code and the bundled third-party library were still shipped. Deleted: `loadEthereumProvider`, `getWcProvider`, `applyConnectedWallet`, `connectWallet`, the WalletConnect project id, and the two `wcProvider.disconnect()` lines in `disconnectWallet` and `removeWalletAddress` (both functions stay). `walletconnect-ethereum-provider.js` and its build entry are gone; the other bundles are byte for byte unchanged after a rebuild.
+  - Checked: both inline module scripts of `dashboard.html` pass a syntax check, and no reference to the removed names is left. Not tested in a browser: open `/dashboard`, check the wallet card shows the address, then use Disconnect and Remove wallet once on a test account.
+
+### Security
 - **CSP (Report-Only) tightened to match what the site really loads (`vercel.json`).** Scripts: only our own files and `accounts.google.com` (Google sign-in). Removed from the policy: `esm.sh`, `cdn.jsdelivr.net`, `cdn.tailwindcss.com`, `cdnjs.cloudflare.com` and `'unsafe-eval'`, since those are no longer loaded. Added `frame-ancestors 'self'`. Still Report-Only: nothing is blocked yet.
   - **To switch to enforcing:** open the main pages with the browser console open (F12) and look for "Content Security Policy" messages: `/login`, `/dashboard`, `/pay`, `/tx`, `/identity`, `/recovery`, `/page-builder`, one `/page/...` page and one bio page. If nothing important is reported, rename the header to `Content-Security-Policy`. `'unsafe-inline'` stays for now because pages use inline scripts and styles, so this policy limits where scripts come from, not inline code.
 
