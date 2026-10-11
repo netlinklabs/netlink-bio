@@ -6,7 +6,6 @@ Output goes to `../shared/vendor/` and is committed, so deploys need no build st
 | Output file | Package (pinned in `package.json`) | Used by |
 |---|---|---|
 | `sequence-waas.js` | `@0xsequence/waas` 2.3.44 | `pay`, `pay2`, `pay5`, `identity`, `recovery`, `dashboard` |
-| `walletconnect-ethereum-provider.js` | `@walletconnect/ethereum-provider` 2.26.0 | `dashboard` (loaded on demand) |
 | `onramp-web-sdk.js` | `@onramp.money/onramp-web-sdk` 2.0.1 | `pay2` |
 
 ## Update a library

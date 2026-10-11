@@ -27,7 +27,7 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 
 - Sequence WaaS keeps a browser-global session that persists across different Supabase logins. **Always validate `sessionMatchesCurrentWallet()` using `sequenceWaas.getAddress()` before any wallet action** (send, export, sign) — this closes a session-mismatch vulnerability already fixed once; don't reintroduce it.
 - Sequence Embedded Wallets are smart contract wallets — there is no exportable private key. Recovery goes through the configured Recovery Wallet (Trust Recovery process), not key export.
-- Wallet SDKs (`@0xsequence/waas`, WalletConnect, Onramp) are bundled into `shared/vendor/` by `vendor-build/` (see its README). Never import them from `esm.sh` or another CDN again, and keep `@0xsequence/waas` on one version across all pages.
+- Wallet SDKs (`@0xsequence/waas`, Onramp) are bundled into `shared/vendor/` by `vendor-build/` (see its README). Never import them from `esm.sh` or another CDN again, and keep `@0xsequence/waas` on one version across all pages.
 - Each social login provider (Google, etc.) creates a **separate wallet address** by default. Don't assume one user = one wallet unless Account Linking has been implemented (it hasn't yet — flag if a task assumes otherwise).
 
 ## Navigation
