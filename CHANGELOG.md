@@ -8,6 +8,11 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Fixed
+- **`pay.html`, `pay2.html`, `pay5.html`: the Send identity gate now really blocks the Send form until the wallet session is verified.** Before, pressing Cancel (or the x) on the gate revealed the Send form without confirming identity, and the form flashed briefly while the session was being checked.
+  - Cancel on the gate now closes the Send modal. The modal opens only after the session check, so the form is never visible without a verified session.
+  - Cancel at the Confirm Send step still returns to the form (the session was already verified at that point).
+  - The transfer itself was already protected (`goToSendConfirm()` and `doExecuteSend()` re-check the session), so this closes a UX and security-posture gap, not a fund risk.
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
 - **`pay.html`, `pay2.html`, `pay5.html`, `recovery.html`: the email code step no longer shows "Could not send code" when the code email was actually sent.** The page waited only 3 seconds for the wallet service to hand over the code prompt. When it took longer (seen right after a wrong-wallet check dropped the session), the red error appeared even though the email arrived. It now waits up to 20 seconds, and stops early if the sign-in itself fails. Applies to Connect Wallet, the Send identity step (also used for Swap) and, on `recovery.html`, the sign-in gate and Emergency Export.
   - Static check only (script syntax). Not tested in a browser or on a real phone.
 
