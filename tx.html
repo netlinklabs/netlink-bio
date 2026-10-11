@@ -304,6 +304,8 @@
         window.addEventListener('unhandledrejection', (e) => showAuthError(e.reason?.message || String(e.reason)));
         function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }
         function truncateAddress(addr) { return addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : ''; }
+        // Receipt amount: at least 2 decimals, up to 6, so 0.0001 POL is not shown as 0.00.
+        function formatReceiptAmount(num) { const n = parseFloat(num); return isNaN(n) ? String(num) : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 }); }
         function formatFintech(num, decimals) { const n = parseFloat(num); return isNaN(n) ? String(num) : n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }); }
         function getTokenLogo(token) { return TOKEN_LOGOS[(token || '').toUpperCase()] || TOKEN_LOGOS['NET']; }
 
@@ -646,7 +648,7 @@
                     </div>
                     <div class="receipt-row">
                         <span class="label">Amount</span>
-                        <span class="value">${formatFintech(tx.amount, 2)}</span>
+                        <span class="value">${formatReceiptAmount(tx.amount)}</span>
                     </div>
                     ${noteText ? `<div class="receipt-row"><span class="label">Note</span><span class="value">${noteText}</span></div>` : ''}
                     <div class="receipt-row">
