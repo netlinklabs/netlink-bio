@@ -8,10 +8,10 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
-- **`pay.html`: connecting a wallet for the first time now requires the same email as the Netlink account.** In the Connect Wallet modal, a Google account or an email whose address differs from the account's email is rejected before any wallet is created ("Use the same email as your Netlink account (...) to connect a wallet."). The email field is pre-filled with the account's email.
+- **`pay.html`, `pay2.html`, `pay5.html`: connecting a wallet for the first time now requires the same email as the Netlink account.** In the Connect Wallet modal, a Google account or an email whose address differs from the account's email is rejected before any wallet is created ("Use the same email as your Netlink account (...) to connect a wallet."). The email field is pre-filled with the account's email.
   - Only applies when no wallet is connected. Existing wallets and Send, Swap and the re-auth steps are not affected.
   - Reconnecting after Disconnect also accepts an email already saved on the profile (`wallet_google_email`, `wallet_recovery_email`), so older wallets made with a different email can still be reconnected. Email match is case-insensitive.
-  - Not changed: `pay2.html` and `pay5.html` (staging copies) and `recovery.html` (still a soft `login_hint`).
+  - Same change in `pay2.html` and `pay5.html` (staging copies). Not changed: `recovery.html` (still a soft `login_hint`).
   - Static check only (script syntax). Not tested in a browser or on a real phone.
 
 ### Fixed

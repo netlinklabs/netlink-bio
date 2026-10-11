@@ -1743,6 +1743,7 @@
             document.getElementById('createWalletStatus').textContent = '';
             renderCreateWalletGoogleButton();
             resetEmailWalletConnect();
+            if (currentUser?.email) document.getElementById('createWalletEmailInput').value = currentUser.email;
             document.getElementById('createWalletModal').classList.add('active');
         };
         window.closeCreateWalletModal = function () {
@@ -1768,6 +1769,32 @@
                 shape: 'pill',
                 width: 240,
             });
+        }
+
+        // First-time connect only: the wallet's sign-in email must match this
+        // Netlink account's email, so app email and wallet email stay the same.
+        // Reconnecting after Disconnect also accepts an email already saved on
+        // the profile (wallet_google_email / wallet_recovery_email), so older
+        // wallets made with a different email are never locked out. Runs BEFORE
+        // sequenceWaas.signIn(), so no wallet session is created on a mismatch.
+        // Returns null when allowed, else an English error message.
+        async function checkConnectEmailAllowed(email) {
+            const normalized = String(email || '').trim().toLowerCase();
+            const appEmail = String(currentUser?.email || '').trim().toLowerCase();
+            if (!normalized) return 'Could not read the email for this sign-in. Please try again.';
+            if (normalized === appEmail) return null;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('profiles').select('wallet_google_email, wallet_recovery_email').eq('id', currentUser.id).single();
+                if (error) throw error;
+                const saved = [data.wallet_google_email, data.wallet_recovery_email]
+                    .map((v) => String(v || '').trim().toLowerCase()).filter(Boolean);
+                if (saved.includes(normalized)) return null;
+            } catch (err) {
+                console.error('Failed to verify connect email:', err);
+                return 'Could not verify your email. Please try again.';
+            }
+            return `Use the same email as your Netlink account (${currentUser.email}) to connect a wallet.`;
         }
 
         // Shared by both the Google flow and the Email OTP flow below — same
@@ -1870,6 +1897,14 @@
             container.style.opacity = '0.5';
             statusEl.textContent = 'Creating your wallet...';
             const idToken = response.credential;
+            if (!window.currentWalletAddress) {
+                const blocked = await checkConnectEmailAllowed(decodeGoogleIdTokenEmail(idToken));
+                if (blocked) {
+                    statusEl.textContent = blocked;
+                    container.style.opacity = '1';
+                    return;
+                }
+            }
             try {
                 const waasResult = await sequenceWaas.signIn({ idToken }, 'Netlink Pay');
                 if (!waasResult) throw new Error('No response from wallet service');
@@ -1929,6 +1964,16 @@
 
             btn.disabled = true;
             btnText.innerHTML = '<span class="spinner"></span>';
+            if (!window.currentWalletAddress) {
+                const blocked = await checkConnectEmailAllowed(email);
+                if (blocked) {
+                    errorEl.textContent = blocked;
+                    errorEl.classList.remove('hidden');
+                    btn.disabled = false;
+                    btnText.textContent = 'Continue with email';
+                    return;
+                }
+            }
             try {
                 pendingConnectEmail = email;
                 pendingEmailAuthCode = null;
