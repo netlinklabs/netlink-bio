@@ -8,6 +8,15 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Fixed
+- **Logout now also drops the wallet (Sequence) session on `recovery.html` and on the app-lock screen.** The wallet session is browser-global. `shared/nav.js` drops it on Logout only when the page exposes `window.sequenceWaas`, and `recovery.html` did not, so logging out there left the previous account's wallet session in the browser. The app-lock screen's Logout button never dropped it either.
+  - `recovery.html`: added `window.sequenceWaas = sequenceWaas;` so the existing Logout code in `shared/nav.js` works there.
+  - `shared/app-lock.js`: the Logout button now calls `dropSession()` (when `window.sequenceWaas` exists) before `signOut()`.
+  - Not changed: `dashboard.html`'s own `handleLogout()` has no `dropSession()`, but nothing calls it (the Logout button uses the `shared/nav.js` handler, which already drops the session there).
+  - Bumped `shared/app-lock.js?v=3` to `?v=4` on the 10 pages that include it, so browsers load the new file.
+  - Dropping the session only logs out the browser. Funds and the profile's `wallet_address` are untouched.
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
+### Fixed
 - **`recovery.html`: Emergency Export now works for wallets whose gas is sponsored.** Before, an empty list of gas options was treated as an error ("Gas payment options are not available from the relayer right now"), so a sponsored wallet could not export at all. An empty list means the relayer pays the gas (same reading as `checkGasSponsorship()` in `pay.html`).
   - Sponsored: no POL is reserved for gas, the whole POL balance is exported, and the transaction is sent without a gas option. The review line says "network fee sponsored".
   - Not sponsored: unchanged (gas paid in POL, fee reserved).
