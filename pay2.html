@@ -1957,6 +1957,20 @@
         let pendingEmailSignInPromise = null; // the outstanding signIn() promise
         let pendingConnectEmail = null;
 
+        // Waits for Sequence to hand over the OTP callback (onEmailAuthCodeRequired).
+        // The code email can be sent before the callback fires, so 3 seconds was
+        // too short (it showed "Could not send code" after the email had arrived).
+        // Stops early if signIn() itself fails; otherwise waits up to 20 seconds.
+        async function waitForEmailAuthCode(signInPromise, timeoutMs = 20000) {
+            let failed = false;
+            Promise.resolve(signInPromise).catch(() => { failed = true; });
+            const started = Date.now();
+            while (!pendingEmailAuthCode && !failed && Date.now() - started < timeoutMs) {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+            return !!pendingEmailAuthCode;
+        }
+
         sequenceWaas.onEmailAuthCodeRequired(async (respondWithCode) => {
             pendingEmailAuthCode = respondWithCode;
         });
@@ -1998,9 +2012,7 @@
 
                 // Give the SDK a moment to fire the callback and populate
                 // pendingEmailAuthCode before revealing the code-entry step.
-                for (let i = 0; i < 30 && !pendingEmailAuthCode; i++) {
-                    await new Promise((resolve) => setTimeout(resolve, 100));
-                }
+                await waitForEmailAuthCode(pendingEmailSignInPromise);
                 if (!pendingEmailAuthCode) {
                     throw new Error('Did not receive an OTP request from the wallet service.');
                 }
@@ -2602,9 +2614,7 @@
                 pendingEmailAuthCode = null; // shared callback slot (see onEmailAuthCodeRequired registration)
                 pendingSendConfirmSignInPromise = sequenceWaas.signIn({ email }, 'Netlink Pay');
 
-                for (let i = 0; i < 30 && !pendingEmailAuthCode; i++) {
-                    await new Promise((resolve) => setTimeout(resolve, 100));
-                }
+                await waitForEmailAuthCode(pendingSendConfirmSignInPromise);
                 if (!pendingEmailAuthCode) {
                     throw new Error('Did not receive an OTP request from the wallet service.');
                 }
