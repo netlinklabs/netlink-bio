@@ -1,6 +1,7 @@
 // Static build config for the Netlink app pages (dashboard, pay, tx, etc.).
-// Public/marketing pages (index.html, privacy-policy.html, ...) use their
-// own hand-written shared/site-nav.css and are NOT built from this config.
+// Public/marketing pages (index.html, ...) use their own hand-written shared/site-nav.css and are
+// NOT built from this config. The legal pages (terms, privacy-policy, ...) have their own build:
+// see tailwind.public.config.js (npm run build:css:public).
 //
 // Rebuild after changing markup/classes in any file listed below:
 //   npx tailwindcss -c tailwind.config.js -i shared/tailwind.src.css -o shared/tailwind.css --minify
