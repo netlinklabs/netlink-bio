@@ -8,6 +8,12 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Security
+- **Wallet SDKs are now bundled and served by us, not imported from `esm.sh` and jsDelivr (`shared/vendor/`, `vendor-build/`).** These pages hold wallet sessions and ran third-party code fetched at page load. Now: `sequence-waas.js` (`@0xsequence/waas` 2.3.44) for `pay`, `pay2`, `pay5`, `identity`, `recovery` and `dashboard`; `walletconnect-ethereum-provider.js` (2.26.0, 2 MB, loaded only when a user connects WalletConnect) for `dashboard`; `onramp-web-sdk.js` (2.0.1) for `pay2`. Built with esbuild from pinned versions, see `vendor-build/README.md`.
+  - **Version changes you should know about:** `dashboard.html` used `@0xsequence/waas` with no version (it was on 2.3.47). It is now on 2.3.44 like the other wallet pages, so every page reads the saved wallet session the same way. It only calls `signIn` there. WalletConnect was `@2` (floating), now 2.26.0. Onramp SDK had no version, now 2.0.1.
+  - Checked in Node: each bundle loads, exports the names the pages import, and `SequenceWaaS` builds with the real project config and has `signIn`, `getAddress`, `isSignedIn`, `sendTransaction`, `feeOptions` ready. **Not tested in a browser: please test a real login, send, export, recovery, the dashboard wallet connect and the Buy Crypto widget before relying on this.**
+  - Still loaded from outside, by design: Google sign-in script (`accounts.google.com`), Google Fonts, and the Onramp widget itself. jsDelivr is still used for currency rates (data) and brand icon images (not code).
+
+### Security
 - **Fix: headings on the legal pages looked plain after the Tailwind CSS change (`terms`, `terms-of-use`, `privacy-policy`, `username-policy`, `contact`, `investor`, `changelog`).** The static `tailwind-public.css` link was placed after each page's own `<style>`, so Tailwind's reset (headings inherit size and weight, margins removed) overrode the page's `h1`, `h2` and `h3` rules. The link now sits where the old CDN script tag was, before `site-nav.css` and the page `<style>`, so the page rules win again. Found from phone screenshots of `/privacy-policy` and `/terms` after PR 345. Not tested in a browser after this fix: check that section headings ("1. Who We Are") are bold, with space above, on both pages.
 
 ### Security
