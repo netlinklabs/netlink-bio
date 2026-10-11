@@ -494,10 +494,42 @@
             }
         }
 
+        // Receipts are only issued for transactions confirmed on Polygon (onchain_verified).
+        // Asks the server to check this one transaction now, polling a few times for fresh sends.
+        const verifyingTx = new Set();
+        async function ensureTxVerified(tx) {
+            if (tx.onchain_verified === true) return true;
+            if (verifyingTx.has(tx.id)) return false;
+            verifyingTx.add(tx.id);
+            showToast('Confirming transaction on Polygon...');
+            try {
+                for (let i = 0; i < 8; i++) {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session) return false;
+                    const r = await fetch(`/api/wallet?action=verify&hash=${encodeURIComponent(tx.hash)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+                    if (r.status === 429) break;
+                    if (r.ok) {
+                        const out = await r.json();
+                        if (out.status === 'verified') { tx.onchain_verified = true; return true; }
+                        if (out.status === 'failed' || out.status === 'not_found') break;
+                    }
+                    await new Promise((res) => setTimeout(res, 4000));
+                }
+                showToast('Receipt is not ready yet. Please try again in a moment.');
+                return false;
+            } catch (e) {
+                showToast('Could not confirm the transaction. Please try again.');
+                return false;
+            } finally {
+                verifyingTx.delete(tx.id);
+            }
+        }
+
         async function openReceiptModal(txId) {
             const tx = allTx.find((t) => t.id === txId);
             if (!tx) { showToast('Transaction not found'); return; }
             if (tx.type === 'swap') { showToast('Receipts are only available for sends and receives'); return; }
+            if (!(await ensureTxVerified(tx))) return;
             currentModalTx = tx;
             const backdrop = document.getElementById('receiptBackdrop');
             const content = document.getElementById('receiptContent');
@@ -649,6 +681,7 @@
         }
 
         async function downloadReceiptImage() {
+            if (!currentModalTx || currentModalTx.onchain_verified !== true) return;
             const sheet = document.getElementById('receiptSheet');
             if (!sheet) return;
             const btn = document.getElementById('btnImg');
@@ -678,7 +711,7 @@
         }
 
         async function downloadReceiptPDF() {
-            if (!currentModalTx) return;
+            if (!currentModalTx || currentModalTx.onchain_verified !== true) return;
             const btn = document.getElementById('btnPdf');
             const original = btn.innerHTML;
             btn.disabled = true;
@@ -723,7 +756,7 @@
         }
 
         async function shareReceipt() {
-            if (!currentModalTx) return;
+            if (!currentModalTx || currentModalTx.onchain_verified !== true) return;
             const btn = document.getElementById('btnShare');
             const original = btn.innerHTML;
             btn.disabled = true;

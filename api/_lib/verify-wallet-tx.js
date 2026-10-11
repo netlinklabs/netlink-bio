@@ -173,3 +173,53 @@ export async function verifyWalletTx() {
     failed: failures.length,
   };
 }
+
+// ---- On-demand verification of ONE transaction (used by tx.html receipts) ----
+// Called through /api/wallet?action=verify. The caller must be the owner of the row.
+// Cost: one eth_getTransactionReceipt (20 CU). A tx that is not mined yet does NOT use up
+// onchain_check_attempts, so the daily cron keeps its own retry budget.
+const verifyHits = new Map(); // userId -> [timestamps]; best effort, per serverless instance
+const VERIFY_LIMIT = 20;      // calls per user per minute
+const VERIFY_WINDOW_MS = 60000;
+
+function verifyThrottled(userId) {
+  const now = Date.now();
+  const hits = (verifyHits.get(userId) || []).filter((t) => now - t < VERIFY_WINDOW_MS);
+  if (hits.length >= VERIFY_LIMIT) { verifyHits.set(userId, hits); return true; }
+  hits.push(now);
+  verifyHits.set(userId, hits);
+  if (verifyHits.size > 5000) verifyHits.clear();
+  return false;
+}
+
+// Returns { status: 'verified' | 'pending' | 'failed' | 'not_found' | 'rate_limited' }
+export async function verifyOneTx(userId, hash) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const alchemyKey = process.env.ALCHEMY_API_KEY;
+  if (!key || !alchemyKey) throw new Error('Server misconfiguration');
+  if (verifyThrottled(userId)) return { status: 'rate_limited' };
+
+  const rows = await sb(
+    key,
+    `wallet_transactions?select=id,onchain_verified&owner_id=eq.${encodeURIComponent(userId)}` +
+      `&hash=eq.${encodeURIComponent(hash)}&limit=1`
+  );
+  if (!rows || !rows.length) return { status: 'not_found' };
+  if (rows[0].onchain_verified) return { status: 'verified' };
+
+  const out = await getReceipts(alchemyKey, [hash]);
+  const r = out[hash];
+  if (!r || r.error || !r.receipt) return { status: 'pending' }; // not mined or RPC hiccup
+  if (r.receipt.status !== '0x1') {
+    await patchByIds(key, [rows[0].id], { onchain_check_attempts: MAX_ATTEMPTS, onchain_check_note: 'Tx reverted on-chain' });
+    return { status: 'failed' };
+  }
+  const profiles = await sb(key, `profiles?select=wallet_address&id=eq.${encodeURIComponent(userId)}&limit=1`);
+  const seen = walletSeen(r.receipt, profiles && profiles[0] && profiles[0].wallet_address);
+  await patchByIds(key, [rows[0].id], {
+    onchain_verified: true,
+    onchain_verified_at: new Date().toISOString(),
+    onchain_check_note: seen ? 'Tx confirmed; wallet matched' : 'Tx confirmed; wallet not seen in receipt',
+  });
+  return { status: 'verified' };
+}
