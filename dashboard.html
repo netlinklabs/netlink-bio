@@ -86,10 +86,15 @@
         .crop-zoom { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; }
         .crop-zoom input[type="range"] { flex: 1; min-width: 0; accent-color: #3b82f6; }
 
+        /* Corner radius of the page cards: the same 11px as the regular cards on pay.html (.pay-card). */
+        :root { --dash-card-radius: 11px; }
+        .dash-surface { border-radius: var(--dash-card-radius); }
+        /* On narrow phones the CV title would wrap to 2 lines and make its header taller than Link in Bio. */
+        @media (max-width: 379px) { .dash-title-extra { display: none; } }
         /* Blue header for the Link in Bio and CV cards, same blue as the main card on pay.html.
            Plain CSS on purpose (no Tailwind rebuild). The selectors start with "html body" so they
            also beat the html.dark text color rules, which use !important. */
-        .dash-card-head { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%); border-radius: 1rem 1rem 0 0; }
+        .dash-card-head { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%); border-radius: calc(var(--dash-card-radius) - 1px) calc(var(--dash-card-radius) - 1px) 0 0; }
         html body .dash-card-head .text-primary { color: #ffffff !important; }
         html body .dash-card-head .text-secondary { color: rgba(255,255,255,0.92) !important; }
         html body .dash-card-head .text-muted,
@@ -106,7 +111,7 @@
         .dash-card-head { cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; transition: border-radius 0.4s ease, border-color 0.4s ease, filter 0.2s ease; }
         .dash-card-head:hover { filter: brightness(1.05); }
         .dash-card-head:active { filter: brightness(0.96); }
-        .dash-card.is-collapsed .dash-card-head { border-radius: 1rem; border-bottom-color: transparent !important; }
+        .dash-card.is-collapsed .dash-card-head { border-radius: calc(var(--dash-card-radius) - 1px); border-bottom-color: transparent !important; }
         .dash-card-icon { width: 2.5rem; height: 2.5rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); }
         .dash-card-icon svg { color: #ffffff; }
         .dash-card-toggle { flex-shrink: 0; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.45); color: #ffffff; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
@@ -202,7 +207,7 @@
         </div>
 
 
-        <div id="profileCard" class="card dash-card rounded-2xl mb-4 lg:mb-6">
+        <div id="profileCard" class="card dash-card dash-surface mb-4 lg:mb-6">
             <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -222,6 +227,18 @@
                         </div>
                         <div class="progress-bar mt-1" style="height:4px;">
                             <div id="bioAiScoreFill" class="progress-fill" style="width:0%"></div>
+                        </div>
+                        <p id="profileUrlHint" class="text-sm text-secondary mt-1.5">netlink.bio/username</p>
+                        <div class="grid grid-cols-3 gap-2 mt-3">
+                            <button onclick="copyProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                            </button>
+                            <button onclick="previewProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+                            </button>
+                            <button onclick="shareProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -252,18 +269,6 @@
                     </div>
 
                     <button id="linkCardSaveBtn" onclick="saveLinkCardSettings()" class="w-full mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm">Save</button>
-
-                    <div class="grid grid-cols-3 gap-2 mt-2">
-                        <button onclick="copyProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
-                        </button>
-                        <button onclick="previewProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
-                        </button>
-                        <button onclick="shareProfileLink()" class="py-2 hover-surface border border-subtle rounded-lg text-xs font-medium text-secondary transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
-                        </button>
-                    </div>
 
                     <!-- Choose Template -- compact trigger button, opens #templateModal to pick Light/Dark
                          layout for the public bio page. Was previously an inline 2-tile card (swatch preview
@@ -420,13 +425,13 @@
             </div></div>
         </div>
 
-        <div id="cvCard" class="card dash-card is-collapsed rounded-2xl mb-4 lg:mb-6">
+        <div id="cvCard" class="card dash-card dash-surface is-collapsed mb-4 lg:mb-6">
             <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <div class="flex items-center justify-between gap-3">
                             <h3 class="text-lg font-semibold text-primary flex items-center gap-2 min-w-0">
-                                <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> Professional CV (Resume)
+                                <i data-lucide="file-text" class="w-5 h-5 text-green-500"></i> <span>Professional CV<span class="dash-title-extra"> (Resume)</span></span>
                             </h3>
                             <button type="button" class="dash-card-toggle" data-card-title="Professional CV" aria-controls="cvCardBody" aria-expanded="false" aria-label="Expand Professional CV" onclick="toggleDashCard('cvCard')"><i data-lucide="chevron-down"></i></button>
                         </div>
@@ -560,7 +565,7 @@
             </div></div>
         </div>
 
-        <div id="landingPageCard" class="card dash-card is-collapsed rounded-2xl mb-4 lg:mb-6">
+        <div id="landingPageCard" class="card dash-card dash-surface is-collapsed mb-4 lg:mb-6">
             <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
                 <div class="flex items-center gap-3">
                     <div class="dash-card-icon"><i data-lucide="globe" class="w-5 h-5"></i></div>
@@ -623,7 +628,7 @@
             </div></div>
         </div>
 
-        <div class="card rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
+        <div class="card dash-surface p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                     <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
@@ -1122,6 +1127,7 @@ window.openNetlinkPay = openNetlinkPay;
 
             if (data.username) {
                 document.getElementById('cvUrlHint').textContent = `netlink.bio/cv/${data.username}`;
+                document.getElementById('profileUrlHint').textContent = `netlink.bio/${data.username}`;
             }
 
             document.getElementById('profileUsername').value = data.username || '';
