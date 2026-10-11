@@ -9,6 +9,7 @@
 
 import { withStats } from './_lib/stats.js';
 import { trackAlchemy } from './_lib/usage.js';
+import { verifyOneTx } from './_lib/verify-wallet-tx.js';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_RPC_URL = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
@@ -368,12 +369,45 @@ async function handleGas(req, res) {
   }
 }
 
+// ==================== action=verify ====================
+// Verifies ONE of the caller's own transactions on Polygon so tx.html can unlock its receipt
+// right after a send, without waiting for the daily cron. Needs the user's access token.
+
+const VERIFY_SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
+const VERIFY_ANON_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
+
+async function handleVerify(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const hash = (req.query.hash || '').trim();
+  if (!/^0x[a-fA-F0-9]{64}$/.test(hash)) {
+    res.status(400).json({ error: 'Invalid or missing transaction hash' });
+    return;
+  }
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (!token) { res.status(401).json({ error: 'Not signed in' }); return; }
+  try {
+    const ur = await fetch(`${VERIFY_SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: VERIFY_ANON_KEY, Authorization: `Bearer ${token}` },
+    });
+    const user = ur.ok ? await ur.json() : null;
+    if (!user || !user.id) { res.status(401).json({ error: 'Not signed in' }); return; }
+    const out = await verifyOneTx(user.id, hash);
+    if (out.status === 'rate_limited') { res.status(429).json(out); return; }
+    res.status(200).json(out);
+  } catch (err) {
+    console.error(err);
+    res.status(502).json({ error: 'Verification failed' });
+  }
+}
+
 async function handler(req, res) {
   const action = req.query.action;
   if (action === 'balance') return handleBalance(req, res);
   if (action === 'transactions') return handleTransactions(req, res);
   if (action === 'gas') return handleGas(req, res);
-  res.status(400).json({ error: 'Invalid or missing action (expected balance, transactions, or gas)' });
+  if (action === 'verify') return handleVerify(req, res);
+  res.status(400).json({ error: 'Invalid or missing action (expected balance, transactions, gas, or verify)' });
 }
 
 export default withStats('wallet', handler);

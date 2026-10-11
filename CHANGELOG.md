@@ -8,6 +8,11 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Security
+- **Receipts in `tx.html` are only issued for transactions confirmed on Polygon.** Before, the receipt was built from the row the browser inserted, so a forged row could produce a receipt. Now "View Receipt", Download Image, Download PDF and Share all need `onchain_verified = true`. Opening a receipt for an unverified row asks the server to check that one transaction right away (up to 8 tries, 4 seconds apart), so a fresh send unlocks its receipt in seconds instead of waiting for the daily cron.
+  - New `GET /api/wallet?action=verify&hash=0x...` (inside `api/wallet.js`, no new function file, because the Hobby plan limit is reached). Needs the user's access token and only checks rows owned by that user. Cost is one `eth_getTransactionReceipt` (20 CU) per call. Limit: 20 calls per user per minute (best effort, per instance). A transaction not mined yet does not use up `onchain_check_attempts`, so the daily cron keeps its own retries. The logic is `verifyOneTx()` in `api/_lib/verify-wallet-tx.js`.
+  - Checked: syntax of `api/wallet.js`, the lib and the inline scripts of `tx.html`. Not tested in a browser or against live Alchemy: send a small test transaction, open its receipt, and confirm it unlocks within a few seconds.
+
+### Security
 - **Removed the unused WalletConnect code and its 2 MB bundle (`dashboard.html`, `shared/vendor/`, `vendor-build/`).** The dashboard no longer offers a WalletConnect button (no element with id `walletConnectBtn` exists, nothing called `connectWallet()`), but the code and the bundled third-party library were still shipped. Deleted: `loadEthereumProvider`, `getWcProvider`, `applyConnectedWallet`, `connectWallet`, the WalletConnect project id, and the two `wcProvider.disconnect()` lines in `disconnectWallet` and `removeWalletAddress` (both functions stay). `walletconnect-ethereum-provider.js` and its build entry are gone; the other bundles are byte for byte unchanged after a rebuild.
   - Checked: both inline module scripts of `dashboard.html` pass a syntax check, and no reference to the removed names is left. Not tested in a browser: open `/dashboard`, check the wallet card shows the address, then use Disconnect and Remove wallet once on a test account.
 
