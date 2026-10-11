@@ -106,7 +106,7 @@
                     class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition mb-3">
                     <span id="authOtpBtnText">Confirm</span>
                 </button>
-                <button type="button" onclick="resetAuthGateEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Use a different email</button>
+                <button type="button" onclick="resetAuthGateEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Send a new code</button>
             </div>
 
             <p id="authSignInError" class="text-xs text-red-500 mt-3 hidden"></p>
@@ -325,7 +325,7 @@
                         <span id="exportOtpBtnText">Confirm</span>
                     </button>
                     <p id="exportOtpError" class="text-xs text-red-500 mb-3 hidden"></p>
-                    <button onclick="resetExportEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Use a different email</button>
+                    <button onclick="resetExportEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Send a new code</button>
                 </div>
             </div>
 
@@ -619,11 +619,53 @@
         let pendingAuthGateAuthCode = null;
         let pendingAuthGateSignInPromise = null;
 
-        window.expandAuthEmail = function () {
+        // Locks an email field to the email(s) that open THIS account's wallet, so the
+        // identity gate can never send a code to a stranger's inbox (and no OTP is wasted
+        // on a wrong address). Candidates: wallet_recovery_email, wallet_google_email,
+        // then the Netlink account email. One candidate -> read-only field. Several
+        // (older wallets) -> a dropdown, still no free typing. This is a UI guard only;
+        // sessionMatchesCurrentWallet() remains the real check after sign-in.
+        async function lockWalletEmailInput(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            let saved = [];
+            try {
+                const { data, error } = await supabaseClient
+                    .from('profiles').select('wallet_recovery_email, wallet_google_email').eq('id', currentUser.id).single();
+                if (error) throw error;
+                saved = [data?.wallet_recovery_email, data?.wallet_google_email];
+            } catch (err) {
+                console.error('Failed to load wallet emails:', err);
+            }
+            const seen = new Set();
+            const list = [];
+            for (const v of [...saved, currentUser?.email]) {
+                const t = String(v || '').trim();
+                if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); list.push(t); }
+            }
+            const oldSel = document.getElementById(inputId + 'Select');
+            if (oldSel) oldSel.remove();
+            if (!list.length) return;
+            el.value = list[0];
+            el.readOnly = true;
+            el.classList.add('opacity-80', 'cursor-not-allowed');
+            if (list.length > 1) {
+                const sel = document.createElement('select');
+                sel.id = inputId + 'Select';
+                sel.className = el.className.replace('opacity-80', '').replace('cursor-not-allowed', '');
+                list.forEach((v) => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+                sel.addEventListener('change', () => { el.value = sel.value; });
+                el.classList.add('hidden');
+                el.parentNode.insertBefore(sel, el);
+            } else {
+                el.classList.remove('hidden');
+            }
+        }
+
+        window.expandAuthEmail = async function () {
             document.getElementById('authGoogleStep').classList.add('hidden');
             document.getElementById('authEmailStep').classList.remove('hidden');
-            prefillEmailInput('authEmailInput');
-            document.getElementById('authEmailInput').focus();
+            await lockWalletEmailInput('authEmailInput');
         };
 
         window.collapseAuthEmail = function () {
@@ -712,9 +754,7 @@
         window.resetAuthGateEmail = function () {
             pendingAuthGateAuthCode = null;
             pendingAuthGateSignInPromise = null;
-            const emailInput = document.getElementById('authEmailInput');
             const codeInput = document.getElementById('authOtpInput');
-            if (emailInput) emailInput.value = '';
             if (codeInput) codeInput.value = '';
             document.getElementById('authSignInError').classList.add('hidden');
             document.getElementById('authOtpStep').classList.add('hidden');
@@ -1284,11 +1324,10 @@
             pendingEmailAuthCode = respondWithCode;
         });
 
-        window.expandExportEmail = function () {
+        window.expandExportEmail = async function () {
             document.getElementById('exportAuthGoogleStep').classList.add('hidden');
             document.getElementById('exportAuthEmailStep').classList.remove('hidden');
-            prefillEmailInput('exportEmailInput');
-            document.getElementById('exportEmailInput').focus();
+            await lockWalletEmailInput('exportEmailInput');
         };
 
         window.collapseExportEmail = function () {
@@ -1377,9 +1416,7 @@
         window.resetExportEmail = function () {
             pendingExportAuthCode = null;
             pendingExportSignInPromise = null;
-            const emailInput = document.getElementById('exportEmailInput');
             const codeInput = document.getElementById('exportOtpInput');
-            if (emailInput) emailInput.value = '';
             if (codeInput) codeInput.value = '';
             document.getElementById('exportEmailError').classList.add('hidden');
             document.getElementById('exportOtpError').classList.add('hidden');

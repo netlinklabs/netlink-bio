@@ -992,7 +992,7 @@
                         <span id="sendConfirmOtpBtnText">Confirm</span>
                     </button>
                     <p id="sendConfirmOtpError" class="text-xs text-red-500 mb-3 hidden"></p>
-                    <button onclick="resetSendConfirmEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Use a different email</button>
+                    <button onclick="resetSendConfirmEmail()" class="w-full text-center text-xs text-muted hover:text-secondary transition">Send a new code</button>
                 </div>
             </div>
         </div>
@@ -2570,10 +2570,53 @@
             pendingReauthResume = null;
         };
 
-        window.expandSendConfirmEmail = function () {
+        // Locks an email field to the email(s) that open THIS account's wallet, so the
+        // identity gate can never send a code to a stranger's inbox (and no OTP is wasted
+        // on a wrong address). Candidates: wallet_recovery_email, wallet_google_email,
+        // then the Netlink account email. One candidate -> read-only field. Several
+        // (older wallets) -> a dropdown, still no free typing. This is a UI guard only;
+        // sessionMatchesCurrentWallet() remains the real check after sign-in.
+        async function lockWalletEmailInput(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            let saved = [];
+            try {
+                const { data, error } = await supabaseClient
+                    .from('profiles').select('wallet_recovery_email, wallet_google_email').eq('id', currentUser.id).single();
+                if (error) throw error;
+                saved = [data?.wallet_recovery_email, data?.wallet_google_email];
+            } catch (err) {
+                console.error('Failed to load wallet emails:', err);
+            }
+            const seen = new Set();
+            const list = [];
+            for (const v of [...saved, currentUser?.email]) {
+                const t = String(v || '').trim();
+                if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); list.push(t); }
+            }
+            const oldSel = document.getElementById(inputId + 'Select');
+            if (oldSel) oldSel.remove();
+            if (!list.length) return;
+            el.value = list[0];
+            el.readOnly = true;
+            el.classList.add('opacity-80', 'cursor-not-allowed');
+            if (list.length > 1) {
+                const sel = document.createElement('select');
+                sel.id = inputId + 'Select';
+                sel.className = el.className.replace('opacity-80', '').replace('cursor-not-allowed', '');
+                list.forEach((v) => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+                sel.addEventListener('change', () => { el.value = sel.value; });
+                el.classList.add('hidden');
+                el.parentNode.insertBefore(sel, el);
+            } else {
+                el.classList.remove('hidden');
+            }
+        }
+
+        window.expandSendConfirmEmail = async function () {
             document.getElementById('sendConfirmGoogleStep').classList.add('hidden');
             document.getElementById('sendConfirmEmailStep').classList.remove('hidden');
-            document.getElementById('sendConfirmEmailInput').focus();
+            await lockWalletEmailInput('sendConfirmEmailInput');
         };
 
         window.collapseSendConfirmEmail = function () {
@@ -2663,7 +2706,7 @@
                 const sessionCheck = await sessionMatchesCurrentWallet();
                 if (!sessionCheck.valid) {
                     errorEl.textContent = sessionCheck.mismatched
-                        ? 'That email opens a different wallet than this account\'s. Tap "Use a different email" and try the correct one.'
+                        ? 'That email opens a different wallet than this account\'s. Please contact support if this keeps happening.'
                         : 'Could not verify your wallet session. Please try again.';
                     errorEl.classList.remove('hidden');
                     return;
@@ -2684,7 +2727,6 @@
         window.resetSendConfirmEmail = function () {
             pendingSendConfirmAuthCode = null;
             pendingSendConfirmSignInPromise = null;
-            document.getElementById('sendConfirmEmailInput').value = '';
             document.getElementById('sendConfirmOtpInput').value = '';
             document.getElementById('sendConfirmEmailError').classList.add('hidden');
             document.getElementById('sendConfirmOtpError').classList.add('hidden');
