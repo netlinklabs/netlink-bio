@@ -711,6 +711,10 @@
             if (oldSel) oldSel.remove();
             const oldTxt0 = document.getElementById(inputId + 'Text');
             if (oldTxt0) oldTxt0.remove();
+            // A single email is shown as plain text, so a field label above it is redundant.
+            const prevEl = el.previousElementSibling;
+            const fieldLabel = prevEl && prevEl.tagName === 'LABEL' ? prevEl : null;
+            if (fieldLabel) fieldLabel.classList.toggle('hidden', list.length === 1);
             if (!list.length) return;
             el.value = list[0];
             el.readOnly = true;

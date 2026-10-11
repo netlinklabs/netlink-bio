@@ -8,6 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`recovery.html`: removed the redundant "Email address" label above the locked email in the sign-in gate.** It now shows only "We will send a code to" and the address. With several saved emails (dropdown) the label stays.
 - **`recovery.html`: an account with no connected wallet now sees "Connect your wallet first" instead of a sign-in.** Shown when the profile has no `wallet_address` (for example after "Disconnect" in Netlink Pay), with a "Go to Netlink Pay" button.
   - Why: the sign-in could never succeed there and ended with the misleading "signed you into a different wallet" message.
   - Nothing else changes: with a connected wallet the gate works as before.
