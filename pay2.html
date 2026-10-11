@@ -1709,6 +1709,19 @@
             statusEl.textContent = 'Confirming your identity...';
             try {
                 await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                // The account just picked may open a DIFFERENT wallet than this
+                // Netlink account's. Verify before anything runs (send, swap,
+                // or revealing the form); a mismatched session is dropped by
+                // sessionMatchesCurrentWallet() itself.
+                const sessionCheck = await sessionMatchesCurrentWallet();
+                if (!sessionCheck.valid) {
+                    container.style.opacity = '1';
+                    statusEl.textContent = sessionCheck.mismatched
+                        ? "That signed you into a different wallet than this account's. Please choose the correct account."
+                        : 'Could not verify your wallet session. Please try again.';
+                    showToast('Wrong account — sign in with the account linked to this wallet.');
+                    return;
+                }
                 container.style.opacity = '1';
                 const resume = pendingReauthResume || doExecuteSend;
                 pendingReauthResume = null;
@@ -2464,6 +2477,7 @@
         }
 
         window.sequenceWaas = sequenceWaas;
+        window.sessionMatchesCurrentWallet = sessionMatchesCurrentWallet;
         window.isSentTransactionResponse = isSentTransactionResponse;
 
         function showSendError(msg) {
@@ -2629,6 +2643,14 @@
                 await pendingSendConfirmSignInPromise;
                 pendingSendConfirmAuthCode = null;
                 pendingSendConfirmSignInPromise = null;
+                const sessionCheck = await sessionMatchesCurrentWallet();
+                if (!sessionCheck.valid) {
+                    errorEl.textContent = sessionCheck.mismatched
+                        ? 'That email opens a different wallet than this account\'s. Tap "Use a different email" and try the correct one.'
+                        : 'Could not verify your wallet session. Please try again.';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
                 const resume = pendingReauthResume || doExecuteSend;
                 pendingReauthResume = null;
                 await resume();
@@ -2755,6 +2777,17 @@
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); closeSendModal(); return; }
             sendTxInProgress = true;
             setSendConfirmBusy(true);
+            // Last line of defense: never send unless the live wallet session
+            // is this account's wallet (it can change via another tab).
+            const sessionCheck = await sessionMatchesCurrentWallet();
+            if (!sessionCheck.valid) {
+                sendTxInProgress = false;
+                setSendConfirmBusy(false);
+                document.getElementById('sendConfirmStatus').textContent = 'Your wallet session changed. Please confirm your identity again.';
+                showToast('Wallet session changed — please confirm your identity again.');
+                renderGoogleConfirmButton();
+                return;
+            }
             const token = document.getElementById('sendTokenSelect').value;
             const to = document.getElementById('sendToAddress').value.trim();
             const amount = document.getElementById('sendAmount').value.trim();
@@ -3711,6 +3744,11 @@
             }
         };
         async function executeSwapTx(transactions) {
+            // Same last-line check as Send: the swap must go out from this
+            // account's wallet. The "not signed in" wording makes
+            // handleSwapAction() re-ask for identity instead of failing.
+            const sessionCheck = await window.sessionMatchesCurrentWallet();
+            if (!sessionCheck.valid) throw new Error("Not signed in to this account's wallet.");
             const resp = await window.sequenceWaas.feeOptions({ network: 'polygon', transactions: transactions });
             const feeOptions = resp.data?.feeOptions;
             console.log(feeOptions);

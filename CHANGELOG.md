@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`pay.html`, `pay2.html`, `pay5.html`: choosing a different Google account (or email) when confirming your identity can no longer send or swap from the wrong wallet.** Before, picking "Use another account" at the Confirm Send step signed in with that account and sent right away, without checking that its wallet is this account's wallet.
+  - After every identity confirmation (Google and email code) the wallet session is checked against the account's wallet. On a mismatch nothing runs, the session is dropped, and a clear message is shown ("That signed you into a different wallet than this account's...").
+  - `doExecuteSend()` and the swap send (`executeSwapTx()`) check the session again right before sending. For Swap, a failed check re-opens the identity step.
+  - `recovery.html` already had these checks (Emergency Export).
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
 ### Changed
 - **`pay.html`, `pay2.html`, `pay5.html`: connecting a wallet for the first time now requires the same email as the Netlink account.** In the Connect Wallet modal, a Google account or an email whose address differs from the account's email is rejected before any wallet is created ("Use the same email as your Netlink account (...) to connect a wallet."). The email field is pre-filled with the account's email.
   - Only applies when no wallet is connected. Existing wallets and Send, Swap and the re-auth steps are not affected.
