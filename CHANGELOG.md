@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`recovery.html`: Emergency Export now works for wallets whose gas is sponsored.** Before, an empty list of gas options was treated as an error ("Gas payment options are not available from the relayer right now"), so a sponsored wallet could not export at all. An empty list means the relayer pays the gas (same reading as `checkGasSponsorship()` in `pay.html`).
+  - Sponsored: no POL is reserved for gas, the whole POL balance is exported, and the transaction is sent without a gas option. The review line says "network fee sponsored".
+  - Not sponsored: unchanged (gas paid in POL, fee reserved).
+  - Safety: if sponsorship changes between the first estimate and the send, the export stops with "Nothing was sent" instead of sending a wrongly planned amount.
+  - Static check only (script syntax). Not tested in a browser or with a real transfer. Test with a small balance first.
+
 ### Changed
 - **`recovery.html`: the sign-in gate and Emergency Export now offer only the sign-in methods that open this account's wallet.** Before, Google and email were always both offered, and the wrong one (a method this wallet was not made with) only created a different empty wallet and was then rejected.
   - Rule: Google is offered only when the profile has `wallet_google_email`. Email is offered when `wallet_recovery_email` is set, or when the wallet was not made with Google. If the profile is unreadable, both stay available.
