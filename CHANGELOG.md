@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`recovery.html`: the sign-in gate is no longer a dead end.** Choosing Google could leave the card dimmed with no message and no way out when the wallet service did not answer.
+  - Google sign-in now times out after 45 seconds with a clear message ("Sign-in is taking too long...") and the button becomes usable again.
+  - Added a "Back to wallet" link at the bottom of the gate card, always visible.
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
 ### Changed
 - **`pay.html`, `pay2.html`, `pay5.html`, `recovery.html`: the locked email in the identity gate is now plain text, not a form field.** It shows "We will send a code to" and the email. The value still sits in a hidden input, so the code flow is unchanged. With several saved emails the dropdown stays.
 - **`pay.html`, `pay2.html`, `pay5.html`: removed the empty bar under the "Send" title on the identity gate and the Swap identity step.** It was the transfer summary card with nothing inside. It is now hidden whenever it has no visible content (CSS `:has()`), and still shows on the real Confirm Send step.
