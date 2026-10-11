@@ -2128,6 +2128,7 @@
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); return; }
             if (!window.currentWalletAddress) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
             sendReauthOnly = false;
+            sendGateActive = false;
             document.getElementById('sendModalTitle').textContent = 'Send';
             document.getElementById('sendStepForm').classList.remove('hidden');
             document.getElementById('sendStepConfirm').classList.add('hidden');
@@ -2140,12 +2141,13 @@
             document.getElementById('sendProgressWrap').classList.add('hidden');
             document.getElementById('sendProgressBar').style.width = '0%';
             selectSendToken('USDC');
-            document.getElementById('sendModal').classList.add('active');
+            // The modal opens only after the session check, so the form is never shown unverified.
             // Gate on re-auth before showing the form: no live Sequence session
             // means the user must confirm identity first (same screen as the
             // Confirm Send step), then the form is revealed.
             const sessionCheck = await sessionMatchesCurrentWallet();
             if (sessionCheck.valid) {
+                document.getElementById('sendModal').classList.add('active');
                 checkGasSponsorship(window.currentWalletAddress); // refresh sponsorship status every time the modal opens
                 return;
             }
@@ -2161,10 +2163,13 @@
                 // Resolve sponsorship before revealing the form (we just
                 // authenticated, so the answer is definitive).
                 await checkGasSponsorship(window.currentWalletAddress);
+                sendGateActive = false;
                 document.getElementById('sendConfirmPending').classList.remove('hidden');
                 document.getElementById('sendStepConfirm').classList.add('hidden');
                 document.getElementById('sendStepForm').classList.remove('hidden');
             };
+            sendGateActive = true;
+            document.getElementById('sendModal').classList.add('active');
             renderGoogleConfirmButton();
         };
 
@@ -2199,6 +2204,7 @@
         };
 
         window.closeSendModal = function () {
+            sendGateActive = false;
             document.getElementById('sendModal').classList.remove('active');
             pendingReauthResume = null;
             sendReauthOnly = false;
@@ -2545,7 +2551,7 @@
         };
 
         window.backToSendForm = function () {
-            if (sendReauthOnly) { closeSendModal(); return; }
+            if (sendReauthOnly || sendGateActive) { closeSendModal(); return; }
             document.getElementById('sendStepConfirm').classList.add('hidden');
             document.getElementById('sendConfirmPending').classList.remove('hidden');
             document.getElementById('sendStepForm').classList.remove('hidden');
@@ -2571,6 +2577,7 @@
         // connect-wallet modal's flow, even though both ultimately call
         // sequenceWaas.signIn({ email }, 'Netlink Pay').
         let pendingReauthResume = null;
+        let sendGateActive = false; // true while the Send identity gate is shown (form hidden until session verified)
         let sendReauthOnly = false; // true when the Send modal is used only to confirm identity for another action (Swap)
         let pendingSendConfirmAuthCode = null;
         let pendingSendConfirmSignInPromise = null;

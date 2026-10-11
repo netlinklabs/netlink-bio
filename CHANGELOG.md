@@ -8,6 +8,13 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Fixed
+- **`pay.html`, `pay2.html`, `pay5.html`: the Send identity gate now really blocks the Send form until the wallet session is verified.** Before, pressing Cancel (or the x) on the gate revealed the Send form without confirming identity, and the form flashed briefly while the session was being checked.
+  - Cancel on the gate now closes the Send modal. The modal opens only after the session check, so the form is never visible without a verified session.
+  - Cancel at the Confirm Send step still returns to the form (the session was already verified at that point).
+  - The transfer itself was already protected (`goToSendConfirm()` and `doExecuteSend()` re-check the session), so this closes a UX and security-posture gap, not a fund risk.
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
+### Fixed
 - **`pay.html`, `pay2.html`, `pay5.html`: choosing a different Google account (or email) when confirming your identity can no longer send or swap from the wrong wallet.** Before, picking "Use another account" at the Confirm Send step signed in with that account and sent right away, without checking that its wallet is this account's wallet.
   - After every identity confirmation (Google and email code) the wallet session is checked against the account's wallet. On a mismatch nothing runs, the session is dropped, and a clear message is shown ("That signed you into a different wallet than this account's...").
   - `doExecuteSend()` and the swap send (`executeSwapTx()`) check the session again right before sending. For Swap, a failed check re-opens the identity step.
