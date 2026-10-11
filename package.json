@@ -11,6 +11,7 @@
     "tailwindcss": "^3.4.19"
   },
   "scripts": {
-    "build:css": "tailwindcss -c tailwind.config.js -i shared/tailwind.src.css -o shared/tailwind.css --minify"
+    "build:css": "tailwindcss -c tailwind.config.js -i shared/tailwind.src.css -o shared/tailwind.css --minify",
+    "build:css:public": "tailwindcss -c tailwind.public.config.js -i shared/tailwind.src.css -o shared/tailwind-public.css --minify"
   }
 }

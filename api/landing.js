@@ -197,7 +197,7 @@ async function handler(req, res) {
 ${blocksHtml.trim() ? '' : '<meta name="robots" content="noindex">'}
 <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
 <link rel="apple-touch-icon" href="/assets/netlinkbio-icon.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/shared/vendor/fontawesome/css/all.min.css?v=1">
 <script type="application/ld+json">${jsonForScript(jsonLd)}</script>
 <style>${PAGE_CSS}</style>
 </head>
