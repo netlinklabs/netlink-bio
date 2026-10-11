@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`tx.html`: the receipt no longer rounds small amounts to 0.00.** The Amount row used a fixed 2 decimals, so a 0.0001 POL send showed "0.00" on the receipt (the card already showed 0.0001). Now it shows at least 2 and up to 6 decimals: 12 NET stays "12.00", 0.0001 POL shows "0.0001". Display only, no stored data changes. Not tested in a browser.
+
 ### Security
 - **Amount check is stricter, per token (`api/_lib/verify-wallet-amount.js`).** The tolerance was the larger of 0.01 or 0.5%, the same for every token, so a small POL amount could be changed (for example 0.005 recorded as 0.01) and still pass, and 100 NET recorded as 100.3 also passed. Now: POL sends and exports must match within 0.0001 (they are recorded at full precision), and everything else within 0.01 with no percentage, because incoming rows and NET or USDC sends are stored with 2 decimals and cutting digits off loses less than 0.01. Swaps keep 2% (output comes from a quote).
   - Data check: POL sends have at most 3 decimals and POL exports 18, so 0.0001 does not reject real rows. Incoming POL rows have 2 decimals (`fromWei` in `api/wallet.js`), so they keep 0.01. Rows already marked `match` are not rechecked; new checks and `unchecked` rows use the new rule.
