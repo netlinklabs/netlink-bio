@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- **`dashboard.html`: crop window for the profile photo (avatar).** After picking a photo, a "Crop Photo" window opens with the photo filling a square, and a circle shows what will appear as the avatar. Drag to move, use the slider, mouse wheel or a two-finger pinch to zoom (1x to 4x). The photo can never leave an empty gap inside the square. "Save Photo" crops that area and uploads it as a 512x512 JPEG (quality 0.85, transparent PNGs get a white background) to the same `avatars/{user_id}/avatar.jpg` path and `profiles.avatar_url` as before, so storage, policies and the database do not change. Cancel, Escape and a tap outside close it without uploading. Images over 15 MB or files that are not images are refused with a message.
+  - Fixes photos that are not 1:1 (wide or tall) not sitting in the middle of the avatar circle. The old code only shrank the photo and kept its ratio, and the page showed it with `object-cover`, so the user could not choose which part to show.
+  - Removed the unused `compressImage()` and `handleAvatarUpload()` from `dashboard.html` (replaced by `openAvatarCropper()`, `confirmAvatarCrop()` and `uploadAvatarBlob()`). Nothing else in the repo used them.
+  - Plain CSS classes (`.crop-*`) and Tailwind classes that already exist in `shared/tailwind.css`, so no Tailwind rebuild. Icons `zoom-in` and `zoom-out` are in the pinned lucide 0.460.0.
+  - Checked in Chromium (390px wide) with an 800x400 test photo: it opens centered, dragging stops at the edges, slider and wheel zoom work, the saved file is 512x512 `image/jpeg` showing the area that was chosen, and a non-image file is refused. Not tested on a real phone or with the real Supabase upload.
+
 ### Fixed
 - **`tx.html`: the page number bar no longer pushes the page sideways on phones.** The bar listed every page number (36px each), so with 20+ pages it was wider than the screen and the page scrolled sideways. It now shows only the first page, the last page and the pages around the current one, with "..." in between (for example `< 1 ... 9 10 11 ... 20 >`). Buttons are 34px on phones (30px under 340px wide, 36px from 480px up) with more space between them. Each button has an `aria-label`, and the current page has `aria-current="page"`.
   - Checked in Chromium at 320, 360, 384 and 414px wide: one row, no sideways scroll, for 3, 4, 5, 7, 20 and 60 pages and for every position (first, second, middle, near last, last).

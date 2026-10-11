@@ -77,6 +77,14 @@
         .cert-row-title { font-size: 0.875rem; overflow-wrap: anywhere; }
         .cert-row-file { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.125rem; font-size: 0.75rem; }
         .cert-row-edit { font-size: 0.75rem; color: #3b82f6; padding: 0.25rem; }
+        /* Avatar cropper: plain CSS on purpose, so this feature needs no Tailwind rebuild. */
+        .crop-stage { position: relative; margin: 0 auto; border-radius: 0.75rem; overflow: hidden; background: #0f172a; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+        .crop-stage.dragging { cursor: grabbing; }
+        .crop-stage canvas { display: block; width: 100%; height: 100%; }
+        .crop-mask { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle closest-side, transparent 99%, rgba(0,0,0,0.6) 100%); }
+        .crop-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,0.9); pointer-events: none; }
+        .crop-zoom { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; }
+        .crop-zoom input[type="range"] { flex: 1; min-width: 0; accent-color: #3b82f6; }
         .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
@@ -245,7 +253,7 @@
                                     <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white transition" title="Change photo">
                                         <i data-lucide="camera" class="w-3.5 h-3.5"></i>
                                     </button>
-                                    <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
+                                    <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="openAvatarCropper(event)">
                                 </div>
                             </div>
                             <p id="avatarStatus" class="text-xs text-center text-muted hidden mb-3"></p>
@@ -692,6 +700,31 @@
             <div class="cert-actions">
                 <button type="button" class="cert-btn-cancel" onclick="closeCertModal()">Cancel</button>
                 <button id="certSaveBtn" type="button" class="cert-btn-save" onclick="saveCertModal()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avatar crop modal -- opened after the user picks a photo. The result is always 1:1. -->
+    <div id="avatarCropModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-semibold text-primary">Crop Photo</h3>
+                <button type="button" onclick="closeAvatarCropper()" class="text-secondary hover:text-primary transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-muted text-center mb-3">Drag to move. Pinch or use the slider to zoom.</p>
+            <div id="avatarCropStage" class="crop-stage">
+                <canvas id="avatarCropCanvas"></canvas>
+                <div class="crop-mask"></div>
+                <div class="crop-ring"></div>
+            </div>
+            <div class="crop-zoom">
+                <i data-lucide="zoom-out" class="w-4 h-4 text-secondary flex-shrink-0"></i>
+                <input id="avatarCropZoom" type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom">
+                <i data-lucide="zoom-in" class="w-4 h-4 text-secondary flex-shrink-0"></i>
+            </div>
+            <div class="cert-actions">
+                <button type="button" class="cert-btn-cancel" onclick="closeAvatarCropper()">Cancel</button>
+                <button id="avatarCropSaveBtn" type="button" class="cert-btn-save" onclick="confirmAvatarCrop()">Save Photo</button>
             </div>
         </div>
     </div>
@@ -2258,37 +2291,144 @@ window.openNetlinkPay = openNetlinkPay;
             checkClaimStatus();
         }
 
-        function compressImage(file, maxDimension = 512, quality = 0.75) {
+        // ==========================================
+        // AVATAR CROP: pilih foto -> geser/zoom di modal -> simpan hasil 1:1
+        // ==========================================
+        const AVATAR_OUTPUT_SIZE = 512;
+        const AVATAR_MAX_FILE_BYTES = 15 * 1024 * 1024;
+        const AVATAR_MAX_ZOOM = 4;
+        // x, y = posisi pojok kiri atas gambar di dalam stage (px). zoom 1 = gambar pas menutupi kotak.
+        const avatarCrop = { img: null, url: '', size: 0, dpr: 1, minScale: 1, zoom: 1, x: 0, y: 0, pointers: new Map(), pinchDist: 0 };
+
+        function openAvatarCropper(event) {
+            const input = event.target;
+            const file = input.files[0];
+            input.value = ''; // supaya file yang sama bisa dipilih lagi
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { showToast('Please choose an image file'); return; }
+            if (file.size > AVATAR_MAX_FILE_BYTES) { showToast('Image is too large (max 15 MB)'); return; }
+
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                avatarCrop.img = img;
+                avatarCrop.url = url;
+                document.getElementById('avatarCropModal').classList.add('active');
+                setupAvatarCropStage();
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                showToast('This image format is not supported');
+            };
+            img.src = url;
+        }
+
+        function setupAvatarCropStage() {
+            const c = avatarCrop;
+            const stage = document.getElementById('avatarCropStage');
+            const canvas = document.getElementById('avatarCropCanvas');
+            // 80 = margin modal (32) + padding card (48)
+            c.size = Math.max(200, Math.min(320, window.innerWidth - 80));
+            c.dpr = Math.min(window.devicePixelRatio || 1, 2);
+            stage.style.width = c.size + 'px';
+            stage.style.height = c.size + 'px';
+            canvas.width = canvas.height = Math.round(c.size * c.dpr);
+
+            const w = c.img.naturalWidth, h = c.img.naturalHeight;
+            c.minScale = c.size / Math.min(w, h);
+            c.zoom = 1;
+            c.x = (c.size - w * c.minScale) / 2;
+            c.y = (c.size - h * c.minScale) / 2;
+            document.getElementById('avatarCropZoom').value = 1;
+            drawAvatarCrop();
+        }
+
+        // Gambar tidak boleh meninggalkan celah kosong di dalam kotak crop.
+        function clampAvatarCrop() {
+            const c = avatarCrop;
+            const s = c.minScale * c.zoom;
+            const w = c.img.naturalWidth * s, h = c.img.naturalHeight * s;
+            c.x = Math.min(0, Math.max(c.size - w, c.x));
+            c.y = Math.min(0, Math.max(c.size - h, c.y));
+        }
+
+        function drawAvatarCrop() {
+            const c = avatarCrop;
+            if (!c.img) return;
+            clampAvatarCrop();
+            const canvas = document.getElementById('avatarCropCanvas');
+            const ctx = canvas.getContext('2d');
+            const s = c.minScale * c.zoom;
+            ctx.setTransform(c.dpr, 0, 0, c.dpr, 0, 0);
+            ctx.clearRect(0, 0, c.size, c.size);
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(c.img, c.x, c.y, c.img.naturalWidth * s, c.img.naturalHeight * s);
+        }
+
+        // Zoom mengikuti titik (cx, cy) supaya bagian yang disentuh tidak melompat.
+        function setAvatarCropZoom(newZoom, cx, cy) {
+            const c = avatarCrop;
+            if (!c.img) return;
+            if (cx === undefined) { cx = c.size / 2; cy = c.size / 2; }
+            newZoom = Math.min(AVATAR_MAX_ZOOM, Math.max(1, newZoom));
+            const oldS = c.minScale * c.zoom;
+            const newS = c.minScale * newZoom;
+            const ix = (cx - c.x) / oldS, iy = (cy - c.y) / oldS;
+            c.zoom = newZoom;
+            c.x = cx - ix * newS;
+            c.y = cy - iy * newS;
+            document.getElementById('avatarCropZoom').value = newZoom;
+            drawAvatarCrop();
+        }
+
+        function closeAvatarCropper() {
+            document.getElementById('avatarCropModal').classList.remove('active');
+            if (avatarCrop.url) URL.revokeObjectURL(avatarCrop.url);
+            avatarCrop.url = '';
+            avatarCrop.img = null;
+            avatarCrop.pointers.clear();
+            avatarCrop.pinchDist = 0;
+        }
+
+        // Potong area kotak crop dari gambar asli, keluaran persegi 512x512 JPEG.
+        function renderAvatarCropBlob() {
+            const c = avatarCrop;
+            const s = c.minScale * c.zoom;
+            const out = document.createElement('canvas');
+            out.width = out.height = AVATAR_OUTPUT_SIZE;
+            const ctx = out.getContext('2d');
+            ctx.fillStyle = '#ffffff'; // PNG transparan jangan jadi hitam di JPEG
+            ctx.fillRect(0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(c.img, -c.x / s, -c.y / s, c.size / s, c.size / s, 0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
             return new Promise((resolve, reject) => {
-                const img = new Image();
-                const reader = new FileReader();
-                reader.onload = (e) => { img.src = e.target.result; };
-                reader.onerror = reject;
-                img.onload = () => {
-                    let { width, height } = img;
-                    if (width > height && width > maxDimension) { height = Math.round(height * (maxDimension / width)); width = maxDimension; }
-                    else if (height > maxDimension) { width = Math.round(width * (maxDimension / height)); height = maxDimension; }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width; canvas.height = height;
-                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', quality);
-                };
-                img.onerror = reject;
-                reader.readAsDataURL(file);
+                out.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Crop failed')), 'image/jpeg', 0.85);
             });
         }
 
-        async function handleAvatarUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const status = document.getElementById('avatarStatus');
-            status.textContent = 'Compressing & uploading...';
-            status.classList.remove('hidden');
-
+        async function confirmAvatarCrop() {
+            if (!avatarCrop.img) return;
+            const btn = document.getElementById('avatarCropSaveBtn');
+            btn.disabled = true;
             try {
-                const compressed = await compressImage(file);
+                const blob = await renderAvatarCropBlob();
+                closeAvatarCropper();
+                await uploadAvatarBlob(blob);
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to crop photo');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function uploadAvatarBlob(blob) {
+            const status = document.getElementById('avatarStatus');
+            status.textContent = 'Uploading...';
+            status.classList.remove('hidden');
+            try {
                 const path = `${currentUser.id}/avatar.jpg`;
-                const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+                const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
                 if (uploadError) throw uploadError;
 
                 const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
@@ -2306,6 +2446,73 @@ window.openNetlinkPay = openNetlinkPay;
                 status.textContent = 'Upload failed. Please try a different image.';
             }
         }
+
+        // Drag 1 jari/mouse = geser, 2 jari = pinch zoom, scroll mouse = zoom.
+        function initAvatarCropper() {
+            const c = avatarCrop;
+            const stage = document.getElementById('avatarCropStage');
+            const modal = document.getElementById('avatarCropModal');
+            const stagePoint = (clientX, clientY) => {
+                const r = stage.getBoundingClientRect();
+                return { x: clientX - r.left, y: clientY - r.top };
+            };
+
+            stage.addEventListener('pointerdown', (e) => {
+                if (!c.img) return;
+                stage.setPointerCapture(e.pointerId);
+                c.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (c.pointers.size === 2) {
+                    const [a, b] = [...c.pointers.values()];
+                    c.pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+                }
+                stage.classList.add('dragging');
+            });
+
+            stage.addEventListener('pointermove', (e) => {
+                const p = c.pointers.get(e.pointerId);
+                if (!p || !c.img) return;
+                if (c.pointers.size === 1) {
+                    c.x += e.clientX - p.x;
+                    c.y += e.clientY - p.y;
+                    p.x = e.clientX; p.y = e.clientY;
+                    drawAvatarCrop();
+                } else if (c.pointers.size === 2) {
+                    p.x = e.clientX; p.y = e.clientY;
+                    const [a, b] = [...c.pointers.values()];
+                    const d = Math.hypot(a.x - b.x, a.y - b.y);
+                    if (c.pinchDist > 0) {
+                        const mid = stagePoint((a.x + b.x) / 2, (a.y + b.y) / 2);
+                        setAvatarCropZoom(c.zoom * d / c.pinchDist, mid.x, mid.y);
+                    }
+                    c.pinchDist = d;
+                }
+            });
+
+            const endPointer = (e) => {
+                c.pointers.delete(e.pointerId);
+                c.pinchDist = 0;
+                if (!c.pointers.size) stage.classList.remove('dragging');
+            };
+            stage.addEventListener('pointerup', endPointer);
+            stage.addEventListener('pointercancel', endPointer);
+
+            stage.addEventListener('wheel', (e) => {
+                if (!c.img) return;
+                e.preventDefault();
+                const pt = stagePoint(e.clientX, e.clientY);
+                setAvatarCropZoom(c.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1), pt.x, pt.y);
+            }, { passive: false });
+
+            document.getElementById('avatarCropZoom').addEventListener('input', (e) => {
+                setAvatarCropZoom(parseFloat(e.target.value));
+            });
+
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeAvatarCropper(); });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) closeAvatarCropper();
+            });
+        }
+        initAvatarCropper();
 
         async function loadLinks() {
             const { data, error } = await supabaseClient.from('links').select('*').eq('user_id', currentUser.id).order('position', { ascending: true });
