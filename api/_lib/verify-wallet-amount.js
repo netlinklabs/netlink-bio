@@ -26,7 +26,7 @@
 //
 // Needs the migration `wallet_tx_amount_check`. Env: SUPABASE_SERVICE_ROLE_KEY, ALCHEMY_API_KEY.
 
-import { sb, chunk, getReceipts } from './verify-wallet-tx.js';
+import { sb, chunk, getReceipts, verifyOneTx } from './verify-wallet-tx.js';
 import { trackAlchemy } from './usage.js';
 
 const NET = '0x0e893b239094a5c573373d44cf1c7d03576b95cb';
@@ -242,4 +242,55 @@ export async function checkWalletTxAmounts() {
     if (limited) break; // still rate limited after retries: stop, the next run continues
   }
   return totals;
+}
+
+// ---- On-demand: tx exists AND the recorded amount matches the chain (used by tx.html receipts) ----
+// Called through /api/wallet?action=verify. Returns { status } where status is one of:
+//   verified            tx confirmed and amount matches (receipt allowed)
+//   pending             not mined yet or an Alchemy hiccup, try again
+//   amount_mismatch     recorded amount differs from the chain (no receipt)
+//   amount_unconfirmed  no matching transfer found for this wallet (no receipt)
+//   failed | not_found | rate_limited   from verifyOneTx
+// Extra cost per call: 1 receipt (20 CU) + 1 or 2 alchemy_getAssetTransfers (150 CU each).
+export async function verifyOneTxFull(userId, hash) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const alchemyKey = process.env.ALCHEMY_API_KEY;
+  const first = await verifyOneTx(userId, hash);
+  if (first.status !== 'verified') return first;
+
+  const rows = await sb(
+    key,
+    `wallet_transactions?select=id,type,token,amount,to_token,to_amount,onchain_amount_status` +
+      `&owner_id=eq.${encodeURIComponent(userId)}&hash=eq.${encodeURIComponent(hash)}&limit=1`
+  );
+  const row = rows && rows[0];
+  if (!row) return { status: 'not_found' };
+  if (row.onchain_amount_status === 'match') return { status: 'verified' };
+  if (row.onchain_amount_status === 'mismatch') return { status: 'amount_mismatch' };
+
+  const profiles = await sb(key, `profiles?select=wallet_address&id=eq.${encodeURIComponent(userId)}&limit=1`);
+  const wallet = profiles && profiles[0] && profiles[0].wallet_address;
+  if (!wallet) return { status: 'amount_unconfirmed' };
+
+  const rc = (await getReceipts(alchemyKey, [hash]))[hash]?.receipt;
+  if (!rc || !rc.blockNumber) return { status: 'pending' };
+  const dirs = row.type === 'swap' ? ['out', 'in'] : row.type === 'receive' ? ['in'] : ['out'];
+  const base = { fromBlock: rc.blockNumber, toBlock: rc.blockNumber, category: ['external', 'internal', 'erc20'], withMetadata: false, excludeZeroValue: true };
+  const queries = dirs.map((d, i) => ({
+    jsonrpc: '2.0', id: i + 1, method: 'alchemy_getAssetTransfers',
+    params: [{ ...base, [d === 'out' ? 'fromAddress' : 'toAddress']: wallet }],
+  }));
+  let answers;
+  try { answers = await transferBatch(alchemyKey, queries); } catch (e) { return { status: 'pending' }; }
+  const rs = queries.map((q) => answers.get(q.id));
+  if (rs.some((r) => !r || r.error || r.result?.pageKey)) return { status: 'pending' };
+  const transfers = rs.flatMap((r) => r.result?.transfers || []);
+  const outcome = evaluateRow(row, legsFor(transfers, hash, wallet));
+  await sb(key, `wallet_transactions?id=eq.${row.id}`, {
+    method: 'PATCH',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({ onchain_amount_status: outcome.status, onchain_amount_note: outcome.note, onchain_amount_checked_at: new Date().toISOString() }),
+  });
+  if (outcome.status === 'match') return { status: 'verified' };
+  return { status: outcome.status === 'mismatch' ? 'amount_mismatch' : 'amount_unconfirmed' };
 }
