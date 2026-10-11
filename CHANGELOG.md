@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`dashboard.html`: blue header on the Link in Bio card and the Professional CV card.** The two cards looked almost the same, so it was easy to scroll past one on a phone. The top part of each card now has the same blue gradient as the main card on `pay.html` (`#0ea5e9` to `#0369a1`) with white text. On Link in Bio the blue covers the title, the AI Score and its bar, down to the line under the bar. On Professional CV it covers the title, the AI Score and bar, the CV link and the Copy, Preview and Share buttons, down to the line under them. The buttons are now see-through white with a white border. The rest of each card is unchanged, and so are all element IDs and the JavaScript.
+  - New `.dash-card-head` CSS is plain CSS (no new Tailwind classes, so `shared/tailwind.css` is not rebuilt). Its selectors start with `html body` so they also win over the `html.dark` text color rules, which use `!important`.
+  - Checked in Chromium at 390px wide in light and dark mode (computed colors and screenshots): white title and score text, the progress bar track and the three buttons stay readable on the blue. Not tested on a real phone.
+  - Both cards use the same blue. If the CV card should look different from Link in Bio, only its gradient needs another color.
+
 ### Added
 - **`dashboard.html`: crop window for the profile photo (avatar).** After picking a photo, a "Crop Photo" window opens with the photo filling a square, and a circle shows what will appear as the avatar. Drag to move, use the slider, mouse wheel or a two-finger pinch to zoom (1x to 4x). The photo can never leave an empty gap inside the square. "Save Photo" crops that area and uploads it as a 512x512 JPEG (quality 0.85, transparent PNGs get a white background) to the same `avatars/{user_id}/avatar.jpg` path and `profiles.avatar_url` as before, so storage, policies and the database do not change. Cancel, Escape and a tap outside close it without uploading. Images over 15 MB or files that are not images are refused with a message.
   - Fixes photos that are not 1:1 (wide or tall) not sitting in the middle of the avatar circle. The old code only shrank the photo and kept its ratio, and the page showed it with `object-cover`, so the user could not choose which part to show.

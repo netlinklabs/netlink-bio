@@ -85,6 +85,19 @@
         .crop-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,0.9); pointer-events: none; }
         .crop-zoom { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; }
         .crop-zoom input[type="range"] { flex: 1; min-width: 0; accent-color: #3b82f6; }
+
+        /* Blue header for the Link in Bio and CV cards, same blue as the main card on pay.html.
+           Plain CSS on purpose (no Tailwind rebuild). The selectors start with "html body" so they
+           also beat the html.dark text color rules, which use !important. */
+        .dash-card-head { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%); border-radius: 1rem 1rem 0 0; }
+        html body .dash-card-head .text-primary { color: #ffffff !important; }
+        html body .dash-card-head .text-secondary { color: rgba(255,255,255,0.92) !important; }
+        html body .dash-card-head .text-muted,
+        html body .dash-card-head .hover\:text-secondary:hover { color: rgba(255,255,255,0.8) !important; }
+        html body .dash-card-head h3 svg { color: #ffffff; }
+        html body .dash-card-head .progress-bar { background: rgba(255,255,255,0.28); }
+        html body .dash-card-head .hover-surface { background: rgba(255,255,255,0.14) !important; border-color: rgba(255,255,255,0.4) !important; color: #ffffff !important; }
+        html body .dash-card-head .hover-surface:hover { background: rgba(255,255,255,0.26) !important; }
         .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .link-item { transition: all 0.2s; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.06); }
@@ -163,7 +176,7 @@
 
 
         <div id="profileCard" class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-subtle">
+            <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
@@ -375,7 +388,7 @@
         </div>
 
         <div id="cvCard" class="card rounded-2xl mb-4 lg:mb-6">
-            <div class="p-4 lg:p-6 border-b border-subtle">
+            <div class="dash-card-head p-4 lg:p-6 border-b border-subtle">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-primary flex items-center gap-2">
