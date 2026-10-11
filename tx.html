@@ -91,6 +91,9 @@
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         .skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
         html.dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
+        .vbar { display:inline-block; width:72px; height:6px; border-radius:9999px; background:rgba(148,163,184,0.25); overflow:hidden; vertical-align:middle; }
+        .vfill { display:block; height:100%; border-radius:9999px; background:#3b82f6; transition:width 0.6s ease; }
+        .vok { color:#10b981; }
         .tx-detail { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease; opacity: 0; }
         .tx-detail.open { max-height: 200px; opacity: 1; padding-top: 12px; }
         .date-header { position: sticky; top: 0; z-index: 10; background: transparent; padding: 16px 0 8px; }
@@ -332,6 +335,7 @@
                 (orders || []).forEach((o) => { orderByHash[String(o.paid_tx_hash).toLowerCase()] = o; });
             } catch (e) { console.error('Could not load order labels', e); }
             document.getElementById('skeletonLoader').classList.add('hidden'); renderTransactions();
+            autoVerifyRecent();
         }
         const ORDER_LABELS = { kyc: 'KYC Verification', kyb: 'KYB Verification', plan: 'Membership Plan' };
         function orderForTx(tx) { return tx && tx.hash ? orderByHash[String(tx.hash).toLowerCase()] || null : null; }
@@ -443,7 +447,7 @@
         function renderTransactions() { const list = document.getElementById('txList'), pagination = document.getElementById('paginationBar'), emptyState = document.getElementById('emptyState'); const filtered = currentFilter === 'all' ? allTx : allTx.filter((t) => t.type === currentFilter); list.classList.remove('hidden'); if (filtered.length === 0) { list.classList.add('hidden'); emptyState.classList.remove('hidden'); pagination.classList.add('hidden'); if (window.lucide) lucide.createIcons(); return; } emptyState.classList.add('hidden'); const totalPages = Math.max(1, Math.ceil(filtered.length / 10)); if (currentPage > totalPages) currentPage = totalPages; const start = (currentPage - 1) * 10; const slice = filtered.slice(start, start + 10); let currentHeader = null, html = ''; slice.forEach((tx) => { const header = formatDateHeader(tx.occurred_at); if (header !== currentHeader) { currentHeader = header; html += `<div class="date-header"><span>${header}</span></div>`; } html += rowHtml(tx); }); list.innerHTML = html; renderPaginationBar(totalPages); if (window.lucide) lucide.createIcons(); }
         function renderPaginationBar(totalPages) { const bar = document.getElementById('paginationBar'); if (totalPages <= 1) { bar.classList.add('hidden'); bar.innerHTML = ''; return; } bar.classList.remove('hidden'); let html = `<button onclick="goToPage(${Math.max(1, currentPage - 1)})" class="page-btn" ${currentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-4 h-4"></i></button>`; for (let p = 1; p <= totalPages; p++) html += `<button onclick="goToPage(${p})" class="page-btn ${p === currentPage ? 'active' : ''}">${p}</button>`; html += `<button onclick="goToPage(${Math.min(totalPages, currentPage + 1)})" class="page-btn" ${currentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-4 h-4"></i></button>`; bar.innerHTML = html; }
         function toggleDetail(txId) { document.getElementById(`detail-${txId}`).classList.toggle('open'); }
-        function rowHtml(tx) { const timeAgo = formatTimeAgo(tx.occurred_at); const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`; if (tx.type === 'swap') return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 icon-swap rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="arrow-left-right" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">Swap ${tx.token}</p><p class="text-xs text-muted mt-0.5">${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[15px] font-bold text-primary">${tx.amount} → ${tx.to_amount}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3"><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition mt-1"><i data-lucide="external-link" class="w-3 h-3"></i> View on PolygonScan</a></div></div></div>`; const isIn = tx.type === 'receive'; const isExport = tx.type === 'export'; const icon = isIn ? 'arrow-down-left' : (isExport ? 'shield-alert' : 'arrow-up-right'); const iconClass = isIn ? 'icon-receive' : (isExport ? 'icon-export' : 'icon-send'); const amountClass = isIn ? 'amount-in' : 'amount-out'; const sign = isIn ? '+' : '-'; const actionLabel = isIn ? 'Received' : (isExport ? 'Exported' : 'Sent'); const addressLabel = tx.counterparty_address ? truncateAddress(tx.counterparty_address) : 'External'; const ord = orderForTx(tx); const titleLabel = ord ? (ORDER_LABELS[ord.type] || 'Order payment') : `${actionLabel} ${tx.token}`; const subLabel = ord ? `Order ${ord.order_no}` : addressLabel; return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 ${iconClass} rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="${icon}" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">${titleLabel}</p><p class="text-xs text-muted mt-0.5">${subLabel} · ${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[17px] font-bold ${amountClass}">${sign}${formatFintech(tx.amount, tx.token === 'POL' ? 4 : 2)} ${tx.token}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3 space-y-2"><div class="flex items-center justify-between text-xs"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><div class="flex items-center gap-3 pt-1"><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition"><i data-lucide="external-link" class="w-3 h-3"></i> View</a><button onclick="event.stopPropagation(); openReceiptModal('${tx.id}')" class="inline-flex items-center gap-1.5 text-xs font-medium text-secondary hover:text-primary transition"><i data-lucide="receipt" class="w-3 h-3"></i> View Receipt</button></div></div></div></div>`; }
+        function rowHtml(tx) { const timeAgo = formatTimeAgo(tx.occurred_at); const explorerUrl = `https://polygonscan.com/tx/${tx.hash}`; if (tx.type === 'swap') return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 icon-swap rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="arrow-left-right" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">Swap ${tx.token}</p><p class="text-xs text-muted mt-0.5">${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[15px] font-bold text-primary">${tx.amount} → ${tx.to_amount}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3"><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs mb-2"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition mt-1"><i data-lucide="external-link" class="w-3 h-3"></i> View on PolygonScan</a></div></div></div>`; const isIn = tx.type === 'receive'; const isExport = tx.type === 'export'; const icon = isIn ? 'arrow-down-left' : (isExport ? 'shield-alert' : 'arrow-up-right'); const iconClass = isIn ? 'icon-receive' : (isExport ? 'icon-export' : 'icon-send'); const amountClass = isIn ? 'amount-in' : 'amount-out'; const sign = isIn ? '+' : '-'; const actionLabel = isIn ? 'Received' : (isExport ? 'Exported' : 'Sent'); const addressLabel = tx.counterparty_address ? truncateAddress(tx.counterparty_address) : 'External'; const ord = orderForTx(tx); const titleLabel = ord ? (ORDER_LABELS[ord.type] || 'Order payment') : `${actionLabel} ${tx.token}`; const subLabel = ord ? `Order ${ord.order_no}` : addressLabel; return `<div class="tx-card rounded-2xl p-4 cursor-pointer" onclick="toggleDetail('${tx.id}')"><div class="flex items-center gap-4"><div class="w-11 h-11 ${iconClass} rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="${icon}" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><p class="text-[15px] font-semibold text-primary truncate">${titleLabel}</p><p class="text-xs text-muted mt-0.5">${subLabel} · ${timeAgo}</p></div><div class="text-right flex-shrink-0"><p class="text-[17px] font-bold ${amountClass}">${sign}${formatFintech(tx.amount, tx.token === 'POL' ? 4 : 2)} ${tx.token}</p></div></div><div id="detail-${tx.id}" class="tx-detail"><div class="pt-3 border-t border-subtle mt-3 space-y-2"><div class="flex items-center justify-between text-xs"><span class="text-muted">Transaction Hash</span><span class="font-mono text-secondary">${truncateAddress(tx.hash)}</span></div><div class="flex items-center justify-between text-xs"><span class="text-muted">Date</span><span class="text-secondary">${formatPolygonScanDate(tx.occurred_at)}</span></div><div class="flex items-center gap-3 pt-1 whitespace-nowrap"><a href="${explorerUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition"><i data-lucide="external-link" class="w-3 h-3"></i> View</a><span id="vs-${tx.id}" class="inline-flex items-center gap-3">${verifyStatusHtml(tx)}</span></div></div></div></div>`; }
         async function fetchPolPriceUsd() {
             try { const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd'); return (await res.json())['polygon-ecosystem-token']?.usd || null; }
             catch (err) { console.error('Failed to fetch POL price:', err); return null; }
@@ -495,34 +499,64 @@
         }
 
         // Receipts are only issued for transactions confirmed on Polygon (onchain_verified).
-        // Asks the server to check this one transaction now, polling a few times for fresh sends.
-        const verifyingTx = new Set();
+        // The card shows a progress bar while the server checks the transaction, then a
+        // Receipt button with a check icon and "Verified".
+        const verifyState = {}; // txId -> { phase: 'verifying' | 'failed', pct }
+        function verifyStatusHtml(tx) {
+            const st = verifyState[tx.id];
+            const receiptBtn = (label, cls) => `<button onclick="event.stopPropagation(); openReceiptModal('${tx.id}')" class="inline-flex items-center gap-1.5 text-xs font-medium ${cls} transition"><i data-lucide="${tx.onchain_verified ? 'circle-check' : 'receipt'}" class="w-3 h-3"></i> ${label}</button>`;
+            if (tx.onchain_verified === true) return receiptBtn('Receipt', 'text-secondary hover:text-primary') + '<span class="text-xs font-medium vok">Verified</span>';
+            if (st && st.phase === 'verifying') return `<span class="vbar" role="progressbar" aria-label="Verifying on Polygon"><span class="vfill" style="width:${st.pct}%"></span></span><span class="text-xs text-muted">Verifying</span>`;
+            return receiptBtn('Receipt', 'text-secondary hover:text-primary');
+        }
+        function refreshVerifyUI(tx) {
+            const el = document.getElementById(`vs-${tx.id}`);
+            if (!el) return;
+            el.innerHTML = verifyStatusHtml(tx);
+            if (window.lucide) lucide.createIcons();
+        }
+        function setVerifyPct(tx, pct) {
+            const fill = document.querySelector(`#vs-${tx.id} .vfill`);
+            if (fill) fill.style.width = pct + '%';
+        }
         async function ensureTxVerified(tx) {
             if (tx.onchain_verified === true) return true;
-            if (verifyingTx.has(tx.id)) return false;
-            verifyingTx.add(tx.id);
-            showToast('Confirming transaction on Polygon...');
+            if (verifyState[tx.id] && verifyState[tx.id].phase === 'verifying') return false;
+            verifyState[tx.id] = { phase: 'verifying', pct: 8 };
+            refreshVerifyUI(tx);
             try {
                 for (let i = 0; i < 8; i++) {
                     const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (!session) return false;
+                    if (!session) break;
                     const r = await fetch(`/api/wallet?action=verify&hash=${encodeURIComponent(tx.hash)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
                     if (r.status === 429) break;
                     if (r.ok) {
                         const out = await r.json();
-                        if (out.status === 'verified') { tx.onchain_verified = true; return true; }
+                        if (out.status === 'verified') {
+                            tx.onchain_verified = true;
+                            setVerifyPct(tx, 100);
+                            await new Promise((res) => setTimeout(res, 400));
+                            delete verifyState[tx.id];
+                            refreshVerifyUI(tx);
+                            return true;
+                        }
                         if (out.status === 'failed' || out.status === 'not_found') break;
                     }
+                    const pct = Math.min(90, 8 + (i + 1) * 11);
+                    verifyState[tx.id].pct = pct;
+                    setVerifyPct(tx, pct);
                     await new Promise((res) => setTimeout(res, 4000));
                 }
-                showToast('Receipt is not ready yet. Please try again in a moment.');
-                return false;
-            } catch (e) {
-                showToast('Could not confirm the transaction. Please try again.');
-                return false;
-            } finally {
-                verifyingTx.delete(tx.id);
-            }
+            } catch (e) { console.error('Verify failed', e); }
+            delete verifyState[tx.id];
+            refreshVerifyUI(tx);
+            showToast('Receipt is not ready yet. Please try again in a moment.');
+            return false;
+        }
+        // Fresh transactions are checked automatically, one at a time, so the receipt unlocks without a tap.
+        async function autoVerifyRecent() {
+            const recent = allTx.filter((t) => (t.type === 'send' || t.type === 'receive') && t.status === 'success' && t.onchain_verified !== true && t.hash && Date.now() - new Date(t.occurred_at).getTime() < 3600000).slice(0, 3);
+            for (const t of recent) { if (!(await ensureTxVerified(t))) break; }
         }
 
         async function openReceiptModal(txId) {
