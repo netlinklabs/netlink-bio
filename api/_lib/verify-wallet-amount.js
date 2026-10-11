@@ -20,7 +20,7 @@
 // Alchemy rate limit (HTTP 429): small batches with a pause, retry with back-off; if it persists the
 // run stops cleanly (rateLimited: true) and the rows stay unchecked for the next run.
 //
-// Known limits: tolerance is max(0.01, 0.5%) (2% for swaps, whose output comes from a quote);
+// Known limits: tolerance is 0.0001 for POL sends/exports and 0.01 for everything else (2% for swaps, whose output comes from a quote);
 // the Sequence relayer fee transfer is ignored, as in api/wallet.js; amounts are compared as
 // numbers, which is fine at these sizes.
 //
@@ -47,8 +47,9 @@ const PAUSE_MS = 1100;       // pause between those requests
 const BUDGET_MS = 90000;     // stop starting new work after this long (cron has maxDuration 120s)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export const within = (a, b, rel = 0.005) =>
-  Math.abs(a - b) <= Math.max(0.01, rel * Math.max(Math.abs(a), Math.abs(b)));
+// `abs` is the smallest difference that still counts as equal; `rel` adds a percentage on top.
+export const within = (a, b, rel = 0, abs = 0.01) =>
+  Math.abs(a - b) <= Math.max(abs, rel * Math.max(Math.abs(a), Math.abs(b))) + 1e-9;
 
 const fmt = (n) => String(Number(Number(n).toFixed(6)));
 
@@ -90,11 +91,11 @@ export function legsFor(transfers, hash, wallet) {
   return legs;
 }
 
-function side(legs, token, dir, amount, rel) {
+function side(legs, token, dir, amount, rel, abs) {
   const values = legs.filter((l) => l.token === token && l.dir === dir).map((l) => l.amount);
   if (!values.length) return { found: false };
   const sum = values.reduce((a, b) => a + b, 0);
-  return { found: true, ok: values.some((v) => within(amount, v, rel)) || within(amount, sum, rel), values };
+  return { found: true, ok: values.some((v) => within(amount, v, rel, abs)) || within(amount, sum, rel, abs), values };
 }
 
 // Decide the result for one row. Pure function: no network.
@@ -103,15 +104,19 @@ export function evaluateRow(row, legs) {
   if (!Number.isFinite(amount)) return { status: 'unchecked', note: 'Recorded amount is not a number' };
 
   if (row.type === 'swap') {
-    const a = side(legs, row.token, 'out', amount, 0.02);
-    const b = row.to_token ? side(legs, row.to_token, 'in', Number(row.to_amount), 0.02) : { found: false };
+    const a = side(legs, row.token, 'out', amount, 0.02, 0.01);
+    const b = row.to_token ? side(legs, row.to_token, 'in', Number(row.to_amount), 0.02, 0.01) : { found: false };
     if (a.found && a.ok && b.found && b.ok) return { status: 'match', note: 'Both swap amounts found on-chain' };
     return { status: 'unchecked', note: 'Swap amounts not confirmed (swaps are never flagged)' };
   }
 
   const dir = row.type === 'receive' ? 'in' : row.type === 'send' || row.type === 'export' ? 'out' : null;
   if (!dir) return { status: 'unchecked', note: `Type ${row.type} is not compared` };
-  const r = side(legs, row.token, dir, amount, 0.005);
+  // Tolerance is per case, not a percentage. POL sends and exports are recorded with their full
+  // precision, so they must match almost exactly. Incoming rows (api/wallet.js fromWei) and NET or
+  // USDC sends keep 2 decimals, and cutting digits off loses less than 0.01, so 0.01 is the limit.
+  const exact = row.token === 'POL' && row.type !== 'receive';
+  const r = side(legs, row.token, dir, amount, 0, exact ? 0.0001 : 0.01);
   if (!r.found) return { status: 'unchecked', note: `No ${row.token} transfer for this wallet found in the tx` };
   if (r.ok) return { status: 'match', note: 'Amount found on-chain' };
   return { status: 'mismatch', note: `Recorded ${fmt(amount)} ${row.token}, on-chain ${r.values.map(fmt).join(' + ')}`.slice(0, 200) };
