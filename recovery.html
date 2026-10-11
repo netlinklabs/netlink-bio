@@ -110,6 +110,9 @@
             </div>
 
             <p id="authSignInError" class="text-xs text-red-500 mt-3 hidden"></p>
+
+            <!-- Always-available exit, so the gate is never a dead end. -->
+            <a href="pay" class="block mt-4 text-xs text-muted hover:text-secondary transition">Back to wallet</a>
         </div>
     </div>
 
@@ -599,13 +602,23 @@
             errorEl.classList.add('hidden');
             container.style.opacity = '0.5';
             try {
-                await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
+                // Never hang forever: if the wallet service does not answer, show an error
+                // and let the person retry or leave (see "Back to wallet").
+                let timer;
+                const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('sign-in timeout')), 45000); });
+                try {
+                    await Promise.race([sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay'), timeout]);
+                } finally {
+                    clearTimeout(timer);
+                }
                 await completeAuthGateSignIn();
                 container.style.opacity = '1';
             } catch (err) {
                 console.error('Auth gate Google sign-in failed:', err);
                 container.style.opacity = '1';
-                errorEl.textContent = 'Could not sign in with Google. Please try again.';
+                errorEl.textContent = /timeout/i.test(String(err?.message || ''))
+                    ? 'Sign-in is taking too long. Please try again, or go back to your wallet.'
+                    : 'Could not sign in with Google. Please try again.';
                 errorEl.classList.remove('hidden');
             }
         }
