@@ -7,6 +7,10 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`tx.html`: receipt verification now shows a progress bar on the transaction card instead of a toast.** The bottom row of a send or receive card is now `[View] [Receipt with check icon] Verified`. While the server checks the transaction on Polygon, the Receipt button is replaced by a small progress bar and the text "Verifying". Fresh transactions (under 1 hour old, up to 3, one at a time) are checked automatically after the list loads. Older unverified rows keep a plain Receipt button that starts the check on tap. The "Confirming transaction..." toast is gone; only a failure toast remains. Uses the `circle-check` icon (already used in `analytics.html`, so it exists in the pinned lucide).
+  - Checked: inline scripts of `tx.html` pass a syntax check. Not tested in a browser: send a small transaction, open Activity, expand the new card and watch the bar fill, then Receipt and Verified appear.
+
 ### Security
 - **Receipts in `tx.html` are only issued for transactions confirmed on Polygon.** Before, the receipt was built from the row the browser inserted, so a forged row could produce a receipt. Now "View Receipt", Download Image, Download PDF and Share all need `onchain_verified = true`. Opening a receipt for an unverified row asks the server to check that one transaction right away (up to 8 tries, 4 seconds apart), so a fresh send unlocks its receipt in seconds instead of waiting for the daily cron.
   - New `GET /api/wallet?action=verify&hash=0x...` (inside `api/wallet.js`, no new function file, because the Hobby plan limit is reached). Needs the user's access token and only checks rows owned by that user. Cost is one `eth_getTransactionReceipt` (20 CU) per call. Limit: 20 calls per user per minute (best effort, per instance). A transaction not mined yet does not use up `onchain_check_attempts`, so the daily cron keeps its own retries. The logic is `verifyOneTx()` in `api/_lib/verify-wallet-tx.js`.
