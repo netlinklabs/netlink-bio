@@ -447,6 +447,13 @@
             }
         }
 
+        // Fills an email field with this Netlink account's email (only when
+        // empty), so the wallet email matches the app email by default.
+        function prefillEmailInput(id) {
+            const el = document.getElementById(id);
+            if (el && !el.value && currentUser?.email) el.value = currentUser.email;
+        }
+
         function showToast(msg, isError) {
             const el = document.getElementById('toast');
             el.textContent = msg;
@@ -531,6 +538,7 @@
 
         async function proceedPastAuthGate() {
             document.getElementById('authGate').style.display = 'none';
+            prefillEmailInput('recoveryEmailInput');
             await renderMethods();
             await loadExportBalances();
             validateExportDestination();
@@ -571,6 +579,10 @@
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: onAuthGateGoogleCredential,
+                // Steers the account picker toward this Netlink account's own
+                // email. A hint, not a guarantee -- sessionMatchesCurrentWallet()
+                // still decides whether the signed-in wallet is the right one.
+                login_hint: currentUser?.email || undefined,
             });
             google.accounts.id.renderButton(container, {
                 theme: 'filled_blue',
@@ -589,6 +601,7 @@
             try {
                 await sequenceWaas.signIn({ idToken: response.credential }, 'Netlink Pay');
                 await completeAuthGateSignIn();
+                container.style.opacity = '1';
             } catch (err) {
                 console.error('Auth gate Google sign-in failed:', err);
                 container.style.opacity = '1';
@@ -609,6 +622,7 @@
         window.expandAuthEmail = function () {
             document.getElementById('authGoogleStep').classList.add('hidden');
             document.getElementById('authEmailStep').classList.remove('hidden');
+            prefillEmailInput('authEmailInput');
             document.getElementById('authEmailInput').focus();
         };
 
@@ -905,6 +919,10 @@
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: onGoogleBackupCredential,
+                // Steers the account picker toward this Netlink account's own
+                // email. A hint, not a guarantee -- sessionMatchesCurrentWallet()
+                // still decides whether the signed-in wallet is the right one.
+                login_hint: currentUser?.email || undefined,
             });
             google.accounts.id.renderButton(container, {
                 theme: 'filled_blue',
@@ -1215,6 +1233,10 @@
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: onExportGoogleCredential,
+                // Steers the account picker toward this Netlink account's own
+                // email. A hint, not a guarantee -- sessionMatchesCurrentWallet()
+                // still decides whether the signed-in wallet is the right one.
+                login_hint: currentUser?.email || undefined,
             });
             google.accounts.id.renderButton(container, {
                 theme: 'filled_blue',
@@ -1253,6 +1275,7 @@
         window.expandExportEmail = function () {
             document.getElementById('exportAuthGoogleStep').classList.add('hidden');
             document.getElementById('exportAuthEmailStep').classList.remove('hidden');
+            prefillEmailInput('exportEmailInput');
             document.getElementById('exportEmailInput').focus();
         };
 

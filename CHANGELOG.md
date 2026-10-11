@@ -7,6 +7,12 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **`recovery.html`: Google sign-in now steers to the Netlink account's own email, same as `pay.html`.** The three Google buttons (sign-in gate, Emergency Export confirmation, Add Google backup) now pass `login_hint` with the account's email, so the account picker defaults to the same Google account as the app (Supabase). It is a hint only: a different account can still be picked, and `sessionMatchesCurrentWallet()` still decides whether the wallet is the right one.
+  - The email fields (sign-in gate, Add email backup, Emergency Export) are pre-filled with the account's email when empty.
+  - After a wallet-mismatch error on the sign-in gate, the Google button is no longer left dimmed (opacity 0.5), so it can be tried again.
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
 ### Changed
 - **`dashboard.html`: Link in Bio header now has the same parts as the CV header, so both cards are the same height.** The link line (`netlink.bio/username`, the real username once it is set) and the Copy, Preview and Share buttons moved from the body of the Link in Bio card into its blue header, under the AI Score bar, the same way as the CV card. They are no longer repeated in the body (the Save button and Choose Template stay). Same `onclick` functions, so nothing else changes.
   - On phones narrower than 380px the CV title shows "Professional CV" without "(Resume)", because the full title wrapped to two lines there and made the CV header 24px taller. Checked from 320px to 430px wide: both headers are the same height, 199px closed and 167px open (the 32px difference is the "Tap to expand" line).
