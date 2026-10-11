@@ -2768,7 +2768,7 @@ window.openNetlinkPay = openNetlinkPay;
         async function loadEthereumProvider() {
             if (EthereumProviderClass) return EthereumProviderClass;
             
-            const mod = await import("https://esm.sh/@walletconnect/ethereum-provider@2?bundle");
+            const mod = await import("/shared/vendor/walletconnect-ethereum-provider.js?v=1");
             
             EthereumProviderClass = mod.EthereumProvider;
             return EthereumProviderClass;
@@ -2869,7 +2869,7 @@ window.openNetlinkPay = openNetlinkPay;
         window.removeWalletAddress = removeWalletAddress;
     </script>
     <script type="module">
-    import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas';
+    import { SequenceWaaS } from '/shared/vendor/sequence-waas.js?v=1';
 
     const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
     const sequenceWaas = new SequenceWaaS({

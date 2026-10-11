@@ -505,7 +505,7 @@
     // This runs independently of the classic script above (its own
     // Supabase client instance, no shared state) so load-order between a
     // classic script and a deferred module script is never a concern.
-    import { SequenceWaaS } from 'https://esm.sh/@0xsequence/waas@2.3.44?bundle';
+    import { SequenceWaaS } from '/shared/vendor/sequence-waas.js?v=1';
 
     const SEQUENCE_PROJECT_ACCESS_KEY = 'AQAAAAAAAMI8q-Xw_LF_zvGQlt_2l-mDYDA';
     const SEQUENCE_WAAS_CONFIG_KEY = 'eyJwcm9qZWN0SWQiOjQ5NzI0LCJycGNTZXJ2ZXIiOiJodHRwczovL3dhYXMuc2VxdWVuY2UuYXBwIn0=';

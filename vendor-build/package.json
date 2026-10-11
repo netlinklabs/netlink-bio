@@ -1,0 +1,14 @@
+{
+  "name": "netlink-vendor-build",
+  "private": true,
+  "description": "Builds the wallet SDK bundles in ../shared/vendor (run: npm ci && npm run build)",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": {
+    "@0xsequence/waas": "2.3.44",
+    "@onramp.money/onramp-web-sdk": "2.0.1",
+    "@walletconnect/ethereum-provider": "2.26.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}
