@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **`pay.html`: connecting a wallet for the first time now requires the same email as the Netlink account.** In the Connect Wallet modal, a Google account or an email whose address differs from the account's email is rejected before any wallet is created ("Use the same email as your Netlink account (...) to connect a wallet."). The email field is pre-filled with the account's email.
+  - Only applies when no wallet is connected. Existing wallets and Send, Swap and the re-auth steps are not affected.
+  - Reconnecting after Disconnect also accepts an email already saved on the profile (`wallet_google_email`, `wallet_recovery_email`), so older wallets made with a different email can still be reconnected. Email match is case-insensitive.
+  - Not changed: `pay2.html` and `pay5.html` (staging copies) and `recovery.html` (still a soft `login_hint`).
+  - Static check only (script syntax). Not tested in a browser or on a real phone.
+
 ### Fixed
 - **`recovery.html`: Google sign-in now steers to the Netlink account's own email, same as `pay.html`.** The three Google buttons (sign-in gate, Emergency Export confirmation, Add Google backup) now pass `login_hint` with the account's email, so the account picker defaults to the same Google account as the app (Supabase). It is a hint only: a different account can still be picked, and `sessionMatchesCurrentWallet()` still decides whether the wallet is the right one.
   - The email fields (sign-in gate, Add email backup, Emergency Export) are pre-filled with the account's email when empty.
