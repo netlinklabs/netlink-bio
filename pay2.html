@@ -1654,6 +1654,37 @@
         // account" -- always confirm the session's wallet matches
         // profiles.wallet_address before trusting it to skip
         // re-authentication for a wallet-affecting action.
+        // Keeps the profile's record of linked sign-in methods in step with what
+        // Sequence reports (the identity gate decides which methods to offer from
+        // wallet_google_email / wallet_recovery_email). Runs at most once per page load,
+        // only with a valid wallet session. Fills a column ONLY when it is empty
+        // (.is(col, null)), never overwrites, ignores non-email values. Best-effort:
+        // a failure is logged and nothing else changes.
+        let walletEmailSyncStarted = false;
+        async function syncWalletEmailsOnce() {
+            if (walletEmailSyncStarted) return;
+            walletEmailSyncStarted = true;
+            try {
+                if (!currentUser?.id) return;
+                const response = await sequenceWaas.listAccounts();
+                const accounts = response?.accounts || [];
+                const looksLikeEmail = (v) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+                const pick = (pred) => (accounts.find(pred)?.email || '').trim();
+                const googleEmail = pick(a => (a.type || '').toLowerCase().includes('oidc') || (a.issuer || '').toLowerCase().includes('google'));
+                const emailEmail = pick(a => (a.type || '').toLowerCase().includes('email') && !(a.issuer || '').toLowerCase().includes('google'));
+                const fills = [];
+                if (looksLikeEmail(googleEmail)) fills.push(['wallet_google_email', googleEmail]);
+                if (looksLikeEmail(emailEmail)) fills.push(['wallet_recovery_email', emailEmail]);
+                for (const [col, value] of fills) {
+                    const { error } = await supabaseClient
+                        .from('profiles').update({ [col]: value }).eq('id', currentUser.id).is(col, null);
+                    if (error) console.error('Non-critical: failed to sync ' + col + ':', error);
+                }
+            } catch (err) {
+                console.error('Non-critical: wallet email sync failed:', err);
+            }
+        }
+
         async function sessionMatchesCurrentWallet() {
             const signedIn = await sequenceWaas.isSignedIn();
             if (!signedIn || !window.currentWalletAddress) {
@@ -1662,6 +1693,7 @@
             try {
                 const sessionAddress = await sequenceWaas.getAddress();
                 if (sessionAddress && sessionAddress.toLowerCase() === window.currentWalletAddress.toLowerCase()) {
+                    syncWalletEmailsOnce(); // best-effort, never blocks
                     return { valid: true, mismatched: false };
                 }
                 console.error('Sequence WaaS session wallet does not match the logged-in profile\'s wallet -- treating as not signed in.');

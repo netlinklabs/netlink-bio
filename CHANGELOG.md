@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **`pay.html`, `pay2.html`, `pay5.html`: the profile's record of linked sign-in methods is also kept in step with Sequence here.** Once per page load, when the wallet session is valid, a linked Google or email identity missing from the profile is filled into `wallet_google_email` / `wallet_recovery_email`.
+  - Why: the identity gate offers methods from those columns. Until now only `recovery.html` corrected them, so accounts that never opened it could miss a valid option in the Send/Swap gate.
+  - Same safety as the `recovery.html` sync: fills only empty columns (`.is(col, null)`), never overwrites, ignores non-email values, best-effort.
 - **`recovery.html`: removed the redundant "Email address" label above the locked email in the sign-in gate.** It now shows only "We will send a code to" and the address. With several saved emails (dropdown) the label stays.
 - **`recovery.html`: an account with no connected wallet now sees "Connect your wallet first" instead of a sign-in.** Shown when the profile has no `wallet_address` (for example after "Disconnect" in Netlink Pay), with a "Go to Netlink Pay" button.
   - Why: the sign-in could never succeed there and ended with the misleading "signed you into a different wallet" message.
