@@ -75,7 +75,7 @@
             <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
             </div>
-            <h2 class="text-base font-semibold text-primary mb-1">Sign in to continue</h2>
+            <h2 id="authSignInTitle" class="text-base font-semibold text-primary mb-1">Sign in to continue</h2>
             <p id="authSignInExplain" class="text-xs text-secondary mb-5 leading-relaxed"></p>
 
             <div id="authGoogleStep">
@@ -112,7 +112,7 @@
             <p id="authSignInError" class="text-xs text-red-500 mt-3 hidden"></p>
 
             <!-- Always-available exit, so the gate is never a dead end. -->
-            <a href="pay" class="block mt-4 text-xs text-muted hover:text-secondary transition">Back to wallet</a>
+            <a id="authBackToWalletLink" href="pay" class="block mt-4 text-xs text-muted hover:text-secondary transition">Back to wallet</a>
         </div>
     </div>
 
@@ -522,6 +522,13 @@
         // less confusing for non-crypto-native users, and they never leave
         // this page.
         async function ensureWalletSession() {
+            // No wallet connected to this account yet: signing in here could only
+            // open some other (or a brand new) wallet, so say that plainly instead of
+            // showing a sign-in that is guaranteed to fail.
+            if (!currentWalletAddress) {
+                showNoWalletCard();
+                return false;
+            }
             const sessionCheck = await sessionMatchesCurrentWallet();
             if (!sessionCheck.valid) {
                 showAuthSignInCard(sessionCheck.mismatched);
@@ -555,6 +562,18 @@
             document.getElementById('exportUseEmailLink').classList.toggle('hidden', !m.email);
             document.getElementById('exportBackToGoogleBtn').classList.toggle('hidden', !m.google);
             if (!m.google) await expandExportEmail();
+        }
+
+        function showNoWalletCard() {
+            document.getElementById('authLoadingState').classList.add('hidden');
+            document.getElementById('authSignInCard').classList.remove('hidden');
+            document.getElementById('authSignInTitle').textContent = 'Connect your wallet first';
+            document.getElementById('authSignInExplain').textContent = 'This account does not have a wallet connected yet. Connect it in Netlink Pay, then come back here.';
+            ['authGoogleStep', 'authEmailStep', 'authOtpStep'].forEach((id) => document.getElementById(id).classList.add('hidden'));
+            const link = document.getElementById('authBackToWalletLink');
+            link.textContent = 'Go to Netlink Pay';
+            link.className = 'block mt-1 w-full px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition';
+            if (window.lucide) lucide.createIcons();
         }
 
         function showAuthSignInCard(mismatched) {
