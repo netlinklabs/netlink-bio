@@ -8,7 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
-- `dashboard.html`: the gift icon on the "Complete Your Profile" card is no longer gold. It now has the same shape and size as the Landing Page card icon, on a blue gradient (same blue as the card headers) with a white gift icon. Plain CSS only.
+- `dashboard.html`: the gift icon on the "Complete Your Profile" card is no longer gold. It now has the same rounded shape and size as the Landing Page card icon, with no fill: a thin blue outline and a blue gift icon (light blue in dark mode). Plain CSS only.
 
 ### Changed
 - `dashboard.html`: "Complete Your Profile" reward card. The target icon is now a gold gift badge. The Claim NET button shows the NET logo (`/assets/net-logo.png`, same as `pay.html`); the button label is now set through `setClaimLabel()` so the logo stays when the text changes. The card has the same border and shadow as the page cards (blue border, surface color unchanged). New "What is NET?" link with an info icon under the button, opening a popup (same style as the AI Score info popup) with the NET logo at the top center. Plain CSS only (no Tailwind rebuild).
