@@ -21,6 +21,7 @@ Netlink — digital identity platform (bio link, CV builder, business landing pa
 
 - All UI text, error messages, and user-facing strings: **English only** — this applies even if the person instructing you writes in Indonesian.
 - Explanatory code comments can be any language, but shipped text must be English.
+- **Use global wording and examples in all UI.** No country-specific terms (for example KTP, NIK, NIB, NPWP), local brand or place names (for example Kopi Senja, Jakarta) in labels, placeholders, hints or examples. Use neutral ones (for example Brightside Coffee, 42 Main Street, Austin, Business license, Tax ID). Exception: facts about Netlink's own company (for example the registration number on about.html and privacy-policy.html).
 - **Never use an em dash ("—") in any UI text, error message, or other user-facing string.** Use a comma, period, or rephrase instead. This applies to visible copy only (headings, body text, labels, meta tags, button text, `title`/`aria-label`/`alt` attributes, etc.) — code comments are exempt since they aren't user-facing.
 
 ## Wallet security (Netlink Pay — pay.html, pay2.html, recovery.html, tx.html)

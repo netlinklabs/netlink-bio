@@ -15,7 +15,7 @@
 //                  cards/products      -> hasOfferCatalog (Offer + Product/Service)
 //                  team                -> employee
 //                  testimonials        -> review
-//                  legal               -> legalName, taxID, identifier
+//                  legal               -> legalName, taxID, vatID, identifier
 //              FAQPage      (faq modules)
 //              VideoObject  (video modules, YouTube only)
 //
@@ -101,11 +101,12 @@ function collectImages(blocks, primary) {
 
 // ---------- legal info ----------
 // Company name -> legalName. Each registration number -> identifier
-// (PropertyValue with the label as propertyID). A label that says NPWP or tax id
-// also fills taxID, the dedicated schema.org property. These are numbers the
+// (PropertyValue with the label as propertyID). A label that says tax id (or the
+// Indonesian NPWP) fills taxID, and VAT fills vatID, the dedicated schema.org properties. These are numbers the
 // owner typed in, Netlink does not verify them.
 
-const TAX_LABEL = /^(npwp|tax id|taxid|tin)$/i;
+const TAX_LABEL = /^(tax id|taxid|tax number|tin|npwp)$/i;
+const VAT_LABEL = /^(vat|vat id|vat number)$/i;
 
 function legalInfo(blocks) {
   const out = { identifiers: [] };
@@ -117,6 +118,7 @@ function legalInfo(blocks) {
       const number = txt(it.number, 60);
       if (!label || !number) return;
       if (TAX_LABEL.test(label) && !out.taxID) out.taxID = number;
+      if (VAT_LABEL.test(label) && !out.vatID) out.vatID = number;
       if (!out.identifiers.some((x) => x.propertyID === label && x.value === number)) {
         out.identifiers.push({ '@type': 'PropertyValue', propertyID: label, value: number });
       }
@@ -430,6 +432,7 @@ export function buildLandingJsonLd({ page, content, blocks, pageUrl, name, tagli
     const legal = legalInfo(list);
     if (legal.legalName) biz.legalName = legal.legalName;
     if (legal.taxID) biz.taxID = legal.taxID;
+    if (legal.vatID) biz.vatID = legal.vatID;
     if (legal.identifiers.length) biz.identifier = legal.identifiers.length === 1 ? legal.identifiers[0] : legal.identifiers;
   }
 

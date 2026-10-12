@@ -397,7 +397,7 @@ window.SC = SC;
 <label class="sidebar-label">Page Info</label>
 <div style="margin-bottom: 16px;">
 <label class="sidebar-input-label">Business Name</label>
-<input type="text" id="inputName" class="sidebar-input" maxlength="120" placeholder="e.g. Kopi Senja" oninput="onGlobal('name', this.value)">
+<input type="text" id="inputName" class="sidebar-input" maxlength="120" placeholder="e.g. Brightside Coffee" oninput="onGlobal('name', this.value)">
 <p id="hintName" class="field-hint"></p>
 </div>
 <div style="margin-bottom: 16px;">
@@ -1879,8 +1879,8 @@ fText(id, 'caption', 'Caption (optional)', d.caption, '', 300) +
 fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS);
 case 'location':
 return fText(id, 'title', 'Title', d.title, 'e.g. Visit us') +
-fText(id, 'addressLine', 'Address', d.addressLine, 'e.g. Jl. Raya Kopi No. 42') +
-fText(id, 'addressCity', 'City / Area', d.addressCity, 'e.g. Bandung, Jawa Barat') +
+fText(id, 'addressLine', 'Address', d.addressLine, 'e.g. 42 Main Street') +
+fText(id, 'addressCity', 'City / Area', d.addressCity, 'e.g. Austin, Texas') +
 fSelect(id, 'addressCountry', 'Country', d.addressCountry || '', [['', 'Select country']].concat(window.NETLINK_COUNTRIES || [])) +
 fUrl(id, 'mapLink', 'Google Maps link (optional)', d.mapLink) +
 fArea(id, 'closingText', 'Closing message (optional)', d.closingText, 'A short note shown under the map', 300) +
@@ -1898,8 +1898,8 @@ return fText(id, 'title', 'Title', d.title, 'e.g. Property tour') +
 '<div class="row2">' + fSelect(id, 'layout', 'Layout', d.layout, [['single', '1 per row'], ['grid', '2 columns (desktop)']]) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
 videoEditorHtml(b);
 case 'legal':
-return fText(id, 'title', 'Title', d.title, 'e.g. Legal information') + fText(id, 'legalName', 'Company name', d.legalName, 'e.g. PT Kopi Senja Abadi', 160) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) +
-'<p class="gallery-limit" style="margin:0 0 10px;text-align:left;">Only add business registration numbers you are happy to show to everyone. Do not add a personal ID number (KTP or NIK).</p>' + legalEditorHtml(b);
+return fText(id, 'title', 'Title', d.title, 'e.g. Legal information') + fText(id, 'legalName', 'Company name', d.legalName, 'e.g. Brightside Coffee Ltd', 160) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) +
+'<p class="gallery-limit" style="margin:0 0 10px;text-align:left;">Only add business registration numbers you are happy to show to everyone. Do not add a personal ID number, such as a national ID or passport number.</p>' + legalEditorHtml(b);
 case 'faq':
 return fText(id, 'title', 'Title', d.title, 'e.g. Questions') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + faqEditorHtml(b);
 case 'testimonials':
@@ -2137,7 +2137,7 @@ renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
 function legalEditorHtml(b) {
 const id = b.id, items = b.data.items;
 return items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Number') +
-liText(id, 'items', i, 'label', 'Type, e.g. NIB, NPWP, SIUP', it.label, 40) + liText(id, 'items', i, 'number', 'Registration number', it.number, 60) + '</div>').join('') + listFooter(b);
+liText(id, 'items', i, 'label', 'Type, e.g. Business license, Tax ID, VAT', it.label, 40) + liText(id, 'items', i, 'number', 'Registration number', it.number, 60) + '</div>').join('') + listFooter(b);
 }
 
 function faqEditorHtml(b) {
