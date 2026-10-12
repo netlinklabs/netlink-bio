@@ -233,7 +233,7 @@ function galleryImages(d, preview) {
 function videoItems(d) {
   return (Array.isArray(d.items) ? d.items : []).filter((it) => it && str(it.url, 2000).trim()).slice(0, MAX_VIDEO_ITEMS);
 }
-// Registration numbers (NIB, NPWP, ...). A row needs both a label and a number.
+// Registration numbers (business license, tax id, VAT, ...). A row needs both a label and a number.
 export function legalItems(d) {
   return (Array.isArray(d.items) ? d.items : [])
     .filter((it) => it && str(it.label).trim() && str(it.number).trim())

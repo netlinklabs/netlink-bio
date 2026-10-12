@@ -8,6 +8,11 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- Page builder UI wording is now global: examples and hints no longer use local terms (KTP, NIK, NIB, NPWP, SIUP, "Kopi Senja", Bandung, Jakarta). Legal Info hints say "business license, tax id, VAT" and warn against national ID or passport numbers. `dashboard.html` CV location placeholder is now "e.g. London". New rule in `CLAUDE.md` (Language).
+- AI Score: **Legal Info now counts**. Company name plus a registration number earns 5 points (2 for only one of them). To keep the total at 100, contact details are now 12 (8 for one channel) and photo or logo is 8.
+- Legal Info JSON-LD: a label of "VAT", "VAT id" or "VAT number" now fills `vatID`. A label of "Tax id", "Tax number", "TIN" (or NPWP) fills `taxID`.
+
+### Changed
 - AI Score: removed the "Sample text. Replace it with your own description." label under Text modules and the "sample text does not count" sentence in the AI Score info. The description bar and the description points now depend only on the text length. Demo text in the name, address and services still earns no points, but no longer says so on screen.
 
 ### Added
