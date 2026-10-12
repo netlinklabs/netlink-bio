@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- `dashboard.html`: collapsed cards (Link in Bio, Professional CV, Landing Page) are no longer full blue. The blue stops right below the URL (Landing Page: right below the subtitle). Copy, Preview and Share keep their blue look and sit below the blue block. The "Tap to expand" hint is now blue text on the card surface. Expanded cards are unchanged. New `.dash-card-top` wrapper, plain CSS only (no Tailwind rebuild).
+
 ### Fixed
 - AI Score no longer treats typed text as sample text. Business name, address, city and services count as filled in when they are not empty ("Your Brand" now earns the business name points). The sample text list was removed from `shared/landing-score.js`.
 - AI Score info: the business name tip no longer says "real" ("Add your business name in Page Settings."), and the info text is left aligned (the wrapped labels and tips were centered).
