@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Docs
+- `CLAUDE.md`: new "Deployment (Vercel)" rule. All deployments go straight to production, no preview deployments unless the owner asks. Preview deployments were also turned off in the Vercel project settings (free plan quota was at 75%).
+
 ### Changed
 - **Landing pages (`netlink.bio/page/:slug`): the JSON-LD now describes every module, so AI assistants and search engines can read the whole page.** Before, only name, url, description, one image and the address were emitted, as one flat object. Now `api/landing.js` calls the new `api/_lib/landing-jsonld.js`, which outputs one `@graph`.
   - Graph: `WebPage` (with `dateModified`, `primaryImageOfPage`) pointing to the business node (`@type` still from `BUSINESS_TYPE_SCHEMA`), plus a `FAQPage` and one `VideoObject` per YouTube video.

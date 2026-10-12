@@ -97,6 +97,12 @@ When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and a
 - Never propose or build an email-change feature — intentionally excluded (account-takeover vector).
 - Presale history: Netlink ran 3 presales in the past (all failed, all refunded). No public presale runs during 2026 — token purchase requests go through the Investor & Partnership Inquiry form as a private sale with vesting. Don't reference presale as active or upcoming in any copy; don't build presale UI/flows in this repo (that would live in `netlink-token` if it ever returns, planned earliest 2027).
 
+## Deployment (Vercel) — production only
+
+- **All deployments go straight to production** (`main` -> netlink.bio). Do not create preview deployments, preview branches for testing, or `vercel` (non-`--prod`) deploys. The Vercel free plan quota is limited, and preview deployments are disabled on the `netlink-bio` project.
+- Exception: only when the owner explicitly asks for a preview deployment.
+- Because there is no preview, test locally first (`vercel dev`, scratch scripts) and keep diffs small and easy to revert.
+
 ## Known in-progress / paused work (don't "helpfully" finish these)
 
 - i18n on `dashboard.html` is mid-implementation and paused (`data-i18n` attributes added, `en.json`/`id.json`/`i18n.js` drafted, language switcher not done). Don't auto-complete this without being asked — re-check current state first, it may have changed.
