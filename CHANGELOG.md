@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- AI Score info: the business name tip no longer says "real" ("Add your business name in Page Settings."), and the info text is left aligned (the wrapped labels and tips were centered).
+
 ### Changed
 - Page builder UI wording is now global: examples and hints no longer use local terms (KTP, NIK, NIB, NPWP, SIUP, "Kopi Senja", Bandung, Jakarta). Legal Info hints say "business license, tax id, VAT" and warn against national ID or passport numbers. `dashboard.html` CV location placeholder is now "e.g. London". New rule in `CLAUDE.md` (Language).
 - AI Score: **Legal Info now counts**. Company name plus a registration number earns 5 points (2 for only one of them). To keep the total at 100, contact details are now 12 (8 for one channel) and photo or logo is 8.

@@ -61,7 +61,7 @@ export function computeAiScore(state) {
   const items = [
     { id: 'name', label: 'Business name', max: 10,
       points: name.length >= 2 && !isPlaceholder(name) ? 10 : 0,
-      tip: 'Add your real business name in Page Settings.' },
+      tip: 'Add your business name in Page Settings.' },
     { id: 'type', label: 'Business type', max: 5,
       points: BUSINESS_TYPE_SCHEMA[s.businessType] ? 5 : 0,
       tip: 'Pick a business type in Page Settings so AI knows what kind of business you are.' },

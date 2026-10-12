@@ -145,7 +145,7 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .settings-txt .ai-info { background: none; border: 0; padding: 2px 4px; color: var(--muted); cursor: pointer; font-size: 12px; line-height: 1; }
 .settings-txt .ai-bar { display: block; height: 4px; border-radius: 999px; background: rgba(var(--w),0.12); overflow: hidden; margin-top: 4px; }
 .settings-txt .ai-fill { display: block; height: 100%; width: 0; border-radius: 999px; background: #64748b; transition: width 0.5s ease; }
-.ai-box { text-align: left; max-width: 420px; max-height: 85vh; overflow-y: auto; padding: 24px; }
+.modal-box.ai-box { text-align: left; max-width: 420px; max-height: 85vh; overflow-y: auto; padding: 24px; }
 .ai-box h3 { color: var(--fg); font-size: 18px; font-weight: 700; margin-bottom: 6px; }
 .ai-box .ai-lead { color: rgba(var(--w),0.6); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
 .ai-row { padding: 9px 0; border-bottom: 1px solid rgba(var(--w),0.07); }
@@ -666,7 +666,7 @@ window.SC = SC;
 <div id="aiScoreModal" onclick="if (event.target === this) closeAiScore()">
 <div class="modal-box ai-box">
 <h3>AI Score</h3>
-<p class="ai-lead">How easy it is for AI and search engines to read and recommend this page. It is worked out from the data your page really publishes.</p>
+<p class="ai-lead">How easy it is for AI and search engines to read and recommend this page. It is worked out from the data your page publishes.</p>
 <div id="aiScoreList"></div>
 <div class="modal-actions"><button type="button" onclick="closeAiScore()" class="sidebar-btn btn-outline">Close</button></div>
 </div>
