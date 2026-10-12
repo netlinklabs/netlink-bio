@@ -46,8 +46,13 @@ const BUSINESS_TYPE_SCHEMA = {
   event: 'Organization', laundry: 'DryCleaningOrLaundry', repair: 'ProfessionalService',
   coworking: 'LocalBusiness', workshop: 'EducationalOrganization', consulting: 'ProfessionalService',
   professional: 'ProfessionalService', nonprofit: 'NGO', web3: 'Organization',
-  creator: 'Person', freelance: 'Person', author: 'Person', educator: 'Person',
-  musician: 'Person', podcaster: 'Person', artist: 'Person', trainer: 'Person', tutor: 'Person',
+  // A landing page always describes a business, never a person (the person is
+  // described by the bio and CV pages). Solo creators map to Organization,
+  // solo service providers to ProfessionalService.
+  creator: 'Organization', author: 'Organization', musician: 'Organization',
+  podcaster: 'Organization', artist: 'Organization',
+  freelance: 'ProfessionalService', educator: 'ProfessionalService',
+  trainer: 'ProfessionalService', tutor: 'ProfessionalService',
   photography: 'ProfessionalService',
 };
 

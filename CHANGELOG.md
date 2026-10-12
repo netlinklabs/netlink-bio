@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- Landing pages: business types that used `Person` (creator, author, musician, podcaster, artist, freelance, educator, trainer, tutor) now emit a business type in JSON-LD (`Organization` or `ProfessionalService`). A landing page always describes a business. The person stays described by the bio and CV pages, which already link to each other through `sameAs` and a shared `#person` id.
+
 ### Docs
 - `CLAUDE.md`: new "Deployment (Vercel)" rule. All deployments go straight to production, no preview deployments unless the owner asks. Preview deployments were also turned off in the Vercel project settings (free plan quota was at 75%).
 
