@@ -277,6 +277,7 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 <script src="/shared/vendor/supabase.js?v=1"></script>
+<script src="/shared/countries.js?v=1"></script>
 <script type="module">
 // Shared renderer: same code the public page (api/landing.js) uses, so the
 // preview always matches what gets published. Module scripts run before
@@ -1777,6 +1778,7 @@ case 'location':
 return fText(id, 'title', 'Title', d.title, 'e.g. Visit us') +
 fText(id, 'addressLine', 'Address', d.addressLine, 'e.g. Jl. Raya Kopi No. 42') +
 fText(id, 'addressCity', 'City / Area', d.addressCity, 'e.g. Bandung, Jawa Barat') +
+fSelect(id, 'addressCountry', 'Country', d.addressCountry || '', [['', 'Select country']].concat(window.NETLINK_COUNTRIES || [])) +
 fUrl(id, 'mapLink', 'Google Maps link (optional)', d.mapLink) +
 fArea(id, 'closingText', 'Closing message (optional)', d.closingText, 'A short note shown under the map', 300) +
 fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS);
