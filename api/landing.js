@@ -17,6 +17,7 @@ import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { sitemapHandler } from './_lib/sitemap.js';
 import { withStats } from './_lib/stats.js';
 import { OG_RENDER_VERSION } from './_lib/og-shared.js';
+import { buildLandingJsonLd } from './_lib/landing-jsonld.js';
 import {
   MAX_BLOCKS, BLOCKS_CSS, LIGHTBOX_HTML, LIGHTBOX_JS, PRODUCT_MODAL_HTML, BLOCKS_JS,
   renderHeader, renderBlocks, pageVars, safeImageUrl,
@@ -33,11 +34,10 @@ async function supabaseGet(path) {
   return res.json();
 }
 
-// Same schema.org @type mapping as page-builder.html's businessTypeSchema
-// (client-side JSON-LD preview while editing) -- copied verbatim so the
-// publicly rendered page matches what the editor already promises via
-// llms.txt/business-page.html ("tagged with the correct schema type
-// automatically"). Keep these two lists in sync if either changes.
+// schema.org @type per business_type. This is the only copy (page-builder.html
+// no longer has its own map), so it is what llms.txt/business-page.html mean by
+// "tagged with the correct schema type automatically". Keep it in step with the
+// Business Type dropdown in page-builder.html when a type is added.
 const BUSINESS_TYPE_SCHEMA = {
   cafe: 'CafeOrCoffeeShop', restaurant: 'Restaurant', bakery: 'Bakery',
   salon: 'BeautySalon', barbershop: 'HairSalon', yoga: 'ExerciseGym', fitness: 'ExerciseGym',
@@ -136,9 +136,12 @@ async function handler(req, res) {
   const blocks = Array.isArray(c.blocks) ? c.blocks.slice(0, MAX_BLOCKS).filter((b) => b && typeof b === 'object') : [];
   const pageUrl = `https://netlink.bio/page/${page.slug}`;
 
-  // Meta description: first text-like block, else the tagline.
+  // Meta description: first text-like block, else the hero subtitle, else the tagline.
   const textBlock = blocks.find((b) => (b.type === 'text' || b.type === 'imagetext') && b.data && String(b.data.body || '').trim());
-  const desc = textBlock ? String(textBlock.data.body).trim().slice(0, 300) : tagline;
+  const heroSub = blocks.find((b) => b.type === 'hero' && b.data && String(b.data.subtitle || '').trim());
+  const desc = textBlock
+    ? String(textBlock.data.body).trim().slice(0, 300)
+    : (heroSub ? String(heroSub.data.subtitle).trim().slice(0, 300) : tagline);
   // Search results and social cards show about 155 characters, so the meta tags get a shorter,
   // word-aligned copy. JSON-LD keeps the full text.
   const metaDesc = shortenAtWord(desc, 155);
@@ -159,21 +162,14 @@ async function handler(req, res) {
 
   // ---- JSON-LD (schema.org) ----
   // @type comes from BUSINESS_TYPE_SCHEMA, keyed by the `business_type`
-  // column -- falls back to 'LocalBusiness'. Only fields that are valid on
-  // every schema type (including Person) are set, so no per-type branching.
-  const locBlock = blocks.find((b) => b.type === 'location' && b.data && (b.data.addressLine || b.data.addressCity));
+  // column -- falls back to 'LocalBusiness'. api/_lib/landing-jsonld.js turns
+  // every module into structured data (one @graph) and skips properties that
+  // are not valid on the chosen type (for example review on Person).
   const schemaType = BUSINESS_TYPE_SCHEMA[page.business_type] || 'LocalBusiness';
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': schemaType,
-    name: businessName,
-    url: pageUrl,
-    ...(desc ? { description: desc } : {}),
-    ...(ogImage ? { image: ogImage } : {}),
-    ...(locBlock
-      ? { address: { '@type': 'PostalAddress', streetAddress: locBlock.data.addressLine || '', addressLocality: locBlock.data.addressCity || '' } }
-      : {}),
-  };
+  const jsonLd = buildLandingJsonLd({
+    page, content, blocks, pageUrl,
+    name: businessName, tagline, description: desc, image: ogImage, schemaType,
+  });
 
   const html = `<!DOCTYPE html>
 <html lang="en">
