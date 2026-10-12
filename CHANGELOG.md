@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- AI Score: removed the "Sample text. Replace it with your own description." label under Text modules and the "sample text does not count" sentence in the AI Score info. The description bar and the description points now depend only on the text length. Demo text in the name, address and services still earns no points, but no longer says so on screen.
+
 ### Added
 - Landing page builder: **AI Score** (0 to 100). A bar under the page URL in the Page Settings card (same look as the dashboard AI Score: dot, "AI Score: N/100", info button, bar; orange below 40, yellow 40 to 69, green 70+). The info button opens a checklist with points and a tip for every missing item. Points: street address and city 10, country 5, contact details 15 (10 for one channel), business name 10, description 10 (strong 10, medium 6, weak 2), photo or logo 10, opening hours 10, services or products with prices 10 (6 without prices), business type 5, FAQ 5 (3 for fewer than 3 questions), social links 5, reviews, team or video 5. Opening hours are not counted for business types that are not a physical place (Organization, NGO). The score is worked out from the JSON-LD the page would really publish, and sample text ("Lorem ipsum", "Service Name 1", "123 Street Name", ...) earns nothing.
 - Text and Image + Text modules: a small strength bar under the text (Weak under 60 characters, Medium 60 to 159, Strong 160 or more). Only the module that becomes the page description is rated.

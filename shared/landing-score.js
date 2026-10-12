@@ -3,8 +3,8 @@
 //
 // The score is worked out from the JSON-LD that the page would really publish
 // (shared/landing-jsonld.js), so what is scored is what AI assistants will read.
-// A field that only holds sample text ("Lorem ipsum", "Service Name 1", ...)
-// does not count. Hours do not apply to business types that are not a physical
+// Name, address and services that only hold the demo text of the mockup page
+// ("Your Brand", "123 Street Name", "Service Name 1") do not count. Hours do not apply to business types that are not a physical
 // place (Organization, NGO), so their points are left out of the total.
 
 import { buildLandingJsonLd, BUSINESS_TYPE_SCHEMA, pageDescription } from './landing-jsonld.js';
@@ -23,10 +23,9 @@ export const DESC_STRONG_AT = 160;  // about the length search results show
 export function textStrength(text) {
   const t = String(text || '').trim();
   const len = t.length;
-  const placeholder = len > 0 && isPlaceholder(t);
   let level = 'empty';
-  if (len > 0) level = placeholder ? 'weak' : len >= DESC_STRONG_AT ? 'strong' : len >= DESC_MEDIUM_AT ? 'medium' : 'weak';
-  return { level, length: len, placeholder, pct: Math.min(100, Math.round((len / DESC_STRONG_AT) * 100)) };
+  if (len > 0) level = len >= DESC_STRONG_AT ? 'strong' : len >= DESC_MEDIUM_AT ? 'medium' : 'weak';
+  return { level, length: len, pct: Math.min(100, Math.round((len / DESC_STRONG_AT) * 100)) };
 }
 
 const asList = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -67,8 +66,8 @@ export function computeAiScore(state) {
       points: BUSINESS_TYPE_SCHEMA[s.businessType] ? 5 : 0,
       tip: 'Pick a business type in Page Settings so AI knows what kind of business you are.' },
     { id: 'description', label: 'Business description', max: 10,
-      points: desc.level === 'strong' ? 10 : desc.level === 'medium' ? 6 : desc.level === 'weak' && !desc.placeholder ? 2 : 0,
-      tip: desc.placeholder ? 'Replace the sample text with a real description.' : 'Write at least ' + DESC_STRONG_AT + ' characters in your first Text module: what you do, where and for whom.' },
+      points: desc.level === 'strong' ? 10 : desc.level === 'medium' ? 6 : desc.level === 'weak' ? 2 : 0,
+      tip: 'Write at least ' + DESC_STRONG_AT + ' characters in your first Text module: what you do, where and for whom.' },
     { id: 'image', label: 'Photo or logo', max: 10,
       points: asList(biz.image).length ? 10 : 0,
       tip: 'Add a logo, a hero image or a gallery.' },

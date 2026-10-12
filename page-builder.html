@@ -666,7 +666,7 @@ window.SC = SC;
 <div id="aiScoreModal" onclick="if (event.target === this) closeAiScore()">
 <div class="modal-box ai-box">
 <h3>AI Score</h3>
-<p class="ai-lead">How easy it is for AI and search engines to read and recommend this page. It is worked out from the data your page really publishes. Sample text does not count.</p>
+<p class="ai-lead">How easy it is for AI and search engines to read and recommend this page. It is worked out from the data your page really publishes.</p>
 <div id="aiScoreList"></div>
 <div class="modal-actions"><button type="button" onclick="closeAiScore()" class="sidebar-btn btn-outline">Close</button></div>
 </div>
@@ -982,8 +982,7 @@ if (!b || !window.SC) return '';
 if (b.id !== descriptionBlockId()) return '<p class="strength-hint">Extra text. Your page description comes from the first Text module.</p>';
 const r = SC.textStrength(b.data.body);
 if (r.level === 'empty') return '<p class="strength-hint">This text becomes your page description for search and AI. Write ' + SC.DESC_STRONG_AT + '+ characters.</p>';
-const hint = r.placeholder ? 'Sample text. Replace it with your own description.'
-: r.level === 'weak' ? 'Too short. Write at least ' + SC.DESC_MEDIUM_AT + ' characters about what you do, where and for whom.'
+const hint = r.level === 'weak' ? 'Too short. Write at least ' + SC.DESC_MEDIUM_AT + ' characters about what you do, where and for whom.'
 : r.level === 'medium' ? 'Good. ' + SC.DESC_STRONG_AT + ' characters or more is strong.'
 : 'Strong. AI can describe your business well.';
 return '<div class="strength-top"><b style="color:' + STRENGTH_COLOR[r.level] + '">' + STRENGTH_LABEL[r.level] + '</b><span class="strength-bar"><span style="width:' + r.pct + '%;background:' + STRENGTH_COLOR[r.level] + '"></span></span><span>' + r.length + '/' + SC.DESC_STRONG_AT + '</span></div><p class="strength-hint">' + hint + '</p>';
