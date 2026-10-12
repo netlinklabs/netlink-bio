@@ -132,12 +132,21 @@
            The Copy / Preview / Share buttons and the hint sit below it on the card surface. Expanded cards stay full blue. */
         .dash-card-top { margin: -1rem -1rem 0; padding: 1rem 1rem 0; }
         @media (min-width: 1024px) { .dash-card-top { margin: -1.5rem -1.5rem 0; padding: 1.5rem 1.5rem 0; } }
-        .dash-card.is-collapsed .dash-card-head { background: transparent; }
+        .dash-card.is-collapsed .dash-card-head { background: rgba(14,165,233,0.09); } /* soft blue tint under the buttons so the card body does not blend into the page */
+        html.dark .dash-card.is-collapsed .dash-card-head { background: rgba(56,189,248,0.10); }
         .dash-card.is-collapsed .dash-card-top { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%); border-radius: calc(var(--dash-card-radius) - 1px) calc(var(--dash-card-radius) - 1px) 0 0; padding-bottom: 0.875rem; }
         html body .dash-card.is-collapsed .dash-card-head .hover-surface { background: #269fdd !important; border-color: #5fb9e6 !important; color: #ffffff !important; }
         html body .dash-card.is-collapsed .dash-card-head .hover-surface:hover { background: #1b8fcf !important; }
         .dash-card-hint-row { color: #0284c7; }
         html.dark .dash-card-hint-row { color: #38bdf8; }
+        /* Card contrast: stronger border and shadow, lighter dark surface, blue border when collapsed,
+           a thin darker blue line under the blue block, and a bit more space between cards. Plain CSS (no Tailwind rebuild). */
+        html body .card.dash-card { border: 1px solid rgba(15,23,42,0.14); box-shadow: 0 4px 14px rgba(15,23,42,0.09); }
+        html.dark body .card.dash-card { background: #243247; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+        html body .card.dash-card.is-collapsed { border-color: rgba(14,165,233,0.6); }
+        html.dark body .card.dash-card.is-collapsed { border-color: rgba(56,189,248,0.55); }
+        .dash-card.is-collapsed .dash-card-top { border-bottom: 2px solid #0369a1; }
+        @media (max-width: 1023px) { .dash-card { margin-bottom: 1.25rem !important; } }
         .dash-no-anim .dash-card, .dash-no-anim .dash-card * { transition: none !important; }
         @media (prefers-reduced-motion: reduce) { .dash-card, .dash-card * { transition: none !important; } }
         .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
