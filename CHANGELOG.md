@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- `analytics.html`: the Upgrade Plan button on the locked stats overlay (Basic tier) is now a link to `plans` instead of a toast.
+
+### Changed
 - `dashboard.html`: the gift icon on the "Complete Your Profile" card is no longer gold. It now has the same rounded shape and size as the Landing Page card icon, with no fill: a thin blue outline and a blue gift icon (light blue in dark mode). Plain CSS only.
 
 ### Changed
