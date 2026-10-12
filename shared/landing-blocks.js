@@ -192,7 +192,7 @@ export function defaultBlockData(type) {
     case 'gallery': return { title: 'Gallery', images: [], columns: 3, bg: 'soft' };
     case 'cards': return { title: 'Our Services', columns: 2, bg: 'tint', items: [{ title: '', desc: '', price: '', icon: 'fa-solid fa-star' }] };
     case 'image': return { image: '', caption: '', bg: 'white' };
-    case 'location': return { title: 'Location', addressLine: '', addressCity: '', mapLink: '', closingText: '', bg: 'white' };
+    case 'location': return { title: 'Location', addressLine: '', addressCity: '', addressCountry: '', mapLink: '', closingText: '', bg: 'white' };
     case 'hours': return { title: 'Opening Hours', rows: [{ label: 'Mon - Fri', time: '09:00 - 17:00' }], bg: 'soft' };
     case 'contact': return {
       title: 'Contact Us', bg: 'white',

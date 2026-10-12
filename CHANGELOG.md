@@ -7,6 +7,8 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- Landing page builder: the Location module has a new Country selector (uses `shared/countries.js`). The chosen ISO code is published as `addressCountry` in the page JSON-LD. Pages with no country selected publish no `addressCountry`, nothing is guessed. The visible Location block is unchanged.
 ### Changed
 - Landing pages: business types that used `Person` (creator, author, musician, podcaster, artist, freelance, educator, trainer, tutor) now emit a business type in JSON-LD (`Organization` or `ProfessionalService`). A landing page always describes a business. The person stays described by the bio and CV pages, which already link to each other through `sameAs` and a shared `#person` id.
 
