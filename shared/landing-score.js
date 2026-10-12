@@ -3,19 +3,12 @@
 //
 // The score is worked out from the JSON-LD that the page would really publish
 // (shared/landing-jsonld.js), so what is scored is what AI assistants will read.
-// Name, address and services that only hold the demo text of the mockup page
-// ("Your Brand", "123 Street Name", "Service Name 1") do not count. Hours do not apply to business types that are not a physical
-// place (Organization, NGO), so their points are left out of the total.
+// Whatever the user typed counts as filled in. Hours do not apply to business types
+// that are not a physical place (Organization, NGO), so their points are left out of the total.
 
 import { buildLandingJsonLd, BUSINESS_TYPE_SCHEMA, pageDescription } from './landing-jsonld.js';
 
 const NOT_A_PLACE = new Set(['Person', 'Organization', 'NGO']);
-
-// Sample text that ships with the mockup page and the editor placeholders.
-const PLACEHOLDER = /lorem ipsum|dolor sit amet|123 street|street name|your (brand|business|name|headline|tagline)|business name|service name|product name|feature title|tagline goes here|^city,? country$/i;
-export function isPlaceholder(text) {
-  return PLACEHOLDER.test(String(text || ''));
-}
 
 // Description strength, used by the small bar under the Text module and by the score.
 export const DESC_MEDIUM_AT = 60;   // characters
@@ -50,17 +43,17 @@ export function computeAiScore(state) {
   const catalogs = asList(biz.hasOfferCatalog);
   const offers = [];
   catalogs.forEach((c) => asList(c.itemListElement).forEach((o) => offers.push(o)));
-  const realOffers = offers.filter((o) => !isPlaceholder(o.itemOffered && o.itemOffered.name));
+  const realOffers = offers.filter((o) => o.itemOffered && String(o.itemOffered.name || '').trim());
   const pricedOffers = realOffers.filter((o) => o.price !== undefined);
   const channels = asList(biz.contactPoint).length;
   const desc = textStrength(description);
   const faqCount = faq ? asList(faq.mainEntity).length : 0;
   const extras = [biz.review, biz.employee, hasVideo].filter(Boolean).length;
-  const addressOk = (v) => !!v && !isPlaceholder(v);
+  const addressOk = (v) => !!String(v || '').trim();
 
   const items = [
     { id: 'name', label: 'Business name', max: 10,
-      points: name.length >= 2 && !isPlaceholder(name) ? 10 : 0,
+      points: name.length >= 2 ? 10 : 0,
       tip: 'Add your business name in Page Settings.' },
     { id: 'type', label: 'Business type', max: 5,
       points: BUSINESS_TYPE_SCHEMA[s.businessType] ? 5 : 0,

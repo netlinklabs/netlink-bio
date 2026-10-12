@@ -8,6 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Fixed
+- AI Score no longer treats typed text as sample text. Business name, address, city and services count as filled in when they are not empty ("Your Brand" now earns the business name points). The sample text list was removed from `shared/landing-score.js`.
 - AI Score info: the business name tip no longer says "real" ("Add your business name in Page Settings."), and the info text is left aligned (the wrapped labels and tips were centered).
 
 ### Changed
