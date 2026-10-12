@@ -8,7 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
-- `dashboard.html`: locked Landing Page card (Basic and Silver) now says "Upgrade to Create Landing Page" (there is no plan above Gold). The Upgrade Plan button is now a link to `plans` instead of a toast.
+- `dashboard.html`: locked Landing Page card (Basic and Silver) now says "Upgrade to Create Landing Page" (there is no plan above Gold). The Upgrade Plan button is now a link to `plans` instead of a toast. The card subtitle for Basic and Silver is now "Available on the Gold plan" (was "Available from Gold plan and up").
 - `dashboard.html`: collapsed cards (Link in Bio, Professional CV, Landing Page) are no longer full blue. The blue stops right below the URL (Landing Page: right below the subtitle). Copy, Preview and Share keep their blue look and sit below the blue block. The "Tap to expand" hint is now blue text on the card surface. Expanded cards are unchanged. New `.dash-card-top` wrapper, plain CSS only (no Tailwind rebuild).
 
 ### Fixed
