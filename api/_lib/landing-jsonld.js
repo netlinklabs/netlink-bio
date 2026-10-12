@@ -13,6 +13,7 @@
 //                  cards/products      -> hasOfferCatalog (Offer + Product/Service)
 //                  team                -> employee
 //                  testimonials        -> review
+//                  legal               -> legalName, taxID, identifier
 //              FAQPage      (faq modules)
 //              VideoObject  (video modules, YouTube only)
 //
@@ -28,7 +29,7 @@
 
 import {
   safeHttpUrl, safeImageUrl, extractYouTubeId, getChannelHref,
-  SOCIAL_DEFS, CONTACT_CHANNEL_DEFS,
+  SOCIAL_DEFS, CONTACT_CHANNEL_DEFS, legalItems,
   MAX_GALLERY_IMAGES, MAX_CARD_ITEMS, MAX_HOURS_ROWS, MAX_VIDEO_ITEMS, MAX_FAQ_ITEMS,
   MAX_TESTIMONIALS, MAX_PRODUCTS, MAX_TEAM_MEMBERS, MAX_SOCIAL_LINKS,
 } from '../../shared/landing-blocks.js';
@@ -67,6 +68,32 @@ function collectImages(blocks, primary) {
     else if (b.type === 'gallery') items(d, 'images').slice(0, MAX_GALLERY_IMAGES).forEach((g) => add(g.src));
   });
   return out.slice(0, MAX_IMAGES);
+}
+
+// ---------- legal info ----------
+// Company name -> legalName. Each registration number -> identifier
+// (PropertyValue with the label as propertyID). A label that says NPWP or tax id
+// also fills taxID, the dedicated schema.org property. These are numbers the
+// owner typed in, Netlink does not verify them.
+
+const TAX_LABEL = /^(npwp|tax id|taxid|tin)$/i;
+
+function legalInfo(blocks) {
+  const out = { identifiers: [] };
+  blocksOf(blocks, 'legal').forEach((b) => {
+    const name = txt(b.data.legalName, 160);
+    if (name && !out.legalName) out.legalName = name;
+    legalItems(b.data).forEach((it) => {
+      const label = txt(it.label, 40);
+      const number = txt(it.number, 60);
+      if (!label || !number) return;
+      if (TAX_LABEL.test(label) && !out.taxID) out.taxID = number;
+      if (!out.identifiers.some((x) => x.propertyID === label && x.value === number)) {
+        out.identifiers.push({ '@type': 'PropertyValue', propertyID: label, value: number });
+      }
+    });
+  });
+  return out;
 }
 
 // ---------- location ----------
@@ -366,6 +393,13 @@ export function buildLandingJsonLd({ page, content, blocks, pageUrl, name, tagli
   if (contact.telephone) biz.telephone = contact.telephone;
   if (contact.email) biz.email = contact.email;
   if (contact.points.length) biz.contactPoint = contact.points;
+
+  if (!isPerson) {
+    const legal = legalInfo(list);
+    if (legal.legalName) biz.legalName = legal.legalName;
+    if (legal.taxID) biz.taxID = legal.taxID;
+    if (legal.identifiers.length) biz.identifier = legal.identifiers.length === 1 ? legal.identifiers[0] : legal.identifiers;
+  }
 
   const sameAs = socialUrls(list);
   if (sameAs.length) biz.sameAs = sameAs;
