@@ -17,7 +17,7 @@ import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { sitemapHandler } from './_lib/sitemap.js';
 import { withStats } from './_lib/stats.js';
 import { OG_RENDER_VERSION } from './_lib/og-shared.js';
-import { buildLandingJsonLd } from './_lib/landing-jsonld.js';
+import { buildLandingJsonLd, BUSINESS_TYPE_SCHEMA, pageDescription } from './_lib/landing-jsonld.js';
 import {
   MAX_BLOCKS, BLOCKS_CSS, LIGHTBOX_HTML, LIGHTBOX_JS, PRODUCT_MODAL_HTML, BLOCKS_JS,
   renderHeader, renderBlocks, pageVars, safeImageUrl,
@@ -34,27 +34,11 @@ async function supabaseGet(path) {
   return res.json();
 }
 
-// schema.org @type per business_type. This is the only copy (page-builder.html
-// no longer has its own map), so it is what llms.txt/business-page.html mean by
-// "tagged with the correct schema type automatically". Keep it in step with the
-// Business Type dropdown in page-builder.html when a type is added.
-const BUSINESS_TYPE_SCHEMA = {
-  cafe: 'CafeOrCoffeeShop', restaurant: 'Restaurant', bakery: 'Bakery',
-  salon: 'BeautySalon', barbershop: 'HairSalon', yoga: 'ExerciseGym', fitness: 'ExerciseGym',
-  clinic: 'MedicalClinic', property: 'RealEstateAgent', agent: 'RealEstateAgent',
-  umkm: 'Store', florist: 'Florist', hotel: 'LodgingBusiness', travel: 'TravelAgency',
-  event: 'Organization', laundry: 'DryCleaningOrLaundry', repair: 'ProfessionalService',
-  coworking: 'LocalBusiness', workshop: 'EducationalOrganization', consulting: 'ProfessionalService',
-  professional: 'ProfessionalService', nonprofit: 'NGO', web3: 'Organization',
-  // A landing page always describes a business, never a person (the person is
-  // described by the bio and CV pages). Solo creators map to Organization,
-  // solo service providers to ProfessionalService.
-  creator: 'Organization', author: 'Organization', musician: 'Organization',
-  podcaster: 'Organization', artist: 'Organization',
-  freelance: 'ProfessionalService', educator: 'ProfessionalService',
-  trainer: 'ProfessionalService', tutor: 'ProfessionalService',
-  photography: 'ProfessionalService',
-};
+// schema.org @type per business_type: BUSINESS_TYPE_SCHEMA in shared/landing-jsonld.js.
+// It is the only copy (page-builder.html uses it for the AI Score), so it is what
+// llms.txt/business-page.html mean by "tagged with the correct schema type
+// automatically". Keep it in step with the Business Type dropdown in page-builder.html
+// when a type is added.
 
 // Gold and Platinum owners can hide the "Made with Netlink.bio" watermark
 // via the "Hide Footer Link" toggle on privacy.html -- tier alone isn't
@@ -142,11 +126,7 @@ async function handler(req, res) {
   const pageUrl = `https://netlink.bio/page/${page.slug}`;
 
   // Meta description: first text-like block, else the hero subtitle, else the tagline.
-  const textBlock = blocks.find((b) => (b.type === 'text' || b.type === 'imagetext') && b.data && String(b.data.body || '').trim());
-  const heroSub = blocks.find((b) => b.type === 'hero' && b.data && String(b.data.subtitle || '').trim());
-  const desc = textBlock
-    ? String(textBlock.data.body).trim().slice(0, 300)
-    : (heroSub ? String(heroSub.data.subtitle).trim().slice(0, 300) : tagline);
+  const desc = pageDescription(blocks, tagline);
   // Search results and social cards show about 155 characters, so the meta tags get a shorter,
   // word-aligned copy. JSON-LD keeps the full text.
   const metaDesc = shortenAtWord(desc, 155);
