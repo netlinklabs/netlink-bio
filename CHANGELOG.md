@@ -8,7 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Added
+- Landing page builder: new **Legal Info** module (19 modules now). The owner enters a company name and registration numbers (NIB, NPWP, SIUP, or any label plus number, up to 6). It shows as a small card on the page and is published in the JSON-LD as `legalName`, `taxID` (when the label is NPWP or tax id) and `identifier` (PropertyValue, label as `propertyID`). Rows need both a label and a number. The numbers are typed by the owner and are not verified by Netlink. The editor warns not to enter a personal ID number (KTP or NIK).
 - Landing page builder: the Location module has a new Country selector (uses `shared/countries.js`). The chosen ISO code is published as `addressCountry` in the page JSON-LD. Pages with no country selected publish no `addressCountry`, nothing is guessed. The visible Location block is unchanged.
+
 ### Changed
 - Landing pages: business types that used `Person` (creator, author, musician, podcaster, artist, freelance, educator, trainer, tutor) now emit a business type in JSON-LD (`Organization` or `ProfessionalService`). A landing page always describes a business. The person stays described by the bio and CV pages, which already link to each other through `sameAs` and a shared `#person` id.
 

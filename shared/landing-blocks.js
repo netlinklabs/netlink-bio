@@ -25,6 +25,7 @@ export const MAX_PRODUCTS = 12;
 export const MAX_PRODUCT_PHOTOS = 3; // main photo (cropped 1:1 on the card) + 2 more shown in the popup
 export const MAX_TEAM_MEMBERS = 12;
 export const MAX_SOCIAL_LINKS = 12;
+export const MAX_LEGAL_ITEMS = 6;
 
 // Used by the editor's Add Module modal and by the module list.
 export const BLOCK_TYPES = [
@@ -44,6 +45,7 @@ export const BLOCK_TYPES = [
   { type: 'social', label: 'Social Links', icon: 'fa-solid fa-share-nodes', desc: 'Instagram, TikTok, YouTube and more' },
   { type: 'cta', label: 'Call to Action', icon: 'fa-solid fa-bullhorn', desc: 'Big message with one button' },
   { type: 'team', label: 'Team', icon: 'fa-solid fa-users', desc: 'People with photo, name and role' },
+  { type: 'legal', label: 'Legal Info', icon: 'fa-solid fa-scale-balanced', desc: 'Company name and registration numbers' },
   { type: 'wallet', label: 'Wallet Card', icon: 'fa-solid fa-wallet', desc: 'Receive USDC donations or payments' },
   { type: 'divider', label: 'Divider', icon: 'fa-solid fa-grip-lines', desc: 'Line, dots or empty space' },
 ];
@@ -200,6 +202,7 @@ export function defaultBlockData(type) {
     };
     case 'video': return { title: 'Videos', layout: 'single', bg: 'white', items: [{ url: '', title: '', channel: '' }] };
     case 'faq': return { title: 'Frequently Asked Questions', bg: 'white', items: [{ q: '', a: '' }] };
+    case 'legal': return { title: 'Legal information', bg: 'soft', legalName: '', items: [{ label: '', number: '' }] };
     case 'testimonials': return { title: 'What clients say', bg: 'soft', items: [{ name: '', role: '', text: '', rating: 5, photo: '' }] };
     case 'products': return { title: 'Our Packages', columns: 2, bg: 'white', items: [{ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }] };
     case 'social': return { title: 'Follow us', align: 'center', bg: 'white', links: [{ platform: 'instagram', url: '' }] };
@@ -230,6 +233,13 @@ function galleryImages(d, preview) {
 function videoItems(d) {
   return (Array.isArray(d.items) ? d.items : []).filter((it) => it && str(it.url, 2000).trim()).slice(0, MAX_VIDEO_ITEMS);
 }
+// Registration numbers (NIB, NPWP, ...). A row needs both a label and a number.
+export function legalItems(d) {
+  return (Array.isArray(d.items) ? d.items : [])
+    .filter((it) => it && str(it.label).trim() && str(it.number).trim())
+    .slice(0, MAX_LEGAL_ITEMS);
+}
+
 function faqItems(d) {
   return (Array.isArray(d.items) ? d.items : []).filter((it) => it && str(it.q).trim() && str(it.a).trim()).slice(0, MAX_FAQ_ITEMS);
 }
@@ -265,6 +275,7 @@ function isEmpty(block, preview) {
     case 'contact': return activeChannels(d).length === 0;
     case 'video': return videoItems(d).length === 0;
     case 'faq': return faqItems(d).length === 0;
+    case 'legal': return !str(d.legalName).trim() && legalItems(d).length === 0;
     case 'testimonials': return testimonialItems(d).length === 0;
     case 'products': return productItems(d).length === 0;
     case 'social': return socialLinks(d).length === 0;
@@ -288,6 +299,7 @@ const EMPTY_HINTS = {
   contact: 'Contact: turn on a channel and fill it in.',
   video: 'Video: paste a YouTube link.',
   faq: 'FAQ: add a question and an answer.',
+  legal: 'Legal Info: add a company name or a registration number.',
   testimonials: 'Testimonials: add at least one review.',
   products: 'Products: add at least one item with a title.',
   social: 'Social Links: add a link.',
@@ -425,6 +437,13 @@ const RENDERERS = {
       '<div class="address-box">' + (line ? '<p class="address-line">' + escapeHtml(line) + '</p>' : '') + (city ? '<span class="address-city">' + escapeHtml(city) + '</span>' : '') + '</div>' +
       '<a href="' + escapeHtml(mapsLink) + '" target="_blank" rel="noopener" class="direction-btn" onclick="trackClick()"><i class="fa-solid fa-map-location-dot"></i> Open in Maps</a>' +
       (closing ? '<p class="closing-text">' + escapeHtml(closing) + '</p>' : ''));
+  },
+
+  legal(block, d) {
+    const name = str(d.legalName, 160).trim();
+    const rows = legalItems(d).map((it) => '<div class="legal-row"><span>' + escapeHtml(str(it.label, 40)) + '</span><span>' + escapeHtml(str(it.number, 60)) + '</span></div>');
+    if (name) rows.unshift('<div class="legal-row"><span>Company</span><span>' + escapeHtml(name) + '</span></div>');
+    return wrap(block, d, titleHtml(d) + '<div class="legal-card">' + rows.join('') + '</div>');
   },
 
   hours(block, d) {
@@ -759,6 +778,11 @@ export const BLOCKS_CSS = `
 .hours-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; gap: 16px; }
 .hours-row:not(:last-child) { border-bottom: 1px solid #f0f0f0; }
 .hours-row span:first-child { font-size: 14px; color: #666; }
+.legal-card { background: white; border-radius: 16px; padding: 12px 24px; border: 1px solid #f0f0f0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.legal-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; gap: 16px; }
+.legal-row:not(:last-child) { border-bottom: 1px solid #f0f0f0; }
+.legal-row span:first-child { font-size: 14px; color: #666; }
+.legal-row span:last-child { font-size: 14px; font-weight: 600; color: #212121; text-align: right; word-break: break-word; }
 .hours-row span:last-child { font-size: 14px; font-weight: 600; color: #212121; text-align: right; }
 
 .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }

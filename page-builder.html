@@ -1378,6 +1378,7 @@ case 'hours': t = d.rows.map(r => r.label).filter(Boolean).join(', '); break;
 case 'contact': t = LB.CONTACT_CHANNEL_DEFS.filter(c => d.channels[c.key] && d.channels[c.key].checked && d.channels[c.key].value).map(c => c.key).join(', '); break;
 case 'video': t = d.items.filter(i => i.url).length ? d.items.filter(i => i.url).length + ' video(s)' : ''; break;
 case 'faq': t = d.items.filter(i => i.q).map(i => i.q).join(', '); break;
+case 'legal': t = d.legalName || d.items.filter(i => i.label && i.number).map(i => i.label).join(', '); break;
 case 'testimonials': t = d.items.filter(i => i.name).map(i => i.name).join(', ') || (d.items.some(i => i.text) ? 'Review added' : ''); break;
 case 'products': t = d.items.filter(i => i.title).map(i => i.title).join(', '); break;
 case 'social': t = d.links.filter(l => l.url).map(l => l.platform).join(', '); break;
@@ -1793,6 +1794,9 @@ case 'video':
 return fText(id, 'title', 'Title', d.title, 'e.g. Property tour') +
 '<div class="row2">' + fSelect(id, 'layout', 'Layout', d.layout, [['single', '1 per row'], ['grid', '2 columns (desktop)']]) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
 videoEditorHtml(b);
+case 'legal':
+return fText(id, 'title', 'Title', d.title, 'e.g. Legal information') + fText(id, 'legalName', 'Company name', d.legalName, 'e.g. PT Kopi Senja Abadi', 160) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) +
+'<p class="gallery-limit" style="margin:0 0 10px;text-align:left;">Only add business registration numbers you are happy to show to everyone. Do not add a personal ID number (KTP or NIK).</p>' + legalEditorHtml(b);
 case 'faq':
 return fText(id, 'title', 'Title', d.title, 'e.g. Questions') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + faqEditorHtml(b);
 case 'testimonials':
@@ -1934,6 +1938,7 @@ return '<div class="field"><label class="module-toggle" style="padding:6px 0;"><
 const LIST_DEFS = {
 video: { key: 'items', max: () => LB.MAX_VIDEO_ITEMS, make: () => ({ url: '', title: '', channel: '' }), label: 'Video' },
 faq: { key: 'items', max: () => LB.MAX_FAQ_ITEMS, make: () => ({ q: '', a: '' }), label: 'Question' },
+legal: { key: 'items', max: () => LB.MAX_LEGAL_ITEMS, make: () => ({ label: '', number: '' }), label: 'Number' },
 testimonials: { key: 'items', max: () => LB.MAX_TESTIMONIALS, make: () => ({ name: '', role: '', text: '', rating: 5, photo: '' }), label: 'Review' },
 products: { key: 'items', max: () => LB.MAX_PRODUCTS, make: () => ({ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }), label: 'Item' },
 social: { key: 'links', max: () => LB.MAX_SOCIAL_LINKS, make: () => ({ platform: 'instagram', url: '' }), label: 'Link' },
@@ -2024,6 +2029,12 @@ break;
 }
 }
 renderModuleList(); refreshBlockPreview(id); scheduleDraftSave();
+}
+
+function legalEditorHtml(b) {
+const id = b.id, items = b.data.items;
+return items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Number') +
+liText(id, 'items', i, 'label', 'Type, e.g. NIB, NPWP, SIUP', it.label, 40) + liText(id, 'items', i, 'number', 'Registration number', it.number, 60) + '</div>').join('') + listFooter(b);
 }
 
 function faqEditorHtml(b) {
