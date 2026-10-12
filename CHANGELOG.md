@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- `dashboard.html`: "Complete Your Profile" reward card. The target icon is now a gold gift badge. The Claim NET button shows the NET logo (`/assets/net-logo.png`, same as `pay.html`); the button label is now set through `setClaimLabel()` so the logo stays when the text changes. The card has the same border and shadow as the page cards (blue border, surface color unchanged). New "What is NET?" link with an info icon under the button, opening a popup (same style as the AI Score info popup) with the NET logo at the top center. Plain CSS only (no Tailwind rebuild).
+
+### Changed
 - `dashboard.html`: the three page cards (Link in Bio, Professional CV, Landing Page) stand out more from the page background. Stronger border and shadow, lighter card surface in dark mode (`#243247`), blue border and a soft blue tint under the buttons while collapsed, a thin dark blue line under the blue block, and more space between cards on phones (1.25rem). Plain CSS only (no Tailwind rebuild).
 
 ### Changed
