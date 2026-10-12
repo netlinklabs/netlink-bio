@@ -80,6 +80,9 @@ function locationInfo(blocks, isPlace) {
     const city = txt(withAddress.data.addressCity, 200);
     if (line) address.streetAddress = line;
     if (city) address.addressLocality = city;
+    // ISO 3166-1 alpha-2 code picked in the editor. Only a valid code is used, nothing is guessed.
+    const country = String(withAddress.data.addressCountry || '').toUpperCase();
+    if (/^[A-Z]{2}$/.test(country)) address.addressCountry = country;
     out.address = address;
   }
   if (isPlace) {
