@@ -137,8 +137,29 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .toggle-switch.active::after { transform: translateX(22px); }
 
 /* Lightbox & Modals */
-#updateModal, #addModuleModal, #iconPickerModal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(10,10,10,0.95); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
-#updateModal.active, #addModuleModal.active, #iconPickerModal.active { display: flex; }
+#updateModal, #addModuleModal, #iconPickerModal, #aiScoreModal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(10,10,10,0.95); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+#updateModal.active, #addModuleModal.active, #iconPickerModal.active, #aiScoreModal.active { display: flex; }
+/* AI Score: bar under the page URL, info modal and the small strength bar under Text modules */
+.settings-txt .ai-score-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; overflow: visible; }
+.settings-txt .ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: #64748b; }
+.settings-txt .ai-info { background: none; border: 0; padding: 2px 4px; color: var(--muted); cursor: pointer; font-size: 12px; line-height: 1; }
+.settings-txt .ai-bar { display: block; height: 4px; border-radius: 999px; background: rgba(var(--w),0.12); overflow: hidden; margin-top: 4px; }
+.settings-txt .ai-fill { display: block; height: 100%; width: 0; border-radius: 999px; background: #64748b; transition: width 0.5s ease; }
+.ai-box { text-align: left; max-width: 420px; max-height: 85vh; overflow-y: auto; padding: 24px; }
+.ai-box h3 { color: var(--fg); font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.ai-box .ai-lead { color: rgba(var(--w),0.6); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+.ai-row { padding: 9px 0; border-bottom: 1px solid rgba(var(--w),0.07); }
+.ai-row-top { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg); }
+.ai-row-top .ai-pts { margin-left: auto; color: rgba(var(--w),0.5); font-size: 12px; white-space: nowrap; }
+.ai-row-top i { width: 16px; text-align: center; font-size: 13px; }
+.ai-row-tip { margin: 4px 0 0 24px; font-size: 12px; line-height: 1.45; color: rgba(var(--w),0.5); }
+.ai-row.na { opacity: 0.45; }
+.strength { margin: 6px 0 14px; }
+.strength-top { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(var(--w),0.5); }
+.strength-top b { font-weight: 700; }
+.strength-bar { flex: 1; height: 4px; border-radius: 999px; background: rgba(var(--w),0.12); overflow: hidden; }
+.strength-bar span { display: block; height: 100%; border-radius: 999px; transition: width 0.3s ease, background 0.3s; }
+.strength-hint { font-size: 11px; line-height: 1.4; margin-top: 5px; color: rgba(var(--w),0.45); }
 .modal-box, .draft-box { width: 90%; max-width: 380px; background: var(--card); border: 1px solid rgba(var(--w),0.1); border-radius: 20px; padding: 32px; text-align: center; }
 .modal-icon, .draft-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(var(--ac),0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: var(--accent); font-size: 32px; }
 .modal-icon.spinning::after { content: ''; width: 28px; height: 28px; border: 3px solid rgba(var(--ac),0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -283,7 +304,9 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 // preview always matches what gets published. Module scripts run before
 // DOMContentLoaded, which is when the main script below first uses window.LB.
 import * as LB from '/shared/landing-blocks.js';
+import * as SC from '/shared/landing-score.js';
 window.LB = LB;
+window.SC = SC;
 </script>
 </head>
 <body>
@@ -335,7 +358,7 @@ window.LB = LB;
 </div>
 
 <details id="settingsBox" class="settings-box">
-<summary><span class="settings-ico"><i class="fa-solid fa-sliders"></i></span><span class="settings-txt"><b>Page Settings</b><span id="settingsSummaryText">Set your page URL, logo and info</span></span></summary>
+<summary><span class="settings-ico"><i class="fa-solid fa-sliders"></i></span><span class="settings-txt"><b>Page Settings</b><span id="settingsSummaryText">Set your page URL, logo and info</span><span class="ai-score-row"><span id="aiScoreDot" class="ai-dot"></span><span id="aiScoreLabel">AI Score: 0/100</span><button type="button" class="ai-info" onclick="openAiScore(event)" aria-label="What is AI Score?"><i class="fa-solid fa-circle-info"></i></button></span><span class="ai-bar"><span id="aiScoreFill" class="ai-fill"></span></span></span></summary>
 <div class="settings-body">
 <div class="sidebar-section">
 <label class="sidebar-label">Page URL</label>
@@ -640,6 +663,15 @@ window.LB = LB;
 </div>
 </div>
 
+<div id="aiScoreModal" onclick="if (event.target === this) closeAiScore()">
+<div class="modal-box ai-box">
+<h3>AI Score</h3>
+<p class="ai-lead">How easy it is for AI and search engines to read and recommend this page. It is worked out from the data your page really publishes. Sample text does not count.</p>
+<div id="aiScoreList"></div>
+<div class="modal-actions"><button type="button" onclick="closeAiScore()" class="sidebar-btn btn-outline">Close</button></div>
+</div>
+</div>
+
 <div id="updateModal">
 <div class="modal-box">
 <div id="updateIcon" class="modal-icon spinning"></div>
@@ -889,6 +921,76 @@ av.replaceWith(img);
 } else {
 av.textContent = label.charAt(0).toUpperCase();
 }
+}
+
+// ---------- AI Score (shared/landing-score.js) ----------
+// Score bar under the page URL, the info modal with tips, and the small
+// strength bar under Text modules. Everything is worked out from the same
+// JSON-LD the published page will have.
+let aiScoreTimer = null;
+let lastAiScore = null;
+function updateAiScore() {
+clearTimeout(aiScoreTimer);
+aiScoreTimer = setTimeout(() => {
+if (!window.SC) return;
+let r;
+try { r = SC.computeAiScore(state); } catch (e) { return; }
+lastAiScore = r;
+const tier = SC.scoreTier(r.score);
+const label = document.getElementById('aiScoreLabel');
+const dot = document.getElementById('aiScoreDot');
+const fill = document.getElementById('aiScoreFill');
+if (label) label.textContent = 'AI Score: ' + r.score + '/100';
+if (dot) dot.style.background = tier.color;
+if (fill) { fill.style.width = r.score + '%'; fill.style.background = tier.color; }
+refreshStrength();
+if (document.getElementById('aiScoreModal').classList.contains('active')) renderAiScoreList();
+}, 120);
+}
+
+function renderAiScoreList() {
+if (!lastAiScore) return;
+document.getElementById('aiScoreList').innerHTML = lastAiScore.items.map(it => {
+const full = it.points >= it.max, part = it.points > 0 && !full;
+const icon = !it.applies ? 'fa-minus' : full ? 'fa-circle-check' : part ? 'fa-circle-half-stroke' : 'fa-circle';
+const color = !it.applies ? 'inherit' : full ? '#22c55e' : part ? '#eab308' : '#f97316';
+const tip = it.applies && !full ? '<p class="ai-row-tip">' + esc(it.tip) + '</p>' : '';
+const pts = it.applies ? it.points + '/' + it.max : 'n/a';
+return '<div class="ai-row' + (it.applies ? '' : ' na') + '"><div class="ai-row-top"><i class="fa-solid ' + icon + '" style="color:' + color + '"></i><span>' + esc(it.label) + '</span><span class="ai-pts">' + pts + '</span></div>' + tip + '</div>';
+}).join('') + (lastAiScore.isPlace ? '' : '<p class="ai-row-tip" style="margin:10px 0 0;">Opening hours do not apply to this business type, so they are not counted.</p>');
+}
+function openAiScore(ev) {
+if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+if (!lastAiScore && window.SC) lastAiScore = SC.computeAiScore(state);
+renderAiScoreList();
+document.getElementById('aiScoreModal').classList.add('active');
+}
+function closeAiScore() { document.getElementById('aiScoreModal').classList.remove('active'); }
+
+// Small strength bar under the Text and Image + Text modules. Only the module that
+// becomes the page description (the first one with text) is rated.
+function descriptionBlockId() {
+const t = state.blocks.filter(b => b.type === 'text' || b.type === 'imagetext');
+const withBody = t.find(b => String(b.data.body || '').trim());
+return (withBody || t[0] || {}).id;
+}
+const STRENGTH_LABEL = { weak: 'Weak', medium: 'Medium', strong: 'Strong' };
+const STRENGTH_COLOR = { weak: '#f97316', medium: '#eab308', strong: '#22c55e' };
+function strengthInner(id) {
+const b = getBlock(id);
+if (!b || !window.SC) return '';
+if (b.id !== descriptionBlockId()) return '<p class="strength-hint">Extra text. Your page description comes from the first Text module.</p>';
+const r = SC.textStrength(b.data.body);
+if (r.level === 'empty') return '<p class="strength-hint">This text becomes your page description for search and AI. Write ' + SC.DESC_STRONG_AT + '+ characters.</p>';
+const hint = r.placeholder ? 'Sample text. Replace it with your own description.'
+: r.level === 'weak' ? 'Too short. Write at least ' + SC.DESC_MEDIUM_AT + ' characters about what you do, where and for whom.'
+: r.level === 'medium' ? 'Good. ' + SC.DESC_STRONG_AT + ' characters or more is strong.'
+: 'Strong. AI can describe your business well.';
+return '<div class="strength-top"><b style="color:' + STRENGTH_COLOR[r.level] + '">' + STRENGTH_LABEL[r.level] + '</b><span class="strength-bar"><span style="width:' + r.pct + '%;background:' + STRENGTH_COLOR[r.level] + '"></span></span><span>' + r.length + '/' + SC.DESC_STRONG_AT + '</span></div><p class="strength-hint">' + hint + '</p>';
+}
+function strengthHtml(id) { return '<div class="strength" data-id="' + id + '">' + strengthInner(id) + '</div>'; }
+function refreshStrength() {
+document.querySelectorAll('.strength[data-id]').forEach(el => { el.innerHTML = strengthInner(el.getAttribute('data-id')); });
 }
 
 function updateSettingsSummary() {
@@ -1177,6 +1279,7 @@ setFieldHint('hintName', !state.name.trim(),
 
 function onGlobal(key, value) {
 state[key] = value;
+updateAiScore();
 if (key === 'name') updateNameHint();
 if (key === 'currentCurrency') renderPreview();
 else renderHeaderPreview();
@@ -1344,6 +1447,7 @@ document.getElementById('pageHeader').innerHTML = LB.renderHeader(state, { previ
 }
 
 function renderPreview() {
+updateAiScore();
 applyVars();
 renderHeaderPreview();
 document.getElementById('blocksArea').innerHTML = LB.renderBlocks(state, { preview: true });
@@ -1754,11 +1858,11 @@ fText(id, 'badge', 'Badge (optional)', d.badge, 'e.g. Open Today', 60) +
 fUrl(id, 'buttonUrl', 'Button link', d.buttonUrl);
 case 'text':
 return fText(id, 'title', 'Title', d.title, 'e.g. About us') +
-fArea(id, 'body', 'Text', d.body, 'Write your text here...') +
+fArea(id, 'body', 'Text', d.body, 'Write your text here...') + strengthHtml(id) +
 '<div class="row2">' + fSelect(id, 'align', 'Text align', d.align, ALIGN_OPTIONS) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>';
 case 'imagetext':
 return fText(id, 'title', 'Title', d.title, 'e.g. Our story') +
-fArea(id, 'body', 'Text', d.body, 'Write your text here...') +
+fArea(id, 'body', 'Text', d.body, 'Write your text here...') + strengthHtml(id) +
 squareImageField(id, d) +
 '<div class="row2">' + fSelect(id, 'imagePosition', 'Image position', d.imagePosition, [['left', 'Left'], ['right', 'Right']]) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + '</div>' +
 '<div class="row2">' + fText(id, 'buttonLabel', 'Button label', d.buttonLabel, 'optional', 60) + fUrl(id, 'buttonUrl', 'Button link', d.buttonUrl) + '</div>';
@@ -2139,6 +2243,7 @@ liText(id, 'items', i, 'name', 'Name', it.name, 80) + liText(id, 'items', i, 'ro
 // ----- field change handlers -----
 
 function afterBlockEdit(id) {
+updateAiScore();
 refreshBlockPreview(id);
 updateSummary(id);
 scheduleDraftSave();

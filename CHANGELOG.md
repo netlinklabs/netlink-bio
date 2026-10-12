@@ -8,6 +8,13 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Added
+- Landing page builder: **AI Score** (0 to 100). A bar under the page URL in the Page Settings card (same look as the dashboard AI Score: dot, "AI Score: N/100", info button, bar; orange below 40, yellow 40 to 69, green 70+). The info button opens a checklist with points and a tip for every missing item. Points: street address and city 10, country 5, contact details 15 (10 for one channel), business name 10, description 10 (strong 10, medium 6, weak 2), photo or logo 10, opening hours 10, services or products with prices 10 (6 without prices), business type 5, FAQ 5 (3 for fewer than 3 questions), social links 5, reviews, team or video 5. Opening hours are not counted for business types that are not a physical place (Organization, NGO). The score is worked out from the JSON-LD the page would really publish, and sample text ("Lorem ipsum", "Service Name 1", "123 Street Name", ...) earns nothing.
+- Text and Image + Text modules: a small strength bar under the text (Weak under 60 characters, Medium 60 to 159, Strong 160 or more). Only the module that becomes the page description is rated.
+
+### Changed
+- `api/_lib/landing-jsonld.js` moved to `shared/landing-jsonld.js` (the old path re-exports it) so the page builder can use it. `BUSINESS_TYPE_SCHEMA` and the new `pageDescription()` now live there and `api/landing.js` imports them. No change to the published JSON-LD. New file `shared/landing-score.js`.
+
+### Added
 - Landing page builder: new **Legal Info** module (19 modules now). The owner enters a company name and registration numbers (NIB, NPWP, SIUP, or any label plus number, up to 6). It shows as a small card on the page and is published in the JSON-LD as `legalName`, `taxID` (when the label is NPWP or tax id) and `identifier` (PropertyValue, label as `propertyID`). Rows need both a label and a number. The numbers are typed by the owner and are not verified by Netlink. The editor warns not to enter a personal ID number (KTP or NIK).
 - Landing page builder: the Location module has a new Country selector (uses `shared/countries.js`). The chosen ISO code is published as `addressCountry` in the page JSON-LD. Pages with no country selected publish no `addressCountry`, nothing is guessed. The visible Location block is unchanged.
 
