@@ -147,6 +147,19 @@
         html.dark body .card.dash-card.is-collapsed { border-color: rgba(56,189,248,0.55); }
         .dash-card.is-collapsed .dash-card-top { border-bottom: 2px solid #0369a1; }
         @media (max-width: 1023px) { .dash-card { margin-bottom: 1.25rem !important; } }
+        /* Reward card (Complete Your Profile): same border and shadow as the page cards, surface color unchanged (no blue background). */
+        html body .card.dash-reward-card { border: 1px solid rgba(14,165,233,0.6); box-shadow: 0 4px 14px rgba(15,23,42,0.09); }
+        html.dark body .card.dash-reward-card { border: 1px solid rgba(56,189,248,0.55); box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+        .reward-gift-badge { width: 2rem; height: 2rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 0.625rem; background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #b45309 100%); box-shadow: 0 2px 8px rgba(245,158,11,0.45), inset 0 1px 0 rgba(255,255,255,0.55); }
+        .reward-gift-badge svg { width: 1.125rem; height: 1.125rem; color: #ffffff; filter: drop-shadow(0 1px 1px rgba(120,53,15,0.5)); }
+        .claim-net-logo { width: 1.25rem; height: 1.25rem; border-radius: 999px; flex-shrink: 0; }
+        #claimNetBtn:disabled .claim-net-logo { opacity: 0.5; filter: grayscale(1); }
+        .net-info-link { display: flex; align-items: center; justify-content: center; gap: 0.25rem; margin: 0.75rem auto 0; font-size: 0.75rem; color: #0284c7; cursor: pointer; background: none; border: 0; padding: 0.25rem 0.5rem; }
+        html.dark .net-info-link { color: #38bdf8; }
+        .net-info-link:hover { text-decoration: underline; }
+        .net-info-link svg { width: 0.875rem; height: 0.875rem; }
+        .net-info-head { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+        .net-info-logo { width: 3.5rem; height: 3.5rem; border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
         .dash-no-anim .dash-card, .dash-no-anim .dash-card * { transition: none !important; }
         @media (prefers-reduced-motion: reduce) { .dash-card, .dash-card * { transition: none !important; } }
         .toast { position: fixed; bottom: 84px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; z-index: 60; max-width: 320px; }
@@ -651,10 +664,10 @@
             </div></div>
         </div>
 
-        <div class="card dash-surface p-4 lg:p-6 mb-4 lg:mb-6">
+        <div class="card dash-reward-card dash-surface p-4 lg:p-6 mb-4 lg:mb-6">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
+                    <span class="reward-gift-badge"><i data-lucide="gift"></i></span>
                     <h3 class="font-semibold text-primary">Complete Your Profile</h3>
                 </div>
                 <span id="completionPct" class="text-sm text-blue-500 font-medium">0%</span>
@@ -676,10 +689,11 @@
                     <i data-lucide="circle" class="w-3 h-3"></i> Connect Wallet
                 </span>
             </div>
-            <button id="claimNetBtn" disabled onclick="claimNetReward()" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed">
-                Claim NET
+            <button id="claimNetBtn" disabled onclick="claimNetReward()" class="w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed flex items-center justify-center gap-2">
+                <img src="/assets/net-logo.png" alt="" class="claim-net-logo"><span id="claimNetLabel">Claim NET</span>
             </button>
             <p id="claimStatusText" class="text-xs text-secondary mt-2 hidden"></p>
+            <button type="button" onclick="openNetInfoModal()" class="net-info-link"><i data-lucide="info"></i><span>What is NET?</span></button>
         </div>
     </main>
 
@@ -810,6 +824,18 @@
                 <button type="button" class="cert-btn-cancel" onclick="closeAvatarCropper()">Cancel</button>
                 <button id="avatarCropSaveBtn" type="button" class="cert-btn-save" onclick="confirmAvatarCrop()">Save Photo</button>
             </div>
+        </div>
+    </div>
+
+    <!-- NET info modal -- opened from "What is NET?" under the Claim NET button. -->
+    <div id="netInfoModal" class="modal">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4 relative">
+            <button onclick="closeNetInfoModal()" class="absolute text-secondary hover:text-primary transition" style="top:1rem;right:1rem" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="net-info-head">
+                <img src="/assets/net-logo.png" alt="NET" class="net-info-logo">
+                <h3 class="text-lg font-semibold text-primary">What is NET?</h3>
+            </div>
+            <p class="text-sm text-secondary text-center">NET (Netlink Ecosystem Token) is a token on the Polygon blockchain network that serves as the utility token across the entire ecosystem developed by Netlink.</p>
         </div>
     </div>
 
@@ -2312,14 +2338,19 @@ window.openNetlinkPay = openNetlinkPay;
             const claimBtn = document.getElementById('claimNetBtn');
             if (pct === 100) {
                 claimBtn.disabled = false;
-                claimBtn.className = 'w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm';
+                claimBtn.className = 'w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2';
             } else {
                 claimBtn.disabled = true;
-                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
+                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed flex items-center justify-center gap-2';
             }
 
             checkClaimStatus();
             refreshAiScores();
+        }
+
+        // Only the label changes, so the NET logo inside the button stays.
+        function setClaimLabel(text) {
+            document.getElementById('claimNetLabel').textContent = text;
         }
 
         async function checkClaimStatus() {
@@ -2335,8 +2366,8 @@ window.openNetlinkPay = openNetlinkPay;
 
             if (existing) {
                 claimBtn.disabled = true;
-                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed';
-                claimBtn.textContent = existing.status === 'claimed' ? 'Claimed' : 'Claim Pending Review';
+                claimBtn.className = 'w-full py-3 bg-gray-300 text-gray-500 font-medium rounded-xl transition text-sm cursor-not-allowed flex items-center justify-center gap-2';
+                setClaimLabel(existing.status === 'claimed' ? 'Claimed' : 'Claim Pending Review');
                 statusText.textContent = existing.status === 'claimed'
                     ? 'Your 20 NET has been sent.'
                     : 'Your claim is submitted and pending review.';
@@ -2349,7 +2380,7 @@ window.openNetlinkPay = openNetlinkPay;
             const claimBtn = document.getElementById('claimNetBtn');
             const statusText = document.getElementById('claimStatusText');
             claimBtn.disabled = true;
-            claimBtn.textContent = 'Submitting...';
+            setClaimLabel('Submitting...');
 
             const { error } = await supabaseClient
                 .from('rewards')
@@ -2369,7 +2400,7 @@ window.openNetlinkPay = openNetlinkPay;
                     showToast('Failed to submit claim');
                 }
                 claimBtn.disabled = false;
-                claimBtn.textContent = 'Claim NET';
+                setClaimLabel('Claim NET');
                 return;
             }
 
@@ -2768,6 +2799,14 @@ window.openNetlinkPay = openNetlinkPay;
             document.getElementById('aiScoreInfoModal').classList.add('active');
         }
 
+        function openNetInfoModal() {
+            document.getElementById('netInfoModal').classList.add('active');
+        }
+
+        function closeNetInfoModal() {
+            document.getElementById('netInfoModal').classList.remove('active');
+        }
+
         function closeAiScoreInfoModal() {
             document.getElementById('aiScoreInfoModal').classList.remove('active');
         }
@@ -2946,6 +2985,10 @@ window.openNetlinkPay = openNetlinkPay;
 
         document.getElementById('templateModal').addEventListener('click', function(e) {
             if (e.target === this) closeTemplateModal();
+        });
+
+        document.getElementById('netInfoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeNetInfoModal();
         });
 
         document.getElementById('aiScoreInfoModal').addEventListener('click', function(e) {
