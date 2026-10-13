@@ -1413,7 +1413,7 @@ const file = event.target.files[0];
 event.target.value = '';
 if (!file) return;
 try {
-state.logoImage = await readPhoto(file, 600);
+state.logoImage = await readLogo(file);
 document.getElementById('logoFileName').textContent = file.name;
 syncLogoUi();
 renderHeaderPreview();
@@ -1455,8 +1455,11 @@ r.readAsDataURL(blob);
 
 // Resizes + re-encodes as JPEG so a multi-MB phone photo never ends up in the
 // browser draft or in storage. A white background is painted first so
-// transparent PNG logos do not turn black.
-function compressImageBlob(blob, maxDim = 1600, quality = 0.82) {
+// transparent PNG images do not turn black.
+// keepAlpha (used for the logo only): no white background, encoded as PNG so the
+// transparency survives. JPEG has no alpha, so this is the only way a transparent
+// logo can show the header color behind it.
+function compressImageBlob(blob, maxDim = 1600, quality = 0.82, keepAlpha = false) {
 return new Promise((resolve, reject) => {
 const img = new Image();
 img.onload = () => {
@@ -1469,12 +1472,14 @@ const canvas = document.createElement('canvas');
 canvas.width = width;
 canvas.height = height;
 const ctx = canvas.getContext('2d');
+if (!keepAlpha) {
 ctx.fillStyle = '#ffffff';
 ctx.fillRect(0, 0, width, height);
+}
 ctx.drawImage(img, 0, 0, width, height);
 canvas.toBlob(
 (out) => out ? resolve(out) : reject(new Error('Image compression failed')),
-'image/jpeg',
+keepAlpha ? 'image/png' : 'image/jpeg',
 quality
 );
 URL.revokeObjectURL(img.src);
@@ -1489,6 +1494,22 @@ if (!file || !file.type || !file.type.startsWith('image/')) throw new Error('Ple
 if (file.size > 20 * 1024 * 1024) throw new Error('Image is too large (max 20 MB).');
 const blob = await compressImageBlob(file, maxDim || 1600);
 return blobToDataURL(blob);
+}
+
+// Logo upload. PNG, WebP and GIF logos can have a transparent background, so they stay PNG with their
+// transparency (the header color then shows behind the logo). If the PNG is still too big at 600 px it is
+// scaled down in steps, and only as a last resort it falls back to the JPEG path (white background).
+const LOGO_MAX_BYTES = 600 * 1024;
+async function readLogo(file) {
+if (!file || !file.type || !file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+if (file.size > 20 * 1024 * 1024) throw new Error('Image is too large (max 20 MB).');
+if (/^image\/(png|webp|gif)$/.test(file.type)) {
+for (const dim of [600, 400, 300]) {
+const out = await compressImageBlob(file, dim, 0.82, true);
+if (out.size <= LOGO_MAX_BYTES) return blobToDataURL(out);
+}
+}
+return readPhoto(file, 600);
 }
 
 function dataURLtoBlob(dataUrl) {
@@ -2464,7 +2485,9 @@ function randomName() { return Math.random().toString(36).slice(2, 10); }
 // Uploads one data-URL image and returns its public URL.
 async function uploadLandingImage(dataUrl, tag) {
 const blob = dataURLtoBlob(dataUrl);
-const path = `${currentUser.id}/${tag}-${randomName()}.jpg`;
+// File extension follows the real type (a transparent logo is a PNG, everything else a JPEG).
+const ext = blob.type === 'image/png' ? 'png' : (blob.type === 'image/webp' ? 'webp' : 'jpg');
+const path = `${currentUser.id}/${tag}-${randomName()}.${ext}`;
 const { error } = await supabaseClient.storage
 .from('landing-images')
 .upload(path, blob, { upsert: true, contentType: blob.type || 'image/jpeg' });

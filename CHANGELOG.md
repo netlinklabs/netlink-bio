@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Fixed
+- `page-builder.html`: a logo with a transparent background (PNG, WebP or GIF) now keeps its transparency, so with **Use brand color for the header** on, the header color shows behind the logo. Before, every image was painted on a white background and saved as a JPEG (JPEG has no transparency), so the logo always showed a white box. The logo now goes through the new `readLogo()`: PNG output without the white background, scaled down in steps (600, 400, 300 px) to stay under 600 KB, and only if that is still too big it falls back to the old JPEG with a white background. JPEG logos behave as before. Hero, gallery and other photos are unchanged. The uploaded file name now ends with `.png` or `.webp` when the image is one (the `landing-images` bucket already allows both). A logo uploaded before this fix is already a JPEG with a white background, so it has to be uploaded again.
+
+### Fixed
 - `shared/landing-blocks.js` (`renderHeader`): with **Use brand color for the header** on, an uploaded logo no longer gets a white backing. A logo with a transparent background (for example a PNG) now shows the brand color behind it, like the header itself. The white backing added in the previous change is removed. Only the letter badge (no logo uploaded) still swaps its colors. A logo that is a solid image (for example a JPG) keeps its own background. Header with the checkbox off is unchanged.
 
 ### Added
