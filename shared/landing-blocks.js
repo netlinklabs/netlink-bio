@@ -9,7 +9,7 @@
 //
 // Content shape (v2):
 //   { v: 2, name, tagline, businessType, primary, currentCurrency,
-//     logoImage, logoShape, showLogoText,
+//     logoImage, logoShape, showLogoText, headerBrand,
 //     blocks: [ { id, type, data }, ... ] }   <- array order = page order
 
 import { qrSvgDataUri } from './qr.js';
@@ -667,8 +667,14 @@ export function renderHeader(content, opts) {
   const logoInner = logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(name) + '">' : escapeHtml(name.charAt(0).toUpperCase());
   const logoClass = c.logoShape === 'landscape' ? 'logo-box landscape' : 'logo-box';
   const textClass = c.showLogoText === false ? 'header-text sr-only' : 'header-text';
-  return '<header class="page-header"><div class="section-inner" style="display:flex;align-items:center;justify-content:space-between;">' +
-    '<div class="header-brand"><div class="' + logoClass + '" style="background:' + (logo ? 'transparent' : 'var(--primary)') + ';color:var(--on-primary);">' + logoInner + '</div>' +
+  // Brand header (checkbox in Page Settings): the header background is the brand color. A logo photo gets a
+  // white backing so any logo stays readable, and the letter badge swaps its colors so it does not vanish.
+  const brand = c.headerBrand === true;
+  const logoStyle = brand
+    ? (logo ? 'background:#FFFFFF;' : 'background:var(--on-primary);color:var(--primary);')
+    : 'background:' + (logo ? 'transparent' : 'var(--primary)') + ';color:var(--on-primary);';
+  return '<header class="page-header' + (brand ? ' header-brand-bg' : '') + '"><div class="section-inner" style="display:flex;align-items:center;justify-content:space-between;">' +
+    '<div class="header-brand"><div class="' + logoClass + '" style="' + logoStyle + '">' + logoInner + '</div>' +
     '<div class="' + textClass + '"><h1>' + escapeHtml(name) + '</h1>' + (tagline ? '<p>' + escapeHtml(tagline) + '</p>' : '') + '</div></div></div></header>';
 }
 
@@ -731,6 +737,9 @@ export const BLOCKS_CSS = `
 .logo-box.landscape img { width: auto; height: 100%; object-fit: contain; }
 .header-text h1 { font-size: 15px; font-weight: 700; color: #212121; line-height: 1.2; }
 .header-text p { font-size: 12px; color: #999; }
+.page-header.header-brand-bg { background: var(--primary); border-bottom-color: transparent; }
+.page-header.header-brand-bg .header-text h1 { color: var(--on-primary); }
+.page-header.header-brand-bg .header-text p { color: var(--on-primary); opacity: 0.8; }
 
 .blk { padding: 40px 24px; }
 .bg-white { background: #ffffff; }

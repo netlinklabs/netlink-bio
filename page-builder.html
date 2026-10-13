@@ -649,7 +649,14 @@ window.SC = SC;
 <button class="color-btn" style="background: #A8680F;" onclick="setPrimary('#A8680F')" data-color="#A8680F" title="Ochre" aria-label="Ochre"></button>
 <button class="color-btn" style="background: #C9B08A;" onclick="setPrimary('#C9B08A')" data-color="#C9B08A" title="Warm sand" aria-label="Warm sand"></button>
 <button class="color-btn" style="background: #212121;" onclick="setPrimary('#212121')" data-color="#212121" title="Charcoal" aria-label="Charcoal"></button>
+<button class="color-btn" style="background: #E8A0B4;" onclick="setPrimary('#E8A0B4')" data-color="#E8A0B4" title="Blush pink" aria-label="Blush pink"></button>
+<button class="color-btn" style="background: #B3262E;" onclick="setPrimary('#B3262E')" data-color="#B3262E" title="Ruby" aria-label="Ruby"></button>
+<button class="color-btn" style="background: #E8B931;" onclick="setPrimary('#E8B931')" data-color="#E8B931" title="Honey" aria-label="Honey"></button>
+<button class="color-btn" style="background: #6B7280;" onclick="setPrimary('#6B7280')" data-color="#6B7280" title="Slate grey" aria-label="Slate grey"></button>
+<button class="color-btn" style="background: #EE8A2E;" onclick="setPrimary('#EE8A2E')" data-color="#EE8A2E" title="Tangerine" aria-label="Tangerine"></button>
+<button class="color-btn" style="background: #5AA9E6;" onclick="setPrimary('#5AA9E6')" data-color="#5AA9E6" title="Sky blue" aria-label="Sky blue"></button>
 </div>
+<label class="module-toggle" style="padding: 12px 0 0;"><input type="checkbox" id="headerBrandToggle" onchange="setHeaderBrand(this.checked)"><span>Use brand color for the header</span></label>
 </div>
 
 </div>
@@ -747,7 +754,7 @@ window.SC = SC;
 // ==========================================
 // Landing Page builder (Gold). The page is a list of modules ("blocks").
 // content = { v: 2, name, tagline, businessType, primary, currentCurrency,
-//             logoImage, logoShape, showLogoText, slug, blocks: [{id,type,data}] }
+//             logoImage, logoShape, showLogoText, headerBrand, slug, blocks: [{id,type,data}] }
 // Array order = page order. Rendering is shared with the public page via
 // shared/landing-blocks.js (window.LB).
 //
@@ -912,7 +919,7 @@ function newId() { return 'b' + Math.random().toString(36).slice(2, 9); }
 
 function emptyState() {
 return { v: 2, name: '', tagline: '', businessType: '', primary: '#5D4037', currentCurrency: 'IDR',
-logoImage: null, logoShape: 'square', showLogoText: true, slug: '', blocks: [] };
+logoImage: null, logoShape: 'square', showLogoText: true, headerBrand: false, slug: '', blocks: [] };
 }
 let state = emptyState();
 
@@ -931,6 +938,7 @@ if (typeof c.currentCurrency === 'string') s.currentCurrency = c.currentCurrency
 if (typeof c.logoImage === 'string') s.logoImage = c.logoImage;
 if (c.logoShape === 'landscape') s.logoShape = 'landscape';
 if (c.showLogoText === false) s.showLogoText = false;
+if (c.headerBrand === true) s.headerBrand = true;
 const seen = new Set();
 (Array.isArray(c.blocks) ? c.blocks : []).slice(0, LB.MAX_BLOCKS).forEach(b => {
 if (!b || !LB.BLOCK_TYPES.some(t => t.type === b.type)) return;
@@ -1376,6 +1384,13 @@ function setPrimary(color) {
 state.primary = color;
 document.querySelectorAll('.color-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.color === color));
 applyVars();
+scheduleDraftSave();
+}
+
+// Checkbox under Brand Color: the page header uses the brand color as its background.
+function setHeaderBrand(on) {
+state.headerBrand = !!on;
+renderHeaderPreview();
 scheduleDraftSave();
 }
 
@@ -2612,6 +2627,7 @@ document.getElementById('businessType').value = state.businessType || '';
 document.getElementById('currencySelect').value = state.currentCurrency;
 document.getElementById('inputSlug').value = state.slug;
 document.querySelectorAll('.color-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.color === state.primary));
+document.getElementById('headerBrandToggle').checked = !!state.headerBrand;
 syncLogoUi();
 updateNameHint();
 updateDraftStatus();
