@@ -17,6 +17,8 @@ export const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 // Bump when the OG card design or behaviour changes: every profile gets a fresh
 // dynamic URL (&r=N) and a new hash, so stored images are regenerated too.
 export const OG_RENDER_VERSION = 5;
+// Landing page card only (type=page). Bump when that card changes; bio/CV cards keep their own version.
+export const PAGE_OG_RENDER_VERSION = 2;
 
 // Header banner (Silver+) is only used for the bio card. Same rules as
 // effectiveBannerUrl() in api/bio.js: tier must still be Silver/Gold and the

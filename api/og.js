@@ -115,8 +115,8 @@ const CACHE_DEGRADED = 'public, max-age=30, s-maxage=30';
 
 // ---------------------------------------------------------------------------
 // Landing page card (type=page): the hero banner of a Gold landing page
-// (netlink.bio/page/:slug) with a dark overlay, the business name and tagline
-// at the bottom left and the Netlink logo at the top right.
+// (netlink.bio/page/:slug) with a light overlay, the business name and tagline
+// at the bottom left and the owner's own logo (or the Netlink logo) at the top right.
 // ---------------------------------------------------------------------------
 
 // The server only fetches hero images that live in our own public storage, so
@@ -124,10 +124,10 @@ const CACHE_DEGRADED = 'public, max-age=30, s-maxage=30';
 const STORAGE_PUBLIC_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/`;
 const PAGE_HERO_MAX_BYTES = 4 * 1024 * 1024;
 
-// Dark overlay: 40% black at the top to 70% black at the bottom (55% on
-// average), so the title and tagline at the bottom stay readable on any photo.
-const OVERLAY_TOP = 0.4;
-const OVERLAY_BOTTOM = 0.7;
+// Dark overlay: 15% black at the top to 50% black at the bottom, so the photo
+// stays bright and the title and tagline at the bottom stay readable.
+const OVERLAY_TOP = 0.15;
+const OVERLAY_BOTTOM = 0.5;
 
 function pageOverlaySvg() {
   return Buffer.from(
@@ -202,12 +202,46 @@ async function loadPageBackground(heroUrl, primary, sharp) {
   return { background: withOverlay, degraded };
 }
 
+// The page owner's own logo (content.logoImage) replaces the Netlink logo on the
+// card. Only logos in our own public storage are fetched (same rule as the hero).
+// Returns { src, w, h } sized to fit the 220x68 logo slot (never enlarged past
+// 2x of what is shown), or null so the caller keeps the Netlink logo.
+function pickLogoUrl(content) {
+  const u = String((content && content.logoImage) || '').trim();
+  return u.startsWith(STORAGE_PUBLIC_PREFIX) && u.length <= 2000 ? u : '';
+}
+
+async function loadPageLogo(url, sharp) {
+  if (!url) return null;
+  let raw = null;
+  try { raw = await fetchBannerOnce(url, 1024 * 1024); } catch (e) { /* keep Netlink logo */ }
+  if (!raw) return null;
+  try {
+    const png = await sharp(raw)
+      .resize(LOGO_W * 2, LOGO_H * 2, { fit: 'inside', withoutEnlargement: true })
+      .png()
+      .toBuffer({ resolveWithObject: true });
+    const { width, height } = png.info;
+    if (!width || !height) return null;
+    const scale = Math.min(LOGO_W / width, LOGO_H / height, 0.5);
+    return {
+      src: toDataUri(png.data, 'image/png'),
+      w: Math.max(1, Math.round(width * scale)),
+      h: Math.max(1, Math.round(height * scale)),
+    };
+  } catch (e) {
+    console.error('[og] logo decode failed', e && e.message);
+    return null;
+  }
+}
+
 function clip(text, max) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   return t.length > max ? t.slice(0, max - 1).trimEnd() + '…' : t;
 }
 
 function buildPageCard({ logo, title, tagline }) {
+  // logo is { src, w, h }; the box is anchored to the top right corner.
   return h('div', {
       style: {
         height: '100%', width: '100%', display: 'flex', flexDirection: 'column',
@@ -215,7 +249,7 @@ function buildPageCard({ logo, title, tagline }) {
       },
     },
       logo
-        ? h('img', { src: logo, width: LOGO_W, height: LOGO_H, style: { position: 'absolute', top: 44, right: 56, width: LOGO_W, height: LOGO_H } })
+        ? h('img', { src: logo.src, width: logo.w, height: logo.h, style: { position: 'absolute', top: 44, right: 56, width: logo.w, height: logo.h } })
         : null,
       h('div', { style: { display: 'flex', fontSize: 66, fontWeight: 800, color: 'white', lineHeight: 1.1, maxWidth: 1000 } }, title),
       tagline
@@ -233,12 +267,15 @@ async function renderPageCard(page, ms) {
 
   const sharp = (await import('sharp')).default;
   let t = Date.now();
-  const { background, degraded } = await loadPageBackground(pickHeroUrl(content), primary, sharp);
+  const [{ background, degraded }, ownLogo] = await Promise.all([
+    loadPageBackground(pickHeroUrl(content), primary, sharp),
+    loadPageLogo(pickLogoUrl(content), sharp),
+  ]);
   lap('assets', t);
 
   t = Date.now();
   const { ImageResponse } = await import('@vercel/og');
-  const element = buildPageCard({ logo: OG_LOGO_DATA_URI, title, tagline });
+  const element = buildPageCard({ logo: ownLogo || { src: OG_LOGO_DATA_URI, w: LOGO_W, h: LOGO_H }, title, tagline });
   const png = Buffer.from(await new ImageResponse(element, { width: 1200, height: 630 }).arrayBuffer());
   lap('satori', t);
 

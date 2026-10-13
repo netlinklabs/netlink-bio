@@ -16,7 +16,7 @@ import { recordEvent } from './_lib/analytics.js';
 import { supabaseAuthHeaders } from './_lib/public-db.js';
 import { sitemapHandler } from './_lib/sitemap.js';
 import { withStats } from './_lib/stats.js';
-import { OG_RENDER_VERSION } from './_lib/og-shared.js';
+import { PAGE_OG_RENDER_VERSION } from './_lib/og-shared.js';
 import { buildLandingJsonLd, BUSINESS_TYPE_SCHEMA, pageDescription } from './_lib/landing-jsonld.js';
 import {
   MAX_BLOCKS, BLOCKS_CSS, LIGHTBOX_HTML, LIGHTBOX_JS, PRODUCT_MODAL_HTML, BLOCKS_JS,
@@ -143,7 +143,7 @@ async function handler(req, res) {
   // Social preview: api/og.js renders the hero banner with the name, tagline and Netlink logo.
   // `v` (updated_at) makes the URL change after every edit, so caches never serve an old card.
   const ogVer = Date.parse(page.updated_at) || 0;
-  const ogCard = `https://netlink.bio/api/og?type=page&slug=${encodeURIComponent(page.slug)}&r=${OG_RENDER_VERSION}&v=${ogVer}`;
+  const ogCard = `https://netlink.bio/api/og?type=page&slug=${encodeURIComponent(page.slug)}&r=p${PAGE_OG_RENDER_VERSION}&v=${ogVer}`;
 
   // ---- JSON-LD (schema.org) ----
   // @type comes from BUSINESS_TYPE_SCHEMA, keyed by the `business_type`
