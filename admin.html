@@ -56,6 +56,10 @@
         @media (max-width: 639px) {
             main { padding-left: 12px !important; padding-right: 12px !important; }
             .tab-btn { padding: 9px 8px; font-size: 12.5px; }
+            /* Toolbar row: keep the timeframe buttons and the Security button on one line on phones */
+            #toolRow, #rangeBtns { flex-wrap: nowrap; gap: 6px; }
+            #toolRow .range-btn { padding: 6px 9px; font-size: 11.5px; }
+            .range-btn.sec-btn svg { display: none; }
             .row { padding: 12px; }
             .btn { min-height: 40px; }
             .field { min-height: 40px; font-size: 16px; }
@@ -87,6 +91,9 @@
         html.dark { --series-1: #3987e5; --series-2: #199e70; --series-3: #9b82e8; --warn: #fbbf24; --crit: #f87171; }
         .range-btn { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #64748b; border: 1px solid rgba(100,116,139,0.3); }
         .range-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+        /* Security button: same pill look as the timeframe buttons, pushed to the far right of the toolbar row */
+        .range-btn.sec-btn { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+        .range-btn.sec-btn.hidden { display: none; }
         .ov-title { font-size: 13px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: #64748b; margin: 20px 0 8px; }
         .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
         @media (min-width: 640px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -205,14 +212,19 @@
         <div id="adminView" class="hidden">
             <div id="tabs" class="tabs-bar"></div>
 
-            <!-- Overview -->
-            <section id="tab-overview" class="hidden">
-                <div class="flex gap-2 mb-2 flex-wrap" id="rangeBtns">
+            <!-- Toolbar row: report timeframe on the left (Overview only), Security button on the far right -->
+            <div id="toolRow" class="flex items-center gap-2 mb-2 flex-wrap hidden">
+                <div class="flex gap-2 flex-wrap" id="rangeBtns">
                     <button class="range-btn" data-range="today">Today</button>
                     <button class="range-btn active" data-range="7d">7D</button>
                     <button class="range-btn" data-range="30d">30D</button>
                     <button class="range-btn" data-range="1y">1Y</button>
                 </div>
+                <button id="secBtn" type="button" class="range-btn sec-btn hidden" title="Early warning signals and protections"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Security</button>
+            </div>
+
+            <!-- Overview -->
+            <section id="tab-overview" class="hidden">
                 <p id="ovError" class="hidden text-sm text-red-500 mb-2"></p>
                 <div id="overview"><p class="text-sm text-muted">Loading...</p></div>
             </section>
@@ -376,7 +388,8 @@
         window.copyText = copy;
 
         // ---------- tabs ----------
-        // Main tabs: Overview, Finance, Community, Security, Audit log. Finance and Community hold sub-tabs.
+        // Main tabs: Overview, Finance, Community, Audit log. Finance and Community hold sub-tabs.
+        // Security (super_admin) is not a tab: it is a button on the toolbar row, see toolRow.
         const SUBTAB_PARENT = { orders: 'finance', payments: 'finance', ambassadors: 'community', rewards: 'community' };
         const subActive = { finance: 'orders', community: null };
         let mainTabs = [];
@@ -387,7 +400,6 @@
             if (isFinance()) mainTabs.push({ id: 'overview', label: 'Overview' });
             mainTabs.push({ id: 'finance', label: 'Finance' });
             if (has('super_admin', 'support') || isFinance()) mainTabs.push({ id: 'community', label: 'Community' });
-            if (has('super_admin')) mainTabs.push({ id: 'security', label: 'Security' });
             if (has('super_admin')) mainTabs.push({ id: 'audit', label: 'Audit log' });
 
             subTabs.finance = [{ id: 'orders', label: 'Orders' }];
@@ -405,6 +417,7 @@
                 box.innerHTML = subTabs[g].map((t) => `<button class="sub-btn" data-sub="${t.id}">${t.label}<span id="badge-${t.id}"></span></button>`).join('');
                 box.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => switchSub(g, b.dataset.sub)));
             });
+            $('secBtn').addEventListener('click', () => switchTab('security'));
             switchTab(mainTabs[0].id);
         }
 
@@ -428,6 +441,12 @@
             activeTab = id;
             ['overview', 'finance', 'community', 'security', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
             $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
+            // Toolbar row: timeframe buttons only on Overview, Security button (super_admin) on every tab.
+            const canSec = has('super_admin');
+            show('rangeBtns', id === 'overview');
+            show('secBtn', canSec);
+            $('secBtn').classList.toggle('active', id === 'security');
+            show('toolRow', id === 'overview' || canSec);
             if (id === 'overview') loadOverview();
             if (id === 'finance' || id === 'community') { if (subActive[id]) switchSub(id, subActive[id]); }
             if (id === 'security') loadSecurity();
