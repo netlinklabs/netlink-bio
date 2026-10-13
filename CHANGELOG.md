@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- `page-builder.html` (database): a landing page URL equal to the owner's own username (for example a Gold user `foo` using `/page/foo`) was rejected with "That URL is taken or reserved". `get_slug_status` and `is_slug_available` now ignore the caller's own profile when `exclude_user_id` is passed. Other users' usernames, reserved names and other users' landing page slugs are still blocked, and the username checks in `index.html` and `dashboard.html` (no `exclude_user_id`) behave as before. Migration `20261013_slug_allow_own_username.sql`, already applied to production on 2026-10-13. No front end change.
+
 ### Changed
 - `admin.html`: **Security** is no longer one of the main tabs. It is now a button on the same row as the report timeframe buttons (Today, 7D, 30D, 1Y), pinned to the far right, with the same pill look (blue when open). The timeframe buttons moved out of the Overview section into this shared row and still show only on Overview. The Security button shows on every tab for `super_admin`. On phones the buttons are a little tighter so everything stays on one line (checked at 320, 360 and 900 px). Plain CSS only (no Tailwind rebuild).
 
