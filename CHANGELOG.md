@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- `shared/landing-blocks.js` (`renderHeader`): with **Use brand color for the header** on, an uploaded logo no longer gets a white backing. A logo with a transparent background (for example a PNG) now shows the brand color behind it, like the header itself. The white backing added in the previous change is removed. Only the letter badge (no logo uploaded) still swaps its colors. A logo that is a solid image (for example a JPG) keeps its own background. Header with the checkbox off is unchanged.
+
 ### Added
 - `page-builder.html` (Page Settings, Brand Color): new checkbox **Use brand color for the header**. When on, the page header background is the brand color and the title and tagline use the matching light or dark text (same `--on-primary` rule as the buttons). A logo photo gets a white backing so any logo stays readable, and the letter badge swaps its colors. New content field `headerBrand` (boolean, only `true` turns it on, default off), so existing pages look the same. Rendered by `renderHeader()` in `shared/landing-blocks.js`, so the editor preview and the public page match. Plain CSS only (no Tailwind rebuild).
 - `page-builder.html`: 6 more Brand Color choices, 18 in total: Blush pink `#E8A0B4`, Ruby `#B3262E`, Honey `#E8B931`, Slate grey `#6B7280`, Tangerine `#EE8A2E` and Sky blue `#5AA9E6`. Each one keeps text on the brand color at a contrast of 4.5 or better (same level as the existing colors).
