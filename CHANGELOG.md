@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- `api/og.js` (landing page share card, `type=page`): if the page has its own logo (`logoImage` in our public storage), the card now shows that logo at the top right instead of the Netlink logo. Without an own logo, the Netlink logo stays. The logo keeps its shape and transparency and fits a 220 x 68 slot (square logos 68 x 68). If the logo cannot be loaded, the Netlink logo is used. The dark overlay is lighter: 15% black at the top to 50% at the bottom (was 40% to 70%), so the photo is brighter and the title and tagline stay readable. `api/landing.js` uses the new `PAGE_OG_RENDER_VERSION` (`og-shared.js`) in the card URL, so already shared pages get the new card. Bio and CV cards are unchanged.
+
 ### Fixed
 - `page-builder.html`: a logo with a transparent background (PNG, WebP or GIF) now keeps its transparency, so with **Use brand color for the header** on, the header color shows behind the logo. Before, every image was painted on a white background and saved as a JPEG (JPEG has no transparency), so the logo always showed a white box. The logo now goes through the new `readLogo()`: PNG output without the white background, limited to 512 x 512 px for a square logo and 512 x 160 px for a landscape logo (fits inside the box, never enlarged) and scaled down in steps (100%, 75%, 50%) to stay under 600 KB, and only if that is still too big it falls back to the old JPEG with a white background. JPEG logos behave as before. Hero, gallery and other photos are unchanged. The uploaded file name now ends with `.png` or `.webp` when the image is one (the `landing-images` bucket already allows both). A logo uploaded before this fix is already a JPEG with a white background, so it has to be uploaded again.
 
