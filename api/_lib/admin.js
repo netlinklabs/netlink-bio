@@ -20,6 +20,7 @@ const SETTLEABLE = ['awaiting_payment', 'underpaid', 'expired', 'late_payment'];
 import { sendMail, invoiceMail, getUserEmail, ambassadorStatusMail } from './mailer.js';
 import { notifyUser } from './notify.js';
 import { usageSummary } from './usage.js';
+import { securitySummary } from './security.js';
 const SAMPLE_ADDR = '0x0000000000000000000000000000000000000000';
 
 const READ_ROLES = ['super_admin', 'finance', 'support', 'kyc_reviewer'];
@@ -62,6 +63,7 @@ const ACTION_ROLES = {
   'admin-rewards-detect': FINANCE_ROLES,
   'admin-rewards-confirm': FINANCE_ROLES,
   'admin-audit': ['super_admin'],
+  'admin-security': ['super_admin'],
   'admin-test-email': ['super_admin'],
 };
 
@@ -752,6 +754,13 @@ export async function handleAdmin(action, req, res, user, ctx) {
         action: r.action, order_id: r.order_id, detail: r.detail, created_at: r.created_at,
       })),
     });
+  }
+
+  // ---------------------------------------------------------- admin-security
+  // Early warning signals plus the written list of protections (api/_lib/security.js). Read only.
+  // super_admin only, because it shows where the weak spots are.
+  if (action === 'admin-security') {
+    return res.status(200).json(await securitySummary(SUPABASE_URL, SERVICE_ROLE_KEY));
   }
 
   // ---------------------------------------------------------- admin-test-email

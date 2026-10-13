@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- `admin.html`: new **Security** tab (super_admin only, between Community and Audit log). It shows (1) early warning signals, (2) a written list of protections that run today, and (3) open gaps.
+  - Signals are read only and computed when the tab opens or on Refresh: payments waiting for review, partially paid orders, wallet amount mismatch, wallet transactions not found on chain, failed wallet transactions (24 hours vs the 7 day average), app PIN lockouts, new accounts (24 hours vs average), declined identity checks, a wallet address shared by several accounts, deletion requests, admin actions and active admin accounts, bot probes on bio pages, server errors (5xx), rejected requests (4xx) and Alchemy 429s. Each signal is OK, Check (yellow) or Act now (red), shows its rule, and a failed check shows "No data" without hiding the others.
+  - New `api/_lib/security.js` (not a new serverless function) and a new `admin-security` action in `api/_lib/admin.js`, super_admin only. It reads existing tables with the service role and writes nothing.
+  - The protections and gaps lists are constants in `security.js`, checked against the code and database on 2026-10-13. Update them (and `CONTROLS_CHECKED`) whenever a protection changes. Open gaps listed: no automatic alerts yet, admin sign-in has no second factor, the Content Security Policy allows inline scripts, thresholds are fixed guesses for the current user base.
+  - No database change and no Tailwind rebuild (only classes already in `shared/tailwind.css` and the page's own CSS).
+
 ### Changed
 - `analytics.html`: the Upgrade Plan button on the locked stats overlay (Basic tier) is now a link to `plans` instead of a toast.
 
