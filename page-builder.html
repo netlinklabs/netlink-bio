@@ -1413,7 +1413,7 @@ const file = event.target.files[0];
 event.target.value = '';
 if (!file) return;
 try {
-state.logoImage = await readPhoto(file, 600);
+state.logoImage = await readLogo(file, state.logoShape);
 document.getElementById('logoFileName').textContent = file.name;
 syncLogoUi();
 renderHeaderPreview();
@@ -1455,13 +1455,22 @@ r.readAsDataURL(blob);
 
 // Resizes + re-encodes as JPEG so a multi-MB phone photo never ends up in the
 // browser draft or in storage. A white background is painted first so
-// transparent PNG logos do not turn black.
-function compressImageBlob(blob, maxDim = 1600, quality = 0.82) {
+// transparent PNG images do not turn black.
+// keepAlpha (used for the logo only): no white background, encoded as PNG so the
+// transparency survives. JPEG has no alpha, so this is the only way a transparent
+// logo can show the header color behind it.
+// maxHeight (optional, used for the landscape logo): the image must fit inside maxDim wide and maxHeight
+// high. Without it, the long side is limited to maxDim as before.
+function compressImageBlob(blob, maxDim = 1600, quality = 0.82, keepAlpha = false, maxHeight = 0) {
 return new Promise((resolve, reject) => {
 const img = new Image();
 img.onload = () => {
 let { width, height } = img;
-if (width > maxDim || height > maxDim) {
+if (maxHeight > 0) {
+const scale = Math.min(1, maxDim / width, maxHeight / height);
+width = Math.max(1, Math.round(width * scale));
+height = Math.max(1, Math.round(height * scale));
+} else if (width > maxDim || height > maxDim) {
 if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
 else { width = Math.round(width * maxDim / height); height = maxDim; }
 }
@@ -1469,12 +1478,14 @@ const canvas = document.createElement('canvas');
 canvas.width = width;
 canvas.height = height;
 const ctx = canvas.getContext('2d');
+if (!keepAlpha) {
 ctx.fillStyle = '#ffffff';
 ctx.fillRect(0, 0, width, height);
+}
 ctx.drawImage(img, 0, 0, width, height);
 canvas.toBlob(
 (out) => out ? resolve(out) : reject(new Error('Image compression failed')),
-'image/jpeg',
+keepAlpha ? 'image/png' : 'image/jpeg',
 quality
 );
 URL.revokeObjectURL(img.src);
@@ -1489,6 +1500,23 @@ if (!file || !file.type || !file.type.startsWith('image/')) throw new Error('Ple
 if (file.size > 20 * 1024 * 1024) throw new Error('Image is too large (max 20 MB).');
 const blob = await compressImageBlob(file, maxDim || 1600);
 return blobToDataURL(blob);
+}
+
+// Logo upload. Max size: square logo 512x512 px, landscape logo 512x160 px (fits inside the box, never
+// enlarged). PNG, WebP and GIF logos stay PNG with their transparency (the header color shows behind the
+// logo). If still too big, scaled down in steps; only as a last resort falls back to JPEG (white background).
+const LOGO_MAX_BYTES = 600 * 1024;
+async function readLogo(file, shape) {
+if (!file || !file.type || !file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+if (file.size > 20 * 1024 * 1024) throw new Error('Image is too large (max 20 MB).');
+const box = shape === 'landscape' ? { w: 512, h: 160 } : { w: 512, h: 512 };
+if (/^image\/(png|webp|gif)$/.test(file.type)) {
+for (const m of [1, 0.75, 0.5]) {
+const out = await compressImageBlob(file, Math.round(box.w * m), 0.82, true, Math.round(box.h * m));
+if (out.size <= LOGO_MAX_BYTES) return blobToDataURL(out);
+}
+}
+return blobToDataURL(await compressImageBlob(file, box.w, 0.82, false, box.h));
 }
 
 function dataURLtoBlob(dataUrl) {
@@ -2464,7 +2492,9 @@ function randomName() { return Math.random().toString(36).slice(2, 10); }
 // Uploads one data-URL image and returns its public URL.
 async function uploadLandingImage(dataUrl, tag) {
 const blob = dataURLtoBlob(dataUrl);
-const path = `${currentUser.id}/${tag}-${randomName()}.jpg`;
+// File extension follows the real type (a transparent logo is a PNG, everything else a JPEG).
+const ext = blob.type === 'image/png' ? 'png' : (blob.type === 'image/webp' ? 'webp' : 'jpg');
+const path = `${currentUser.id}/${tag}-${randomName()}.${ext}`;
 const { error } = await supabaseClient.storage
 .from('landing-images')
 .upload(path, blob, { upsert: true, contentType: blob.type || 'image/jpeg' });
