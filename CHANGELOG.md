@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- `admin.html`: **Security** is no longer one of the main tabs. It is now a button on the same row as the report timeframe buttons (Today, 7D, 30D, 1Y), pinned to the far right, with the same pill look (blue when open). The timeframe buttons moved out of the Overview section into this shared row and still show only on Overview. The Security button shows on every tab for `super_admin`. On phones the buttons are a little tighter so everything stays on one line (checked at 320, 360 and 900 px). Plain CSS only (no Tailwind rebuild).
+
 ### Added
 - `admin.html`: new **Security** tab (super_admin only, between Community and Audit log). It shows (1) early warning signals, (2) a written list of protections that run today, and (3) open gaps.
   - Signals are read only and computed when the tab opens or on Refresh: payments waiting for review, partially paid orders, wallet amount mismatch, wallet transactions not found on chain, failed wallet transactions (24 hours vs the 7 day average), app PIN lockouts, new accounts (24 hours vs average), declined identity checks, a wallet address shared by several accounts, deletion requests, admin actions and active admin accounts, bot probes on bio pages, server errors (5xx), rejected requests (4xx) and Alchemy 429s. Each signal is OK, Check (yellow) or Act now (red), shows its rule, and a failed check shows "No data" without hiding the others.
