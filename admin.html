@@ -200,7 +200,7 @@
                 <button id="printBtn" type="button" class="print-btn hidden" title="Print or save the report as PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
             </div>
         </div>
-        <p class="text-sm text-muted mb-4">Overview, finance, community and audit log</p>
+        <p class="text-sm text-muted mb-4">Overview, finance, community, security and audit log</p>
 
         <div id="adminView" class="hidden">
             <div id="tabs" class="tabs-bar"></div>
@@ -295,6 +295,11 @@
             </section>
             </section>
 
+            <!-- Security -->
+            <section id="tab-security" class="hidden">
+                <div id="securityBox"><p class="text-sm text-muted">Loading...</p></div>
+            </section>
+
             <!-- Audit -->
             <section id="tab-audit" class="hidden">
                 <div id="auditList" class="card rounded-2xl overflow-hidden"></div>
@@ -371,7 +376,7 @@
         window.copyText = copy;
 
         // ---------- tabs ----------
-        // Main tabs: Overview, Finance, Community, Audit log. Finance and Community hold sub-tabs.
+        // Main tabs: Overview, Finance, Community, Security, Audit log. Finance and Community hold sub-tabs.
         const SUBTAB_PARENT = { orders: 'finance', payments: 'finance', ambassadors: 'community', rewards: 'community' };
         const subActive = { finance: 'orders', community: null };
         let mainTabs = [];
@@ -382,6 +387,7 @@
             if (isFinance()) mainTabs.push({ id: 'overview', label: 'Overview' });
             mainTabs.push({ id: 'finance', label: 'Finance' });
             if (has('super_admin', 'support') || isFinance()) mainTabs.push({ id: 'community', label: 'Community' });
+            if (has('super_admin')) mainTabs.push({ id: 'security', label: 'Security' });
             if (has('super_admin')) mainTabs.push({ id: 'audit', label: 'Audit log' });
 
             subTabs.finance = [{ id: 'orders', label: 'Orders' }];
@@ -420,10 +426,11 @@
             // Old shortcut names (orders, payments, ambassadors, rewards) open the matching sub-tab.
             if (SUBTAB_PARENT[id]) { const g = SUBTAB_PARENT[id]; subActive[g] = id; id = g; }
             activeTab = id;
-            ['overview', 'finance', 'community', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
+            ['overview', 'finance', 'community', 'security', 'audit'].forEach((t) => show(`tab-${t}`, t === id));
             $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
             if (id === 'overview') loadOverview();
             if (id === 'finance' || id === 'community') { if (subActive[id]) switchSub(id, subActive[id]); }
+            if (id === 'security') loadSecurity();
             if (id === 'audit') loadAudit();
         }
 
@@ -1619,6 +1626,64 @@
                     return `<div class="row"><div class="flex justify-between text-sm"><span class="font-semibold text-primary">${esc(e.action)}</span><span class="text-xs text-muted">${esc(fmtDate(e.created_at))}</span></div><div class="text-xs text-muted">${esc(String(e.admin))} (${esc(e.role)})${bits.length ? ' · ' + esc(bits.join(' · ')) : ''}</div></div>`;
                 }).join('');
             } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
+        }
+
+        // ---------- security ----------
+        // Early warning signals plus the list of protections that run today. Data comes from
+        // api/_lib/security.js (admin-security action, super_admin only). Signals are computed when
+        // this tab opens or when Refresh is pressed, nothing is sent automatically yet.
+        const SEC_LEVEL = { ok: ['OK', 'b-ok'], warn: ['Check', 'b-warn'], bad: ['Act now', 'b-bad'], unknown: ['No data', 'b-gray'] };
+        const SEC_OVERALL = {
+            ok: ['All clear', 'b-ok', 'No signal is above its threshold.'],
+            warn: ['Needs a look', 'b-warn', 'At least one signal is above its yellow threshold.'],
+            bad: ['Action needed', 'b-bad', 'At least one signal is above its red threshold.'],
+            partial: ['Partly checked', 'b-gray', 'Some checks could not load. The rest are clear.'],
+        };
+
+        function securityHtml(d) {
+            const [oLabel, oCls, oText] = SEC_OVERALL[d.overall] || SEC_OVERALL.partial;
+            const c = d.counts || {};
+            let h = `<div class="card chart-card">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="badge ${oCls}" style="font-size:13px;padding:4px 12px">${esc(oLabel)}</span>
+                    <button id="secRefresh" type="button" class="btn btn-ghost">Refresh</button>
+                </div>
+                <p class="text-sm text-secondary">${esc(oText)}</p>
+                <p class="text-xs text-muted mt-1">${fmtN(c.bad || 0)} red, ${fmtN(c.warn || 0)} yellow, ${fmtN(c.ok || 0)} clear${c.unknown ? ', ' + fmtN(c.unknown) + ' without data' : ''}. Checked ${esc(fmtDate(d.generated_at))}.</p>
+                <p class="text-xs text-muted mt-1">Signals are checked when you open this tab. Nothing is sent to you automatically yet.</p>
+            </div>`;
+
+            h += '<div class="ov-title">Early warning signals</div>';
+            (d.groups || []).forEach((g) => {
+                const list = (d.signals || []).filter((s) => s.group === g);
+                if (!list.length) return;
+                h += `<div class="card rounded-2xl overflow-hidden mb-3"><div class="row" style="padding-bottom:6px"><span class="text-xs font-semibold text-muted" style="text-transform:uppercase;letter-spacing:.02em">${esc(g)}</span></div>`;
+                h += list.map((s) => {
+                    const [lbl, cls] = SEC_LEVEL[s.level] || SEC_LEVEL.unknown;
+                    const go = s.go ? ` <button type="button" class="text-xs" style="color:#3b82f6;font-weight:600" data-sec-go="${esc(s.go)}">Open</button>` : '';
+                    return `<div class="row"><div class="flex justify-between gap-2 text-sm"><span class="font-semibold text-primary">${esc(s.label)}</span><span class="flex items-center gap-2"><span class="text-primary font-semibold">${esc(String(s.value))}</span><span class="badge ${cls}">${esc(lbl)}</span></span></div><div class="text-xs text-muted">${esc(s.detail)}${go}</div><div class="text-xs text-muted" style="opacity:.8">Rule: ${esc(s.rule)}</div></div>`;
+                }).join('');
+                h += '</div>';
+            });
+
+            h += `<div class="ov-title">Protections in place</div><p class="text-xs text-muted mb-2">Written from the code and database on ${esc(d.controls_checked)}. Update api/_lib/security.js when a protection changes.</p>`;
+            h += (d.controls || []).map((g) => `<details class="card chart-card"><summary class="text-sm font-semibold text-primary" style="cursor:pointer">${esc(g.area)} <span class="text-xs text-muted">(${g.items.length})</span></summary><div style="margin-top:8px">${g.items.map((i) => `<div class="mb-2"><div class="text-sm text-primary"><span class="badge b-ok" style="margin-right:6px">On</span>${esc(i.label)}</div><div class="text-xs text-muted">${esc(i.detail)}</div></div>`).join('')}</div></details>`).join('');
+
+            h += '<div class="ov-title">Open gaps</div>';
+            h += `<div class="card chart-card">${(d.gaps || []).map((i) => `<div class="mb-2"><div class="text-sm text-primary"><span class="badge b-warn" style="margin-right:6px">Open</span>${esc(i.label)}</div><div class="text-xs text-muted">${esc(i.detail)}</div></div>`).join('')}</div>`;
+            return h;
+        }
+
+        async function loadSecurity() {
+            const box = $('securityBox');
+            box.innerHTML = '<p class="text-sm text-muted">Loading...</p>';
+            try {
+                const d = await api('admin-security');
+                box.innerHTML = securityHtml(d);
+                const r = $('secRefresh');
+                if (r) r.addEventListener('click', () => { r.disabled = true; r.textContent = 'Checking...'; loadSecurity(); });
+                box.querySelectorAll('[data-sec-go]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.secGo)));
+            } catch (err) { box.innerHTML = `<p class="text-sm text-red-500">${esc(err.message)}</p>`; }
         }
 
         // ---------- boot ----------
