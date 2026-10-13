@@ -667,12 +667,13 @@ export function renderHeader(content, opts) {
   const logoInner = logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(name) + '">' : escapeHtml(name.charAt(0).toUpperCase());
   const logoClass = c.logoShape === 'landscape' ? 'logo-box landscape' : 'logo-box';
   const textClass = c.showLogoText === false ? 'header-text sr-only' : 'header-text';
-  // Brand header (checkbox in Page Settings): the header background is the brand color. A logo photo gets a
-  // white backing so any logo stays readable, and the letter badge swaps its colors so it does not vanish.
+  // Brand header (checkbox in Page Settings): the header background is the brand color. An uploaded logo has no
+  // backing of its own, so a transparent PNG shows the brand color behind it. Only the letter badge (shown when
+  // there is no logo) swaps its colors, so it does not vanish on the brand color.
   const brand = c.headerBrand === true;
-  const logoStyle = brand
-    ? (logo ? 'background:#FFFFFF;' : 'background:var(--on-primary);color:var(--primary);')
-    : 'background:' + (logo ? 'transparent' : 'var(--primary)') + ';color:var(--on-primary);';
+  const logoStyle = logo
+    ? 'background:transparent;color:var(--on-primary);'
+    : (brand ? 'background:var(--on-primary);color:var(--primary);' : 'background:var(--primary);color:var(--on-primary);');
   return '<header class="page-header' + (brand ? ' header-brand-bg' : '') + '"><div class="section-inner" style="display:flex;align-items:center;justify-content:space-between;">' +
     '<div class="header-brand"><div class="' + logoClass + '" style="' + logoStyle + '">' + logoInner + '</div>' +
     '<div class="' + textClass + '"><h1>' + escapeHtml(name) + '</h1>' + (tagline ? '<p>' + escapeHtml(tagline) + '</p>' : '') + '</div></div></div></header>';
