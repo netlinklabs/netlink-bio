@@ -26,6 +26,7 @@ export const MAX_PRODUCT_PHOTOS = 3; // main photo (cropped 1:1 on the card) + 2
 export const MAX_TEAM_MEMBERS = 12;
 export const MAX_SOCIAL_LINKS = 12;
 export const MAX_LEGAL_ITEMS = 6;
+export const MAX_SPEC_ITEMS = 30;    // label + value rows in one Specification module
 
 // Used by the editor's Add Module modal and by the module list.
 export const BLOCK_TYPES = [
@@ -42,6 +43,7 @@ export const BLOCK_TYPES = [
   { type: 'faq', label: 'FAQ', icon: 'fa-solid fa-circle-question', desc: 'Questions and answers' },
   { type: 'testimonials', label: 'Testimonials', icon: 'fa-solid fa-quote-left', desc: 'Reviews from happy clients' },
   { type: 'products', label: 'Products', icon: 'fa-solid fa-tags', desc: 'Packages or products with detail popup' },
+  { type: 'specs', label: 'Specification', icon: 'fa-solid fa-table-list', desc: 'Label and value rows, for property or product details' },
   { type: 'social', label: 'Social Links', icon: 'fa-solid fa-share-nodes', desc: 'Instagram, TikTok, YouTube and more' },
   { type: 'cta', label: 'Call to Action', icon: 'fa-solid fa-bullhorn', desc: 'Big message with one button' },
   { type: 'team', label: 'Team', icon: 'fa-solid fa-users', desc: 'People with photo, name and role' },
@@ -205,6 +207,7 @@ export function defaultBlockData(type) {
     case 'legal': return { title: 'Legal information', bg: 'soft', legalName: '', items: [{ label: '', number: '' }] };
     case 'testimonials': return { title: 'What clients say', bg: 'soft', items: [{ name: '', role: '', text: '', rating: 5, photo: '' }] };
     case 'products': return { title: 'Our Packages', columns: 2, bg: 'white', items: [{ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }] };
+    case 'specs': return { title: 'Specifications', bg: 'white', items: [{ label: '', value: '' }] };
     case 'social': return { title: 'Follow us', align: 'center', bg: 'white', links: [{ platform: 'instagram', url: '' }] };
     case 'cta': return { headline: '', text: '', buttonLabel: '', buttonUrl: '', style: 'brand', align: 'center' };
     case 'team': return { title: 'Our Team', columns: 4, bg: 'white', items: [{ name: '', role: '', photo: '' }] };
@@ -238,6 +241,14 @@ export function legalItems(d) {
   return (Array.isArray(d.items) ? d.items : [])
     .filter((it) => it && str(it.label).trim() && str(it.number).trim())
     .slice(0, MAX_LEGAL_ITEMS);
+}
+
+// Specification rows (for example "Land area" / "120 m2"). A row needs both a label and a value.
+// Also used by shared/landing-jsonld.js, so the page and its structured data show the same rows.
+export function specItems(d) {
+  return (Array.isArray(d.items) ? d.items : [])
+    .filter((it) => it && str(it.label).trim() && str(it.value).trim())
+    .slice(0, MAX_SPEC_ITEMS);
 }
 
 function faqItems(d) {
@@ -278,6 +289,7 @@ function isEmpty(block, preview) {
     case 'legal': return !str(d.legalName).trim() && legalItems(d).length === 0;
     case 'testimonials': return testimonialItems(d).length === 0;
     case 'products': return productItems(d).length === 0;
+    case 'specs': return specItems(d).length === 0;
     case 'social': return socialLinks(d).length === 0;
     case 'cta': return !str(d.headline).trim() && !str(d.text).trim();
     case 'team': return teamItems(d).length === 0;
@@ -302,6 +314,7 @@ const EMPTY_HINTS = {
   legal: 'Legal Info: add a company name or a registration number.',
   testimonials: 'Testimonials: add at least one review.',
   products: 'Products: add at least one item with a title.',
+  specs: 'Specification: add a label and a value.',
   social: 'Social Links: add a link.',
   cta: 'Call to Action: add a headline or text.',
   team: 'Team: add at least one person.',
@@ -444,6 +457,12 @@ const RENDERERS = {
     const rows = legalItems(d).map((it) => '<div class="legal-row"><span>' + escapeHtml(str(it.label, 40)) + '</span><span>' + escapeHtml(str(it.number, 60)) + '</span></div>');
     if (name) rows.unshift('<div class="legal-row"><span>Company</span><span>' + escapeHtml(name) + '</span></div>');
     return wrap(block, d, titleHtml(d) + '<div class="legal-card">' + rows.join('') + '</div>');
+  },
+
+  // <dl> keeps the label and value pairing readable for screen readers and crawlers.
+  specs(block, d) {
+    const rows = specItems(d).map((it) => '<div class="spec-row"><dt>' + escapeHtml(str(it.label, 60)) + '</dt><dd>' + escapeHtml(str(it.value, 200)) + '</dd></div>').join('');
+    return wrap(block, d, titleHtml(d) + '<dl class="spec-card">' + rows + '</dl>');
   },
 
   hours(block, d) {
@@ -784,6 +803,11 @@ export const BLOCKS_CSS = `
 .legal-row span:first-child { font-size: 14px; color: #666; }
 .legal-row span:last-child { font-size: 14px; font-weight: 600; color: #212121; text-align: right; word-break: break-word; }
 .hours-row span:last-child { font-size: 14px; font-weight: 600; color: #212121; text-align: right; }
+.spec-card { margin: 0; background: white; border-radius: 16px; padding: 4px 24px; border: 1px solid #f0f0f0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.spec-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: start; padding: 12px 0; }
+.spec-row:not(:last-child) { border-bottom: 1px solid #f0f0f0; }
+.spec-row dt { font-size: 14px; color: #666; word-break: break-word; }
+.spec-row dd { margin: 0; font-size: 14px; font-weight: 600; color: #212121; word-break: break-word; }
 
 .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .contact-btn { padding: 16px; border-radius: 16px; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; border: none; text-decoration: none; font-family: inherit; }

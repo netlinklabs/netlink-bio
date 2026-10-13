@@ -181,6 +181,12 @@ html.dark #appHeader .tr.gold { color: #fbbf24; }
 .icon-picker-grid::-webkit-scrollbar-thumb { background: rgba(var(--w),0.2); border-radius: 3px; }
 .icon-btn { aspect-ratio: 1; border-radius: 12px; background: var(--card); border: 1px solid rgba(var(--w),0.08); color: var(--accent); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
 .icon-btn:hover { background: rgba(var(--w),0.15); transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.icon-btn.active { border-color: var(--accent); background: rgba(var(--w),0.12); }
+.icon-search { width: 100%; box-sizing: border-box; margin: 0 0 14px; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(var(--w),0.12); background: var(--card); color: var(--fg); font-size: 14px; font-family: inherit; outline: none; }
+.icon-search:focus { border-color: var(--accent); }
+.icon-group-title { grid-column: 1 / -1; margin: 10px 0 0; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(var(--w),0.5); }
+.icon-group-title:first-child { margin-top: 0; }
+.icon-empty { grid-column: 1 / -1; text-align: center; padding: 24px 0; font-size: 13px; color: rgba(var(--w),0.5); }
 
 /* Phone / desktop preview */
 #deviceModal { display: none; position: fixed; inset: 0; z-index: 90; background: var(--bg); flex-direction: column; }
@@ -730,6 +736,7 @@ window.SC = SC;
 <h3>Choose Icon</h3>
 <button class="icon-picker-close" onclick="closeIconPicker()"><i class="fa-solid fa-xmark"></i></button>
 </div>
+<input type="search" id="iconSearch" class="icon-search" placeholder="Search icons, e.g. bed, land, price" maxlength="40" autocomplete="off" aria-label="Search icons" oninput="renderIconGrid()">
 <div class="icon-picker-grid" id="iconPickerGrid"></div>
 </div>
 </div>
@@ -785,38 +792,118 @@ const RESERVED_USERNAMES = [
 ];
 let myTier = 'basic'; // safe fallback: no access until the tier is confirmed
 
-const faIcons = [
-    {v: 'fa-solid fa-coffee', l: 'Coffee/Cafe'}, {v: 'fa-solid fa-utensils', l: 'Restaurant/Food'},
-    {v: 'fa-solid fa-burger', l: 'Burger/Fast Food'}, {v: 'fa-solid fa-pizza-slice', l: 'Pizza'},
-    {v: 'fa-solid fa-mug-hot', l: 'Hot Drink'}, {v: 'fa-solid fa-cake-candles', l: 'Cake/Bakery'},
-    {v: 'fa-solid fa-ice-cream', l: 'Ice Cream/Dessert'}, {v: 'fa-solid fa-wine-glass', l: 'Bar/Wine'},
-    {v: 'fa-solid fa-bowl-food', l: 'Food Bowl'}, {v: 'fa-solid fa-apple-whole', l: 'Healthy/Fruit'},
-    {v: 'fa-solid fa-briefcase', l: 'Business/Job'}, {v: 'fa-solid fa-building', l: 'Company/Office'},
-    {v: 'fa-solid fa-chart-line', l: 'Growth/Chart'}, {v: 'fa-solid fa-chart-pie', l: 'Analytics'},
-    {v: 'fa-solid fa-handshake', l: 'Deal/Partner'}, {v: 'fa-solid fa-shop', l: 'Shop/Retail'},
-    {v: 'fa-solid fa-store', l: 'Store'}, {v: 'fa-solid fa-calculator', l: 'Accounting'},
-    {v: 'fa-solid fa-paperclip', l: 'Office Supplies'}, {v: 'fa-solid fa-pen-nib', l: 'Design/Writing'},
-    {v: 'fa-solid fa-laptop', l: 'Laptop/IT'}, {v: 'fa-solid fa-desktop', l: 'Desktop/PC'},
-    {v: 'fa-solid fa-mobile-screen', l: 'Mobile/App'}, {v: 'fa-solid fa-camera', l: 'Photography'},
-    {v: 'fa-solid fa-video', l: 'Video/Film'}, {v: 'fa-solid fa-microphone', l: 'Podcast/Audio'},
-    {v: 'fa-solid fa-music', l: 'Music'}, {v: 'fa-solid fa-headphones', l: 'Headphones'},
-    {v: 'fa-solid fa-gamepad', l: 'Gaming'}, {v: 'fa-solid fa-tv', l: 'Television'},
-    {v: 'fa-solid fa-scissors', l: 'Salon/Barber'}, {v: 'fa-solid fa-hammer', l: 'Construction'},
-    {v: 'fa-solid fa-wrench', l: 'Repair/Mechanic'}, {v: 'fa-solid fa-paintbrush', l: 'Painting'},
-    {v: 'fa-solid fa-palette', l: 'Art/Palette'}, {v: 'fa-solid fa-stethoscope', l: 'Medical/Clinic'},
-    {v: 'fa-solid fa-tooth', l: 'Dental'}, {v: 'fa-solid fa-car', l: 'Automotive/Car'},
-    {v: 'fa-solid fa-truck', l: 'Logistics/Delivery'}, {v: 'fa-solid fa-plane', l: 'Travel/Flight'},
-    {v: 'fa-solid fa-book', l: 'Book/Education'}, {v: 'fa-solid fa-dumbbell', l: 'Fitness/Gym'},
-    {v: 'fa-solid fa-bicycle', l: 'Cycling'}, {v: 'fa-solid fa-futbol', l: 'Sports/Soccer'},
-    {v: 'fa-solid fa-person-swimming', l: 'Swimming'}, {v: 'fa-solid fa-guitar', l: 'Guitar'},
-    {v: 'fa-solid fa-masks-theater', l: 'Theater/Acting'}, {v: 'fa-solid fa-seedling', l: 'Agriculture/Plant'},
-    {v: 'fa-solid fa-leaf', l: 'Nature/Eco'}, {v: 'fa-solid fa-paw', l: 'Pets/Vet'},
-    {v: 'fa-solid fa-house', l: 'Property/House'}, {v: 'fa-solid fa-key', l: 'Keys/Rentals'},
-    {v: 'fa-solid fa-cube', l: 'Web3/Blockchain'}, {v: 'fa-solid fa-coins', l: 'Crypto/Token'},
-    {v: 'fa-solid fa-link', l: 'Chain/Link'}, {v: 'fa-solid fa-drum', l: 'Band/Drums'},
-    {v: 'fa-solid fa-podcast', l: 'Podcast Show'}, {v: 'fa-solid fa-id-badge', l: 'Agent/ID'},
-    {v: 'fa-solid fa-graduation-cap', l: 'Tutor/Graduate'}, {v: 'fa-solid fa-chalkboard-user', l: 'Teaching/Class'},
-    {v: 'fa-solid fa-hand-holding-heart', l: 'Charity/Care'}, {v: 'fa-solid fa-people-group', l: 'Community/NGO'}
+// Icon picker list (Font Awesome Free 6.4.0, solid). Every name was checked against shared/vendor/fontawesome.
+// Format: [group, [[icon name without the fa-solid fa-prefix, label used for the tooltip and search], ...]].
+// Icons already saved on a page keep working even if they are not in this list (see safeIcon in shared/landing-blocks.js).
+const faIconGroups = [
+  ['Property', [
+    ['house', 'House, home'], ['house-chimney', 'House with chimney'], ['house-circle-check', 'Verified property'],
+    ['building', 'Building, office'], ['city', 'City, apartments'], ['hotel', 'Hotel, villa'],
+    ['warehouse', 'Warehouse, garage'], ['school', 'School'], ['hospital', 'Hospital'],
+    ['landmark', 'Landmark, bank'], ['tree-city', 'Green city'], ['key', 'Keys, rentals'],
+    ['door-open', 'Door, entrance'], ['stairs', 'Stairs, floors'], ['elevator', 'Elevator'],
+    ['mountain-sun', 'View, mountain'], ['sign-hanging', 'For sale sign'], ['signs-post', 'Directions'],
+    ['tent', 'Camp, tent'], ['mosque', 'Mosque'], ['church', 'Church'], ['place-of-worship', 'Place of worship'],
+  ]],
+  ['Rooms & Facilities', [
+    ['bed', 'Bedroom, bed'], ['bath', 'Bathroom, bathtub'], ['shower', 'Shower'], ['toilet', 'Toilet'],
+    ['couch', 'Living room, sofa'], ['kitchen-set', 'Kitchen'], ['sink', 'Sink'], ['faucet', 'Water tap'],
+    ['droplet', 'Water'], ['fan', 'Fan, ventilation'], ['snowflake', 'Air conditioner'], ['fire', 'Fire, heating'],
+    ['bolt', 'Electricity'], ['plug', 'Power outlet'], ['wifi', 'Wi-Fi, internet'], ['lightbulb', 'Lighting, idea'],
+    ['car-side', 'Parking, carport'], ['square-parking', 'Parking lot'], ['water-ladder', 'Swimming pool'],
+    ['umbrella-beach', 'Beach, terrace'], ['tree', 'Garden, tree'], ['sun', 'Sunlight'], ['wind', 'Air flow'],
+    ['shield-halved', 'Security'], ['lock', 'Lock, gated'], ['bell-concierge', 'Concierge, service'],
+  ]],
+  ['Land & Size', [
+    ['ruler-combined', 'Building size'], ['ruler', 'Length'], ['maximize', 'Land area'],
+    ['vector-square', 'Plot, land'], ['expand', 'Expand, size'], ['compass', 'Direction, orientation'],
+    ['map', 'Map'], ['map-location-dot', 'Map location'], ['location-dot', 'Location pin'],
+    ['location-crosshairs', 'Exact location'], ['road', 'Road access'], ['bridge', 'Bridge'],
+    ['mountain', 'Mountain, hill'], ['water', 'Water, river'], ['layer-group', 'Floors, layers'],
+    ['arrows-up-down-left-right', 'All directions'], ['border-all', 'Grid, lots'],
+    ['table-cells-large', 'Blocks, units'],
+  ]],
+  ['Legal & Finance', [
+    ['certificate', 'Certificate'], ['file-contract', 'Contract'], ['file-signature', 'Signature'],
+    ['stamp', 'Official stamp'], ['scale-balanced', 'Law, balance'], ['gavel', 'Legal, auction'],
+    ['id-card', 'ID card'], ['clipboard-check', 'Checklist, approved'], ['file-invoice-dollar', 'Invoice'],
+    ['money-bill-wave', 'Cash, price'], ['hand-holding-dollar', 'Payment, loan'], ['coins', 'Coins, token'],
+    ['credit-card', 'Card payment'], ['wallet', 'Wallet'], ['percent', 'Discount, rate'],
+    ['calendar-check', 'Booked date'], ['hourglass-half', 'Time left'], ['piggy-bank', 'Savings, down payment'],
+    ['building-columns', 'Bank'], ['receipt', 'Receipt'], ['vault', 'Vault, safe'],
+  ]],
+  ['Shop & Retail', [
+    ['shop', 'Shop, retail'], ['store', 'Store'], ['bag-shopping', 'Shopping bag'], ['cart-shopping', 'Cart'],
+    ['basket-shopping', 'Basket'], ['tag', 'Price tag'], ['tags', 'Tags, offers'], ['gift', 'Gift'],
+    ['box', 'Package, box'], ['box-open', 'Unboxing'], ['boxes-stacked', 'Stock, inventory'],
+    ['truck-fast', 'Fast delivery'], ['barcode', 'Barcode, SKU'], ['qrcode', 'QR code'], ['gem', 'Gem, premium'],
+    ['ring', 'Ring, jewelry'], ['crown', 'Crown, best seller'], ['shirt', 'Clothing'], ['glasses', 'Glasses'],
+    ['shoe-prints', 'Shoes, footwear'], ['medal', 'Medal'], ['award', 'Award'], ['trophy', 'Trophy'],
+    ['star', 'Star'],
+  ]],
+  ['Food & Drink', [
+    ['coffee', 'Coffee, cafe'], ['utensils', 'Restaurant, food'], ['burger', 'Burger, fast food'],
+    ['pizza-slice', 'Pizza'], ['mug-hot', 'Hot drink'], ['cake-candles', 'Cake, bakery'],
+    ['ice-cream', 'Ice cream, dessert'], ['wine-glass', 'Bar, wine'], ['bowl-food', 'Food bowl'],
+    ['apple-whole', 'Healthy, fruit'], ['bread-slice', 'Bread'], ['cookie', 'Cookie'], ['carrot', 'Vegetable'],
+    ['fish', 'Seafood'], ['drumstick-bite', 'Chicken, meat'], ['bottle-water', 'Bottled water'],
+    ['martini-glass', 'Cocktail'], ['beer-mug-empty', 'Beer'], ['pepper-hot', 'Spicy'], ['egg', 'Egg'],
+    ['cheese', 'Cheese'], ['lemon', 'Lemon, citrus'], ['wheat-awn', 'Grain, wheat'], ['mug-saucer', 'Tea, cup'],
+    ['blender', 'Blender, juice'], ['bowl-rice', 'Rice bowl'],
+  ]],
+  ['Beauty & Health', [
+    ['spa', 'Spa, wellness'], ['hand-sparkles', 'Clean, sparkle'], ['scissors', 'Salon, barber'],
+    ['stethoscope', 'Medical, clinic'], ['tooth', 'Dental'], ['heart-pulse', 'Health, heart rate'],
+    ['user-doctor', 'Doctor'], ['pills', 'Medicine'], ['syringe', 'Vaccine, injection'],
+    ['kit-medical', 'First aid'], ['brain', 'Mind, brain'], ['eye', 'Eye care'], ['face-smile', 'Smile, happy'],
+    ['baby', 'Baby, kids'], ['wand-magic-sparkles', 'Makeup, magic'], ['soap', 'Soap'], ['pump-soap', 'Hand soap'],
+  ]],
+  ['Business & Work', [
+    ['briefcase', 'Business, job'], ['chart-line', 'Growth, chart'], ['chart-pie', 'Analytics'],
+    ['chart-column', 'Bar chart'], ['handshake', 'Deal, partner'], ['calculator', 'Accounting'],
+    ['paperclip', 'Office supplies'], ['pen-nib', 'Design, writing'], ['bullhorn', 'Marketing, promo'],
+    ['user-tie', 'Consultant, agent'], ['users', 'Team, users'], ['bullseye', 'Goal, target'],
+    ['rocket', 'Launch, startup'], ['magnifying-glass', 'Search, research'], ['thumbs-up', 'Like, approved'],
+    ['circle-check', 'Done, included'], ['headset', 'Support, hotline'], ['phone', 'Phone, call'],
+    ['envelope', 'Email'], ['comments', 'Chat, comments'], ['globe', 'Website, global'],
+    ['calendar-days', 'Calendar'], ['clock', 'Time, hours'], ['language', 'Language'], ['file-lines', 'Document'],
+    ['folder-open', 'Folder, portfolio'], ['newspaper', 'News, press'], ['id-badge', 'Agent, ID badge'],
+  ]],
+  ['Tech & Creative', [
+    ['laptop', 'Laptop, IT'], ['desktop', 'Desktop, PC'], ['mobile-screen', 'Mobile, app'],
+    ['camera', 'Photography'], ['video', 'Video, film'], ['microphone', 'Podcast, audio'], ['music', 'Music'],
+    ['headphones', 'Headphones'], ['gamepad', 'Gaming'], ['tv', 'Television'], ['palette', 'Art, palette'],
+    ['paintbrush', 'Painting'], ['cube', 'Web3, blockchain'], ['link', 'Chain, link'], ['podcast', 'Podcast show'],
+    ['drum', 'Band, drums'], ['guitar', 'Guitar'], ['masks-theater', 'Theater, acting'], ['film', 'Film, movie'],
+    ['photo-film', 'Photo and video'], ['code', 'Code, developer'], ['robot', 'AI, robot'],
+    ['microchip', 'Chip, hardware'], ['server', 'Server, hosting'], ['database', 'Database'], ['cloud', 'Cloud'],
+  ]],
+  ['Trades & Services', [
+    ['hammer', 'Construction'], ['wrench', 'Repair, mechanic'], ['screwdriver-wrench', 'Maintenance'],
+    ['toolbox', 'Tools'], ['paint-roller', 'Painting, renovation'], ['broom', 'Cleaning'],
+    ['helmet-safety', 'Contractor, safety'], ['solar-panel', 'Solar energy'], ['recycle', 'Recycle, eco'],
+    ['jug-detergent', 'Laundry'], ['hand-holding-droplet', 'Water service'], ['trowel', 'Masonry, trowel'],
+    ['trowel-bricks', 'Bricklaying'], ['bucket', 'Bucket, cleaning'],
+  ]],
+  ['Travel & Transport', [
+    ['car', 'Car, automotive'], ['truck', 'Logistics, delivery'], ['plane', 'Travel, flight'],
+    ['bicycle', 'Cycling'], ['bus', 'Bus'], ['motorcycle', 'Motorcycle'], ['ship', 'Ship, ferry'],
+    ['train', 'Train'], ['taxi', 'Taxi'], ['gas-pump', 'Fuel'], ['suitcase-rolling', 'Luggage, trip'],
+    ['passport', 'Passport, visa'], ['map-pin', 'Map pin'], ['person-hiking', 'Hiking, outdoor'],
+  ]],
+  ['Education & Community', [
+    ['book', 'Book, education'], ['book-open', 'Reading, library'], ['graduation-cap', 'Tutor, graduate'],
+    ['chalkboard-user', 'Teaching, class'], ['dumbbell', 'Fitness, gym'], ['futbol', 'Sports, soccer'],
+    ['person-swimming', 'Swimming'], ['person-running', 'Running'], ['basketball', 'Basketball'],
+    ['hand-holding-heart', 'Charity, care'], ['people-group', 'Community, NGO'], ['paw', 'Pets, vet'],
+    ['seedling', 'Agriculture, plant'], ['leaf', 'Nature, eco'], ['earth-asia', 'Asia, world'],
+    ['handshake-angle', 'Help, support'],
+  ]],
+  ['General', [
+    ['heart', 'Heart, favorite'], ['check', 'Check'], ['bell', 'Notification'], ['flag', 'Flag'],
+    ['bookmark', 'Bookmark'], ['circle-info', 'Info'], ['circle-question', 'Question'], ['moon', 'Moon, night'],
+    ['wand-sparkles', 'Sparkles'], ['infinity', 'Unlimited'], ['clock-rotate-left', 'History, warranty'],
+  ]],
 ];
 
 // ---------- state ----------
@@ -1484,6 +1571,7 @@ case 'faq': t = d.items.filter(i => i.q).map(i => i.q).join(', '); break;
 case 'legal': t = d.legalName || d.items.filter(i => i.label && i.number).map(i => i.label).join(', '); break;
 case 'testimonials': t = d.items.filter(i => i.name).map(i => i.name).join(', ') || (d.items.some(i => i.text) ? 'Review added' : ''); break;
 case 'products': t = d.items.filter(i => i.title).map(i => i.title).join(', '); break;
+case 'specs': t = d.items.filter(i => i.label && i.value).map(i => i.label).join(', '); break;
 case 'social': t = d.links.filter(l => l.url).map(l => l.platform).join(', '); break;
 case 'cta': t = d.headline || d.text; break;
 case 'team': t = d.items.filter(i => i.name).map(i => i.name).join(', '); break;
@@ -1900,6 +1988,8 @@ videoEditorHtml(b);
 case 'legal':
 return fText(id, 'title', 'Title', d.title, 'e.g. Legal information') + fText(id, 'legalName', 'Company name', d.legalName, 'e.g. Brightside Coffee Ltd', 160) + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) +
 '<p class="gallery-limit" style="margin:0 0 10px;text-align:left;">Only add business registration numbers you are happy to show to everyone. Do not add a personal ID number, such as a national ID or passport number.</p>' + legalEditorHtml(b);
+case 'specs':
+return fText(id, 'title', 'Title', d.title, 'e.g. Property details') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + specsEditorHtml(b);
 case 'faq':
 return fText(id, 'title', 'Title', d.title, 'e.g. Questions') + fSelect(id, 'bg', 'Background', d.bg, BG_OPTIONS) + faqEditorHtml(b);
 case 'testimonials':
@@ -2042,6 +2132,7 @@ const LIST_DEFS = {
 video: { key: 'items', max: () => LB.MAX_VIDEO_ITEMS, make: () => ({ url: '', title: '', channel: '' }), label: 'Video' },
 faq: { key: 'items', max: () => LB.MAX_FAQ_ITEMS, make: () => ({ q: '', a: '' }), label: 'Question' },
 legal: { key: 'items', max: () => LB.MAX_LEGAL_ITEMS, make: () => ({ label: '', number: '' }), label: 'Number' },
+specs: { key: 'items', max: () => LB.MAX_SPEC_ITEMS, make: () => ({ label: '', value: '' }), label: 'Row' },
 testimonials: { key: 'items', max: () => LB.MAX_TESTIMONIALS, make: () => ({ name: '', role: '', text: '', rating: 5, photo: '' }), label: 'Review' },
 products: { key: 'items', max: () => LB.MAX_PRODUCTS, make: () => ({ title: '', price: '', desc: '', image: '', imageFull: '', moreImages: [], buttonLabel: '', buttonUrl: '' }), label: 'Item' },
 social: { key: 'links', max: () => LB.MAX_SOCIAL_LINKS, make: () => ({ platform: 'instagram', url: '' }), label: 'Link' },
@@ -2138,6 +2229,13 @@ function legalEditorHtml(b) {
 const id = b.id, items = b.data.items;
 return items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Number') +
 liText(id, 'items', i, 'label', 'Type, e.g. Business license, Tax ID, VAT', it.label, 40) + liText(id, 'items', i, 'number', 'Registration number', it.number, 60) + '</div>').join('') + listFooter(b);
+}
+
+// Label on the left, value on the right, one pair per row (for example Land area / 120 m2).
+function specsEditorHtml(b) {
+const id = b.id, items = b.data.items;
+return items.map((it, i) => '<div class="sub-card">' + liHead(id, i, items.length, 'Row') +
+'<div class="row2">' + liText(id, 'items', i, 'label', 'Label, e.g. Land area', it.label, 60) + liText(id, 'items', i, 'value', 'Value, e.g. 120 m2', it.value, 200) + '</div></div>').join('') + listFooter(b);
 }
 
 function faqEditorHtml(b) {
@@ -2271,11 +2369,26 @@ afterBlockEdit(id);
 
 function openIconPicker(id, idx) {
 iconTarget = { id, idx };
-const grid = document.getElementById('iconPickerGrid');
-if (grid.innerHTML === '') {
-grid.innerHTML = faIcons.map(ic => `<button class="icon-btn" onclick="selectIcon('${ic.v}')" title="${ic.l}"><i class="${ic.v}"></i></button>`).join('');
-}
+document.getElementById('iconSearch').value = '';
+renderIconGrid();
 document.getElementById('iconPickerModal').classList.add('active');
+}
+
+// Grouped icon grid. The search matches the label, the icon name and the group name.
+function renderIconGrid() {
+const q = (document.getElementById('iconSearch').value || '').trim().toLowerCase();
+const b = iconTarget && getBlock(iconTarget.id);
+const current = b && b.data.items && b.data.items[iconTarget.idx] ? b.data.items[iconTarget.idx].icon : '';
+let html = '';
+faIconGroups.forEach(([group, list]) => {
+const hits = list.filter(([name, label]) => !q || label.toLowerCase().includes(q) || name.includes(q.replace(/\s+/g, '-')) || group.toLowerCase().includes(q));
+if (!hits.length) return;
+html += '<div class="icon-group-title">' + group + '</div>' + hits.map(([name, label]) => {
+const cls = 'fa-solid fa-' + name;
+return '<button type="button" class="icon-btn' + (cls === current ? ' active' : '') + '" onclick="selectIcon(\'' + cls + '\')" title="' + label + '" aria-label="' + label + '"><i class="' + cls + '"></i></button>';
+}).join('');
+});
+document.getElementById('iconPickerGrid').innerHTML = html || '<p class="icon-empty">No icons found. Try another word.</p>';
 }
 
 function closeIconPicker() {
