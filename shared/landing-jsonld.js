@@ -16,6 +16,7 @@
 //                  team                -> employee
 //                  testimonials        -> review
 //                  legal               -> legalName, taxID, vatID, identifier
+//                  specs               -> additionalProperty (PropertyValue name + value), Place types only
 //              FAQPage      (faq modules)
 //              VideoObject  (video modules, YouTube only)
 //
@@ -24,15 +25,16 @@
 //     renderer in shared/landing-blocks.js), so the JSON-LD never describes
 //     something a visitor cannot see.
 //   - Properties that are not valid on the page's @type are skipped (Person has
-//     no review, employee, openingHoursSpecification or hasMap).
+//     no review, employee, openingHoursSpecification or hasMap; Organization and NGO
+//     have no additionalProperty).
 //   - Nothing is guessed: opening hours that cannot be read with certainty,
 //     prices that are not numbers and reviews without a name are left out.
 //   - No user_id / id of the owner is ever passed in or emitted.
 
 import {
   safeHttpUrl, safeImageUrl, extractYouTubeId, getChannelHref,
-  SOCIAL_DEFS, CONTACT_CHANNEL_DEFS, legalItems,
-  MAX_GALLERY_IMAGES, MAX_CARD_ITEMS, MAX_HOURS_ROWS, MAX_VIDEO_ITEMS, MAX_FAQ_ITEMS,
+  SOCIAL_DEFS, CONTACT_CHANNEL_DEFS, legalItems, specItems,
+  MAX_SPEC_ITEMS, MAX_GALLERY_IMAGES, MAX_CARD_ITEMS, MAX_HOURS_ROWS, MAX_VIDEO_ITEMS, MAX_FAQ_ITEMS,
   MAX_TESTIMONIALS, MAX_PRODUCTS, MAX_TEAM_MEMBERS, MAX_SOCIAL_LINKS,
 } from './landing-blocks.js';
 
@@ -125,6 +127,25 @@ function legalInfo(blocks) {
     });
   });
   return out;
+}
+
+// ---------- specifications ----------
+// Each row of a Specification module -> PropertyValue (name = label, value = value), as typed
+// by the owner. Values are kept as text on purpose: "120 m2" or "3 + 1" is not turned into a number.
+// Several Specification modules are merged, and the same label and value pair is listed once.
+
+function specProperties(blocks) {
+  const out = [];
+  blocksOf(blocks, 'specs').forEach((b) => {
+    specItems(b.data).forEach((it) => {
+      const name = txt(it.label, 60);
+      const value = txt(it.value, 200);
+      if (!name || !value) return;
+      if (out.some((x) => x.name === name && x.value === value)) return;
+      out.push({ '@type': 'PropertyValue', name, value });
+    });
+  });
+  return out.slice(0, MAX_SPEC_ITEMS * 2);
 }
 
 // ---------- location ----------
@@ -421,6 +442,8 @@ export function buildLandingJsonLd({ page, content, blocks, pageUrl, name, tagli
   if (isPlace) {
     const hours = openingHours(list);
     if (hours.length) biz.openingHoursSpecification = hours;
+    const specs = specProperties(list);
+    if (specs.length) biz.additionalProperty = specs;
   }
 
   const contact = contactInfo(list);
