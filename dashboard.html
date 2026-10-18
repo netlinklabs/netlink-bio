@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-    <title>Netlink.bio - Dashboard</title>
+    <title>Netlink - Dashboard</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <link rel="stylesheet" href="/shared/tailwind.css?v=13">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -521,7 +521,7 @@
                             <div id="cvCountryDisplay" class="w-full px-3 py-2 border border-subtle bg-surface rounded-lg text-sm text-primary">
                                 <span id="cvCountryDisplayText" class="text-muted">Not set</span>
                             </div>
-                            <p class="text-xs text-muted mt-1">Same as your Bio country — edit it in Edit Profile above. Always visible on your public CV.</p>
+                            <p class="text-xs text-muted mt-1">Same as your Bio country. Edit it in Edit Profile above. Always visible on your public CV.</p>
                         </div>
                         <div>
                             <label class="text-sm font-medium text-secondary block mb-1.5">Professional Summary</label>
@@ -1054,7 +1054,7 @@
             if (!username) { showToast('Pick a username first'); return; }
             const url = `${window.location.origin}/${username}`;
             if (navigator.share) {
-                navigator.share({ title: 'My Netlink.bio', url }).catch(() => {});
+                navigator.share({ title: 'My Netlink', url }).catch(() => {});
             } else {
                 navigator.clipboard.writeText(url).then(() => showToast('Link copied to share!'));
             }
@@ -1123,7 +1123,7 @@
             const code = currentProfile?.country_code || '';
             const el = document.getElementById('cvCountryDisplayText');
             if (!code) {
-                el.textContent = 'Not set — add it in Edit Profile above';
+                el.textContent = 'Not set. Add it in Edit Profile above';
                 el.classList.add('text-muted');
                 return;
             }
@@ -1292,7 +1292,7 @@ window.openNetlinkPay = openNetlinkPay;
             }
 
             if (RESERVED_USERNAMES.includes(username)) {
-                status.textContent = 'That username is reserved — try another.';
+                status.textContent = 'That username is reserved. Try another.';
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
                 status.classList.remove('hidden');
                 return;
@@ -1325,7 +1325,7 @@ window.openNetlinkPay = openNetlinkPay;
                 status.className = 'mt-1.5 text-xs font-medium text-red-500';
             } else if (slugStatus === 'too_short') {
                 if (requiredTier === 'reserved') {
-                    status.textContent = '1-character usernames are reserved — contact us to request one.';
+                    status.textContent = '1-character usernames are reserved. Contact us to request one.';
                 } else {
                     status.innerHTML = `${username.length}-character usernames require the <strong>${TIER_LABEL[requiredTier]}</strong> plan or higher. Upgrade to use a shorter username.`;
                 }
@@ -1392,7 +1392,7 @@ window.openNetlinkPay = openNetlinkPay;
                 }
 
                 if (RESERVED_USERNAMES.includes(username)) {
-                    usernameStatus.textContent = 'That username is reserved — try another.';
+                    usernameStatus.textContent = 'That username is reserved. Try another.';
                     usernameStatus.className = 'mt-1.5 text-xs font-medium text-red-500';
                     usernameStatus.classList.remove('hidden');
                     return;
@@ -1760,7 +1760,7 @@ window.openNetlinkPay = openNetlinkPay;
             }
 
             currentLandingPage = data;
-            showToast('Landing page created — opening editor...');
+            showToast('Landing page created, opening editor...');
             window.location.href = `page-builder?id=${data.id}`;
             await loadLandingPageCard();
         }
@@ -1773,7 +1773,7 @@ window.openNetlinkPay = openNetlinkPay;
         function previewLandingPage() {
             if (!currentLandingPage) { showToast('No landing page found'); return; }
             if (!currentLandingPage.slug) { showToast('Set a URL slug in the editor first'); return; }
-            if (!currentLandingPage.is_published) { showToast('Publish your page first — tap Update Page in the editor'); return; }
+            if (!currentLandingPage.is_published) { showToast('Publish your page first. Tap Update Page in the editor'); return; }
             window.open(`https://netlink.bio/page/${currentLandingPage.slug}`, '_blank');
         }
 
@@ -1836,7 +1836,7 @@ window.openNetlinkPay = openNetlinkPay;
             if (!username) { showToast('Pick a username first'); return; }
             const url = `${window.location.origin}/cv/${username}`;
             if (navigator.share) {
-                navigator.share({ title: 'My Netlink.bio CV', url }).catch(() => {});
+                navigator.share({ title: 'My Netlink CV', url }).catch(() => {});
             } else {
                 navigator.clipboard.writeText(url).then(() => showToast('Link copied to share!'));
             }
@@ -1872,7 +1872,7 @@ window.openNetlinkPay = openNetlinkPay;
                     </div>
                     <input class="cv-exp-title w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Job Title" value="${escapeHtml(item.title)}">
                     <input class="cv-exp-company w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Company" value="${escapeHtml(item.company)}">
-                    <input class="cv-exp-date w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2021 — Present" value="${escapeHtml(item.date)}">
+                    <input class="cv-exp-date w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2021 - Present" value="${escapeHtml(item.date)}">
                     <textarea class="cv-exp-bullets w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" rows="3" placeholder="One achievement per line">${escapeHtml((item.bullets || []).join('\n'))}</textarea>
                 </div>
             `);
@@ -1884,7 +1884,7 @@ window.openNetlinkPay = openNetlinkPay;
                     </div>
                     <input class="cv-edu-degree w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Degree" value="${escapeHtml(item.degree)}">
                     <input class="cv-edu-school w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="School" value="${escapeHtml(item.school)}">
-                    <input class="cv-edu-year w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2016 — 2018" value="${escapeHtml(item.year)}">
+                    <input class="cv-edu-year w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="e.g. 2016 - 2018" value="${escapeHtml(item.year)}">
                     <input class="cv-edu-detail w-full px-2.5 py-1.5 border border-subtle bg-white rounded-lg text-sm" placeholder="Detail (optional)" value="${escapeHtml(item.detail)}">
                 </div>
             `);
@@ -2749,7 +2749,7 @@ window.openNetlinkPay = openNetlinkPay;
             const { error } = await supabaseClient.from('profiles').update({ link_icon_shape: shape }).eq('id', currentUser.id);
             if (error) {
                 console.error(error);
-                showToast('Failed to save icon shape — please try again');
+                showToast('Failed to save icon shape. Please try again');
                 return;
             }
             showToast(`Icon shape set to ${shape === 'rounded' ? 'Rounded' : 'Circle'}`);
@@ -2820,7 +2820,7 @@ window.openNetlinkPay = openNetlinkPay;
             const { error } = await supabaseClient.from('profiles').update({ theme_preset: theme }).eq('id', currentUser.id);
             if (error) {
                 console.error(error);
-                showToast('Failed to save layout — please try again');
+                showToast('Failed to save layout. Please try again');
                 return;
             }
             showToast(`Layout set to ${theme === 'dark' ? 'Dark' : 'Light'}`);
@@ -2915,7 +2915,7 @@ window.openNetlinkPay = openNetlinkPay;
         function openLinkModal(linkId = null) {
             const tier = currentProfile?.tier || 'basic';
             const limit = LINK_LIMITS[tier] ?? 20;
-            if (!linkId && currentLinks.length >= limit) { showToast('Limit reached — upgrade your plan for more links'); return; }
+            if (!linkId && currentLinks.length >= limit) { showToast('Limit reached. Upgrade your plan for more links'); return; }
 
             const link = linkId ? currentLinks.find(l => l.id === linkId) : null;
             document.getElementById('linkModalTitle').textContent = link ? 'Edit Link' : 'Add Link';

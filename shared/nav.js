@@ -303,7 +303,7 @@
           ${avatarHtml(p, 'w-14 h-14')}
           <div class="min-w-0">
             <p class="font-semibold text-slate-900 dark:text-slate-50 truncate">${escapeHtml(p.display_name || p.username || 'Your Account')}</p>
-            <p class="text-xs text-slate-500">@${escapeHtml(p.username || '—')} · ${escapeHtml(tierLabel)} Plan</p>
+            <p class="text-xs text-slate-500">@${escapeHtml(p.username || '-')} · ${escapeHtml(tierLabel)} Plan</p>
             <p class="text-xs text-slate-400 font-mono mt-0.5">${escapeHtml(formatNetId(p.net_id))}</p>
           </div>
         </div>
@@ -377,7 +377,7 @@
           }
         } catch (err) {
           console.error('Biometric toggle failed:', err);
-          toast('Could not update biometric unlock — please try again');
+          toast('Could not update biometric unlock. Please try again');
         }
         renderAccountSheet();
         if (window.lucide) lucide.createIcons();

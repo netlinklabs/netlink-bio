@@ -150,7 +150,7 @@
     const cred = await navigator.credentials.create({
       publicKey: {
         challenge,
-        rp: { name: 'Netlink.bio' },
+        rp: { name: 'Netlink' },
         user: { id: userIdBuf, name: state.userEmail || 'user', displayName: state.userEmail || 'Netlink user' },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
         authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
@@ -299,7 +299,7 @@
           return;
         }
         if (pin !== firstPin) {
-          document.getElementById('nlal-msg').textContent = "PINs don't match — try again.";
+          document.getElementById('nlal-msg').textContent = "PINs don't match. Try again.";
           pad.flashError();
           stage = 'first';
           setTimeout(paint, 450);

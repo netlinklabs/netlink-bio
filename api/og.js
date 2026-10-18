@@ -300,7 +300,7 @@ async function renderPageCard(page, ms) {
 // caller needs for caching/storing decisions. `ms` collects stage timings.
 async function renderCard(profile, type, ms) {
   const lap = (k, since) => { ms[k] = Date.now() - since; };
-  const displayName = profile?.display_name || profile?.username || 'Netlink.bio';
+  const displayName = profile?.display_name || profile?.username || 'Netlink';
   const subtitle = type === 'cv'
     ? (profile?.cv_data?.title || 'View Professional CV')
     : (profile?.username ? `@${profile.username}` : 'One Link For Everything');
@@ -490,7 +490,7 @@ function buildCard({ transparent, avatar, logo, displayName, subtitle, badgeLabe
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14,
               },
             }, h('span', { style: { color: 'white', fontSize: 26, fontWeight: 700 } }, 'n')),
-            h('span', { style: { color: 'white', fontSize: 28, fontWeight: 700 } }, 'Netlink.bio')
+            h('span', { style: { color: 'white', fontSize: 28, fontWeight: 700 } }, 'Netlink')
           ),
       // Avatar
       avatar

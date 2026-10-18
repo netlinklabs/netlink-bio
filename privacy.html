@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy & Data - Netlink.bio</title>
+    <title>Privacy & Data - Netlink</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <link rel="stylesheet" href="/shared/tailwind.css?v=13">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -238,7 +238,7 @@
             <div id="deletionPendingView" class="hidden">
                 <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
                     <p class="text-sm font-medium text-red-700">Deletion scheduled</p>
-                    <p class="text-xs text-red-600 mt-1">Your account will be deleted on <span id="deletionDateText" class="font-semibold">—</span> (<span id="deletionDaysLeftText">—</span> days left).</p>
+                    <p class="text-xs text-red-600 mt-1">Your account will be deleted on <span id="deletionDateText" class="font-semibold">-</span> (<span id="deletionDaysLeftText">-</span> days left).</p>
                 </div>
                 <button onclick="cancelDeletion()" id="cancelDeletionBtn" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition text-sm">Cancel Deletion Request</button>
             </div>
@@ -281,7 +281,7 @@
         }
 
         function formatDate(iso) {
-            if (!iso) return '—';
+            if (!iso) return '-';
             return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         }
 

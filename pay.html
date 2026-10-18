@@ -675,7 +675,7 @@
             <div class="bg-surface rounded-xl p-3 mb-4 space-y-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-muted">Rate</span>
-                    <span id="confirmRate" class="text-xs font-medium text-primary">—</span>
+                    <span id="confirmRate" class="text-xs font-medium text-primary">-</span>
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-muted">Slippage Protection</span>
@@ -824,7 +824,7 @@
             <i data-lucide="log-out" class="w-8 h-8 text-red-500 mx-auto mb-3"></i>
             <h3 class="font-semibold text-primary text-lg mb-2">Disconnect Wallet</h3>
             <p class="text-sm text-secondary mb-4 text-left">
-                This unlinks your wallet from this account, but doesn't delete it. To use it again, reconnect with the same sign-in method you used originally (Google or email) — make sure you remember which one it was, since that's what brings you back to the same wallet.
+                This unlinks your wallet from this account, but doesn't delete it. To use it again, reconnect with the same sign-in method you used originally (Google or email). Make sure you remember which one it was, since that's what brings you back to the same wallet.
             </p>
             <label class="flex items-start gap-2 text-left text-xs text-secondary mb-5">
                 <input id="disconnectConfirmCheckbox" type="checkbox" onchange="onDisconnectCheckboxChange()" class="mt-0.5">
@@ -850,19 +850,19 @@
                     <button type="button" id="sendTokenBtn" onclick="toggleSendTokenDropdown()" class="w-full flex items-center justify-between px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary hover-surface transition">
                         <span class="flex items-center gap-2">
                             <img id="sendTokenLogo" src="/assets/usdc-logo.png" alt="" class="w-5 h-5 rounded-full">
-                            <span id="sendTokenLabel">USDC — USD Coin</span>
+                            <span id="sendTokenLabel">USDC - USD Coin</span>
                         </span>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
                     </button>
                     <div id="sendTokenDropdown" class="hidden absolute z-20 mt-1 w-full bg-surface border border-subtle rounded-lg shadow-lg overflow-hidden">
                         <button type="button" onclick="selectSendToken('USDC')" class="w-full flex items-center gap-2 px-3 py-2.5 hover-surface text-sm text-primary text-left">
-                            <img src="/assets/usdc-logo.png" alt="" class="w-5 h-5 rounded-full"> USDC — USD Coin
+                            <img src="/assets/usdc-logo.png" alt="" class="w-5 h-5 rounded-full"> USDC - USD Coin
                         </button>
                         <button type="button" onclick="selectSendToken('NET')" class="w-full flex items-center gap-2 px-3 py-2.5 hover-surface text-sm text-primary text-left">
-                            <img src="/assets/net-logo.png" alt="" class="w-5 h-5 rounded-full"> NET — Netlink Token
+                            <img src="/assets/net-logo.png" alt="" class="w-5 h-5 rounded-full"> NET - Netlink Token
                         </button>
                         <button type="button" onclick="selectSendToken('POL')" class="w-full flex items-center gap-2 px-3 py-2.5 hover-surface text-sm text-primary text-left">
-                            <img src="/assets/polygon-logo.png" alt="" class="w-5 h-5 rounded-full"> POL — Polygon
+                            <img src="/assets/polygon-logo.png" alt="" class="w-5 h-5 rounded-full"> POL - Polygon
                         </button>
                     </div>
                 </div>
@@ -1646,7 +1646,7 @@
             const methods = await applySendGateMethods();
             if (!methods.google) return;
             if (!window.google) {
-                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable. Check your connection.</p>';
                 return;
             }
             google.accounts.id.initialize({
@@ -1686,7 +1686,7 @@
                     statusEl.textContent = sessionCheck.mismatched
                         ? "That signed you into a different wallet than this account's. Please choose the correct account."
                         : 'Could not verify your wallet session. Please try again.';
-                    showToast('Wrong account — sign in with the account linked to this wallet.');
+                    showToast('Wrong account. Sign in with the account linked to this wallet.');
                     return;
                 }
                 // Reset the dimmed-while-signing-in state on success too, not
@@ -1704,7 +1704,7 @@
                 console.error(err);
                 statusEl.textContent = 'Confirm your identity to authorize this transfer.';
                 container.style.opacity = '1';
-                showToast('Could not verify your identity — please try again.');
+                showToast('Could not verify your identity. Please try again.');
             }
         }
 
@@ -1742,7 +1742,7 @@
             container.innerHTML = '';
             container.style.opacity = '1';
             if (!window.google) {
-                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable. Check your connection.</p>';
                 return;
             }
             google.accounts.id.initialize({
@@ -1919,7 +1919,7 @@
                     return;
                 }
 
-                statusEl.textContent = 'Could not create wallet — please try again.';
+                statusEl.textContent = 'Could not create wallet. Please try again.';
                 container.style.opacity = '1';
                 showToast('Could not create wallet. Please try again.');
             }
@@ -2102,7 +2102,7 @@
 
         window.openReceiveModal = function () {
             const address = window.currentWalletAddress;
-            if (!address) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
+            if (!address) { showToast('No wallet connected. Tap Connect Wallet to continue'); return; }
             document.getElementById('receiveAddress').textContent = address;
             // QR is drawn in the browser (shared/qr.js), not by an outside service, so nobody else can swap the address in it.
             const qrImg = document.getElementById('receiveQr');
@@ -2116,7 +2116,7 @@
 
         window.openSendModal = async function () {
             if (window.hasPendingDeletion) { showToast('Sending is disabled while account deletion is pending'); return; }
-            if (!window.currentWalletAddress) { showToast('No wallet connected — tap Connect Wallet to continue'); return; }
+            if (!window.currentWalletAddress) { showToast('No wallet connected. Tap Connect Wallet to continue'); return; }
             sendReauthOnly = false;
             sendGateActive = false;
             document.getElementById('sendToAddress').value = '';
@@ -2355,7 +2355,7 @@
                 );
             } catch (err) {
                 console.error('Camera scan unavailable:', err);
-                document.getElementById('qrScanStatus').textContent = 'Camera unavailable — you can still upload a QR image below.';
+                document.getElementById('qrScanStatus').textContent = 'Camera unavailable. You can still upload a QR image below.';
             }
         };
 
@@ -2397,14 +2397,14 @@
                 await onQrScanSuccess(decodedText);
             } catch (err) {
                 console.error('Failed to read QR from image:', err);
-                document.getElementById('qrScanStatus').textContent = 'Could not read a QR code from that image — try another.';
+                document.getElementById('qrScanStatus').textContent = 'Could not read a QR code from that image. Try another.';
             }
         };
 
         const SEND_TOKEN_META = {
-            USDC: { logo: '/assets/usdc-logo.png', label: 'USDC — USD Coin' },
-            NET:  { logo: '/assets/net-logo.png',  label: 'NET — Netlink Token' },
-            POL:  { logo: '/assets/polygon-logo.png', label: 'POL — Polygon' },
+            USDC: { logo: '/assets/usdc-logo.png', label: 'USDC - USD Coin' },
+            NET:  { logo: '/assets/net-logo.png',  label: 'NET - Netlink Token' },
+            POL:  { logo: '/assets/polygon-logo.png', label: 'POL - Polygon' },
         };
 
         window.toggleSendTokenDropdown = function () {
@@ -2603,7 +2603,7 @@
             } else {
                 if (sessionCheck.mismatched) {
                     document.getElementById('sendConfirmStatus').textContent = 'A different wallet session was detected in this browser. Please confirm your identity again to continue.';
-                    showToast('A different wallet session was detected — please sign in again.');
+                    showToast('A different wallet session was detected. Please sign in again.');
                 } else {
                     document.getElementById('sendConfirmStatus').textContent = 'Confirm your identity to authorize this transfer.';
                 }
@@ -2836,7 +2836,7 @@
             }
             if (!isSentTransactionResponse(tx)) {
                 console.error('Sequence did not return a sent-transaction response:', tx);
-                throw new Error('Transaction was not sent — please try again.');
+                throw new Error('Transaction was not sent. Please try again.');
             }
             if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
                 console.error('Transaction reverted:', tx.receipt);
@@ -2904,7 +2904,7 @@
                 sendTxInProgress = false;
                 setSendConfirmBusy(false);
                 document.getElementById('sendConfirmStatus').textContent = 'Your wallet session changed. Please confirm your identity again.';
-                showToast('Wallet session changed — please confirm your identity again.');
+                showToast('Wallet session changed. Please confirm your identity again.');
                 renderGoogleConfirmButton();
                 return;
             }
@@ -3123,8 +3123,8 @@
                 // placeholder, without touching the block's height.
                 feeEl.classList.remove('gas-estimating');
                 paidFromEl.classList.remove('gas-estimating');
-                setTextIfChanged(feeEl, '—');
-                setTextIfChanged(paidFromEl, '—');
+                setTextIfChanged(feeEl, '-');
+                setTextIfChanged(paidFromEl, '-');
             } else {
                 // Still waiting on the very first check for this opening.
                 feeEl.classList.add('gas-estimating');
@@ -3499,7 +3499,7 @@
             } catch (err) {
                 if (myToken !== swapQuoteToken) return;
                 console.error(err);
-                errorEl.textContent = 'Could not get a quote right now — try again.';
+                errorEl.textContent = 'Could not get a quote right now. Try again.';
                 errorEl.classList.remove('hidden');
                 resetSwapQuote();
             }
@@ -3609,7 +3609,7 @@
                 startCountdown();
             } catch (err) {
                 console.error(err);
-                text.textContent = 'Could not refresh price — please try again';
+                text.textContent = 'Could not refresh price. Please try again';
                 // Restart countdown anyway to retry
                 setTimeout(startCountdown, 2000);
             } finally {
@@ -3826,7 +3826,7 @@
                 const txHash = swapTx?.txHash || swapTx?.hash || swapTx?.data?.txHash || swapTx?.receipt?.transactionHash;
                 if (!txHash) {
                     console.error('Swap sent but no tx hash was returned:', swapTx);
-                    throw new Error('Swap was not sent — please try again.');
+                    throw new Error('Swap was not sent. Please try again.');
                 }
 
                 // Read the gross swapped-to amount from the quote that was
@@ -3865,7 +3865,7 @@
                     window.ensureWalletSession(() => window.openSwapConfirmModal(true));
                     return;
                 }
-                errorEl.textContent = String(err?.message || 'Swap failed — please try again.');
+                errorEl.textContent = String(err?.message || 'Swap failed. Please try again.');
                 errorEl.classList.remove('hidden');
                 btn.disabled = false;
                 btn.textContent = `Swap ${swapFrom} to ${swapTo}`;
@@ -3910,7 +3910,7 @@
             // the root cause of a fake "Swapped!" toast with nothing sent.
             if (!window.isSentTransactionResponse(tx)) {
                 console.error('Sequence did not return a sent-transaction response:', tx);
-                throw new Error('Swap was not sent — please try again.');
+                throw new Error('Swap was not sent. Please try again.');
             }
             if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
                 throw new Error(tx.receipt.revertReason || 'Transaction failed on-chain.');

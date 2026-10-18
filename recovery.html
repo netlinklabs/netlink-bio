@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallet Security — Netlink Pay</title>
+    <title>Wallet Security - Netlink Pay</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <link rel="stylesheet" href="/shared/tailwind.css?v=13">
@@ -138,7 +138,7 @@
                 <div>
                     <p class="text-sm font-semibold text-primary mb-1">Add a backup sign-in method</p>
                     <p class="text-xs text-secondary leading-relaxed">
-                        Your wallet currently only opens with Google. If you ever lose access to your Google account, or Google is temporarily unavailable, you won't be able to sign in. Adding an email backup gives you a second way in — same wallet, same address, same balance.
+                        Your wallet currently only opens with Google. If you ever lose access to your Google account, or Google is temporarily unavailable, you won't be able to sign in. Adding an email backup gives you a second way in, same wallet, same address, same balance.
                     </p>
                 </div>
             </div>
@@ -202,7 +202,7 @@
         <div id="alreadyLinkedCard" class="hidden card rounded-2xl p-5 mb-4 text-center">
             <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500 mx-auto mb-2"></i>
             <p class="text-sm font-semibold text-primary">Email backup is active</p>
-            <p class="text-xs text-secondary mt-1">You can sign in with Google or your email — both open the same wallet.</p>
+            <p class="text-xs text-secondary mt-1">You can sign in with Google or your email, both open the same wallet.</p>
         </div>
 
         <p class="text-[11px] text-muted text-center leading-relaxed px-4 mb-6">
@@ -214,7 +214,7 @@
             <div class="relative z-10">
                 <p class="text-white/70 text-xs font-medium mb-1 flex items-center gap-1.5"><i data-lucide="triangle-alert" class="w-3.5 h-3.5"></i> Emergency Only</p>
                 <h1 class="text-xl font-bold">Export all assets</h1>
-                <p class="text-white/60 text-xs mt-2">Move every token in your wallet — POL, USDC, and NET — to an external wallet like MetaMask or Trust Wallet in a single transaction.</p>
+                <p class="text-white/60 text-xs mt-2">Move every token in your wallet (POL, USDC, and NET) to an external wallet like MetaMask or Trust Wallet in a single transaction.</p>
             </div>
         </div>
 
@@ -230,7 +230,7 @@
             <input id="exportDestAddress" type="text" placeholder="0x..." autocomplete="off" spellcheck="false"
                 class="w-full px-4 py-3 rounded-xl bg-surface border border-subtle text-sm font-mono text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
             <p id="exportAddressError" class="text-xs text-red-500 mb-2 hidden"></p>
-            <p class="text-[11px] text-muted mb-4">Must be a wallet you control outside Netlink Pay — MetaMask, Trust Wallet, or similar. Double-check it before continuing.</p>
+            <p class="text-[11px] text-muted mb-4">Must be a wallet you control outside Netlink Pay: MetaMask, Trust Wallet, or similar. Double-check it before continuing.</p>
 
             <div class="bg-surface rounded-xl p-4 mb-4">
                 <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Will export</p>
@@ -281,7 +281,7 @@
                 <input id="exportConfirmSuffix" type="text" maxlength="4" placeholder="????" autocomplete="off" spellcheck="false"
                     oninput="this.value = this.value.toUpperCase(); validateExportSuffix();"
                     class="w-full px-4 py-2.5 rounded-xl bg-surface border border-subtle text-primary text-center tracking-[0.3em] font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 mb-2">
-                <p id="exportSuffixError" class="text-xs text-red-500 mb-3 hidden">Doesn't match — check the address above.</p>
+                <p id="exportSuffixError" class="text-xs text-red-500 mb-3 hidden">Doesn't match. Check the address above.</p>
 
                 <div class="flex gap-2">
                     <button onclick="closeExportModal()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
@@ -293,7 +293,7 @@
             <div id="exportStepAuth" class="hidden">
                 <i data-lucide="shield-check" class="w-8 h-8 text-blue-500 mb-3"></i>
                 <h3 class="font-semibold text-primary text-lg mb-2">Confirm your identity</h3>
-                <p id="exportAuthStatus" class="text-sm text-secondary mb-4">One last step — confirm it's you to authorize this transfer.</p>
+                <p id="exportAuthStatus" class="text-sm text-secondary mb-4">One last step: confirm it's you to authorize this transfer.</p>
 
                 <div id="exportAuthGoogleStep">
                     <div id="exportGoogleConfirmWrap" class="flex items-center justify-center mb-3"></div>
@@ -627,7 +627,7 @@
             document.getElementById('authSignInError').classList.add('hidden');
             if (!walletSignInMethods().google) return; // email-only wallet: no Google button
             if (!window.google) {
-                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable. Check your connection.</p>';
                 return;
             }
             google.accounts.id.initialize({
@@ -1065,7 +1065,7 @@
             container.innerHTML = '';
             document.getElementById('addGoogleError').classList.add('hidden');
             if (!window.google) {
-                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable. Check your connection.</p>';
                 return;
             }
             google.accounts.id.initialize({
@@ -1256,7 +1256,7 @@
                 return;
             }
             if (currentWalletAddress && addr.toLowerCase() === currentWalletAddress.toLowerCase()) {
-                errorEl.textContent = "That's your own Netlink Pay wallet address — enter an external wallet instead.";
+                errorEl.textContent = "That's your own Netlink Pay wallet address. Enter an external wallet instead.";
                 errorEl.classList.remove('hidden');
                 openBtn.disabled = true;
                 return;
@@ -1381,7 +1381,7 @@
             container.innerHTML = '';
             if (!walletSignInMethods().google) return; // email-only wallet: no Google button
             if (!window.google) {
-                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable — check your connection.</p>';
+                container.innerHTML = '<p class="text-xs text-red-500">Google sign-in unavailable. Check your connection.</p>';
                 return;
             }
             google.accounts.id.initialize({
@@ -1411,9 +1411,9 @@
                 await doExecuteExport();
             } catch (err) {
                 console.error('Export identity confirm (Google) failed:', err);
-                statusEl.textContent = "One last step — confirm it's you to authorize this transfer.";
+                statusEl.textContent = "One last step: confirm it's you to authorize this transfer.";
                 container.style.opacity = '1';
-                showToast('Could not verify your identity — please try again.');
+                showToast('Could not verify your identity. Please try again.');
             }
         }
 
@@ -1573,7 +1573,7 @@
             }
 
             if (txs.length === 0) {
-                return { estimatedFeePol: '0', hasEnoughPol: false, txs: [], error: 'Nothing to export — your wallet balance is zero.' };
+                return { estimatedFeePol: '0', hasEnoughPol: false, txs: [], error: 'Nothing to export. Your wallet balance is zero.' };
             }
 
             const resp = await sequenceWaas.feeOptions({ network: 'polygon', transactions: txs });
@@ -1687,7 +1687,7 @@
                 const tx = await sequenceWaas.sendTransaction(sendArgs);
                 if (!isSentTransactionResponse(tx)) {
                     console.error('Sequence did not return a sent-transaction response:', tx);
-                    throw new Error('Transaction was not sent — please try again.');
+                    throw new Error('Transaction was not sent. Please try again.');
                 }
                 if (tx.receipt?.status && tx.receipt.status !== 'SUCCEEDED') {
                     console.error('Export transaction reverted:', tx.receipt);
@@ -1731,7 +1731,7 @@
                 showToast(msg, true);
                 document.getElementById('exportStepExecuting').classList.add('hidden');
                 document.getElementById('exportStepAuth').classList.remove('hidden');
-                document.getElementById('exportAuthStatus').textContent = "One last step — confirm it's you to authorize this transfer.";
+                document.getElementById('exportAuthStatus').textContent = "One last step: confirm it's you to authorize this transfer.";
             }
         }
 

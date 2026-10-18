@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <script>(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transaction History — Netlink Pay</title>
+    <title>Transaction History - Netlink Pay</title>
     <link rel="icon" type="image/png" href="/assets/netlinkbio-icon.png">
     <link rel="stylesheet" href="/shared/tailwind.css?v=13">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -508,7 +508,7 @@
         // address belongs to the viewer or the counterparty: the setting
         // always governs how that person's own info appears, everywhere.
         function formatAddressByMode(address, mode) {
-            if (!address) return '—';
+            if (!address) return '-';
             if (mode === 'hidden') return 'Hidden by owner';
             if (mode === 'full') return address;
             return truncateAddress(address);
@@ -669,13 +669,13 @@
                             <div class="party-label">Sender :</div>
                             <div class="party-name">${senderLabel}</div>
                             <div class="party-addr-label">Wallet Address:</div>
-                            <div class="party-addr">${senderAddr || '—'}</div>
+                            <div class="party-addr">${senderAddr || '-'}</div>
                         </div>
                         <div class="party-col">
                             <div class="party-label">Recipient :</div>
                             <div class="party-name">${recipientLabel}</div>
                             <div class="party-addr-label">Wallet Address:</div>
-                            <div class="party-addr">${recipientAddr || '—'}</div>
+                            <div class="party-addr">${recipientAddr || '-'}</div>
                         </div>
                     </div>
                     <div class="receipt-row">
@@ -693,7 +693,7 @@
                     </div>
                     <div class="receipt-row">
                         <span class="label">Gas Fee</span>
-                        <span class="value-mono" id="modalGasFee">—</span>
+                        <span class="value-mono" id="modalGasFee">-</span>
                     </div>
                     <div class="hash-block" style="margin-top: 16px;">
                         <div style="flex: 0 0 62%; max-width: 62%;">
@@ -727,7 +727,7 @@
             } else {
                 gasEl.textContent = 'Loading...';
                 const fee = await fetchAndPersistGasFee(tx);
-                gasEl.textContent = fee ? formatFintech(fee, 4) + ' POL' : '—';
+                gasEl.textContent = fee ? formatFintech(fee, 4) + ' POL' : '-';
             }
         }
 
@@ -830,7 +830,7 @@
                 closeReceiptModal();
             } catch (err) {
                 console.error('Failed to generate receipt PDF:', err);
-                showToast('Could not generate receipt — please try again');
+                showToast('Could not generate receipt. Please try again');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
@@ -875,13 +875,13 @@
                     // to just downloading the PDF so the person can still
                     // share it manually from their file system.
                     doc.save(filename);
-                    showToast('Sharing files isn\'t supported here — PDF downloaded instead');
+                    showToast('Sharing files isn\'t supported here, PDF downloaded instead');
                     closeReceiptModal();
                 }
             } catch (err) {
                 if (err.name !== 'AbortError') {
                     console.error('Failed to share receipt:', err);
-                    showToast('Could not share receipt — please try again');
+                    showToast('Could not share receipt. Please try again');
                 }
             } finally {
                 btn.disabled = false;
