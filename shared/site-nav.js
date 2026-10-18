@@ -61,7 +61,7 @@
               <img src="${LOGO_LIGHT}" alt="Netlink" width="200" height="48">
             </div>
             <h4 class="footer-brand-title">About</h4>
-            <p class="footer-brand-desc">Netlink is a modern digital identity platform that helps individuals and businesses create a trusted online presence, showcase their work, connect with opportunities, receive payments, and build an AI-ready profile — all from a single trusted identity.</p>
+            <p class="footer-brand-desc">Netlink is a modern digital identity platform that helps individuals and businesses create a trusted online presence, showcase their work, connect with opportunities, receive payments, and build a profile optimized for AI discovery, all from a single trusted identity.</p>
           </div>
           <div class="footer-group footer-group-left">
             <div>
@@ -71,7 +71,6 @@
                 <a href="digital-cv">Digital CV</a>
                 <a href="business-page">Business Profile</a>
                 <a href="netlink-pay">Netlink Pay</a>
-                <a href="https://netlinktoken.com" target="_blank" rel="noopener noreferrer">Netlink Token (NET)</a>
                 <a href="verification">Verification</a>
               </div>
             </div>
@@ -80,6 +79,7 @@
               <div class="footer-links">
                 <a href="faq">FAQ</a>
                 <a href="https://medium.com/@netlinklabs" target="_blank" rel="noopener noreferrer">Blog</a>
+                <a href="https://netlinktoken.com" target="_blank" rel="noopener noreferrer">Netlink Token (NET)</a>
                 <a href="changelog">Changelog</a>
                 <a href="https://netlinklabs.statuspage.io/" target="_blank" rel="noopener noreferrer">Status</a>
               </div>
