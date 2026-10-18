@@ -45,7 +45,7 @@
         </div>
 
         <div class="card rounded-2xl p-5 lg:p-7">
-            <p>These Terms of Service ("Terms") govern your access to and use of Netlink.bio — including Link in Bio, Digital CV, Business Profile, Verification, and related features (collectively, "the Service") — provided by <strong>PT Netlink Labs Global</strong> ("Netlink", "we", "us"). By creating an account or using the Service, you agree to these Terms.</p>
+            <p>These Terms of Service ("Terms") govern your access to and use of Netlink.bio, including Link in Bio, Digital CV, Business Profile, Verification, and related features (collectively, "the Service"), provided by <strong>PT Netlink Labs Global</strong> ("Netlink", "we", "us"). By creating an account or using the Service, you agree to these Terms.</p>
             <p>Netlink Pay is a separate wallet feature governed by its own <a href="terms-of-use" class="inline-link">Terms of Use (Netlink Pay)</a>, referenced in Section 5 below. Data handling is governed by our <a href="privacy-policy" class="inline-link">Privacy Policy</a>.</p>
 
             <h2>1. Eligibility & Account</h2>
@@ -107,7 +107,7 @@
         <p class="text-xs text-muted text-center mt-6 mb-6">© 2026 PT Netlink Labs Global. This document is provided for transparency and does not constitute legal advice.</p>
 
         <a id="tosBackBtn" href="/" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> <span id="tosBackBtnText">I've Read It — Back to Home</span>
+            <i data-lucide="check-circle" class="w-4 h-4"></i> <span id="tosBackBtnText">I've Read It, Back to Home</span>
         </a>
     </main>
 
@@ -126,7 +126,7 @@
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     document.getElementById('tosBackBtn').href = 'dashboard';
-                    document.getElementById('tosBackBtnText').textContent = "I've Read It — Back to Dashboard";
+                    document.getElementById('tosBackBtnText').textContent = "I've Read It, Back to Dashboard";
                 }
             } catch (err) {
                 console.error('Session check failed:', err);
