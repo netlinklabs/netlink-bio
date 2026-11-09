@@ -62,6 +62,7 @@ const ACTION_ROLES = {
   'admin-rewards': FINANCE_ROLES,
   'admin-rewards-detect': FINANCE_ROLES,
   'admin-rewards-confirm': FINANCE_ROLES,
+  'admin-new-signups': AMBASSADOR_READ_ROLES, // manual monitoring of newest accounts (email + bio URL only)
   'admin-audit': ['super_admin'],
   'admin-security': ['super_admin'],
   'admin-test-email': ['super_admin'],
@@ -740,6 +741,20 @@ export async function handleAdmin(action, req, res, user, ctx) {
       });
     }
     return res.status(200).json({ confirmed: done.length, skipped: ids.length - done.length });
+  }
+
+  // ---------------------------------------------------------- admin-new-signups
+  // The 10 newest accounts, for a manual check of new bio pages (adult, gambling or illegal links).
+  // Returns only email, username and signup time. The bio page itself is public, so the admin
+  // opens it in a new tab; nothing else about the user is exposed here. Read only, no audit entry.
+  if (action === 'admin-new-signups') {
+    const rows = await db('profiles?select=id,username,created_at&order=created_at.desc&limit=10');
+    const signups = await Promise.all(rows.map(async (p) => ({
+      email: await getUserEmail(p.id),
+      username: p.username || null,
+      created_at: p.created_at,
+    })));
+    return res.status(200).json({ signups });
   }
 
   // ---------------------------------------------------------- admin-audit

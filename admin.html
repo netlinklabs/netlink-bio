@@ -269,6 +269,14 @@
             <!-- Community: Ambassadors + Rewards -->
             <section id="tab-community" class="hidden">
             <div id="subtabs-community" class="subtabs"></div>
+            <!-- New signups -->
+            <section id="tab-signups" class="hidden">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <p class="text-xs text-muted">The 10 newest accounts. Open the bio to check for adult, gambling or illegal links.</p>
+                    <button id="suRefresh" type="button" class="btn btn-ghost">Refresh</button>
+                </div>
+                <div id="suList" class="card rounded-2xl overflow-hidden"></div>
+            </section>
             <!-- Ambassadors -->
             <section id="tab-ambassadors" class="hidden">
                 <div class="flex flex-col sm:flex-row gap-2 mb-3">
@@ -390,7 +398,7 @@
         // ---------- tabs ----------
         // Main tabs: Overview, Finance, Community, Audit log. Finance and Community hold sub-tabs.
         // Security (super_admin) is not a tab: it is a button on the toolbar row, see toolRow.
-        const SUBTAB_PARENT = { orders: 'finance', payments: 'finance', ambassadors: 'community', rewards: 'community' };
+        const SUBTAB_PARENT = { orders: 'finance', payments: 'finance', signups: 'community', ambassadors: 'community', rewards: 'community' };
         const subActive = { finance: 'orders', community: null };
         let mainTabs = [];
         let subTabs = { finance: [], community: [] };
@@ -405,6 +413,7 @@
             subTabs.finance = [{ id: 'orders', label: 'Orders' }];
             if (isFinance()) subTabs.finance.push({ id: 'payments', label: 'Payments' });
             subTabs.community = [];
+            if (has('super_admin', 'support')) subTabs.community.push({ id: 'signups', label: 'New signups' });
             if (has('super_admin', 'support')) subTabs.community.push({ id: 'ambassadors', label: 'Ambassadors' });
             if (isFinance()) subTabs.community.push({ id: 'rewards', label: 'Rewards' });
             subActive.finance = subTabs.finance[0].id;
@@ -424,6 +433,7 @@
         function loadSub(sub) {
             if (sub === 'orders') loadOrders();
             if (sub === 'payments') loadPayments();
+            if (sub === 'signups') loadSignups();
             if (sub === 'ambassadors') loadAmbassadors();
             if (sub === 'rewards') loadRewards();
         }
@@ -1625,6 +1635,25 @@
         let rwTimer = null;
         $('rwSearch').addEventListener('input', () => { clearTimeout(rwTimer); rwTimer = setTimeout(loadRewards, 350); });
         $('rwStatus').addEventListener('change', loadRewards);
+
+        // ---------- new signups ----------
+        // Manual monitoring: email + public bio URL of the 10 newest accounts (admin-new-signups).
+        async function loadSignups() {
+            const list = $('suList');
+            list.innerHTML = '<p class="p-4 text-sm text-muted">Loading...</p>';
+            try {
+                const { signups } = await api('admin-new-signups');
+                if (!signups.length) { list.innerHTML = '<p class="p-4 text-sm text-muted">No accounts yet.</p>'; return; }
+                list.innerHTML = signups.map((s) => {
+                    const url = s.username ? `https://netlink.bio/${s.username}` : null;
+                    const bio = url
+                        ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6;font-weight:600;word-break:break-all">netlink.bio/${esc(s.username)}</a>`
+                        : '<span class="text-muted">No username yet</span>';
+                    return `<div class="row"><div class="flex justify-between gap-2 text-sm"><span class="font-semibold text-primary" style="word-break:break-all">${esc(s.email || '-')}</span><span class="text-xs text-muted" style="white-space:nowrap">${esc(fmtDate(s.created_at))}</span></div><div class="text-xs">${bio}</div></div>`;
+                }).join('');
+            } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
+        }
+        $('suRefresh').addEventListener('click', loadSignups);
 
         // ---------- audit ----------
         async function loadAudit() {

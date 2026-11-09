@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Added
+- `admin.html`: new **New signups** sub-tab under Community (super_admin and support). It lists the 10 newest accounts with only email, signup time and a link to the public bio page (`netlink.bio/username`, opens in a new tab), for manual checks of adult, gambling or illegal bio content. New read-only `admin-new-signups` action in `api/_lib/admin.js` (same roles as Ambassadors) returns just `email`, `username` and `created_at`, so no other user data is exposed. No audit entry is written because it only reads.
+
 ### Changed
 - App pages and shared scripts: removed em dashes from visible text and messages (toasts, error messages, status text, placeholders, labels, `<title>`) in `dashboard.html`, `identity.html`, `login.html`, `reset-password.html`, `reward.html`, `card.html`, `privacy.html`, `recovery.html`, `tx.html`, `pay.html`, `pay2.html`, `pay5.html`, `page-builder.html`, `research/usdc-report-2026.html`, `shared/nav.js`, `shared/app-lock.js`, `shared/account-menu.js` and `api/_lib/html.js`. An empty value is now shown as `-`, and labels such as `USDC - USD Coin` and `IDR - Indonesian Rupiah` use a hyphen. `console` messages, code comments and the regex in `shared/landing-jsonld.js` (it parses hours text, so it still accepts an em dash) were left as they are.
 - "Netlink.bio" used as a brand name replaced with "Netlink" in the titles and alt text of the app pages (dashboard, identity, contact, contacts, analytics, privacy, login, reset-password), the share titles in `dashboard.html`, the server-rendered page title in `api/_lib/html.js`, the passkey name in `shared/app-lock.js` and the brand text on the share card in `api/og.js`. Existing share card images stay cached until they expire.
