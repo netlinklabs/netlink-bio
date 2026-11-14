@@ -431,6 +431,13 @@
                         window.location.href = 'dashboard';
                     }
                 } else {
+                    // Friendly early check. The database also rejects disposable domains on its own.
+                    try {
+                        const { data: isDisposable } = await window.supabaseClient.rpc('is_disposable_email', { p_email: email });
+                        if (isDisposable === true) throw new Error('Please use a permanent email address.');
+                    } catch (checkErr) {
+                        if (checkErr && checkErr.message === 'Please use a permanent email address.') throw checkErr;
+                    }
                     const { error } = await window.supabaseClient.auth.signUp({ email, password, options: await window.nlCaptcha.opts() });
                     if (error) throw error;
                     window.showToast('We sent a verification code to your email.', true);
