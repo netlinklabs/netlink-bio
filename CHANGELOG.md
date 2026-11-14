@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- Signup failed with "Database error saving new user" for emails with a long name before the @. `handle_new_user()` now caps the generated username prefix at 20 characters, so the username never exceeds the 25 character limit (migration `20261114_handle_new_user_limit_email_prefix.sql`, already applied in production).
+
 ### Removed
 - `shared/turnstile-test.html`: temporary Turnstile diagnostic page, deleted after signup, login and password reset passed with CAPTCHA enabled.
 
