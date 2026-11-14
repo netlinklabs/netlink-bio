@@ -23,38 +23,56 @@
 
   // Public Turnstile site key (safe to expose in client code). Empty = off.
   const SITE_KEY = '';
+  // shared/turnstile-test.html sets window.NL_TURNSTILE_SITE_KEY to try this helper
+  // before SITE_KEY above is switched on.
+  const KEY = SITE_KEY || window.NL_TURNSTILE_SITE_KEY || '';
 
-  const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+  const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=nlTurnstileOnload';
   const TIMEOUT_MS = 30000;
+  const LOAD_TIMEOUT_MS = 15000;
 
   const MSG_LOAD = 'Security check could not load. Please refresh the page and try again.';
   const MSG_FAIL = 'Security check failed. Please refresh the page and try again.';
   const MSG_TIMEOUT = 'Security check timed out. Please try again.';
 
-  let scriptPromise = null;
   let container = null;
   let widgetId = null;
   let settleCurrent = null; // settles the request that is waiting for a token
   let queue = Promise.resolve(); // one challenge at a time
 
+  let apiReady = false;
+  let scriptInjected = false;
+  let readyWaiters = [];
+
+  // Cloudflare calls this once api.js is fully ready (the documented `onload`
+  // parameter). Do not use turnstile.ready() with a script injected like this:
+  // it never fires, which made every auth call hang on phones.
+  window.nlTurnstileOnload = () => {
+    apiReady = true;
+    readyWaiters.splice(0).forEach((w) => w());
+  };
+
   function loadScript() {
-    if (window.turnstile) return Promise.resolve();
-    if (scriptPromise) return scriptPromise;
-    scriptPromise = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = SCRIPT_SRC;
-      s.async = true;
-      s.onload = () => {
-        if (window.turnstile && typeof window.turnstile.ready === 'function') window.turnstile.ready(resolve);
-        else resolve();
-      };
-      s.onerror = () => {
-        scriptPromise = null;
+    if (apiReady) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      let timer = null;
+      const waiter = () => { clearTimeout(timer); resolve(); };
+      const fail = () => {
+        clearTimeout(timer);
+        readyWaiters = readyWaiters.filter((w) => w !== waiter);
         reject(new Error(MSG_LOAD));
       };
-      document.head.appendChild(s);
+      readyWaiters.push(waiter);
+      timer = setTimeout(fail, LOAD_TIMEOUT_MS);
+      if (!scriptInjected) {
+        scriptInjected = true;
+        const el = document.createElement('script');
+        el.src = SCRIPT_SRC;
+        el.async = true;
+        el.onerror = () => { scriptInjected = false; fail(); };
+        document.head.appendChild(el);
+      }
     });
-    return scriptPromise;
   }
 
   function ensureContainer() {
@@ -89,7 +107,7 @@
           try {
             if (widgetId === null) {
               widgetId = window.turnstile.render(ensureContainer(), {
-                sitekey: SITE_KEY,
+                sitekey: KEY,
                 execution: 'execute',
                 appearance: 'interaction-only',
                 callback: (token) => { if (settleCurrent) settleCurrent(null, token); },
@@ -109,7 +127,7 @@
 
   // Resolves to a fresh token, or undefined while captcha is off on the client.
   function getToken() {
-    if (!SITE_KEY) return Promise.resolve(undefined);
+    if (!KEY) return Promise.resolve(undefined);
     const p = queue.then(requestToken);
     queue = p.catch(() => {});
     return p;
@@ -121,5 +139,5 @@
     return captchaToken ? { captchaToken } : {};
   }
 
-  window.nlCaptcha = { enabled: !!SITE_KEY, getToken, opts };
+  window.nlCaptcha = { enabled: !!KEY, getToken, opts };
 })();

@@ -18,9 +18,9 @@
 </head>
 <body>
 <h1>Turnstile test (temporary)</h1>
-<p>Tap a test, wait up to 20 seconds, then send a screenshot of this page.</p>
+<p>Reload this page before each test. Tap one test, wait up to 30 seconds, then send a screenshot.</p>
 <button id="btnVisible" type="button">Test 1: visible widget</button>
-<button id="btnLogin" type="button" class="alt">Test 2: same as login</button>
+<button id="btnHelper" type="button" class="alt">Test 2: real login helper</button>
 <div id="widget"></div>
 <pre id="log"></pre>
 
@@ -44,67 +44,56 @@
   window.addEventListener('unhandledrejection', (e) => log('promise rejection: ' + ((e.reason && e.reason.message) || e.reason)));
 
   log('page loaded on host: ' + location.hostname);
-  log('browser: ' + navigator.userAgent);
 
-  let loading = null;
-  function loadApi() {
-    if (loading) return loading;
-    loading = new Promise((resolve, reject) => {
-      log('loading api.js ...');
-      const s = document.createElement('script');
-      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      s.async = true;
-      s.onload = () => {
-        log('api.js loaded, turnstile object: ' + typeof window.turnstile);
-        if (window.turnstile && typeof window.turnstile.ready === 'function') {
-          log('waiting for turnstile.ready ...');
-          window.turnstile.ready(() => { log('turnstile.ready fired'); resolve(); });
-        } else {
-          resolve();
-        }
-      };
-      s.onerror = () => { log('api.js FAILED to load (blocked or offline)'); reject(new Error('load')); };
-      document.head.appendChild(s);
-    });
-    return loading;
-  }
-
-  async function runTest(mode) {
-    try { await loadApi(); } catch (e) { return; }
-    const box = document.getElementById('widget');
-    box.innerHTML = '';
-    log('--- test: ' + mode);
-    let answered = false;
-    const opts = {
-      sitekey: SITE_KEY,
-      callback: (t) => { answered = true; log('TOKEN OK, length ' + t.length); },
-      'error-callback': (c) => { answered = true; log('ERROR code: ' + c); },
-      'timeout-callback': () => log('timeout-callback fired'),
-      'expired-callback': () => log('token expired'),
-      'before-interactive-callback': () => log('interaction needed, the widget should be visible'),
-      'after-interactive-callback': () => log('interaction done'),
+  // Test 1: raw Turnstile, visible widget, documented onload callback.
+  function test1() {
+    log('--- test 1: visible widget');
+    window.nlRawOnload = () => {
+      log('api.js onload callback fired');
+      let answered = false;
+      const id = window.turnstile.render(document.getElementById('widget'), {
+        sitekey: SITE_KEY,
+        callback: (t) => { answered = true; log('TOKEN OK, length ' + t.length); },
+        'error-callback': (c) => { answered = true; log('ERROR code: ' + c); },
+        'before-interactive-callback': () => log('interaction needed, widget should be visible'),
+      });
+      log('rendered, widget id ' + id);
+      setTimeout(() => { if (!answered) log('NO RESPONSE after 30 seconds'); }, 30000);
     };
-    if (mode === 'login') {
-      opts.execution = 'execute';
-      opts.appearance = 'interaction-only';
-    }
-    let id;
-    try {
-      id = window.turnstile.render(box, opts);
-    } catch (e) {
-      log('render threw: ' + e.message);
-      return;
-    }
-    log('rendered, widget id ' + id);
-    if (mode === 'login') {
-      log('calling execute');
-      window.turnstile.execute(id);
-    }
-    setTimeout(() => { if (!answered) log('NO RESPONSE after 20 seconds'); }, 20000);
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=nlRawOnload';
+    s.async = true;
+    s.onerror = () => log('api.js FAILED to load (blocked or offline)');
+    document.head.appendChild(s);
+    log('loading api.js ...');
   }
 
-  document.getElementById('btnVisible').addEventListener('click', () => runTest('visible'));
-  document.getElementById('btnLogin').addEventListener('click', () => runTest('login'));
+  // Test 2: the real helper from /shared/turnstile.js, two calls in a row.
+  function test2() {
+    log('--- test 2: real login helper');
+    window.NL_TURNSTILE_SITE_KEY = SITE_KEY;
+    const s = document.createElement('script');
+    s.src = '/shared/turnstile.js?v=2';
+    s.onload = async () => {
+      log('helper loaded, enabled: ' + window.nlCaptcha.enabled);
+      for (let i = 1; i <= 2; i++) {
+        const t0 = performance.now();
+        try {
+          const o = await window.nlCaptcha.opts();
+          const ms = Math.round(performance.now() - t0);
+          log('call ' + i + ': ' + (o.captchaToken ? 'TOKEN OK, length ' + o.captchaToken.length : 'no token') + ' in ' + ms + ' ms');
+        } catch (e) {
+          log('call ' + i + ' FAILED: ' + e.message);
+        }
+      }
+      log('done');
+    };
+    s.onerror = () => log('could not load /shared/turnstile.js');
+    document.head.appendChild(s);
+  }
+
+  document.getElementById('btnVisible').addEventListener('click', test1);
+  document.getElementById('btnHelper').addEventListener('click', test2);
 </script>
 </body>
 </html>
