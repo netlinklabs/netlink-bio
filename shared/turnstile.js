@@ -22,7 +22,7 @@
   'use strict';
 
   // Public Turnstile site key (safe to expose in client code). Empty = off.
-  const SITE_KEY = '0x4AAAAAAGAyQXsZM4W1z7mF';
+  const SITE_KEY = '';
 
   const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
   const TIMEOUT_MS = 30000;
