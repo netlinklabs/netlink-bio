@@ -28,6 +28,20 @@
   const LS_WEBAUTHN_USER = 'nl_lock_webauthn_user_id';
   const GOOGLE_CLIENT_ID = '207398676098-o9j3ijhd20latst8rq1orvt6rvlk8v06.apps.googleusercontent.com';
 
+  // Supabase CAPTCHA protection: options for signInWithPassword / signInWithIdToken.
+  // Loads the shared Turnstile helper on demand, because not every page that
+  // includes app-lock.js also includes shared/turnstile.js.
+  function captchaOpts() {
+    if (window.nlCaptcha) return window.nlCaptcha.opts();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = '/shared/turnstile.js?v=1';
+      s.onload = () => resolve(window.nlCaptcha.opts());
+      s.onerror = () => reject(new Error('Security check could not load. Please refresh the page and try again.'));
+      document.head.appendChild(s);
+    });
+  }
+
   let state = {
     supabaseClient: null,
     userId: null,
@@ -419,7 +433,7 @@
         const password = document.getElementById('nlal-forgot-pw').value;
         const msgEl = document.getElementById('nlal-msg');
         try {
-          const { error } = await state.supabaseClient.auth.signInWithPassword({ email, password });
+          const { error } = await state.supabaseClient.auth.signInWithPassword({ email, password, options: await captchaOpts() });
           if (error) throw error;
           renderResetPinFlow();
         } catch (err) {
@@ -438,6 +452,7 @@
               const { error } = await state.supabaseClient.auth.signInWithIdToken({
                 provider: 'google',
                 token: response.credential,
+                options: await captchaOpts(),
               });
               if (error) throw error;
               renderResetPinFlow();

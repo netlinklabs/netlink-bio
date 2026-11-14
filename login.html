@@ -156,6 +156,7 @@
     </div>
 
     <script src="/shared/vendor/supabase.js?v=1"></script>
+    <script src="/shared/turnstile.js?v=1"></script>
     <script>
         // lucide loads with `defer` now, so wait for DOMContentLoaded (which
         // always fires after deferred scripts finish) before the first call.
@@ -279,7 +280,7 @@
             if (!pendingOtpEmail) return;
             hideOtpError();
             try {
-                const { error } = await window.supabaseClient.auth.resend({ type: 'signup', email: pendingOtpEmail });
+                const { error } = await window.supabaseClient.auth.resend({ type: 'signup', email: pendingOtpEmail, options: await window.nlCaptcha.opts() });
                 if (error) throw error;
                 window.showToast('A new code has been sent to your email.', true);
                 startResendCooldown();
@@ -367,7 +368,8 @@
             setForgotLoading(true);
             try {
                 const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://netlink.bio/reset-password.html'
+                    redirectTo: 'https://netlink.bio/reset-password.html',
+                    ...(await window.nlCaptcha.opts())
                 });
                 if (error) throw error;
                 window.showToast('If an account exists for this email, a reset link has been sent.', true);
@@ -415,13 +417,13 @@
             setLoading(true);
             try {
                 if (mode === 'signin') {
-                    const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+                    const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password, options: await window.nlCaptcha.opts() });
                     const isUnconfirmedError = error && (error.message || '').toLowerCase().includes('not confirmed');
 
                     if (error && !isUnconfirmedError) throw error;
 
                     if (isUnconfirmedError || !data.user || !data.user.email_confirmed_at) {
-                        const { error: resendError } = await window.supabaseClient.auth.resend({ type: 'signup', email });
+                        const { error: resendError } = await window.supabaseClient.auth.resend({ type: 'signup', email, options: await window.nlCaptcha.opts() });
                         if (resendError) throw resendError;
                         window.showToast('Please verify your email to continue.', true);
                         showOtpStep(email);
@@ -429,7 +431,7 @@
                         window.location.href = 'dashboard';
                     }
                 } else {
-                    const { error } = await window.supabaseClient.auth.signUp({ email, password });
+                    const { error } = await window.supabaseClient.auth.signUp({ email, password, options: await window.nlCaptcha.opts() });
                     if (error) throw error;
                     window.showToast('We sent a verification code to your email.', true);
                     showOtpStep(email);
@@ -448,7 +450,7 @@
 
             if (session.user && !session.user.email_confirmed_at) {
                 try {
-                    await window.supabaseClient.auth.resend({ type: 'signup', email: session.user.email });
+                    await window.supabaseClient.auth.resend({ type: 'signup', email: session.user.email, options: await window.nlCaptcha.opts() });
                 } catch (err) {
                     console.error('Resend error:', err);
                 }

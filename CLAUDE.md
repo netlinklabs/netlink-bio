@@ -92,6 +92,12 @@ When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and a
 
 `docs/payment-rules.md` is the single source of truth for prices, plan lengths, upgrade math, grace period, reminders, KYC rules, tier features and refunds. **Before changing any file that touches payments, orders, KYC, tiers or plan expiry (list in section 8 of that file), read it first, so your change does not conflict with the current rules.** If you change a rule, update that file in the same PR and add a line to its "Rule history".
 
+## Supabase Auth CAPTCHA (Turnstile)
+
+- CAPTCHA protection (Cloudflare Turnstile) goes through `shared/turnstile.js`. Every new `signUp`, `signInWithPassword`, `signInWithIdToken`, `resend` or `resetPasswordForEmail` call must pass `await nlCaptcha.opts()` (usage is in the header of that file). Without it the call fails once CAPTCHA is enabled in Supabase.
+- Don't enable CAPTCHA in Supabase before `SITE_KEY` in `shared/turnstile.js` is filled in and deployed.
+- Keep `https://challenges.cloudflare.com` in the `script-src` of the CSP in `vercel.json`.
+
 ## Production data safety
 
 - Before writing/inserting data into any **production Supabase table** (e.g. notifications broadcasts, manual data fixes), stop and show a draft of the change first. Do not execute without explicit approval.
