@@ -22,7 +22,7 @@
   'use strict';
 
   // Public Turnstile site key (safe to expose in client code). Empty = off.
-  const SITE_KEY = '';
+  const SITE_KEY = '0x4AAAAAAGAyQXsZM4W1z7mF';
   // shared/turnstile-test.html sets window.NL_TURNSTILE_SITE_KEY to try this helper
   // before SITE_KEY above is switched on.
   const KEY = SITE_KEY || window.NL_TURNSTILE_SITE_KEY || '';
