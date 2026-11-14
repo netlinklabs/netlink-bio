@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- PAGE-TYPE: app -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Turnstile test</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background: #f8fafc; color: #0f172a; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  p { font-size: 14px; margin: 0 0 12px; color: #475569; }
+  button { font-size: 15px; padding: 12px 14px; margin: 0 8px 8px 0; border: 0; border-radius: 10px; background: #0d9488; color: #fff; }
+  button.alt { background: #334155; }
+  #widget { min-height: 70px; margin: 8px 0 12px; }
+  pre { font-size: 12px; line-height: 1.5; background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 10px; white-space: pre-wrap; word-break: break-word; }
+</style>
+</head>
+<body>
+<h1>Turnstile test (temporary)</h1>
+<p>Tap a test, wait up to 20 seconds, then send a screenshot of this page.</p>
+<button id="btnVisible" type="button">Test 1: visible widget</button>
+<button id="btnLogin" type="button" class="alt">Test 2: same as login</button>
+<div id="widget"></div>
+<pre id="log"></pre>
+
+<script>
+  // Public Turnstile site key (safe to expose).
+  const SITE_KEY = '0x4AAAAAAGAyQXsZM4W1z7mF';
+  const out = document.getElementById('log');
+
+  function log(msg) {
+    out.textContent += new Date().toISOString().slice(11, 23) + '  ' + msg + '\n';
+  }
+
+  ['warn', 'error'].forEach((k) => {
+    const orig = console[k];
+    console[k] = function () {
+      log('console.' + k + ': ' + Array.prototype.map.call(arguments, String).join(' '));
+      orig.apply(console, arguments);
+    };
+  });
+  window.addEventListener('error', (e) => log('window error: ' + e.message));
+  window.addEventListener('unhandledrejection', (e) => log('promise rejection: ' + ((e.reason && e.reason.message) || e.reason)));
+
+  log('page loaded on host: ' + location.hostname);
+  log('browser: ' + navigator.userAgent);
+
+  let loading = null;
+  function loadApi() {
+    if (loading) return loading;
+    loading = new Promise((resolve, reject) => {
+      log('loading api.js ...');
+      const s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true;
+      s.onload = () => {
+        log('api.js loaded, turnstile object: ' + typeof window.turnstile);
+        if (window.turnstile && typeof window.turnstile.ready === 'function') {
+          log('waiting for turnstile.ready ...');
+          window.turnstile.ready(() => { log('turnstile.ready fired'); resolve(); });
+        } else {
+          resolve();
+        }
+      };
+      s.onerror = () => { log('api.js FAILED to load (blocked or offline)'); reject(new Error('load')); };
+      document.head.appendChild(s);
+    });
+    return loading;
+  }
+
+  async function runTest(mode) {
+    try { await loadApi(); } catch (e) { return; }
+    const box = document.getElementById('widget');
+    box.innerHTML = '';
+    log('--- test: ' + mode);
+    let answered = false;
+    const opts = {
+      sitekey: SITE_KEY,
+      callback: (t) => { answered = true; log('TOKEN OK, length ' + t.length); },
+      'error-callback': (c) => { answered = true; log('ERROR code: ' + c); },
+      'timeout-callback': () => log('timeout-callback fired'),
+      'expired-callback': () => log('token expired'),
+      'before-interactive-callback': () => log('interaction needed, the widget should be visible'),
+      'after-interactive-callback': () => log('interaction done'),
+    };
+    if (mode === 'login') {
+      opts.execution = 'execute';
+      opts.appearance = 'interaction-only';
+    }
+    let id;
+    try {
+      id = window.turnstile.render(box, opts);
+    } catch (e) {
+      log('render threw: ' + e.message);
+      return;
+    }
+    log('rendered, widget id ' + id);
+    if (mode === 'login') {
+      log('calling execute');
+      window.turnstile.execute(id);
+    }
+    setTimeout(() => { if (!answered) log('NO RESPONSE after 20 seconds'); }, 20000);
+  }
+
+  document.getElementById('btnVisible').addEventListener('click', () => runTest('visible'));
+  document.getElementById('btnLogin').addEventListener('click', () => runTest('login'));
+</script>
+</body>
+</html>
