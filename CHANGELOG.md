@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- `CLAUDE.md`: documented Resend SMTP for auth emails, the disposable email block and the username prefix cap.
+
 ### Added
 - Signup blocks disposable email domains. New table `blocked_email_domains` (195 well known disposable domains, no public access), function `is_disposable_email()` and a `BEFORE INSERT` trigger on `auth.users` that rejects them (migration `20261114_block_disposable_email_signup.sql`, already applied in production). `login.html` checks the address first and shows "Please use a permanent email address." To block more domains, insert them into `blocked_email_domains`.
 - Auth emails (OTP, reset password) now go through Resend SMTP from `noreply@netlink.bio` (configured in the Supabase dashboard, no code change).

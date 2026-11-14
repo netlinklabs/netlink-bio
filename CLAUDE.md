@@ -97,6 +97,8 @@ When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and a
 - CAPTCHA protection (Cloudflare Turnstile) goes through `shared/turnstile.js`. Every new `signUp`, `signInWithPassword`, `signInWithIdToken`, `resend` or `resetPasswordForEmail` call must pass `await nlCaptcha.opts()` (usage is in the header of that file). Without it the call fails once CAPTCHA is enabled in Supabase.
 - Don't enable CAPTCHA in Supabase before `SITE_KEY` in `shared/turnstile.js` is filled in and deployed.
 - Keep `https://challenges.cloudflare.com` in the `script-src` of the CSP in `vercel.json`.
+- Signup also rejects disposable email domains: table `blocked_email_domains`, function `is_disposable_email()` and a trigger on `auth.users` (migration `20261114_block_disposable_email_signup.sql`). Add domains by inserting into that table.
+- `handle_new_user()` caps the generated username prefix at 20 characters so usernames stay within the 25 character limit.
 
 ## Production data safety
 
@@ -114,7 +116,7 @@ When creating a new HTML file, decide its PAGE-TYPE first, add the marker, and a
 
 - i18n on `dashboard.html` is mid-implementation and paused (`data-i18n` attributes added, `en.json`/`id.json`/`i18n.js` drafted, language switcher not done). Don't auto-complete this without being asked — re-check current state first, it may have changed.
 - "Netlink Pay Connect" (embeddable widget) is concept-stage only. Do not build, wire up, or publish anything referencing it unless explicitly instructed.
-- SMTP is currently Gmail-based (temporary). Domain confirmed live — Resend migration can proceed when ready (still a separate task, not done as part of this).
+- Auth emails (signup OTP, reset password, password changed) go through Resend SMTP from `noreply@netlink.bio`, configured in the Supabase dashboard (Authentication > Emails > SMTP Settings: host `smtp.resend.com`, port 465, username `resend`, password = Resend API key). Gmail SMTP was retired on 2026-11-14.
 
 ## After making changes
 
