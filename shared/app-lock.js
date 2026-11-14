@@ -35,7 +35,7 @@
     if (window.nlCaptcha) return window.nlCaptcha.opts();
     return new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = '/shared/turnstile.js?v=2';
+      s.src = '/shared/turnstile.js?v=3';
       s.onload = () => resolve(window.nlCaptcha.opts());
       s.onerror = () => reject(new Error('Security check could not load. Please refresh the page and try again.'));
       document.head.appendChild(s);

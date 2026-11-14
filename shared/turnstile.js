@@ -87,6 +87,11 @@
     return container;
   }
 
+  // Optional debug hook, only used by shared/turnstile-test.html.
+  function dbg(msg) {
+    try { if (typeof window.nlTurnstileDebug === 'function') window.nlTurnstileDebug(msg); } catch (e) { /* ignore */ }
+  }
+
   function requestToken() {
     return loadScript().then(
       () =>
@@ -105,20 +110,26 @@
           timer = setTimeout(() => settle(new Error(MSG_TIMEOUT)), TIMEOUT_MS);
 
           try {
+            // No turnstile.execute(): the widget runs by itself when it is
+            // rendered, and reset() runs it again for the next token. Calling
+            // execute() right after render() lost the first request on a phone.
             if (widgetId === null) {
+              dbg('render');
               widgetId = window.turnstile.render(ensureContainer(), {
                 sitekey: KEY,
-                execution: 'execute',
                 appearance: 'interaction-only',
-                callback: (token) => { if (settleCurrent) settleCurrent(null, token); },
-                'error-callback': () => { if (settleCurrent) settleCurrent(new Error(MSG_FAIL)); },
-                'timeout-callback': () => { if (settleCurrent) settleCurrent(new Error(MSG_TIMEOUT)); },
+                callback: (token) => { dbg('token received'); if (settleCurrent) settleCurrent(null, token); },
+                'error-callback': (code) => { dbg('error code ' + code); if (settleCurrent) settleCurrent(new Error(MSG_FAIL)); },
+                'timeout-callback': () => { dbg('timeout-callback'); if (settleCurrent) settleCurrent(new Error(MSG_TIMEOUT)); },
+                'before-interactive-callback': () => dbg('interaction needed'),
+                'after-interactive-callback': () => dbg('interaction done'),
               });
             } else {
+              dbg('reset');
               window.turnstile.reset(widgetId);
             }
-            window.turnstile.execute(widgetId);
           } catch (err) {
+            dbg('render or reset threw: ' + err.message);
             settle(new Error(MSG_FAIL));
           }
         })

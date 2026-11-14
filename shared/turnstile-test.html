@@ -72,8 +72,9 @@
   function test2() {
     log('--- test 2: real login helper');
     window.NL_TURNSTILE_SITE_KEY = SITE_KEY;
+    window.nlTurnstileDebug = (m) => log('  [helper] ' + m);
     const s = document.createElement('script');
-    s.src = '/shared/turnstile.js?v=2';
+    s.src = '/shared/turnstile.js?v=3';
     s.onload = async () => {
       log('helper loaded, enabled: ' + window.nlCaptcha.enabled);
       for (let i = 1; i <= 2; i++) {
