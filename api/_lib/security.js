@@ -12,6 +12,8 @@
 // Signals are computed when the tab is opened. Nothing is sent automatically yet (see GAPS).
 // Thresholds are small on purpose: the user base is small, so a handful of events already matters.
 
+import { isScriptEmail, unusualDomains, maxBurst, fastOrderUsers } from './signup-patterns.js';
+
 export const CONTROLS_CHECKED = '2026-11-15';
 
 export const CONTROLS = [
@@ -57,6 +59,7 @@ export const CONTROLS = [
     items: [
       ['Security headers', 'Content Security Policy and X-Content-Type-Options are sent on every page (vercel.json).'],
       ['Bot probe logging', 'Requests for bio pages that do not exist are counted per name, so scanning shows up here.'],
+      ['Sign-up pattern signals', 'Script-like email names, unusual new email domains, sign-up bursts and very fast first orders are flagged in the Access group. Monitoring only: no sign-up is blocked by these signals.'],
       ['Rate limit counting for Alchemy', 'HTTP 429 answers from Alchemy are counted, so a throughput problem is visible.'],
     ],
   },
@@ -99,6 +102,27 @@ export async function securitySummary(SUPABASE_URL, SERVICE_ROLE_KEY) {
     const m = /\/(\d+)$/.exec(r.headers.get('content-range') || '');
     if (!m) throw new Error(`${table} count missing`);
     return Number(m[1]);
+  };
+
+  // The newest accounts of the last 7 days (up to 50) with their email, for the sign-up pattern
+  // signals. Loaded once and shared. The email is optional: if it cannot be read, the time based
+  // signals still work. Emails never leave this function (signals only show counts and domains).
+  let signupsPromise = null;
+  const recentSignups = () => {
+    if (!signupsPromise) {
+      signupsPromise = (async () => {
+        const rows = await rest(`profiles?select=id,created_at&created_at=gte.${since7d}&order=created_at.desc&limit=50`);
+        return Promise.all(rows.map(async (p) => {
+          let email = null;
+          try {
+            const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${p.id}`, { headers: H });
+            if (r.ok) email = (await r.json())?.email || null;
+          } catch (e) { /* email stays null */ }
+          return { id: p.id, created_at: p.created_at, email };
+        }));
+      })();
+    }
+    return signupsPromise;
   };
 
   // Runs one check. fn returns { level, value, detail }, an error becomes level "unknown".
@@ -190,6 +214,33 @@ export async function securitySummary(SUPABASE_URL, SERVICE_ROLE_KEY) {
       const { level, avg } = vsAverage(n, prev, 5, 3, 20, 5);
       return { level, value: n, detail: `Daily average over the 7 days before: ${avgText(avg)}. A sudden jump can be a bot sign-up run.` };
     }),
+
+    // Sign-up pattern signals. Monitoring only, nothing is blocked (see api/_lib/signup-patterns.js).
+    check('signup_script_email', 'Access', 'Script-like email names, 7 days', 'Yellow at 1, red at 3 or more.', async () => {
+      const list = await recentSignups();
+      const n = list.filter((s) => isScriptEmail(s.email)).length;
+      return { level: byCount(n, 1, 3), value: n, detail: 'Email names made of a few letters and 9 or more digits, like a sign-up script makes. A real user can match by chance, so look at the account first.' };
+    }, 'signups'),
+
+    check('signup_new_domain', 'Access', 'Unusual new email domain, 24 hours', 'Yellow at 1 or more.', async () => {
+      const list = await recentSignups();
+      const found = unusualDomains(list, now);
+      const names = found.slice(0, 3).map((d) => `${d.domain} (${d.count})`).join(', ');
+      return { level: byCount(found.length, 1), value: found.length, detail: found.length ? `Domains outside the big mailbox providers with 2 or more new accounts and none before: ${names}.` : 'No domain outside the big mailbox providers has 2 or more new accounts today.' };
+    }, 'signups'),
+
+    check('signup_burst', 'Access', 'Most sign-ups in one hour, last 24 hours', 'Yellow at 3, red at 6 or more.', async () => {
+      const list = await recentSignups();
+      const n = maxBurst(list, now);
+      return { level: byCount(n, 3, 6), value: n, detail: 'The most accounts created inside any 60 minute stretch. Catches a short bot run that the daily count misses.' };
+    }, 'signups'),
+
+    check('signup_fast_order', 'Access', 'Order placed within 30 minutes of sign-up, 7 days', 'Yellow at 1 or more.', async () => {
+      const list = await recentSignups();
+      const orders = await rest(`orders?select=user_id,created_at&created_at=gte.${since7d}&limit=200`);
+      const n = fastOrderUsers(new Map(list.map((s) => [s.id, s.created_at])), orders);
+      return { level: byCount(n, 1), value: n, detail: 'Accounts that opened an order very soon after signing up. A buyer can do this too, so check the account and the order before acting.' };
+    }, 'orders'),
 
     check('kyc_declined', 'Access', 'Identity checks declined, 7 days', 'Yellow at 3, red at 10 or more.', async () => {
       const n = await count('verifications', `status=eq.declined&created_at=gte.${since7d}`);
