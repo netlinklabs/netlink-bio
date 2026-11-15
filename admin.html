@@ -1182,6 +1182,7 @@
                     ${kv('Method', esc(o.pay_method || '-'))}
                     ${kv('Payer wallet', esc(o.payer_address || '-'), true)}
                     ${kv('Paid tx', esc(o.paid_tx_hash || '-'), true)}
+                    ${d.payments ? kv('Hash typed by buyer', esc(o.claimed_tx_hash || '-'), true) : ''}
                     ${kv('Created', esc(fmtDate(o.created_at)))}
                     ${kv('Expires', esc(fmtDate(o.expires_at)))}
                     ${kv('Paid at', esc(fmtDate(o.paid_at)))}

@@ -12,7 +12,7 @@
 // Signals are computed when the tab is opened. Nothing is sent automatically yet (see GAPS).
 // Thresholds are small on purpose: the user base is small, so a handful of events already matters.
 
-export const CONTROLS_CHECKED = '2026-10-13';
+export const CONTROLS_CHECKED = '2026-11-15';
 
 export const CONTROLS = [
   {
@@ -39,6 +39,7 @@ export const CONTROLS = [
       ['Didit webhook is signed and fresh', 'The webhook signature is verified with a constant time compare and old timestamps are rejected.'],
       ['Duplicate webhook events are ignored', 'verifications.event_id is unique, so a replayed event cannot create a second record.'],
       ['A payment hash can be claimed once', 'An order cannot claim a transaction hash that another order already claimed.'],
+      ['A typed hash cannot take another buyer\'s transfer', 'A transfer matched only by a typed hash is refused when its sender is the payer of another open order or the saved wallet of another account. It stays unmatched for an admin to link.'],
       ['Verification attempt limits', 'Each user has a total and a daily limit on identity verification attempts.'],
     ],
   },
@@ -82,6 +83,7 @@ export async function securitySummary(SUPABASE_URL, SERVICE_ROLE_KEY) {
   const since24h = encodeURIComponent(iso(now - DAY));
   const since7d = encodeURIComponent(iso(now - 7 * DAY));
   const since8d = encodeURIComponent(iso(now - 8 * DAY));
+  const since30d = encodeURIComponent(iso(now - 30 * DAY));
   const day8 = iso(now - 7 * DAY).slice(0, 10); // today plus the 7 days before it
   const nowQ = encodeURIComponent(iso(now));
 
@@ -125,6 +127,26 @@ export async function securitySummary(SUPABASE_URL, SERVICE_ROLE_KEY) {
       const n = await count('order_payments', 'match_status=in.(unmatched,late)&order_id=is.null');
       return { level: byCount(n, 1, 5), value: n, detail: 'USDC seen on chain that is not linked to an order. Review them in Finance, Payments.' };
     }, 'payments'),
+
+    check('hash_no_payment', 'Money', 'Typed hash without a payment, 7 days', 'Yellow at 1, red at 3 or more.', async () => {
+      const n = await count('orders', `claimed_tx_hash=not.is.null&status=in.(awaiting_payment,underpaid,expired)&created_at=gte.${since7d}`);
+      return { level: byCount(n, 1, 3), value: n, detail: 'Orders where a buyer typed a transaction hash but no matching payment arrived. A made-up hash is a typical probe of the payment check.' };
+    }, 'orders'),
+
+    check('hash_sender_mismatch', 'Money', 'Paid by a sender other than the payer, 30 days', 'Yellow at 1 or more.', async () => {
+      const pays = await rest(`order_payments?select=order_id,from_address&match_status=eq.matched&order_id=not.is.null&occurred_at=gte.${since30d}&limit=1000`);
+      const ids = [...new Set(pays.map((p) => p.order_id))];
+      const payerOf = new Map();
+      for (let i = 0; i < ids.length; i += 100) {
+        const rows = await rest(`orders?select=id,payer_address&id=in.(${ids.slice(i, i + 100).join(',')})`);
+        for (const r of rows) payerOf.set(r.id, String(r.payer_address || '').toLowerCase());
+      }
+      const n = pays.filter((p) => {
+        const payer = payerOf.get(p.order_id);
+        return payer && payer !== String(p.from_address || '').toLowerCase();
+      }).length;
+      return { level: byCount(n, 1), value: n, detail: 'Payments assigned by a typed hash or linked by an admin where the sender differs from the order payer address. Expected for exchange withdrawals. Check that the sender is the buyer.' };
+    }, 'orders'),
 
     check('orders_underpaid', 'Money', 'Partially paid orders', 'Yellow at 1 or more.', async () => {
       const n = await count('orders', 'status=eq.underpaid');
