@@ -18,8 +18,9 @@
 //  - Incoming native USDC transfers to the finance wallet are pulled from
 //    Alchemy and stored in `order_payments` (unique per tx_hash + log_index).
 //  - A transfer belongs to an order when it comes FROM the order's payer
-//    address, or when its hash equals the order's claimed_tx_hash (a hash
-//    the user supplied wins over the address).
+//    address, or when its hash equals the order's claimed_tx_hash. A hash alone
+//    never takes a transfer sent by the payer of another open order or from
+//    the saved wallet of another account (api/_lib/payment-claim.js).
 //  - Transfers that match nothing stay `unmatched` for an admin to link.
 //
 // All amounts are handled as integer micro-USDC (BigInt) to avoid float drift.
@@ -29,6 +30,7 @@ import { emailUser, emailAdmin, invoiceMail, receiptMail, adminPaidMail, planAct
 import { handleAdmin, isAdminAction } from './_lib/admin.js';
 import { withStats } from './_lib/stats.js';
 import { trackAlchemy } from './_lib/usage.js';
+import { claimVerdict } from './_lib/payment-claim.js';
 
 const SUPABASE_URL = 'https://fuewalufgiclrcgszlit.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_FcmN6iwrOJp-5KBtBU8Cww_ZtvzahQb';
@@ -509,8 +511,20 @@ async function fetchIncomingTransfers() {
     .filter(Boolean);
 }
 
+// Who else could own the sender of a transfer? Only looked up when a transfer is claimed by a
+// typed hash (see api/_lib/payment-claim.js). A failed lookup throws, so the claim is not made.
+async function senderOwners(from, order) {
+  if (!ADDR_RE.test(from)) return { malformed: true };
+  const [openOrders, profiles] = await Promise.all([
+    db(`orders?payer_address=eq.${from}&id=neq.${order.id}&status=in.(${ACTIVE_STATUSES.join(',')})&select=id&limit=1`),
+    db(`profiles?wallet_address=ilike.${from}&id=neq.${order.user_id}&select=id&limit=1`),
+  ]);
+  return { malformed: false, otherOpenOrder: openOrders.length > 0, otherUser: profiles.length > 0 };
+}
+
 // Assigns transfers that belong to this order: sent from its payer address, or
-// matching the hash the user supplied. Late ones (after expiry) are marked
+// matching the hash the user supplied. A hash match alone never takes a transfer that
+// belongs to someone else (claimVerdict). Late ones (after expiry) are marked
 // 'late' for an admin to decide. The claim is atomic (order_id=is.null).
 async function claimTransfersForOrder(order) {
   const expiresAt = new Date(order.expires_at).getTime();
@@ -519,9 +533,17 @@ async function claimTransfersForOrder(order) {
   if (order.claimed_tx_hash) filters.push(`tx_hash.eq.${order.claimed_tx_hash}`);
   const candidates = await db(
     `order_payments?order_id=is.null&match_status=eq.unmatched&occurred_at=gte.${since}` +
-      `&or=(${filters.join(',')})&select=id,occurred_at`
+      `&or=(${filters.join(',')})&select=id,occurred_at,from_address,tx_hash`
   );
   for (const c of candidates) {
+    const fromOrderPayer = String(c.from_address || '').toLowerCase() === String(order.payer_address || '').toLowerCase();
+    const owners = fromOrderPayer ? null : await senderOwners(String(c.from_address || '').toLowerCase(), order);
+    const verdict = claimVerdict(order, c, owners);
+    if (!verdict.allowed) {
+      // Stays unmatched: it shows up in Finance, Payments and in the Security tab for an admin to link.
+      console.warn('orders: hash claim refused', order.order_no, verdict.reason, c.tx_hash);
+      continue;
+    }
     const isLate = new Date(c.occurred_at).getTime() > expiresAt;
     // order_id=is.null in the filter makes the claim atomic: a transfer can only be taken once.
     await db(`order_payments?id=eq.${c.id}&order_id=is.null`, {

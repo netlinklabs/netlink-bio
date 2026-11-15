@@ -22,6 +22,7 @@ Last verified against code and production: 2026-10-07.
 - One active order (awaiting_payment or underpaid) per user per type. Opening the same one again returns the existing order.
 - A different plan or a new upgrade price replaces an open order only if nothing was paid on it. If a partial payment exists, the user must finish it or wait for it to expire.
 - Status check is throttled to once per 10 seconds per order.
+- **Payment matching**: a transfer is assigned to an order when it was sent from the order's payer address. A transaction hash typed by the buyer (for exchange withdrawals) can also assign a transfer, but **never one sent by the payer address of another open order, or from the saved wallet of another account** (`api/_lib/payment-claim.js`). Such a transfer stays `unmatched` and an admin links it (Finance, Payments). If the owner lookup fails, the hash claim is refused.
 
 ### Order statuses
 
@@ -189,3 +190,4 @@ Set in `api/orders.js` (`PLAN_PRICES`). Period names in requests: `monthly`, `qu
 - Earlier: KYC became a separate $2.50 one-time add-on, no longer required for Gold.
 - 2026-10-09: `plans.html` became an in-app page (app nav, login required). A public pricing page, if built later, is a separate file that sends signed in users to `/plans`.
 - 2026-10-09: New in-app `billing.html` (current plan and order history) and `api/orders.js?action=list`. The Account menu now has separate "Plans" and "Billing" items.
+- 2026-11-15: A typed transaction hash no longer takes a transfer sent by the payer of another open order or from another account's saved wallet (it stays unmatched for an admin). Admin order detail shows the hash typed by the buyer. Security tab has two new payment signals.

@@ -166,6 +166,8 @@ export async function handleAdmin(action, req, res, user, ctx) {
     pay_method: o.pay_method,
     payer_address: o.payer_address,
     paid_tx_hash: o.paid_tx_hash,
+    // The hash the buyer typed on checkout (finance and super_admin only, like the payments list).
+    claimed_tx_hash: canSeePayments ? o.claimed_tx_hash || null : null,
     expires_at: o.expires_at,
     paid_at: o.paid_at,
     fulfilled_at: o.fulfilled_at,
@@ -358,7 +360,8 @@ export async function handleAdmin(action, req, res, user, ctx) {
         body: transfers,
       });
     }
-    const open = await db('orders?status=in.(awaiting_payment,underpaid)&select=*&limit=100');
+    // Oldest order first, so the result does not depend on the database's row order.
+    const open = await db('orders?status=in.(awaiting_payment,underpaid)&select=*&order=created_at.asc&limit=100');
     let changed = 0;
     for (const o of open) {
       await ctx.claimTransfersForOrder(o);

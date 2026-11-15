@@ -7,6 +7,13 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Security
+- **Payments: a typed transaction hash could take another buyer's payment.** In `claimTransfersForOrder` (`api/orders.js`) a transfer matched an order when it came from the order's payer address OR its hash equalled the hash typed on checkout ("hash wins"), with no check on who sent it. Transfers to the finance wallet are public, so an account with an open order could type the hash of another buyer's transfer, before that buyer's own payment check ran, and get the order marked paid (an overpayment counts as paid). New `api/_lib/payment-claim.js` (`claimVerdict`) now refuses a hash-only match when the sender is the payer address of another open order or the saved wallet of another account, and refuses it when the owner lookup is missing (fail closed). Refused transfers stay `unmatched`, so they show in Finance, Payments and the Security tab, and an admin can link them. Normal payments from the payer address and exchange withdrawals with a typed hash work as before. A made-up hash never created a payment (nothing on chain matches it); this closes the real-hash variant. Checked on 2026-11-15: no order had a payment from a sender other than its payer, and no unmatched transfers were open. Tests: `node api/_lib/payment-claim.test.mjs`.
+- `admin-sync` (`api/_lib/admin.js`) now reads open orders oldest first, so which order claims a transfer no longer depends on database row order.
+- Admin order detail now shows **Hash typed by buyer** (`claimed_tx_hash`, finance and super_admin only), so a made-up hash is visible to admins.
+- Admin Security tab: two new Money signals, **Typed hash without a payment, 7 days** (yellow at 1, red at 3) and **Paid by a sender other than the payer, 30 days** (yellow at 1; expected for exchange withdrawals). Controls list updated (`CONTROLS_CHECKED` 2026-11-15).
+- Still open (not changed here): the 10 second payment check throttle lives in memory per serverless instance, only the latest 100 transfers are read (no paging), no block confirmations are required, `profiles.wallet_address` can be edited by the user so it is not proof of ownership, and orders have no per-user creation limit.
+
 ### Changed
 - `CLAUDE.md`: documented Resend SMTP for auth emails, the disposable email block and the username prefix cap.
 
