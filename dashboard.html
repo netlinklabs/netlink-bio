@@ -2434,6 +2434,10 @@ window.openNetlinkPay = openNetlinkPay;
                     showToast('Claim quota is full');
                 } else if (error.message.includes('duplicate') || error.code === '23505') {
                     showToast('You already claimed this reward');
+                } else if (error.message.includes('wallet_not_verified')) {
+                    showToast('Open the Wallet tab once to finish verifying your wallet, then try again.');
+                } else if (error.message.includes('profile_incomplete')) {
+                    showToast('Complete your profile first: photo, country, at least one link and a connected wallet.');
                 } else {
                     showToast('Failed to submit claim');
                 }

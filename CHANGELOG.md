@@ -8,6 +8,7 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **Clearer messages when a NET claim is rejected.** In `dashboard.html`, a claim from an account with an incomplete profile, or with a wallet that is not verified yet, now shows a short message saying what to do instead of the general "Failed to submit claim". An older wallet is verified quietly the next time the owner opens the Wallet tab.
 - **Wallet linking is now confirmed on the server.** In `pay.html`, `pay2.html`, `pay5.html` and `dashboard.html`, connecting a wallet signs a short message with the Sequence wallet and sends it to the `wallet-link` Edge Function, which checks it before saving the address to the profile. Disconnecting also goes through the same function. Wallets linked earlier are verified quietly the next time the owner opens Netlink Pay with an active wallet session. Nothing changes in the screens, except that a wallet that is already used by another account, or a wallet that does not match the signed-in wallet, shows an error and is not saved. Direct profile writes of `wallet_address` from these pages were removed. No database change in this commit. Hotfix: the quiet verification call is now reached through `window.ensureWalletVerified`, because the first version referenced a function from another script and stopped the header and bottom menu from loading on the Netlink Pay pages.
 
 ### Added
