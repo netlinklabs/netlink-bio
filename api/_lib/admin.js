@@ -612,7 +612,7 @@ export async function handleAdmin(action, req, res, user, ctx) {
     const profiles = [];
     for (let i = 0; i < userIds.length; i += 100) {
       const chunk = userIds.slice(i, i + 100);
-      profiles.push(...(await db(`profiles?id=in.(${chunk.join(',')})&select=id,username,display_name,wallet_address`)));
+      profiles.push(...(await db(`profiles?id=in.(${chunk.join(',')})&select=id,username,display_name,wallet_address,wallet_verified_at`)));
     }
     const byId = Object.fromEntries(profiles.map((p) => [p.id, p]));
     return res.status(200).json({
@@ -628,7 +628,7 @@ export async function handleAdmin(action, req, res, user, ctx) {
           tx_hash: r.tx_hash || null,
           claimed_at: r.claimed_at,
           created_at: r.created_at,
-          user: p ? { username: p.username, display_name: p.display_name, wallet_address: p.wallet_address || null } : null,
+          user: p ? { username: p.username, display_name: p.display_name, wallet_address: p.wallet_address || null, wallet_verified_at: p.wallet_verified_at || null } : null,
         };
       }),
     });

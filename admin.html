@@ -1485,8 +1485,10 @@
 
         const fmtNet = (v) => String(Number(Number(v).toFixed(6)));
         const rwHasWallet = (r) => !!(r.user && RW_ADDR_RE.test(r.user.wallet_address || ''));
-        // Only claims that are still unpaid and have a valid wallet may go into a payout paste.
-        const rwPayable = () => rwRows.filter((r) => r.status === 'pending' && rwHasWallet(r));
+        // A wallet counts as verified once the owner proved it with a wallet signature (set by the server).
+        const rwVerified = (r) => !!(r.user && r.user.wallet_verified_at);
+        // Only claims that are still unpaid, have a valid wallet and a verified wallet may go into a payout paste.
+        const rwPayable = () => rwRows.filter((r) => r.status === 'pending' && rwHasWallet(r) && rwVerified(r));
 
         // Stops a spreadsheet from running a cell that starts with = + - @ as a formula.
         function csvCell(v) {
@@ -1498,12 +1500,14 @@
         function updateRwActions() {
             const payable = rwPayable();
             const pendingRows = rwRows.filter((r) => r.status === 'pending');
-            const noWallet = pendingRows.length - payable.length;
+            const noWallet = pendingRows.filter((r) => !rwHasWallet(r)).length;
+            const unverified = pendingRows.filter((r) => rwHasWallet(r) && !rwVerified(r)).length;
             const seen = new Map();
             payable.forEach((r) => { const k = r.user.wallet_address.toLowerCase(); seen.set(k, (seen.get(k) || 0) + 1); });
             const dup = [...seen.values()].filter((n) => n > 1).length;
             const warns = [];
             if (noWallet > 0) warns.push(`${noWallet} unpaid claim${noWallet === 1 ? ' has' : 's have'} no valid wallet and ${noWallet === 1 ? 'is' : 'are'} left out of the paste.`);
+            if (unverified > 0) warns.push(`${unverified} unpaid claim${unverified === 1 ? ' has' : 's have'} a wallet that is not verified and ${unverified === 1 ? 'is' : 'are'} left out of the paste.`);
             if (dup > 0) warns.push(`${dup} wallet address${dup === 1 ? ' appears' : 'es appear'} more than once. Check before sending.`);
             $('rwWarn').textContent = warns.join(' ');
             show('rwWarn', warns.length > 0);
@@ -1527,8 +1531,11 @@
                 list.innerHTML = rewards.map((r) => {
                     const u = r.user || {};
                     const addr = u.wallet_address || '';
+                    const verifiedHtml = u.wallet_verified_at
+                        ? ' <span class="badge b-ok">Wallet verified</span>'
+                        : ' <span class="badge b-warn">Wallet not verified</span>';
                     const addrHtml = RW_ADDR_RE.test(addr)
-                        ? `<span class="mono">${esc(addr)}</span>`
+                        ? `<span class="mono">${esc(addr)}</span>${verifiedHtml} <button class="text-blue-500" data-copy="${esc(addr)}">Copy</button>`
                         : '<span class="text-red-500">No valid wallet</span>';
                     const txHtml = r.tx_hash
                         ? ` · <a href="https://polygonscan.com/tx/${encodeURIComponent(r.tx_hash)}" target="_blank" rel="noopener noreferrer" class="text-blue-500">View transaction</a>`
@@ -1545,6 +1552,7 @@
                         </div>
                     </div>`;
                 }).join('');
+                list.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => copy(b.dataset.copy)));
             } catch (err) { list.innerHTML = `<p class="p-4 text-sm text-red-500">${esc(err.message)}</p>`; }
         }
 
@@ -1563,10 +1571,10 @@
         // CSV of the rows currently listed (all columns, including already received ones).
         $('rwCsvBtn').addEventListener('click', () => {
             if (!rwRows.length) return;
-            const head = ['username', 'display_name', 'wallet_address', 'amount_net', 'status', 'tx_hash', 'claimed_at', 'created_at'];
+            const head = ['username', 'display_name', 'wallet_address', 'wallet_verified_at', 'amount_net', 'status', 'tx_hash', 'claimed_at', 'created_at'];
             const lines = [head.join(',')].concat(rwRows.map((r) => {
                 const u = r.user || {};
-                return [u.username, u.display_name, u.wallet_address, fmtNet(r.amount), r.status, r.tx_hash, r.claimed_at, r.created_at].map(csvCell).join(',');
+                return [u.username, u.display_name, u.wallet_address, u.wallet_verified_at, fmtNet(r.amount), r.status, r.tx_hash, r.claimed_at, r.created_at].map(csvCell).join(',');
             }));
             const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
