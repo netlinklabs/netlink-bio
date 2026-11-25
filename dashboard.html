@@ -1350,14 +1350,48 @@ window.openNetlinkPay = openNetlinkPay;
             }
         }
 
+        // ---- Link wallet through the server (signature is verified server-side) ----
+        async function walletLink(body) {
+            const { data, error } = await supabaseClient.functions.invoke('wallet-link', { body });
+            if (error) {
+                let code = 'server_error';
+                try { code = (await error.context.json()).error || code; } catch (_) { }
+                const e = new Error(code);
+                e.code = code;
+                throw e;
+            }
+            return data;
+        }
+
+        async function verifyAndLinkWallet(address) {
+            const ch = await walletLink({ action: 'challenge' });
+            const signed = await window.sequenceWaas.signMessage({ chainId: 137, message: ch.message });
+            const signature = signed && signed.data && signed.data.signature;
+            if (!signature) throw new Error('sign_failed');
+            return walletLink({ action: 'confirm', address, signature });
+        }
+
+        function walletLinkErrorText(code) {
+            if (code === 'wallet_in_use') return 'This wallet is already linked to another account.';
+            if (code === 'already_linked_other_wallet') return 'Your account already has a different wallet linked.';
+            if (code === 'verifier_unavailable') return 'Wallet verification is busy. Please try again in a moment.';
+            return 'Could not verify your wallet. Please try again.';
+        }
+
         async function saveWallet() {
             const wallet_address = document.getElementById('walletAddressInput').value.trim();
             if (wallet_address && !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
                 showToast('That doesn\'t look like a valid wallet address');
                 return;
             }
-            const { error } = await supabaseClient.from('profiles').update({ wallet_address: wallet_address || null }).eq('id', currentUser.id);
-            if (error) { showToast('Failed to save wallet address'); return; }
+            try {
+                if (wallet_address) await verifyAndLinkWallet(wallet_address);
+                else await walletLink({ action: 'unlink' });
+            } catch (e) {
+                console.error('Wallet link failed:', e);
+                showToast(walletLinkErrorText(e.code));
+                return false;
+            }
             showToast('Wallet address saved');
 
             // The DB write above is what actually matters for "success".
@@ -1370,6 +1404,7 @@ window.openNetlinkPay = openNetlinkPay;
             } catch (refreshErr) {
                 console.error('Wallet saved, but UI refresh failed:', refreshErr);
             }
+            return true;
         }
         // formatTokenAmount/fetchWalletBalances were removed (2026-09-25) along
         // with the dashboard's Wallet Balance display card -- the balance grid
@@ -3197,9 +3232,10 @@ window.openNetlinkPay = openNetlinkPay;
             if (!current) return;
 
             try {
-                const { error } = await supabaseClient.from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
-                if (error) {
-                    console.error('Supabase error removing wallet:', error);
+                try {
+                    await walletLink({ action: 'unlink' });
+                } catch (unlinkErr) {
+                    console.error('Error removing wallet:', unlinkErr);
                     // Continue anyway - update UI to reflect disconnected state
                 }
                 document.getElementById('walletAddressInput').value = '';
@@ -3278,7 +3314,11 @@ window.openNetlinkPay = openNetlinkPay;
             }
 
             document.getElementById('walletAddressInput').value = walletAddress;
-            await window.saveWallet(true);
+            const walletSaved = await window.saveWallet(true);
+            if (!walletSaved) {
+                document.getElementById('walletAddressInput').value = '';
+                return;
+            }
 
             // Google's idToken already carries the account email as a JWT
             // claim -- decode it here (no extra API call needed) and record

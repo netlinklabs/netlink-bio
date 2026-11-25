@@ -1193,6 +1193,7 @@
             if (currentWalletAddress) {
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
+                setTimeout(ensureWalletVerified, 4000);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'Not connected';
             }
@@ -1797,6 +1798,51 @@
             return `Use the same email as your Netlink account (${currentUser.email}) to connect a wallet.`;
         }
 
+        // ---- Link wallet through the server (signature is verified server-side) ----
+        async function walletLink(body) {
+            const { data, error } = await supabaseClient.functions.invoke('wallet-link', { body });
+            if (error) {
+                let code = 'server_error';
+                try { code = (await error.context.json()).error || code; } catch (_) { }
+                const e = new Error(code);
+                e.code = code;
+                throw e;
+            }
+            return data;
+        }
+
+        async function verifyAndLinkWallet(address) {
+            const ch = await walletLink({ action: 'challenge' });
+            const signed = await window.sequenceWaas.signMessage({ chainId: 137, message: ch.message });
+            const signature = signed && signed.data && signed.data.signature;
+            if (!signature) throw new Error('sign_failed');
+            return walletLink({ action: 'confirm', address, signature });
+        }
+
+        function walletLinkErrorText(code) {
+            if (code === 'wallet_in_use') return 'This wallet is already linked to another account.';
+            if (code === 'already_linked_other_wallet') return 'Your account already has a different wallet linked.';
+            if (code === 'verifier_unavailable') return 'Wallet verification is busy. Please try again in a moment.';
+            return 'Could not verify your wallet. Please try again.';
+        }
+
+        // Quietly verifies an older wallet that was linked before server verification existed.
+        async function ensureWalletVerified() {
+            try {
+                if (window._walletVerifyTried) return;
+                window._walletVerifyTried = true;
+                const { data } = await supabaseClient
+                    .from('profiles').select('wallet_address, wallet_verified_at').eq('id', currentUser.id).single();
+                if (!data || !data.wallet_address || data.wallet_verified_at) return;
+                if (!window.sequenceWaas || !(await window.sequenceWaas.isSignedIn())) return;
+                const live = await window.sequenceWaas.getAddress();
+                if (!live || live.toLowerCase() !== data.wallet_address.toLowerCase()) return;
+                await verifyAndLinkWallet(data.wallet_address);
+            } catch (e) {
+                console.warn('Wallet verification skipped', e && e.code);
+            }
+        }
+
         // Shared by both the Google flow and the Email OTP flow below — same
         // wallet-linking logic applies whether this is a brand-new wallet or
         // a returning user signing back into an existing one (including a
@@ -1807,10 +1853,14 @@
                 .from('profiles').select('wallet_address').eq('id', currentUser.id).single();
             if (fetchErr) throw fetchErr;
 
+            let linkedAddress;
+            try {
+                linkedAddress = (await verifyAndLinkWallet(walletAddress)).wallet_address;
+            } catch (e) {
+                throw new Error(walletLinkErrorText(e.code));
+            }
+
             if (!existing.wallet_address) {
-                const { error: saveErr } = await supabaseClient
-                    .from('profiles').update({ wallet_address: walletAddress }).eq('id', currentUser.id);
-                if (saveErr) throw saveErr;
 
                 // wallet_google_email is specifically the Google-federated
                 // recovery email -- only write it when this connection came
@@ -1822,7 +1872,7 @@
                 }
             }
 
-            const finalAddress = existing.wallet_address || walletAddress;
+            const finalAddress = linkedAddress || existing.wallet_address || walletAddress;
             currentWalletAddress = finalAddress;
             window.currentWalletAddress = finalAddress;
 
@@ -1859,9 +1909,7 @@
                 // email) deterministically resolves to the same wallet for
                 // this project, so there's no need to tear down the Sequence
                 // session itself.
-                const { error } = await supabaseClient
-                    .from('profiles').update({ wallet_address: null }).eq('id', currentUser.id);
-                if (error) throw error;
+                await walletLink({ action: 'unlink' });
 
                 currentWalletAddress = '';
                 window.currentWalletAddress = '';
