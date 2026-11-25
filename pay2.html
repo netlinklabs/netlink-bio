@@ -1232,7 +1232,7 @@
                 document.getElementById('walletAddressDisplay').textContent = truncateAddress(currentWalletAddress);
                 updateOnrampWidget(currentWalletAddress);
                 fetchWalletBalances(currentWalletAddress);
-                setTimeout(ensureWalletVerified, 4000);
+                setTimeout(function () { if (window.ensureWalletVerified) window.ensureWalletVerified(); }, 4000);
             } else {
                 document.getElementById('walletAddressDisplay').textContent = 'Not connected';
             }
@@ -1927,6 +1927,7 @@
                 console.warn('Wallet verification skipped', e && e.code);
             }
         }
+        window.ensureWalletVerified = ensureWalletVerified;
 
         // Shared by both the Google flow and the Email OTP flow below — same
         // wallet-linking logic applies whether this is a brand-new wallet or
