@@ -2046,7 +2046,7 @@
             } catch (err) {
                 console.error('Failed to disconnect wallet:', err);
                 const pinErrors = {
-                    invalid_pin: 'Incorrect PIN.',
+                    invalid_pin: 'Incorrect PIN. Your wallet is still connected.',
                     pin_locked: 'Too many attempts. Please wait before trying again.',
                 };
                 if (pinErrors[err.code]) {
