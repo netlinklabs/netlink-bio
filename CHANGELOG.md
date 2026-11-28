@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Changed
+- **Disconnect Wallet asks for the app PIN.** In `pay.html`, `pay2.html` and `pay5.html`, the Disconnect Wallet window has a 6-digit PIN field and a Forgot PIN link. The PIN is sent with the `unlink` request to the `wallet-link` Edge Function. No database change.
+
 ### Fixed
 - **Forgot PIN, new PIN screen.** In `shared/app-lock.js`, the delete key now shows its icon, and the new PIN must be entered twice before it is saved. If the two entries differ, the screen starts again with "PINs don't match. Try again." `app-lock.js` is now `?v=9` on every page that loads it.
 
