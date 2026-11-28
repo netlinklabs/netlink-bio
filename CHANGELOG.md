@@ -8,6 +8,9 @@ older entries in older-dated files) if what you are looking for is not below.
 ## [Unreleased]
 
 ### Changed
+- **Disconnect Wallet, wrong PIN message.** In `pay.html`, `pay2.html` and `pay5.html` it now reads "Incorrect PIN. Your wallet is still connected."
+
+### Changed
 - **Disconnect Wallet asks for the app PIN.** In `pay.html`, `pay2.html` and `pay5.html`, the Disconnect Wallet window has a 6-digit PIN field and a Forgot PIN link. The PIN is sent with the `unlink` request to the `wallet-link` Edge Function. No database change.
 
 ### Fixed
