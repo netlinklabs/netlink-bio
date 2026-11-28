@@ -865,10 +865,15 @@
             <p class="text-sm text-secondary mb-4 text-left">
                 This unlinks your wallet from this account, but doesn't delete it. To use it again, reconnect with the same sign-in method you used originally (Google or email). Make sure you remember which one it was, since that's what brings you back to the same wallet.
             </p>
-            <label class="flex items-start gap-2 text-left text-xs text-secondary mb-5">
+            <label class="flex items-start gap-2 text-left text-xs text-secondary mb-4">
                 <input id="disconnectConfirmCheckbox" type="checkbox" onchange="onDisconnectCheckboxChange()" class="mt-0.5">
                 <span>I understand, and I know which sign-in method to use to reconnect to this wallet later.</span>
             </label>
+            <label for="disconnectPinInput" class="block text-xs text-secondary mb-1 text-left">Enter your 6-digit app PIN</label>
+            <input id="disconnectPinInput" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="------" oninput="onDisconnectPinInput()"
+                class="w-full px-3 py-2.5 border border-subtle bg-surface rounded-lg text-sm text-primary text-center tracking-[0.4em] font-semibold mb-2">
+            <p id="disconnectPinError" class="hidden text-xs text-red-500 mb-2 text-left"></p>
+            <button type="button" onclick="resetDisconnectPin()" class="block text-xs text-secondary underline mb-5">Forgot PIN?</button>
             <div class="flex gap-2">
                 <button onclick="closeDisconnectWalletModal()" class="flex-1 py-2.5 border border-subtle hover-surface rounded-xl text-sm font-medium text-secondary transition">Cancel</button>
                 <button id="disconnectConfirmBtn" onclick="handleDisconnectWalletConfirm()" disabled class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition">Disconnect</button>
@@ -1888,16 +1893,38 @@
         }
 
         // ---- Disconnect Wallet ----
+        function canConfirmDisconnect() {
+            return document.getElementById('disconnectConfirmCheckbox').checked
+                && /^[0-9]{6}$/.test(document.getElementById('disconnectPinInput').value);
+        }
+        function showDisconnectPinError(message) {
+            const el = document.getElementById('disconnectPinError');
+            el.textContent = message || '';
+            el.classList.toggle('hidden', !message);
+        }
         window.openDisconnectWalletModal = function () {
             document.getElementById('disconnectConfirmCheckbox').checked = false;
+            document.getElementById('disconnectPinInput').value = '';
+            showDisconnectPinError('');
             document.getElementById('disconnectConfirmBtn').disabled = true;
             document.getElementById('disconnectWalletModal').classList.add('active');
         };
         window.closeDisconnectWalletModal = function () {
+            document.getElementById('disconnectPinInput').value = '';
             document.getElementById('disconnectWalletModal').classList.remove('active');
         };
         window.onDisconnectCheckboxChange = function () {
-            document.getElementById('disconnectConfirmBtn').disabled = !document.getElementById('disconnectConfirmCheckbox').checked;
+            document.getElementById('disconnectConfirmBtn').disabled = !canConfirmDisconnect();
+        };
+        window.onDisconnectPinInput = function () {
+            const el = document.getElementById('disconnectPinInput');
+            el.value = el.value.replace(/[^0-9]/g, '');
+            if (el.value) showDisconnectPinError('');
+            document.getElementById('disconnectConfirmBtn').disabled = !canConfirmDisconnect();
+        };
+        // Opens the app lock screen, which has the Forgot PIN flow.
+        window.resetDisconnectPin = async function () {
+            if (window.NetlinkAppLock) await NetlinkAppLock.requireAppLock();
         };
 
         window.handleDisconnectWalletConfirm = async function () {
@@ -1910,7 +1937,7 @@
                 // email) deterministically resolves to the same wallet for
                 // this project, so there's no need to tear down the Sequence
                 // session itself.
-                await walletLink({ action: 'unlink' });
+                await walletLink({ action: 'unlink', pin: document.getElementById('disconnectPinInput').value });
 
                 currentWalletAddress = '';
                 window.currentWalletAddress = '';
@@ -1930,10 +1957,19 @@
                 showToast('Wallet disconnected');
             } catch (err) {
                 console.error('Failed to disconnect wallet:', err);
-                showToast('Could not disconnect wallet. Please try again.');
+                const pinErrors = {
+                    invalid_pin: 'Incorrect PIN.',
+                    pin_locked: 'Too many attempts. Please wait before trying again.',
+                };
+                if (pinErrors[err.code]) {
+                    document.getElementById('disconnectPinInput').value = '';
+                    showDisconnectPinError(pinErrors[err.code]);
+                } else {
+                    showToast('Could not disconnect wallet. Please try again.');
+                }
             } finally {
                 btn.textContent = 'Disconnect';
-                btn.disabled = !document.getElementById('disconnectConfirmCheckbox').checked;
+                btn.disabled = !canConfirmDisconnect();
             }
         };
 
