@@ -473,18 +473,44 @@
     }
 
     function renderResetPinFlow() {
-      overlay.innerHTML = `<div class="nlal-card"><p class="nlal-title">Set a new PIN</p><p class="nlal-subtitle">Choose a new 6-digit PIN.</p><div class="nlal-dots"></div><p class="nlal-msg" id="nlal-msg"></p>${keypadHtml()}</div>`;
-      const pad = mountPinPad(overlay, async (pin) => {
-        try {
-          const { error } = await state.supabaseClient.rpc('set_app_pin', { p_pin: pin });
-          if (error) throw error;
-          markUnlocked();
-          onSuccess();
-        } catch (err) {
-          document.getElementById('nlal-msg').textContent = 'Could not save your new PIN.';
-          pad.flashError();
-        }
-      });
+      let firstPin = '';
+
+      function paintReset(msg) {
+        overlay.innerHTML = `
+          <div class="nlal-card">
+            <p class="nlal-title">${firstPin ? 'Confirm your PIN' : 'Set a new PIN'}</p>
+            <p class="nlal-subtitle">${firstPin ? 'Enter it once more to confirm.' : 'Choose a new 6-digit PIN.'}</p>
+            <div class="nlal-dots"></div>
+            <p class="nlal-msg" id="nlal-msg">${msg || ''}</p>
+            ${keypadHtml()}
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        const pad = mountPinPad(overlay, async (pin) => {
+          if (!firstPin) {
+            firstPin = pin;
+            paintReset();
+            return;
+          }
+          if (pin !== firstPin) {
+            firstPin = '';
+            paintReset("PINs don't match. Try again.");
+            return;
+          }
+          try {
+            const { error } = await state.supabaseClient.rpc('set_app_pin', { p_pin: pin });
+            if (error) throw error;
+            markUnlocked();
+            onSuccess();
+          } catch (err) {
+            console.error('set_app_pin failed:', err);
+            document.getElementById('nlal-msg').textContent = 'Could not save your new PIN.';
+            pad.flashError();
+          }
+        });
+      }
+
+      paintReset();
     }
 
     paint();

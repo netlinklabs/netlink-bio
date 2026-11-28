@@ -7,6 +7,9 @@ older entries in older-dated files) if what you are looking for is not below.
 
 ## [Unreleased]
 
+### Fixed
+- **Forgot PIN, new PIN screen.** In `shared/app-lock.js`, the delete key now shows its icon, and the new PIN must be entered twice before it is saved. If the two entries differ, the screen starts again with "PINs don't match. Try again." `app-lock.js` is now `?v=9` on every page that loads it.
+
 ### Changed
 - **Admin, Rewards tab: wallet check before paying.** Each claim now shows whether the claimant's wallet is verified and has a Copy button for the full address. Claims whose wallet is not verified are left out of the TokenPocket paste, with a warning line, and the CSV has a new `wallet_verified_at` column. `admin-rewards` returns `wallet_verified_at` for each claimant. Nothing changes for users.
 - **Clearer messages when a NET claim is rejected.** In `dashboard.html`, a claim from an account with an incomplete profile, or with a wallet that is not verified yet, now shows a short message saying what to do instead of the general "Failed to submit claim". An older wallet is verified quietly the next time the owner opens the Wallet tab.
